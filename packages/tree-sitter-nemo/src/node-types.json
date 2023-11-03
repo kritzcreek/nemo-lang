@@ -1,11 +1,1482 @@
 [
   {
-    "type": "source_file",
+    "type": "array_e",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "array_e",
+          "named": true
+        },
+        {
+          "type": "array_idx_e",
+          "named": true
+        },
+        {
+          "type": "bin_e",
+          "named": true
+        },
+        {
+          "type": "block_e",
+          "named": true
+        },
+        {
+          "type": "bool_lit",
+          "named": true
+        },
+        {
+          "type": "call_e",
+          "named": true
+        },
+        {
+          "type": "float_lit",
+          "named": true
+        },
+        {
+          "type": "if_e",
+          "named": true
+        },
+        {
+          "type": "int_lit",
+          "named": true
+        },
+        {
+          "type": "intrinsic_e",
+          "named": true
+        },
+        {
+          "type": "struct_e",
+          "named": true
+        },
+        {
+          "type": "struct_idx_e",
+          "named": true
+        },
+        {
+          "type": "var_e",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "array_idx_e",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "array_e",
+          "named": true
+        },
+        {
+          "type": "array_idx_e",
+          "named": true
+        },
+        {
+          "type": "bin_e",
+          "named": true
+        },
+        {
+          "type": "block_e",
+          "named": true
+        },
+        {
+          "type": "bool_lit",
+          "named": true
+        },
+        {
+          "type": "call_e",
+          "named": true
+        },
+        {
+          "type": "float_lit",
+          "named": true
+        },
+        {
+          "type": "if_e",
+          "named": true
+        },
+        {
+          "type": "int_lit",
+          "named": true
+        },
+        {
+          "type": "intrinsic_e",
+          "named": true
+        },
+        {
+          "type": "struct_e",
+          "named": true
+        },
+        {
+          "type": "struct_idx_e",
+          "named": true
+        },
+        {
+          "type": "var_e",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "bin_e",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "array_e",
+          "named": true
+        },
+        {
+          "type": "array_idx_e",
+          "named": true
+        },
+        {
+          "type": "bin_e",
+          "named": true
+        },
+        {
+          "type": "block_e",
+          "named": true
+        },
+        {
+          "type": "bool_lit",
+          "named": true
+        },
+        {
+          "type": "call_e",
+          "named": true
+        },
+        {
+          "type": "float_lit",
+          "named": true
+        },
+        {
+          "type": "if_e",
+          "named": true
+        },
+        {
+          "type": "int_lit",
+          "named": true
+        },
+        {
+          "type": "intrinsic_e",
+          "named": true
+        },
+        {
+          "type": "struct_e",
+          "named": true
+        },
+        {
+          "type": "struct_idx_e",
+          "named": true
+        },
+        {
+          "type": "var_e",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "block_e",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "expr_decl",
+          "named": true
+        },
+        {
+          "type": "let_decl",
+          "named": true
+        },
+        {
+          "type": "set_decl",
+          "named": true
+        },
+        {
+          "type": "while_decl",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "bool_lit",
     "named": true,
     "fields": {}
   },
   {
-    "type": "hello",
+    "type": "call_args",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "array_e",
+          "named": true
+        },
+        {
+          "type": "array_idx_e",
+          "named": true
+        },
+        {
+          "type": "bin_e",
+          "named": true
+        },
+        {
+          "type": "block_e",
+          "named": true
+        },
+        {
+          "type": "bool_lit",
+          "named": true
+        },
+        {
+          "type": "call_e",
+          "named": true
+        },
+        {
+          "type": "float_lit",
+          "named": true
+        },
+        {
+          "type": "if_e",
+          "named": true
+        },
+        {
+          "type": "int_lit",
+          "named": true
+        },
+        {
+          "type": "intrinsic_e",
+          "named": true
+        },
+        {
+          "type": "struct_e",
+          "named": true
+        },
+        {
+          "type": "struct_idx_e",
+          "named": true
+        },
+        {
+          "type": "var_e",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "call_e",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "call_args",
+          "named": true
+        },
+        {
+          "type": "lower_ident",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "expr_decl",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "array_e",
+          "named": true
+        },
+        {
+          "type": "array_idx_e",
+          "named": true
+        },
+        {
+          "type": "bin_e",
+          "named": true
+        },
+        {
+          "type": "block_e",
+          "named": true
+        },
+        {
+          "type": "bool_lit",
+          "named": true
+        },
+        {
+          "type": "call_e",
+          "named": true
+        },
+        {
+          "type": "float_lit",
+          "named": true
+        },
+        {
+          "type": "if_e",
+          "named": true
+        },
+        {
+          "type": "int_lit",
+          "named": true
+        },
+        {
+          "type": "intrinsic_e",
+          "named": true
+        },
+        {
+          "type": "struct_e",
+          "named": true
+        },
+        {
+          "type": "struct_idx_e",
+          "named": true
+        },
+        {
+          "type": "var_e",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "func_param",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "lower_ident",
+          "named": true
+        },
+        {
+          "type": "ty_array",
+          "named": true
+        },
+        {
+          "type": "ty_bool",
+          "named": true
+        },
+        {
+          "type": "ty_f32",
+          "named": true
+        },
+        {
+          "type": "ty_i32",
+          "named": true
+        },
+        {
+          "type": "ty_struct",
+          "named": true
+        },
+        {
+          "type": "ty_unit",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "func_params",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "func_param",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "func_type",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "ty_array",
+          "named": true
+        },
+        {
+          "type": "ty_bool",
+          "named": true
+        },
+        {
+          "type": "ty_f32",
+          "named": true
+        },
+        {
+          "type": "ty_i32",
+          "named": true
+        },
+        {
+          "type": "ty_struct",
+          "named": true
+        },
+        {
+          "type": "ty_unit",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "if_e",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "array_e",
+          "named": true
+        },
+        {
+          "type": "array_idx_e",
+          "named": true
+        },
+        {
+          "type": "bin_e",
+          "named": true
+        },
+        {
+          "type": "block_e",
+          "named": true
+        },
+        {
+          "type": "bool_lit",
+          "named": true
+        },
+        {
+          "type": "call_e",
+          "named": true
+        },
+        {
+          "type": "float_lit",
+          "named": true
+        },
+        {
+          "type": "if_e",
+          "named": true
+        },
+        {
+          "type": "int_lit",
+          "named": true
+        },
+        {
+          "type": "intrinsic_e",
+          "named": true
+        },
+        {
+          "type": "struct_e",
+          "named": true
+        },
+        {
+          "type": "struct_idx_e",
+          "named": true
+        },
+        {
+          "type": "var_e",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "int_lit",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "intrinsic_e",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "call_args",
+          "named": true
+        },
+        {
+          "type": "intrinsic_ident",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "let_decl",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "array_e",
+          "named": true
+        },
+        {
+          "type": "array_idx_e",
+          "named": true
+        },
+        {
+          "type": "bin_e",
+          "named": true
+        },
+        {
+          "type": "block_e",
+          "named": true
+        },
+        {
+          "type": "bool_lit",
+          "named": true
+        },
+        {
+          "type": "call_e",
+          "named": true
+        },
+        {
+          "type": "float_lit",
+          "named": true
+        },
+        {
+          "type": "if_e",
+          "named": true
+        },
+        {
+          "type": "int_lit",
+          "named": true
+        },
+        {
+          "type": "intrinsic_e",
+          "named": true
+        },
+        {
+          "type": "lower_ident",
+          "named": true
+        },
+        {
+          "type": "struct_e",
+          "named": true
+        },
+        {
+          "type": "struct_idx_e",
+          "named": true
+        },
+        {
+          "type": "var_e",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "set_array_idx",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "array_e",
+          "named": true
+        },
+        {
+          "type": "array_idx_e",
+          "named": true
+        },
+        {
+          "type": "bin_e",
+          "named": true
+        },
+        {
+          "type": "block_e",
+          "named": true
+        },
+        {
+          "type": "bool_lit",
+          "named": true
+        },
+        {
+          "type": "call_e",
+          "named": true
+        },
+        {
+          "type": "float_lit",
+          "named": true
+        },
+        {
+          "type": "if_e",
+          "named": true
+        },
+        {
+          "type": "int_lit",
+          "named": true
+        },
+        {
+          "type": "intrinsic_e",
+          "named": true
+        },
+        {
+          "type": "lower_ident",
+          "named": true
+        },
+        {
+          "type": "struct_e",
+          "named": true
+        },
+        {
+          "type": "struct_idx_e",
+          "named": true
+        },
+        {
+          "type": "var_e",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "set_decl",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "array_e",
+          "named": true
+        },
+        {
+          "type": "array_idx_e",
+          "named": true
+        },
+        {
+          "type": "bin_e",
+          "named": true
+        },
+        {
+          "type": "block_e",
+          "named": true
+        },
+        {
+          "type": "bool_lit",
+          "named": true
+        },
+        {
+          "type": "call_e",
+          "named": true
+        },
+        {
+          "type": "float_lit",
+          "named": true
+        },
+        {
+          "type": "if_e",
+          "named": true
+        },
+        {
+          "type": "int_lit",
+          "named": true
+        },
+        {
+          "type": "intrinsic_e",
+          "named": true
+        },
+        {
+          "type": "set_array_idx",
+          "named": true
+        },
+        {
+          "type": "set_struct_idx",
+          "named": true
+        },
+        {
+          "type": "set_var",
+          "named": true
+        },
+        {
+          "type": "struct_e",
+          "named": true
+        },
+        {
+          "type": "struct_idx_e",
+          "named": true
+        },
+        {
+          "type": "var_e",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "set_struct_idx",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "lower_ident",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "set_var",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "lower_ident",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "source_file",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "top_func",
+          "named": true
+        },
+        {
+          "type": "top_import",
+          "named": true
+        },
+        {
+          "type": "top_let",
+          "named": true
+        },
+        {
+          "type": "top_struct",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "struct_e",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "struct_field_e",
+          "named": true
+        },
+        {
+          "type": "upper_ident",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "struct_field_e",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "array_e",
+          "named": true
+        },
+        {
+          "type": "array_idx_e",
+          "named": true
+        },
+        {
+          "type": "bin_e",
+          "named": true
+        },
+        {
+          "type": "block_e",
+          "named": true
+        },
+        {
+          "type": "bool_lit",
+          "named": true
+        },
+        {
+          "type": "call_e",
+          "named": true
+        },
+        {
+          "type": "float_lit",
+          "named": true
+        },
+        {
+          "type": "if_e",
+          "named": true
+        },
+        {
+          "type": "int_lit",
+          "named": true
+        },
+        {
+          "type": "intrinsic_e",
+          "named": true
+        },
+        {
+          "type": "lower_ident",
+          "named": true
+        },
+        {
+          "type": "struct_e",
+          "named": true
+        },
+        {
+          "type": "struct_idx_e",
+          "named": true
+        },
+        {
+          "type": "var_e",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "struct_field_top",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "lower_ident",
+          "named": true
+        },
+        {
+          "type": "ty_array",
+          "named": true
+        },
+        {
+          "type": "ty_bool",
+          "named": true
+        },
+        {
+          "type": "ty_f32",
+          "named": true
+        },
+        {
+          "type": "ty_i32",
+          "named": true
+        },
+        {
+          "type": "ty_struct",
+          "named": true
+        },
+        {
+          "type": "ty_unit",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "struct_idx_e",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "array_e",
+          "named": true
+        },
+        {
+          "type": "array_idx_e",
+          "named": true
+        },
+        {
+          "type": "bin_e",
+          "named": true
+        },
+        {
+          "type": "block_e",
+          "named": true
+        },
+        {
+          "type": "bool_lit",
+          "named": true
+        },
+        {
+          "type": "call_e",
+          "named": true
+        },
+        {
+          "type": "float_lit",
+          "named": true
+        },
+        {
+          "type": "if_e",
+          "named": true
+        },
+        {
+          "type": "int_lit",
+          "named": true
+        },
+        {
+          "type": "intrinsic_e",
+          "named": true
+        },
+        {
+          "type": "lower_ident",
+          "named": true
+        },
+        {
+          "type": "struct_e",
+          "named": true
+        },
+        {
+          "type": "struct_idx_e",
+          "named": true
+        },
+        {
+          "type": "var_e",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "top_func",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "block_e",
+          "named": true
+        },
+        {
+          "type": "func_params",
+          "named": true
+        },
+        {
+          "type": "lower_ident",
+          "named": true
+        },
+        {
+          "type": "ty_array",
+          "named": true
+        },
+        {
+          "type": "ty_bool",
+          "named": true
+        },
+        {
+          "type": "ty_f32",
+          "named": true
+        },
+        {
+          "type": "ty_i32",
+          "named": true
+        },
+        {
+          "type": "ty_struct",
+          "named": true
+        },
+        {
+          "type": "ty_unit",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "top_import",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "func_type",
+          "named": true
+        },
+        {
+          "type": "lower_ident",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "top_let",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "array_e",
+          "named": true
+        },
+        {
+          "type": "array_idx_e",
+          "named": true
+        },
+        {
+          "type": "bin_e",
+          "named": true
+        },
+        {
+          "type": "block_e",
+          "named": true
+        },
+        {
+          "type": "bool_lit",
+          "named": true
+        },
+        {
+          "type": "call_e",
+          "named": true
+        },
+        {
+          "type": "float_lit",
+          "named": true
+        },
+        {
+          "type": "if_e",
+          "named": true
+        },
+        {
+          "type": "int_lit",
+          "named": true
+        },
+        {
+          "type": "intrinsic_e",
+          "named": true
+        },
+        {
+          "type": "lower_ident",
+          "named": true
+        },
+        {
+          "type": "struct_e",
+          "named": true
+        },
+        {
+          "type": "struct_idx_e",
+          "named": true
+        },
+        {
+          "type": "ty_array",
+          "named": true
+        },
+        {
+          "type": "ty_bool",
+          "named": true
+        },
+        {
+          "type": "ty_f32",
+          "named": true
+        },
+        {
+          "type": "ty_i32",
+          "named": true
+        },
+        {
+          "type": "ty_struct",
+          "named": true
+        },
+        {
+          "type": "ty_unit",
+          "named": true
+        },
+        {
+          "type": "var_e",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "top_struct",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "struct_field_top",
+          "named": true
+        },
+        {
+          "type": "upper_ident",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "ty_array",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "ty_array",
+          "named": true
+        },
+        {
+          "type": "ty_bool",
+          "named": true
+        },
+        {
+          "type": "ty_f32",
+          "named": true
+        },
+        {
+          "type": "ty_i32",
+          "named": true
+        },
+        {
+          "type": "ty_struct",
+          "named": true
+        },
+        {
+          "type": "ty_unit",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "ty_struct",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "upper_ident",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "var_e",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "lower_ident",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "while_decl",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "array_e",
+          "named": true
+        },
+        {
+          "type": "array_idx_e",
+          "named": true
+        },
+        {
+          "type": "bin_e",
+          "named": true
+        },
+        {
+          "type": "block_e",
+          "named": true
+        },
+        {
+          "type": "bool_lit",
+          "named": true
+        },
+        {
+          "type": "call_e",
+          "named": true
+        },
+        {
+          "type": "float_lit",
+          "named": true
+        },
+        {
+          "type": "if_e",
+          "named": true
+        },
+        {
+          "type": "int_lit",
+          "named": true
+        },
+        {
+          "type": "intrinsic_e",
+          "named": true
+        },
+        {
+          "type": "struct_e",
+          "named": true
+        },
+        {
+          "type": "struct_idx_e",
+          "named": true
+        },
+        {
+          "type": "var_e",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "!=",
+    "named": false
+  },
+  {
+    "type": "&&",
+    "named": false
+  },
+  {
+    "type": "(",
+    "named": false
+  },
+  {
+    "type": ")",
+    "named": false
+  },
+  {
+    "type": "*",
+    "named": false
+  },
+  {
+    "type": "+",
+    "named": false
+  },
+  {
+    "type": ",",
+    "named": false
+  },
+  {
+    "type": "-",
+    "named": false
+  },
+  {
+    "type": "->",
+    "named": false
+  },
+  {
+    "type": ".",
+    "named": false
+  },
+  {
+    "type": "/",
+    "named": false
+  },
+  {
+    "type": "0",
+    "named": false
+  },
+  {
+    "type": ":",
+    "named": false
+  },
+  {
+    "type": ";",
+    "named": false
+  },
+  {
+    "type": "<",
+    "named": false
+  },
+  {
+    "type": "<=",
+    "named": false
+  },
+  {
+    "type": "=",
+    "named": false
+  },
+  {
+    "type": "==",
+    "named": false
+  },
+  {
+    "type": ">",
+    "named": false
+  },
+  {
+    "type": ">=",
+    "named": false
+  },
+  {
+    "type": "[",
+    "named": false
+  },
+  {
+    "type": "]",
+    "named": false
+  },
+  {
+    "type": "else",
+    "named": false
+  },
+  {
+    "type": "false",
+    "named": false
+  },
+  {
+    "type": "float_lit",
+    "named": true
+  },
+  {
+    "type": "fn",
+    "named": false
+  },
+  {
+    "type": "from",
+    "named": false
+  },
+  {
+    "type": "if",
+    "named": false
+  },
+  {
+    "type": "import",
+    "named": false
+  },
+  {
+    "type": "intrinsic_ident",
+    "named": true
+  },
+  {
+    "type": "let",
+    "named": false
+  },
+  {
+    "type": "lower_ident",
+    "named": true
+  },
+  {
+    "type": "set",
+    "named": false
+  },
+  {
+    "type": "struct",
+    "named": false
+  },
+  {
+    "type": "true",
+    "named": false
+  },
+  {
+    "type": "ty_bool",
+    "named": true
+  },
+  {
+    "type": "ty_f32",
+    "named": true
+  },
+  {
+    "type": "ty_i32",
+    "named": true
+  },
+  {
+    "type": "ty_unit",
+    "named": true
+  },
+  {
+    "type": "upper_ident",
+    "named": true
+  },
+  {
+    "type": "while",
+    "named": false
+  },
+  {
+    "type": "{",
+    "named": false
+  },
+  {
+    "type": "||",
+    "named": false
+  },
+  {
+    "type": "}",
     "named": false
   }
 ]

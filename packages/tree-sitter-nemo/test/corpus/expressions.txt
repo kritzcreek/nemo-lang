@@ -1,0 +1,503 @@
+================================================================================
+Literals
+================================================================================
+
+let _ = 0;
+let _ = 4242;
+let _ = true;
+let _ = false;
+let _ = 0.0;
+let _ = 0.1234;
+let _ = 1234.1234;
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (top_let
+    (lower_ident)
+    (int_lit))
+  (top_let
+    (lower_ident)
+    (int_lit))
+  (top_let
+    (lower_ident)
+    (bool_lit))
+  (top_let
+    (lower_ident)
+    (bool_lit))
+  (top_let
+    (lower_ident)
+    (float_lit))
+  (top_let
+    (lower_ident)
+    (float_lit))
+  (top_let
+    (lower_ident)
+    (float_lit)))
+
+================================================================================
+Types
+================================================================================
+
+let _ : i32 = 0;
+let _ : f32 = 0;
+let _ : bool = 0;
+let _ : unit = 0;
+let _ : Struct = 0;
+let _ : [i32] = 0;
+let _ : [[Struct]] = 0;
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (top_let
+    (lower_ident)
+    (ty_i32)
+    (int_lit))
+  (top_let
+    (lower_ident)
+    (ty_f32)
+    (int_lit))
+  (top_let
+    (lower_ident)
+    (ty_bool)
+    (int_lit))
+  (top_let
+    (lower_ident)
+    (ty_unit)
+    (int_lit))
+  (top_let
+    (lower_ident)
+    (ty_struct
+      (upper_ident))
+    (int_lit))
+  (top_let
+    (lower_ident)
+    (ty_array
+      (ty_i32))
+    (int_lit))
+  (top_let
+    (lower_ident)
+    (ty_array
+      (ty_array
+        (ty_struct
+          (upper_ident))))
+    (int_lit)))
+
+================================================================================
+Array expr
+================================================================================
+
+let _ = [];
+let _ = [1];
+let _ = [1, 2];
+let _ = [1, 2,];
+let _ = [[1], []];
+let _ = x[1];
+let _ = x[x[x]];
+let _ = [1, 2][0];
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (top_let
+    (lower_ident)
+    (array_e))
+  (top_let
+    (lower_ident)
+    (array_e
+      (int_lit)))
+  (top_let
+    (lower_ident)
+    (array_e
+      (int_lit)
+      (int_lit)))
+  (top_let
+    (lower_ident)
+    (array_e
+      (int_lit)
+      (int_lit)))
+  (top_let
+    (lower_ident)
+    (array_e
+      (array_e
+        (int_lit))
+      (array_e)))
+  (top_let
+    (lower_ident)
+    (array_idx_e
+      (var_e
+        (lower_ident))
+      (int_lit)))
+  (top_let
+    (lower_ident)
+    (array_idx_e
+      (var_e
+        (lower_ident))
+      (array_idx_e
+        (var_e
+          (lower_ident))
+        (var_e
+          (lower_ident)))))
+  (top_let
+    (lower_ident)
+    (array_idx_e
+      (array_e
+        (int_lit)
+        (int_lit))
+      (int_lit))))
+
+================================================================================
+Struct expr
+================================================================================
+
+let _ = Vec { };
+let _ = Vec { x = 10 };
+let _ = Vec { x = 10, y = 1.0 };
+let _ = Vec { x = 10, y = 1.0, };
+let _ = v.x;
+let _ = v.x.y;
+let _ = v[0].y;
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (top_let
+    (lower_ident)
+    (struct_e
+      (upper_ident)))
+  (top_let
+    (lower_ident)
+    (struct_e
+      (upper_ident)
+      (struct_field_e
+        (lower_ident)
+        (int_lit))))
+  (top_let
+    (lower_ident)
+    (struct_e
+      (upper_ident)
+      (struct_field_e
+        (lower_ident)
+        (int_lit))
+      (struct_field_e
+        (lower_ident)
+        (float_lit))))
+  (top_let
+    (lower_ident)
+    (struct_e
+      (upper_ident)
+      (struct_field_e
+        (lower_ident)
+        (int_lit))
+      (struct_field_e
+        (lower_ident)
+        (float_lit))))
+  (top_let
+    (lower_ident)
+    (struct_idx_e
+      (var_e
+        (lower_ident))
+      (lower_ident)))
+  (top_let
+    (lower_ident)
+    (struct_idx_e
+      (struct_idx_e
+        (var_e
+          (lower_ident))
+        (lower_ident))
+      (lower_ident)))
+  (top_let
+    (lower_ident)
+    (struct_idx_e
+      (array_idx_e
+        (var_e
+          (lower_ident))
+        (int_lit))
+      (lower_ident))))
+
+================================================================================
+Call expr
+================================================================================
+
+let _ = f();
+let _ = f(1);
+let _ = f(1, 2,);
+let _ = f(1, f(2));
+let _ = @array_len([]);
+let _ = @array_new(1, 2);
+
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (top_let
+    (lower_ident)
+    (call_e
+      (lower_ident)
+      (call_args)))
+  (top_let
+    (lower_ident)
+    (call_e
+      (lower_ident)
+      (call_args
+        (int_lit))))
+  (top_let
+    (lower_ident)
+    (call_e
+      (lower_ident)
+      (call_args
+        (int_lit)
+        (int_lit))))
+  (top_let
+    (lower_ident)
+    (call_e
+      (lower_ident)
+      (call_args
+        (int_lit)
+        (call_e
+          (lower_ident)
+          (call_args
+            (int_lit))))))
+  (top_let
+    (lower_ident)
+    (intrinsic_e
+      (intrinsic_ident)
+      (call_args
+        (array_e))))
+  (top_let
+    (lower_ident)
+    (intrinsic_e
+      (intrinsic_ident)
+      (call_args
+        (int_lit)
+        (int_lit)))))
+
+================================================================================
+If expr
+================================================================================
+
+let _ = if true { 1 } else { 3 };
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (top_let
+    (lower_ident)
+    (if_e
+      (bool_lit)
+      (block_e
+        (expr_decl
+          (int_lit)))
+      (block_e
+        (expr_decl
+          (int_lit))))))
+
+================================================================================
+Block expr
+================================================================================
+
+let _ = {};
+let _ = {1};
+let _ = {
+    1;
+    x;
+    2
+};
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (top_let
+    (lower_ident)
+    (block_e))
+  (top_let
+    (lower_ident)
+    (block_e
+      (expr_decl
+        (int_lit))))
+  (top_let
+    (lower_ident)
+    (block_e
+      (expr_decl
+        (int_lit))
+      (expr_decl
+        (var_e
+          (lower_ident)))
+      (expr_decl
+        (int_lit)))))
+
+================================================================================
+Binary expr
+================================================================================
+
+let _ = 1 + 1;
+let _ = 1 + 1 + 1;
+let _ = 1 * 1 + 1;
+let _ = 1 + 1 * 1;
+let _ = 1 <= 2 && 1 < 1 || 1 >= 3 && 3 > 4 || 1 == 1 || 1 != 2;
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (top_let
+    (lower_ident)
+    (bin_e
+      (int_lit)
+      (int_lit)))
+  (top_let
+    (lower_ident)
+    (bin_e
+      (bin_e
+        (int_lit)
+        (int_lit))
+      (int_lit)))
+  (top_let
+    (lower_ident)
+    (bin_e
+      (bin_e
+        (int_lit)
+        (int_lit))
+      (int_lit)))
+  (top_let
+    (lower_ident)
+    (bin_e
+      (int_lit)
+      (bin_e
+        (int_lit)
+        (int_lit))))
+  (top_let
+    (lower_ident)
+    (bin_e
+      (bin_e
+        (bin_e
+          (int_lit)
+          (int_lit))
+        (bin_e
+          (bin_e
+            (int_lit)
+            (int_lit))
+          (bin_e
+            (int_lit)
+            (int_lit))))
+      (bin_e
+        (bin_e
+          (bin_e
+            (int_lit)
+            (int_lit))
+          (bin_e
+            (int_lit)
+            (int_lit)))
+        (bin_e
+          (int_lit)
+          (int_lit))))))
+
+================================================================================
+Declarations
+================================================================================
+
+let _ = {
+    let x = 1;
+    set x = 1;
+    set x[0] = 1;
+    set x.y = 1;
+    while x {
+      1;
+      2
+    };
+};
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (top_let
+    (lower_ident)
+    (block_e
+      (let_decl
+        (lower_ident)
+        (int_lit))
+      (set_decl
+        (set_var
+          (lower_ident))
+        (int_lit))
+      (set_decl
+        (set_array_idx
+          (lower_ident)
+          (int_lit))
+        (int_lit))
+      (set_decl
+        (set_struct_idx
+          (lower_ident)
+          (lower_ident))
+        (int_lit))
+      (while_decl
+        (var_e
+          (lower_ident))
+        (block_e
+          (expr_decl
+            (int_lit))
+          (expr_decl
+            (int_lit)))))))
+
+================================================================================
+Top levels
+================================================================================
+
+import internal : (i32, f32) -> i32 from external;
+
+struct Vec {
+  x : f32,
+  y : f32,
+}
+
+let x = 10;
+
+fn main() = {
+  
+}
+
+fn add(x : i32, y : i32) : i32 = {
+    x + y
+}
+--------------------------------------------------------------------------------
+
+(source_file
+  (top_import
+    (lower_ident)
+    (func_type
+      (ty_i32)
+      (ty_f32)
+      (ty_i32))
+    (lower_ident))
+  (top_struct
+    (upper_ident)
+    (struct_field_top
+      (lower_ident)
+      (ty_f32))
+    (struct_field_top
+      (lower_ident)
+      (ty_f32)))
+  (top_let
+    (lower_ident)
+    (int_lit))
+  (top_func
+    (lower_ident)
+    (func_params)
+    (block_e))
+  (top_func
+    (lower_ident)
+    (func_params
+      (func_param
+        (lower_ident)
+        (ty_i32))
+      (func_param
+        (lower_ident)
+        (ty_i32)))
+    (ty_i32)
+    (block_e
+      (expr_decl
+        (bin_e
+          (var_e
+            (lower_ident))
+          (var_e
+            (lower_ident)))))))
