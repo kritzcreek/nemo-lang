@@ -47,6 +47,8 @@ module.exports = grammar({
         prec.left(1, seq($._expr, '&&', $._expr)),
       ),
 
+      _parenthesized_e: $ => seq('(', $._expr, ')'),
+
       // Extracted this rule to make it clear that we want the parser to greedily parse:
       // my_func(args) into `(call_e ident args)` and not `(var_e ERROR)`
       _call_or_var: $ => choice($.call_e, $.var_e),
@@ -54,6 +56,7 @@ module.exports = grammar({
       _expr: $ => choice(
         $._lit, 
         $._call_or_var,
+        $._parenthesized_e,
         $.array_e,
         $.array_idx_e,
         $.struct_e,
@@ -121,8 +124,7 @@ module.exports = grammar({
         $.lower_ident,
         seq(':', $.func_type),
         'from',
-        $.lower_ident,
-        ';'
+        $.lower_ident
       ),
 
       func_param: $ => seq($.lower_ident, ':', $._type),

@@ -443,7 +443,7 @@ let _ = {
 Top levels
 ================================================================================
 
-import internal : (i32, f32) -> i32 from external;
+import internal : (i32, f32) -> i32 from external
 
 struct Vec {
   x : f32,
@@ -501,3 +501,96 @@ fn add(x : i32, y : i32) : i32 = {
             (lower_ident))
           (var_e
             (lower_ident)))))))
+
+================================================================================
+TESTINGU
+================================================================================
+fn draw_particle(particle : Particle) : f32 = {
+
+  if particle.time > 0.0 {
+    begin_path(0.0);
+    arc(particle.x, particle.y, (particle_timer - particle.time) / 2.0, 0.0, two_pi);
+    set_stroke_color(particle.color.r, particle.color.g, particle.color.b);
+    stroke(0.0)
+  } else { 0.0 }
+}
+--------------------------------------------------------------------------------
+
+(source_file
+  (top_func
+    (lower_ident)
+    (func_params
+      (func_param
+        (lower_ident)
+        (ty_struct
+          (upper_ident))))
+    (ty_f32)
+    (block_e
+      (expr_decl
+        (if_e
+          (bin_e
+            (struct_idx_e
+              (var_e
+                (lower_ident))
+              (lower_ident))
+            (float_lit))
+          (block_e
+            (expr_decl
+              (call_e
+                (lower_ident)
+                (call_args
+                  (float_lit))))
+            (expr_decl
+              (call_e
+                (lower_ident)
+                (call_args
+                  (struct_idx_e
+                    (var_e
+                      (lower_ident))
+                    (lower_ident))
+                  (struct_idx_e
+                    (var_e
+                      (lower_ident))
+                    (lower_ident))
+                  (bin_e
+                    (struct_idx_e
+                      (bin_e
+                        (var_e
+                          (lower_ident))
+                        (var_e
+                          (lower_ident)))
+                      (lower_ident))
+                    (float_lit))
+                  (float_lit)
+                  (var_e
+                    (lower_ident)))))
+            (expr_decl
+              (call_e
+                (lower_ident)
+                (call_args
+                  (struct_idx_e
+                    (struct_idx_e
+                      (var_e
+                        (lower_ident))
+                      (lower_ident))
+                    (lower_ident))
+                  (struct_idx_e
+                    (struct_idx_e
+                      (var_e
+                        (lower_ident))
+                      (lower_ident))
+                    (lower_ident))
+                  (struct_idx_e
+                    (struct_idx_e
+                      (var_e
+                        (lower_ident))
+                      (lower_ident))
+                    (lower_ident)))))
+            (expr_decl
+              (call_e
+                (lower_ident)
+                (call_args
+                  (float_lit)))))
+          (block_e
+            (expr_decl
+              (float_lit))))))))
