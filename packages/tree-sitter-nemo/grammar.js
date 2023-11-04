@@ -9,7 +9,7 @@ function semi_sep_trailing(rule) {
 module.exports = grammar({
     name: 'nemo',
     word: $ => $.lower_ident,
-  
+
     rules: {
       source_file: $ => repeat($._toplevel),
 
@@ -111,11 +111,11 @@ module.exports = grammar({
       // Toplevel
 
       top_let: $ => seq(
-        'let', 
-        $.lower_ident, 
-        optional(seq(':', $._type)), 
-        '=', 
-        $._expr,
+        'let',
+        field('binder', $.lower_ident),
+        field('ty', optional(seq(':', $._type))),
+        '=',
+        field('expr', $._expr),
         ';'
       ),
 
@@ -155,4 +155,3 @@ module.exports = grammar({
       )
     }
   });
-  

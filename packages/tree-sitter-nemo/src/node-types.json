@@ -1068,92 +1068,117 @@
   {
     "type": "top_let",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "array_e",
-          "named": true
-        },
-        {
-          "type": "array_idx_e",
-          "named": true
-        },
-        {
-          "type": "bin_e",
-          "named": true
-        },
-        {
-          "type": "block_e",
-          "named": true
-        },
-        {
-          "type": "bool_lit",
-          "named": true
-        },
-        {
-          "type": "call_e",
-          "named": true
-        },
-        {
-          "type": "float_lit",
-          "named": true
-        },
-        {
-          "type": "if_e",
-          "named": true
-        },
-        {
-          "type": "int_lit",
-          "named": true
-        },
-        {
-          "type": "intrinsic_e",
-          "named": true
-        },
-        {
-          "type": "lower_ident",
-          "named": true
-        },
-        {
-          "type": "struct_e",
-          "named": true
-        },
-        {
-          "type": "struct_idx_e",
-          "named": true
-        },
-        {
-          "type": "ty_array",
-          "named": true
-        },
-        {
-          "type": "ty_bool",
-          "named": true
-        },
-        {
-          "type": "ty_f32",
-          "named": true
-        },
-        {
-          "type": "ty_i32",
-          "named": true
-        },
-        {
-          "type": "ty_struct",
-          "named": true
-        },
-        {
-          "type": "ty_unit",
-          "named": true
-        },
-        {
-          "type": "var_e",
-          "named": true
-        }
-      ]
+    "fields": {
+      "binder": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "lower_ident",
+            "named": true
+          }
+        ]
+      },
+      "expr": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "array_e",
+            "named": true
+          },
+          {
+            "type": "array_idx_e",
+            "named": true
+          },
+          {
+            "type": "bin_e",
+            "named": true
+          },
+          {
+            "type": "block_e",
+            "named": true
+          },
+          {
+            "type": "bool_lit",
+            "named": true
+          },
+          {
+            "type": "call_e",
+            "named": true
+          },
+          {
+            "type": "float_lit",
+            "named": true
+          },
+          {
+            "type": "if_e",
+            "named": true
+          },
+          {
+            "type": "int_lit",
+            "named": true
+          },
+          {
+            "type": "intrinsic_e",
+            "named": true
+          },
+          {
+            "type": "struct_e",
+            "named": true
+          },
+          {
+            "type": "struct_idx_e",
+            "named": true
+          },
+          {
+            "type": "var_e",
+            "named": true
+          }
+        ]
+      },
+      "ty": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": ":",
+            "named": false
+          },
+          {
+            "type": "ty_array",
+            "named": true
+          },
+          {
+            "type": "ty_bool",
+            "named": true
+          },
+          {
+            "type": "ty_f32",
+            "named": true
+          },
+          {
+            "type": "ty_i32",
+            "named": true
+          },
+          {
+            "type": "ty_struct",
+            "named": true
+          },
+          {
+            "type": "ty_unit",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {

@@ -12,9 +12,9 @@
 #define ALIAS_COUNT 0
 #define TOKEN_COUNT 46
 #define EXTERNAL_TOKEN_COUNT 0
-#define FIELD_COUNT 0
+#define FIELD_COUNT 3
 #define MAX_ALIAS_SEQUENCE_LENGTH 7
-#define PRODUCTION_ID_COUNT 1
+#define PRODUCTION_ID_COUNT 3
 
 enum {
   sym_lower_ident = 1,
@@ -676,6 +676,35 @@ static const TSSymbolMetadata ts_symbol_metadata[] = {
     .visible = false,
     .named = false,
   },
+};
+
+enum {
+  field_binder = 1,
+  field_expr = 2,
+  field_ty = 3,
+};
+
+static const char * const ts_field_names[] = {
+  [0] = NULL,
+  [field_binder] = "binder",
+  [field_expr] = "expr",
+  [field_ty] = "ty",
+};
+
+static const TSFieldMapSlice ts_field_map_slices[PRODUCTION_ID_COUNT] = {
+  [1] = {.index = 0, .length = 2},
+  [2] = {.index = 2, .length = 4},
+};
+
+static const TSFieldMapEntry ts_field_map_entries[] = {
+  [0] =
+    {field_binder, 1},
+    {field_expr, 3},
+  [2] =
+    {field_binder, 1},
+    {field_expr, 5},
+    {field_ty, 2},
+    {field_ty, 3},
 };
 
 static const TSSymbol ts_alias_sequences[PRODUCTION_ID_COUNT][MAX_ALIAS_SEQUENCE_LENGTH] = {
@@ -4545,10 +4574,10 @@ static const TSParseActionEntry ts_parse_actions[] = {
   [355] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_top_struct, 5),
   [357] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_top_import, 6),
   [359] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_top_struct, 6),
-  [361] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_top_let, 7),
+  [361] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_top_let, 7, .production_id = 2),
   [363] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_top_func, 5),
   [365] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_top_func, 7),
-  [367] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_top_let, 5),
+  [367] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_top_let, 5, .production_id = 1),
   [369] = {.entry = {.count = 1, .reusable = true}}, SHIFT(103),
   [371] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_top_struct, 4),
   [373] = {.entry = {.count = 2, .reusable = true}}, REDUCE(aux_sym_func_params_repeat1, 2), SHIFT_REPEAT(139),
@@ -4647,6 +4676,9 @@ extern const TSLanguage *tree_sitter_nemo(void) {
     .small_parse_table_map = ts_small_parse_table_map,
     .parse_actions = ts_parse_actions,
     .symbol_names = ts_symbol_names,
+    .field_names = ts_field_names,
+    .field_map_slices = ts_field_map_slices,
+    .field_map_entries = ts_field_map_entries,
     .symbol_metadata = ts_symbol_metadata,
     .public_symbol_map = ts_symbol_map,
     .alias_map = ts_non_terminal_alias_map,
