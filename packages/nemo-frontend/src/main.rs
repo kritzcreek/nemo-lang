@@ -1,5 +1,5 @@
-
-use tree_sitter::{Parser, Node};
+use nemo_frontend::types::Typechecker;
+use tree_sitter::Parser;
 use tree_sitter_nemo;
 
 const EXAMPLE_PROG: &str = r"
@@ -167,27 +167,6 @@ fn tick(elapsed_time_ms : f32) = {
 }
 ";
 
-struct Typechecker<'a> {
-    source: &'a [u8]
-}
-
-impl <'a> Typechecker<'a> {
-
-    pub fn new(source: &'a str) -> Typechecker<'a> {
-        Typechecker { source: source.as_bytes() }
-    }
-
-    pub fn check_top_let(&self, node: Node<'_>) -> Option<String> {
-      assert!(node.kind() == "top_let");
-      let binder = node.child_by_field_name("binder");
-      // let ty = node.child_by_field_name("ty");
-      // let expr = node.child_by_field_name("expr");
-
-      let result = binder?.utf8_text(self.source).unwrap();
-      Some(result.to_string())
-  }
-}
-
 pub fn parse() {
     let mut parser = Parser::new();
     parser.set_language(tree_sitter_nemo::language()).unwrap();
@@ -201,19 +180,12 @@ pub fn parse() {
     let top_levels = root_node.children(&mut cursor);
     for top_level in top_levels {
         if top_level.kind() == "top_let" {
-            println!("{:?}", tc.check_top_let(top_level));
+            println!("{:?}", tc.infer_top_let(top_level));
         }
         assert!(!top_level.to_sexp().contains("ERROR"))
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        parse();
-        assert!(false)
-    }
+fn main() {
+    parse()
 }

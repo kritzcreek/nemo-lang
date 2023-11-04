@@ -1,8 +1,0 @@
-[package]
-name = "nemo_parser"
-version = "1.0.0"
-edition = "2021"
-
-[dependencies]
-tree-sitter = "0.20.10"
-tree-sitter-nemo = { path = "../tree-sitter-nemo" }

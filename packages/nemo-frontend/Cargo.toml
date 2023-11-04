@@ -1,8 +1,11 @@
 [package]
-name = "nemo-syntax"
+name = "nemo-frontend"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+ariadne = { version = "0.3.0", features = ["auto-color"] }
+tree-sitter = "0.20.10"
+tree-sitter-nemo = { path = "../tree-sitter-nemo" }

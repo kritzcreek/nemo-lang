@@ -16,7 +16,7 @@
           "named": true
         },
         {
-          "type": "bin_e",
+          "type": "binary_e",
           "named": true
         },
         {
@@ -79,7 +79,7 @@
           "named": true
         },
         {
-          "type": "bin_e",
+          "type": "binary_e",
           "named": true
         },
         {
@@ -126,66 +126,195 @@
     }
   },
   {
-    "type": "bin_e",
+    "type": "binary_e",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": false,
-      "types": [
-        {
-          "type": "array_e",
-          "named": true
-        },
-        {
-          "type": "array_idx_e",
-          "named": true
-        },
-        {
-          "type": "bin_e",
-          "named": true
-        },
-        {
-          "type": "block_e",
-          "named": true
-        },
-        {
-          "type": "bool_lit",
-          "named": true
-        },
-        {
-          "type": "call_e",
-          "named": true
-        },
-        {
-          "type": "float_lit",
-          "named": true
-        },
-        {
-          "type": "if_e",
-          "named": true
-        },
-        {
-          "type": "int_lit",
-          "named": true
-        },
-        {
-          "type": "intrinsic_e",
-          "named": true
-        },
-        {
-          "type": "struct_e",
-          "named": true
-        },
-        {
-          "type": "struct_idx_e",
-          "named": true
-        },
-        {
-          "type": "var_e",
-          "named": true
-        }
-      ]
+    "fields": {
+      "left": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "array_e",
+            "named": true
+          },
+          {
+            "type": "array_idx_e",
+            "named": true
+          },
+          {
+            "type": "binary_e",
+            "named": true
+          },
+          {
+            "type": "block_e",
+            "named": true
+          },
+          {
+            "type": "bool_lit",
+            "named": true
+          },
+          {
+            "type": "call_e",
+            "named": true
+          },
+          {
+            "type": "float_lit",
+            "named": true
+          },
+          {
+            "type": "if_e",
+            "named": true
+          },
+          {
+            "type": "int_lit",
+            "named": true
+          },
+          {
+            "type": "intrinsic_e",
+            "named": true
+          },
+          {
+            "type": "struct_e",
+            "named": true
+          },
+          {
+            "type": "struct_idx_e",
+            "named": true
+          },
+          {
+            "type": "var_e",
+            "named": true
+          }
+        ]
+      },
+      "op": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "!=",
+            "named": false
+          },
+          {
+            "type": "&&",
+            "named": false
+          },
+          {
+            "type": "*",
+            "named": false
+          },
+          {
+            "type": "+",
+            "named": false
+          },
+          {
+            "type": "-",
+            "named": false
+          },
+          {
+            "type": "/",
+            "named": false
+          },
+          {
+            "type": "<",
+            "named": false
+          },
+          {
+            "type": "<=",
+            "named": false
+          },
+          {
+            "type": "==",
+            "named": false
+          },
+          {
+            "type": ">",
+            "named": false
+          },
+          {
+            "type": ">=",
+            "named": false
+          },
+          {
+            "type": "||",
+            "named": false
+          }
+        ]
+      },
+      "right": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "array_e",
+            "named": true
+          },
+          {
+            "type": "array_idx_e",
+            "named": true
+          },
+          {
+            "type": "binary_e",
+            "named": true
+          },
+          {
+            "type": "block_e",
+            "named": true
+          },
+          {
+            "type": "bool_lit",
+            "named": true
+          },
+          {
+            "type": "call_e",
+            "named": true
+          },
+          {
+            "type": "float_lit",
+            "named": true
+          },
+          {
+            "type": "if_e",
+            "named": true
+          },
+          {
+            "type": "int_lit",
+            "named": true
+          },
+          {
+            "type": "intrinsic_e",
+            "named": true
+          },
+          {
+            "type": "struct_e",
+            "named": true
+          },
+          {
+            "type": "struct_idx_e",
+            "named": true
+          },
+          {
+            "type": "var_e",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
@@ -237,7 +366,7 @@
           "named": true
         },
         {
-          "type": "bin_e",
+          "type": "binary_e",
           "named": true
         },
         {
@@ -319,7 +448,7 @@
           "named": true
         },
         {
-          "type": "bin_e",
+          "type": "binary_e",
           "named": true
         },
         {
@@ -471,7 +600,7 @@
           "named": true
         },
         {
-          "type": "bin_e",
+          "type": "binary_e",
           "named": true
         },
         {
@@ -558,7 +687,7 @@
           "named": true
         },
         {
-          "type": "bin_e",
+          "type": "binary_e",
           "named": true
         },
         {
@@ -625,7 +754,7 @@
           "named": true
         },
         {
-          "type": "bin_e",
+          "type": "binary_e",
           "named": true
         },
         {
@@ -692,7 +821,7 @@
           "named": true
         },
         {
-          "type": "bin_e",
+          "type": "binary_e",
           "named": true
         },
         {
@@ -843,7 +972,7 @@
           "named": true
         },
         {
-          "type": "bin_e",
+          "type": "binary_e",
           "named": true
         },
         {
@@ -949,7 +1078,7 @@
           "named": true
         },
         {
-          "type": "bin_e",
+          "type": "binary_e",
           "named": true
         },
         {
@@ -1100,7 +1229,7 @@
             "named": true
           },
           {
-            "type": "bin_e",
+            "type": "binary_e",
             "named": true
           },
           {
@@ -1282,7 +1411,7 @@
           "named": true
         },
         {
-          "type": "bin_e",
+          "type": "binary_e",
           "named": true
         },
         {

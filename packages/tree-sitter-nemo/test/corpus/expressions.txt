@@ -342,53 +342,53 @@ let _ = 1 <= 2 && 1 < 1 || 1 >= 3 && 3 > 4 || 1 == 1 || 1 != 2;
 (source_file
   (top_let
     (lower_ident)
-    (bin_e
+    (binary_e
       (int_lit)
       (int_lit)))
   (top_let
     (lower_ident)
-    (bin_e
-      (bin_e
+    (binary_e
+      (binary_e
         (int_lit)
         (int_lit))
       (int_lit)))
   (top_let
     (lower_ident)
-    (bin_e
-      (bin_e
+    (binary_e
+      (binary_e
         (int_lit)
         (int_lit))
       (int_lit)))
   (top_let
     (lower_ident)
-    (bin_e
+    (binary_e
       (int_lit)
-      (bin_e
+      (binary_e
         (int_lit)
         (int_lit))))
   (top_let
     (lower_ident)
-    (bin_e
-      (bin_e
-        (bin_e
+    (binary_e
+      (binary_e
+        (binary_e
           (int_lit)
           (int_lit))
-        (bin_e
-          (bin_e
+        (binary_e
+          (binary_e
             (int_lit)
             (int_lit))
-          (bin_e
+          (binary_e
             (int_lit)
             (int_lit))))
-      (bin_e
-        (bin_e
-          (bin_e
+      (binary_e
+        (binary_e
+          (binary_e
             (int_lit)
             (int_lit))
-          (bin_e
+          (binary_e
             (int_lit)
             (int_lit)))
-        (bin_e
+        (binary_e
           (int_lit)
           (int_lit))))))
 
@@ -496,7 +496,7 @@ fn add(x : i32, y : i32) : i32 = {
     (ty_i32)
     (block_e
       (expr_decl
-        (bin_e
+        (binary_e
           (var_e
             (lower_ident))
           (var_e
@@ -528,7 +528,7 @@ fn draw_particle(particle : Particle) : f32 = {
     (block_e
       (expr_decl
         (if_e
-          (bin_e
+          (binary_e
             (struct_idx_e
               (var_e
                 (lower_ident))
@@ -552,9 +552,9 @@ fn draw_particle(particle : Particle) : f32 = {
                     (var_e
                       (lower_ident))
                     (lower_ident))
-                  (bin_e
+                  (binary_e
                     (struct_idx_e
-                      (bin_e
+                      (binary_e
                         (var_e
                           (lower_ident))
                         (var_e

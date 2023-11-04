@@ -6,6 +6,26 @@ function semi_sep_trailing(rule) {
   return seq(repeat(seq(rule, ';')), optional(rule))
 }
 
+const binary_ops = [
+  ['&&'],
+  ['||'],
+  ['==', '!=', '<', '<=', '>', '>='],
+  ['+', '-'],
+  ['*', '/'],
+];
+
+function make_binary_rules(expr) {
+  let p = 0;
+  const levels = binary_ops.map(ops =>
+    prec.left(++p, seq(
+      field('left', expr),
+      field('op', choice(...ops)),
+      field('right', expr)
+    ))
+  );
+  return choice(...levels)
+}
+
 module.exports = grammar({
     name: 'nemo',
     word: $ => $.lower_ident,
@@ -39,13 +59,7 @@ module.exports = grammar({
       block_e: $ => seq('{', semi_sep_trailing($._decl), '}'),
 
       intrinsic_e: $ => seq($.intrinsic_ident, $.call_args),
-      bin_e: $ => choice(
-        prec.left(5, seq($._expr, choice('*', '/'), $._expr)),
-        prec.left(4, seq($._expr, choice('+', '-'), $._expr)),
-        prec.left(3, seq($._expr, choice('==', '!=', '<', '<=', '>', '>='), $._expr)),
-        prec.left(2, seq($._expr, '||', $._expr)),
-        prec.left(1, seq($._expr, '&&', $._expr)),
-      ),
+      binary_e: $ => make_binary_rules($._expr),
 
       _parenthesized_e: $ => seq('(', $._expr, ')'),
 
@@ -54,7 +68,7 @@ module.exports = grammar({
       _call_or_var: $ => choice($.call_e, $.var_e),
 
       _expr: $ => choice(
-        $._lit, 
+        $._lit,
         $._call_or_var,
         $._parenthesized_e,
         $.array_e,
@@ -63,7 +77,7 @@ module.exports = grammar({
         $.struct_idx_e,
         $.if_e,
         $.block_e,
-        $.bin_e,
+        $.binary_e,
         $.intrinsic_e
       ),
 
