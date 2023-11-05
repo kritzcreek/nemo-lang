@@ -55,8 +55,11 @@ module.exports = grammar({
       if_e: $ => seq('if', $._expr, $.block_e, 'else', $.block_e),
 
       call_args: $ => seq('(', comma_sep_trailing($._expr), ')'),
-      call_e: $ => seq($.lower_ident, $.call_args),
-      block_e: $ => seq('{', semi_sep_trailing($._decl), '}'),
+      call_e: $ => seq(
+        field('function', $.lower_ident),
+        field('arguments', $.call_args)
+      ),
+      block_e: $ => seq('{', field('declarations', semi_sep_trailing($._decl)), '}'),
 
       intrinsic_e: $ => seq($.intrinsic_ident, $.call_args),
       binary_e: $ => make_binary_rules($._expr),
@@ -108,7 +111,7 @@ module.exports = grammar({
       ty_f32: $ => 'f32',
       ty_bool: $ => 'bool',
       ty_unit: $ => 'unit',
-      ty_array: $ => seq('[', $._type ,']'),
+      ty_array: $ => seq('[', field('elem_ty', $._type) ,']'),
       ty_struct: $ => $.upper_ident,
 
       _type: $ => choice(
@@ -120,7 +123,13 @@ module.exports = grammar({
         $.ty_struct
       ),
 
-      func_type: $ => seq('(', comma_sep_trailing($._type) ,')', '->', $._type),
+      func_type: $ => seq(
+        '(',
+        comma_sep_trailing(field('argument', $._type))
+        ,')',
+        '->',
+        field('result', $._type)
+      ),
 
       // Toplevel
 
@@ -135,27 +144,36 @@ module.exports = grammar({
 
       top_import: $ => seq(
         'import',
-        $.lower_ident,
-        seq(':', $.func_type),
+        field('internal', $.lower_ident),
+        ':',
+        field('type', $.func_type),
         'from',
-        $.lower_ident
+        field('external', $.lower_ident)
       ),
 
-      func_param: $ => seq($.lower_ident, ':', $._type),
+      func_param: $ => seq(
+        field('name', $.lower_ident),
+        ':',
+        field('type', $._type)
+      ),
       func_params: $ => seq('(', comma_sep_trailing($.func_param), ')'),
       top_func: $ => seq(
         'fn',
-        $.lower_ident,
-        $.func_params,
-        optional(seq(':', $._type)),
+        field('name', $.lower_ident),
+        field('params', $.func_params),
+        optional(seq(':', field('result', $._type))),
         '=',
-        $.block_e
+        field('body', $.block_e)
       ),
 
-      struct_field_top: $ => seq($.lower_ident, ':', $._type),
+      struct_field_top: $ => seq(
+        field('name', $.lower_ident),
+        ':',
+        field('type', $._type)
+      ),
       top_struct: $ => seq(
         'struct',
-        $.upper_ident,
+        field('name', $.upper_ident),
         '{',
         comma_sep_trailing($.struct_field_top),
         '}'

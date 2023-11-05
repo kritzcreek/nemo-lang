@@ -39,6 +39,7 @@ struct RingBuffer {
   watermark : i32
 }
 
+let test = funcall(1, 2 * 3);
 let two_pi = 3.14159265359 * 2.0;
 let particle_timer = 200.0;
 
@@ -173,17 +174,12 @@ pub fn parse() {
     let tree = parser.parse(EXAMPLE_PROG, None).unwrap();
     let root_node = tree.root_node();
 
-    let mut cursor = root_node.walk();
-
     let tc = Typechecker::new(EXAMPLE_PROG);
-
-    let top_levels = root_node.children(&mut cursor);
-    for top_level in top_levels {
-        if top_level.kind() == "top_let" {
-            println!("{:?}", tc.infer_top_let(top_level));
-        }
-        assert!(!top_level.to_sexp().contains("ERROR"))
-    }
+    match tc.infer_prog(root_node) {
+        Ok(tl) => println!("{tl:?}"),
+        Err(err) => println!("{err}"),
+    };
+    assert!(!root_node.to_sexp().contains("ERROR"))
 }
 
 fn main() {
