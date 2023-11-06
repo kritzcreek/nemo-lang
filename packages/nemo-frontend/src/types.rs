@@ -2,8 +2,8 @@ use core::fmt;
 use std::collections::HashMap;
 
 use crate::syntax::{
-    Expr, FuncParam, FuncTy, Lit, Op, Program, Span, Spanned, StructField, Toplevel, Ty, Typed,
-    TypedExpr,
+    Declaration, Expr, FuncParam, FuncTy, Lit, Op, Program, SetTarget, Span, Spanned, StructField,
+    Toplevel, Ty, Typed, TypedDeclaration, TypedExpr,
 };
 use tree_sitter::Node;
 
@@ -396,8 +396,147 @@ impl<'a> Typechecker<'a> {
             .collect()
     }
 
+    fn infer_set_target(&self, ctx: &mut Ctx, node: &Node) -> TyResult<Typed<SetTarget>> {
+        let at: Span = node.into();
+        match node.kind() {
+            "set_var" => {
+                let name_node = node.child_by_field("name")?;
+                let name = self.text(&name_node);
+                let ty = ctx.lookup(&name, &name_node.into())?;
+                let it = SetTarget::Var {
+                    name: Typed {
+                        ty: ty.clone(),
+                        at: at.clone(),
+                        it: name.to_string(),
+                    },
+                };
+                Ok(Typed {
+                    ty: ty.clone(),
+                    at,
+                    it,
+                })
+            }
+
+            "set_array_idx" => {
+                let array_node = node.child_by_field("array")?;
+                let array = self.text(&array_node);
+
+                let (array_ty, elem_ty) = {
+                    let array_ty = ctx.lookup(array, &array_node.into())?;
+                    let elem_ty = if let Ty::Array(ref elem_ty) = array_ty {
+                        *elem_ty.clone()
+                    } else {
+                        return Err(Spanned::from(
+                            array_node.into(),
+                            TyError::NonArrayIdx(array_ty.clone()),
+                        ));
+                    };
+                    (array_ty.clone(), elem_ty)
+                };
+
+                let index_node = node.child_by_field("index")?;
+                let index = self.infer_expr(ctx, &index_node)?;
+                self.expect_ty(&Ty::I32, &index.ty, &index.at)?;
+                let it = SetTarget::Array {
+                    name: Typed {
+                        ty: array_ty.clone(),
+                        at: array_node.into(),
+                        it: array.to_string(),
+                    },
+                    index,
+                };
+                Ok(Typed {
+                    ty: elem_ty,
+                    at,
+                    it,
+                })
+            }
+
+            //   "set_struct_idx" => {
+            //     let struct_node = target_node.child_by_field("struct")?;
+            //     let struct_ty = self.infer_expr(ctx, &struct_node)?.ty;
+
+            //     if let Ty::Struct(fields) = struct_ty {
+            //       let field_name = self.text(&target_node.child_by_field("field")?);
+            //       fields.get(&field_name)
+            //         .cloned()
+            //         .ok_or(Spanned::from(struct_node.start_position(), TyError::MissingStructField(field_name)))
+            //     } else {
+            //       Err(Spanned::from(struct_node.start_position(), TyError::InvalidIndexTarget(struct_ty)))
+            //     }
+            //   },
+            _ => unimplemented!(),
+        }
+    }
+
+    fn infer_decl(&self, ctx: &mut Ctx, node: &Node<'_>) -> TyResult<TypedDeclaration> {
+        let at: Span = node.into();
+        match node.kind() {
+            "let_decl" => {
+                let name_node = node.child_by_field("binder")?;
+                let name = self.text(&name_node);
+
+                let value_node = node.child_by_field("expr")?;
+                let typed_expr = self.infer_expr(ctx, &value_node)?;
+
+                ctx.add(name.to_string(), typed_expr.ty.clone());
+                Ok(Typed {
+                    ty: Ty::Unit,
+                    at,
+                    it: Declaration::Let {
+                        binder: Spanned::from(name_node.into(), name.to_string()),
+                        expr: typed_expr,
+                    },
+                })
+            }
+            "set_decl" => {
+                let set_target_node = node.child_by_field("target")?;
+                let set_target = self.infer_set_target(ctx, &set_target_node)?;
+
+                let expr_node = node.child_by_field("expr")?;
+                let expr = self.infer_expr(ctx, &expr_node)?;
+
+                self.expect_ty(&set_target.ty, &expr.ty, &expr.at)?;
+                Ok(Typed {
+                    ty: Ty::Unit,
+                    at,
+                    it: Declaration::Set { set_target, expr },
+                })
+            }
+            "expr_decl" => {
+                let expr_node = node.child_by_field("expr")?;
+                let expr = self.infer_expr(ctx, &expr_node)?;
+                Ok(Typed {
+                    ty: expr.ty.clone(),
+                    at,
+                    it: Declaration::Expr(expr),
+                })
+            }
+            "while_decl" => {
+                let condition_node = node.child_by_field("cond")?;
+                let condition = self.infer_expr(ctx, &condition_node)?;
+                self.expect_ty(&Ty::Bool, &condition.ty, &condition.at)?;
+
+                let body_node = node.child_by_field("body")?;
+                let body = self.infer_expr(ctx, &body_node)?;
+                self.expect_ty(&Ty::Unit, &body.ty, &body.at)?;
+
+                Ok(Typed {
+                    ty: Ty::Unit,
+                    at,
+                    it: Declaration::While { condition, body },
+                })
+            }
+
+            k => Err(Spanned::from(
+                at,
+                TyError::Message(format!("Unhandled decl type: {k}")),
+            )),
+        }
+    }
+
     fn infer_expr(&self, ctx: &mut Ctx, node: &Node<'_>) -> TyResult<TypedExpr> {
-        let at = node.into();
+        let at: Span = node.into();
         match node.kind() {
             "int_lit" => {
                 let lit = Lit::I32(

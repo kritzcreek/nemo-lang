@@ -95,18 +95,38 @@ module.exports = grammar({
       ),
 
       // Declarations
-      set_var: $ => $.lower_ident,
-      set_array_idx: $ => seq($.lower_ident, '[', $._expr, ']'),
-      set_struct_idx: $ => seq($.lower_ident, '.', $.lower_ident),
+      set_var: $ => field('name', $.lower_ident),
+      set_array_idx: $ => seq(
+        field('array', $.lower_ident), 
+        '[', field('index', $._expr), ']'
+      ),
+      set_struct_idx: $ => seq(
+        field('struct', $.lower_ident), 
+        '.', field('index', $.lower_ident)
+      ),
       _set_target: $ => choice(
         $.set_var,
         $.set_array_idx,
         $.set_struct_idx
       ),
 
-      let_decl: $ => seq('let', $.lower_ident, '=', $._expr),
-      set_decl: $ => seq('set', $._set_target, '=', $._expr),
-      while_decl: $ => seq('while', $._expr, $.block_e),
+      let_decl: $ => seq(
+        'let', 
+        field('binder', $.lower_ident), 
+        '=', 
+        field('expr', $._expr)
+      ),
+      set_decl: $ => seq(
+        'set', 
+        field('target', $._set_target), 
+        '=', 
+        field('expr', $._expr)
+      ),
+      while_decl: $ => seq(
+        'while', 
+        field('condition', $._expr), 
+        field('body', $.block_e)
+      ),
       expr_decl: $ => $._expr,
 
       _decl: $ => choice(

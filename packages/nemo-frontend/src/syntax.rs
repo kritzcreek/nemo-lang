@@ -189,7 +189,38 @@ pub enum Expr {
         then_branch: Box<TypedExpr>,
         else_branch: Box<TypedExpr>,
     },
+    Block {
+        declarations: Vec<TypedDeclaration>
+    }
 }
+
+pub type TypedDeclaration = Typed<Declaration>;
+
+
+#[derive(Debug, PartialEq)]
+pub enum Declaration {
+    Let {
+        binder: Spanned<String>,
+        expr: TypedExpr
+    },
+    Set {
+        set_target: Typed<SetTarget>,
+        expr: TypedExpr
+    },
+    Expr(TypedExpr),
+    While {
+        condition: TypedExpr,
+        body: TypedExpr
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub enum SetTarget {
+    Array { name: Typed<String>, index: TypedExpr },
+    Struct { name: Typed<String>, index: String },
+    Var { name: Typed<String> }
+}
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct FuncParam {
     pub name: Spanned<String>,
