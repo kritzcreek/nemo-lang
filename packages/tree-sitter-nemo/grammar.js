@@ -46,7 +46,10 @@ module.exports = grammar({
       // Expressions
       var_e: $ => $.lower_ident,
       array_e: $ => seq('[', comma_sep_trailing($._expr), ']'),
-      array_idx_e: $ => seq($._expr, '[', $._expr, ']'),
+      array_idx_e: $ => seq(
+        field('array', $._expr),
+        '[', field('index', $._expr), ']'
+      ),
 
       struct_field_e: $ => seq($.lower_ident, '=', $._expr),
       struct_e: $ => seq($.upper_ident, '{', comma_sep_trailing($.struct_field_e), '}'),

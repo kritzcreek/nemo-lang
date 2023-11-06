@@ -15,6 +15,7 @@ pub enum TyError {
     Message(String),
     UnknownVar(String),
     UnknownType(String),
+    NonArrayIdx(Ty),
     TypeMismatch { expected: Ty, actual: Ty },
 }
 
@@ -27,6 +28,10 @@ impl fmt::Display for TyError {
             TyError::Message(m) => write!(f, "{m}"),
             TyError::UnknownVar(v) => write!(f, "Unknown variable '{v}'"),
             TyError::UnknownType(t) => write!(f, "Unknown type '{t}'"),
+            TyError::NonArrayIdx(t) => write!(
+                f,
+                "Tried to access a value of type '{t}', as if it was an array"
+            ),
             TyError::TypeMismatch { expected, actual } => {
                 write!(f, "Expected type: '{expected}', but got '{actual}'")
             }
@@ -192,8 +197,7 @@ impl<'a> Typechecker<'a> {
         let external_node = node.child_by_field("external")?;
 
         Ok(Toplevel::TopImport {
-            internal:
-            Spanned::from(internal_node.into(), self.text(&internal_node).to_string()),
+            internal: Spanned::from(internal_node.into(), self.text(&internal_node).to_string()),
             func_ty,
             external: Spanned::from(external_node.into(), self.text(&external_node).to_string()),
         })
@@ -203,14 +207,21 @@ impl<'a> Typechecker<'a> {
         assert!(node.kind() == "top_struct");
         let name_node = node.child_by_field("name")?;
         let name = self.text(&name_node);
-        let struct_fields = self.structs.get(name).expect("Checked a struct that wasn't declared upfront");
+        let struct_fields = self
+            .structs
+            .get(name)
+            .expect("Checked a struct that wasn't declared upfront");
         Ok(Toplevel::TopStruct {
             name: Spanned::from(name_node.into(), name.to_string()),
-            fields: struct_fields.clone()
+            fields: struct_fields.clone(),
         })
     }
 
-    fn check_top_let(&self, ctx: &mut Ctx, node: &Node<'_>) -> TyResult<(Typed<String>, TypedExpr)> {
+    fn check_top_let(
+        &self,
+        ctx: &mut Ctx,
+        node: &Node<'_>,
+    ) -> TyResult<(Typed<String>, TypedExpr)> {
         assert!(node.kind() == "top_let");
         let binder = node.child_by_field("binder")?;
         // let ty = node.child_by_field("ty")?;
@@ -239,7 +250,10 @@ impl<'a> Typechecker<'a> {
                 let name = self.text(&name_node).to_string();
                 let ty_node = n.child_by_field("type")?;
                 let ty = self.convert_ty(ty_node)?;
-                Ok(FuncParam { name: Spanned::from(name_node.into(), name), ty })
+                Ok(FuncParam {
+                    name: Spanned::from(name_node.into(), name),
+                    ty,
+                })
             })
             .collect::<TyResult<Vec<FuncParam>>>()?;
         let return_ty = match node.child_by_field_name("result") {
@@ -259,10 +273,9 @@ impl<'a> Typechecker<'a> {
             name: Spanned::from(name.into(), self.text(&name).to_string()),
             params,
             return_ty,
-            body
-        } )
+            body,
+        })
     }
-
 
     fn declare_func(&mut self, node: &Node<'_>) -> TyResult<()> {
         assert!(node.kind() == "top_func");
@@ -487,8 +500,48 @@ impl<'a> Typechecker<'a> {
                     },
                 })
             }
-            "array_e" | "array_idx_e" | "struct_e" | "struct_idx_e" | "if_e" | "block_e"
-            | "intrinsic_e" => Err(Spanned::from(
+            "array_e" => {
+                let mut cursor = node.walk();
+                let elems = node
+                    .children(&mut cursor)
+                    .filter(|n| is_expr_kind(n.kind()))
+                    .map(|n| self.infer_expr(ctx, &n))
+                    .collect::<TyResult<Vec<_>>>()?;
+                let ty_elem = match elems.get(0) {
+                    Some(head) => {
+                        for elem in elems.iter() {
+                            self.expect_ty(&head.ty, &elem.ty, &elem.at)?
+                        }
+                        head.ty.clone()
+                    }
+                    None => Ty::Unit,
+                };
+                Ok(Typed {
+                    ty: Ty::Array(Box::new(ty_elem)),
+                    at,
+                    it: Expr::Array(elems),
+                })
+            }
+            "array_idx_e" => {
+                let array_node = node.child_by_field("array")?;
+                let array = self.infer_expr(ctx, &array_node)?;
+                let index_node = node.child_by_field("index")?;
+                let index = self.infer_expr(ctx, &index_node)?;
+                let ty_elem = match array.ty {
+                    Ty::Array(ref t) => *t.clone(),
+                    t => return Err(Spanned::from(at.clone(), TyError::NonArrayIdx(t))),
+                };
+                self.expect_ty(&Ty::I32, &index.ty, &index.at)?;
+                Ok(Typed {
+                    ty: ty_elem,
+                    at,
+                    it: Expr::ArrayIdx {
+                        array: Box::new(array),
+                        index: Box::new(index),
+                    },
+                })
+            }
+            "struct_e" | "struct_idx_e" | "if_e" | "block_e" | "intrinsic_e" => Err(Spanned::from(
                 node.into(),
                 TyError::Message(format!("Unhandled expr type: {}", node.kind())),
             )),

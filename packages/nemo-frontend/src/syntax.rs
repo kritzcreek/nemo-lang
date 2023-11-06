@@ -179,6 +179,11 @@ pub enum Expr {
         left: Box<TypedExpr>,
         right: Box<TypedExpr>,
     },
+    Array(Vec<TypedExpr>),
+    ArrayIdx {
+        array: Box<TypedExpr>,
+        index: Box<TypedExpr>,
+    },
 }
 #[derive(Debug, PartialEq, Clone)]
 pub struct FuncParam {
