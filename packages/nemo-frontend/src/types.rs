@@ -211,6 +211,9 @@ impl<'a> Typechecker<'a> {
             .structs
             .get(name)
             .expect("Checked a struct that wasn't declared upfront");
+        for ele in struct_fields {
+            self.check_ty(&ele.ty.it, &ele.ty.at)?;
+        }
         Ok(Toplevel::TopStruct {
             name: Spanned::from(name_node.into(), name.to_string()),
             fields: struct_fields.clone(),
@@ -432,6 +435,16 @@ impl<'a> Typechecker<'a> {
                     it: Expr::Lit(lit),
                 })
             }
+            "var_e" => {
+                let name_node = node.child(0).expect("Expected a name in a var_e node");
+                let name = self.text(&name_node);
+                let ty = ctx.lookup(name, &name_node.into())?;
+                Ok(Typed {
+                    ty: ty.clone(),
+                    at,
+                    it: Expr::Var(name.to_string()),
+                })
+            }
             "binary_e" => {
                 let left_node = node.child_by_field("left")?;
                 let left = self.infer_expr(ctx, &left_node)?;
@@ -541,7 +554,28 @@ impl<'a> Typechecker<'a> {
                     },
                 })
             }
-            "struct_e" | "struct_idx_e" | "if_e" | "block_e" | "intrinsic_e" => Err(Spanned::from(
+            "if_e" => {
+                let condition_node = node.child_by_field("condition")?;
+                let condition = self.infer_expr(ctx, &condition_node)?;
+                let then_node = node.child_by_field("then")?;
+                let then_branch = self.infer_expr(ctx, &then_node)?;
+                let else_node = node.child_by_field("else")?;
+                let else_branch = self.infer_expr(ctx, &else_node)?;
+
+                self.expect_ty(&Ty::Bool, &condition.ty, &condition.at)?;
+                self.expect_ty(&then_branch.ty, &else_branch.ty, &then_branch.at)?;
+
+                Ok(Typed {
+                    ty: then_branch.ty.clone(),
+                    at,
+                    it: Expr::If {
+                        condition: Box::new(condition),
+                        then_branch: Box::new(then_branch),
+                        else_branch: Box::new(else_branch),
+                    },
+                })
+            }
+            "struct_e" | "struct_idx_e" | "block_e" | "intrinsic_e" => Err(Spanned::from(
                 node.into(),
                 TyError::Message(format!("Unhandled expr type: {}", node.kind())),
             )),

@@ -55,7 +55,14 @@ module.exports = grammar({
       struct_e: $ => seq($.upper_ident, '{', comma_sep_trailing($.struct_field_e), '}'),
       struct_idx_e: $ => seq($._expr, '.', $.lower_ident),
 
-      if_e: $ => seq('if', $._expr, $.block_e, 'else', $.block_e),
+      if_e: $ => seq(
+        'if',
+        field('condition', $._expr),
+        field('then', $.block_e),
+        'else', 
+        field('else', $.block_e) 
+      ),
+      
 
       call_args: $ => seq('(', comma_sep_trailing($._expr), ')'),
       call_e: $ => seq(

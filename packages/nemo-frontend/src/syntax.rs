@@ -184,6 +184,11 @@ pub enum Expr {
         array: Box<TypedExpr>,
         index: Box<TypedExpr>,
     },
+    If {
+        condition: Box<TypedExpr>,
+        then_branch: Box<TypedExpr>,
+        else_branch: Box<TypedExpr>,
+    },
 }
 #[derive(Debug, PartialEq, Clone)]
 pub struct FuncParam {

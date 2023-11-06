@@ -12,9 +12,9 @@
 #define ALIAS_COUNT 0
 #define TOKEN_COUNT 46
 #define EXTERNAL_TOKEN_COUNT 0
-#define FIELD_COUNT 20
+#define FIELD_COUNT 23
 #define MAX_ALIAS_SEQUENCE_LENGTH 7
-#define PRODUCTION_ID_COUNT 20
+#define PRODUCTION_ID_COUNT 21
 
 enum {
   sym_lower_ident = 1,
@@ -684,21 +684,24 @@ enum {
   field_array = 3,
   field_binder = 4,
   field_body = 5,
-  field_declarations = 6,
-  field_elem_ty = 7,
-  field_expr = 8,
-  field_external = 9,
-  field_function = 10,
-  field_index = 11,
-  field_internal = 12,
-  field_left = 13,
-  field_name = 14,
-  field_op = 15,
-  field_params = 16,
-  field_result = 17,
-  field_right = 18,
-  field_ty = 19,
-  field_type = 20,
+  field_condition = 6,
+  field_declarations = 7,
+  field_elem_ty = 8,
+  field_else = 9,
+  field_expr = 10,
+  field_external = 11,
+  field_function = 12,
+  field_index = 13,
+  field_internal = 14,
+  field_left = 15,
+  field_name = 16,
+  field_op = 17,
+  field_params = 18,
+  field_result = 19,
+  field_right = 20,
+  field_then = 21,
+  field_ty = 22,
+  field_type = 23,
 };
 
 static const char * const ts_field_names[] = {
@@ -708,8 +711,10 @@ static const char * const ts_field_names[] = {
   [field_array] = "array",
   [field_binder] = "binder",
   [field_body] = "body",
+  [field_condition] = "condition",
   [field_declarations] = "declarations",
   [field_elem_ty] = "elem_ty",
+  [field_else] = "else",
   [field_expr] = "expr",
   [field_external] = "external",
   [field_function] = "function",
@@ -721,6 +726,7 @@ static const char * const ts_field_names[] = {
   [field_params] = "params",
   [field_result] = "result",
   [field_right] = "right",
+  [field_then] = "then",
   [field_ty] = "ty",
   [field_type] = "type",
 };
@@ -742,9 +748,10 @@ static const TSFieldMapSlice ts_field_map_slices[PRODUCTION_ID_COUNT] = {
   [14] = {.index = 25, .length = 4},
   [15] = {.index = 29, .length = 1},
   [16] = {.index = 30, .length = 4},
-  [17] = {.index = 34, .length = 2},
-  [18] = {.index = 36, .length = 2},
-  [19] = {.index = 38, .length = 3},
+  [17] = {.index = 34, .length = 3},
+  [18] = {.index = 37, .length = 2},
+  [19] = {.index = 39, .length = 2},
+  [20] = {.index = 41, .length = 3},
 };
 
 static const TSFieldMapEntry ts_field_map_entries[] = {
@@ -799,12 +806,16 @@ static const TSFieldMapEntry ts_field_map_entries[] = {
     {field_params, 2},
     {field_result, 4},
   [34] =
+    {field_condition, 1},
+    {field_else, 4},
+    {field_then, 2},
+  [37] =
     {field_argument, 1},
     {field_result, 4},
-  [36] =
+  [39] =
     {field_argument, 1, .inherited = true},
     {field_result, 4},
-  [38] =
+  [41] =
     {field_argument, 1, .inherited = true},
     {field_argument, 2},
     {field_result, 5},
@@ -4625,8 +4636,8 @@ static const TSParseActionEntry ts_parse_actions[] = {
   [186] = {.entry = {.count = 1, .reusable = false}}, REDUCE(sym__parenthesized_e, 3),
   [188] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_bool_lit, 1),
   [190] = {.entry = {.count = 1, .reusable = false}}, REDUCE(sym_bool_lit, 1),
-  [192] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_if_e, 5),
-  [194] = {.entry = {.count = 1, .reusable = false}}, REDUCE(sym_if_e, 5),
+  [192] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_if_e, 5, .production_id = 17),
+  [194] = {.entry = {.count = 1, .reusable = false}}, REDUCE(sym_if_e, 5, .production_id = 17),
   [196] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_struct_e, 5),
   [198] = {.entry = {.count = 1, .reusable = false}}, REDUCE(sym_struct_e, 5),
   [200] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_binary_e, 3, .production_id = 6),
@@ -4782,11 +4793,11 @@ static const TSParseActionEntry ts_parse_actions[] = {
   [510] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_set_struct_idx, 3),
   [512] = {.entry = {.count = 1, .reusable = true}}, SHIFT(155),
   [514] = {.entry = {.count = 1, .reusable = true}}, SHIFT(109),
-  [516] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_func_type, 5, .production_id = 17),
-  [518] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_func_type, 5, .production_id = 18),
+  [516] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_func_type, 5, .production_id = 18),
+  [518] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_func_type, 5, .production_id = 19),
   [520] = {.entry = {.count = 1, .reusable = true}}, SHIFT(157),
   [522] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_set_array_idx, 4),
-  [524] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_func_type, 6, .production_id = 19),
+  [524] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_func_type, 6, .production_id = 20),
 };
 
 #ifdef __cplusplus
