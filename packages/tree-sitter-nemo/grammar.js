@@ -51,25 +51,36 @@ module.exports = grammar({
         '[', field('index', $._expr), ']'
       ),
 
-      struct_field_e: $ => seq($.lower_ident, '=', $._expr),
-      struct_e: $ => seq($.upper_ident, '{', comma_sep_trailing($.struct_field_e), '}'),
+      struct_field_e: $ => seq(
+        field('name', $.lower_ident),
+        '=',
+        field('expr', $._expr)
+      ),
+      struct_e: $ => seq(
+        field('struct', $.upper_ident),
+        '{', comma_sep_trailing($.struct_field_e), '}'
+      ),
       struct_idx_e: $ => seq($._expr, '.', $.lower_ident),
 
       if_e: $ => seq(
         'if',
         field('condition', $._expr),
         field('then', $.block_e),
-        'else', 
-        field('else', $.block_e) 
+        'else',
+        field('else', $.block_e)
       ),
-      
+
 
       call_args: $ => seq('(', comma_sep_trailing($._expr), ')'),
       call_e: $ => seq(
         field('function', $.lower_ident),
         field('arguments', $.call_args)
       ),
-      block_e: $ => seq('{', field('declarations', semi_sep_trailing($._decl)), '}'),
+      block_e: $ => seq(
+        '{',
+         semi_sep_trailing(field('block_decl', $._decl)),
+        '}'
+      ),
 
       intrinsic_e: $ => seq($.intrinsic_ident, $.call_args),
       binary_e: $ => make_binary_rules($._expr),
@@ -97,11 +108,11 @@ module.exports = grammar({
       // Declarations
       set_var: $ => field('name', $.lower_ident),
       set_array_idx: $ => seq(
-        field('array', $.lower_ident), 
+        field('array', $.lower_ident),
         '[', field('index', $._expr), ']'
       ),
       set_struct_idx: $ => seq(
-        field('struct', $.lower_ident), 
+        field('struct', $.lower_ident),
         '.', field('index', $.lower_ident)
       ),
       _set_target: $ => choice(
@@ -111,20 +122,20 @@ module.exports = grammar({
       ),
 
       let_decl: $ => seq(
-        'let', 
-        field('binder', $.lower_ident), 
-        '=', 
+        'let',
+        field('binder', $.lower_ident),
+        '=',
         field('expr', $._expr)
       ),
       set_decl: $ => seq(
-        'set', 
-        field('target', $._set_target), 
-        '=', 
+        'set',
+        field('target', $._set_target),
+        '=',
         field('expr', $._expr)
       ),
       while_decl: $ => seq(
-        'while', 
-        field('condition', $._expr), 
+        'while',
+        field('condition', $._expr),
         field('body', $.block_e)
       ),
       expr_decl: $ => $._expr,

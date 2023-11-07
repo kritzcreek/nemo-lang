@@ -143,7 +143,7 @@ impl fmt::Display for Ty {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct FuncTy {
     pub arguments: Vec<Ty>,
     pub result: Ty,
@@ -161,6 +161,12 @@ pub struct Typed<T> {
     pub ty: Ty,
     pub at: Span,
     pub it: T,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct StructFieldE {
+    pub name: Spanned<String>,
+    pub expr: TypedExpr,
 }
 
 pub type TypedExpr = Typed<Expr>;
@@ -190,35 +196,45 @@ pub enum Expr {
         else_branch: Box<TypedExpr>,
     },
     Block {
-        declarations: Vec<TypedDeclaration>
-    }
+        declarations: Vec<TypedDeclaration>,
+    },
+    Struct {
+        fields: Vec<StructFieldE>,
+    },
 }
 
 pub type TypedDeclaration = Typed<Declaration>;
-
 
 #[derive(Debug, PartialEq)]
 pub enum Declaration {
     Let {
         binder: Spanned<String>,
-        expr: TypedExpr
+        expr: TypedExpr,
     },
     Set {
         set_target: Typed<SetTarget>,
-        expr: TypedExpr
+        expr: TypedExpr,
     },
     Expr(TypedExpr),
     While {
         condition: TypedExpr,
-        body: TypedExpr
-    }
+        body: TypedExpr,
+    },
 }
 
 #[derive(Debug, PartialEq)]
 pub enum SetTarget {
-    Array { name: Typed<String>, index: TypedExpr },
-    Struct { name: Typed<String>, index: String },
-    Var { name: Typed<String> }
+    Array {
+        name: Typed<String>,
+        index: TypedExpr,
+    },
+    Struct {
+        name: Typed<String>,
+        index: String,
+    },
+    Var {
+        name: Typed<String>,
+    },
 }
 
 #[derive(Debug, PartialEq, Clone)]

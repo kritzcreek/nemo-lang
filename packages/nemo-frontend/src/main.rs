@@ -39,7 +39,6 @@ struct RingBuffer {
   watermark : i32
 }
 
-let test = funcall(1, 2 * 3);
 let two_pi = 3.14159265359 * 2.0;
 let particle_timer = 200.0;
 

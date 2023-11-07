@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 use crate::syntax::{
     Declaration, Expr, FuncParam, FuncTy, Lit, Op, Program, SetTarget, Span, Spanned, StructField,
-    Toplevel, Ty, Typed, TypedDeclaration, TypedExpr,
+    StructFieldE, Toplevel, Ty, Typed, TypedDeclaration, TypedExpr,
 };
 use tree_sitter::Node;
 
@@ -14,9 +14,27 @@ pub enum TyError {
     InvalidOperator,
     Message(String),
     UnknownVar(String),
+    UnknownFunction(String),
     UnknownType(String),
     NonArrayIdx(Ty),
-    TypeMismatch { expected: Ty, actual: Ty },
+    FieldTypeMismatch {
+        struct_name: String,
+        field_name: String,
+        expected: Ty,
+        actual: Ty,
+    },
+    ExtraField {
+        struct_name: String,
+        field_name: String,
+    },
+    MissingField {
+        struct_name: String,
+        field_name: String,
+    },
+    TypeMismatch {
+        expected: Ty,
+        actual: Ty,
+    },
 }
 
 impl fmt::Display for TyError {
@@ -27,15 +45,21 @@ impl fmt::Display for TyError {
             TyError::InvalidOperator => write!(f, "Invalid operator"),
             TyError::Message(m) => write!(f, "{m}"),
             TyError::UnknownVar(v) => write!(f, "Unknown variable '{v}'"),
+            TyError::UnknownFunction(fun) => write!(f, "Unknown function '{fun}'"),
             TyError::UnknownType(t) => write!(f, "Unknown type '{t}'"),
             TyError::NonArrayIdx(t) => write!(
                 f,
                 "Tried to access a value of type '{t}', as if it was an array"
             ),
-            TyError::TypeMismatch { expected, actual } => {
-                write!(f, "Expected type: '{expected}', but got '{actual}'")
+            TyError::FieldTypeMismatch { struct_name, field_name, expected, actual } =>
+              write!(f, "Expected a value of type '{expected}' for {struct_name}.{field_name}, but got '{actual}' instead"),
+            TyError::ExtraField { struct_name, field_name } =>
+              write!(f, "Unknown field '{field_name}' for struct '{struct_name}'"),
+            TyError::MissingField { struct_name, field_name } =>
+              write!(f, "Missing field {struct_name}.{field_name}"),
+            TyError::TypeMismatch { expected, actual } =>
+                write!(f, "Expected type: '{expected}', but got '{actual}'"),
             }
-        }
     }
 }
 
@@ -122,6 +146,10 @@ impl<'a> Typechecker<'a> {
         node.utf8_text(self.source).unwrap()
     }
 
+    fn spanned_text(&self, node: &Node<'_>) -> Spanned<String> {
+        Spanned::from(node.into(), self.text(node).to_string())
+    }
+
     fn check_ty(&self, ty: &Ty, span: &Span) -> TyResult<()> {
         match ty {
             Ty::Array(t) => self.check_ty(&t, span),
@@ -179,7 +207,7 @@ impl<'a> Typechecker<'a> {
                 let ty_node = n.child_by_field("type")?;
                 let ty = self.convert_ty(ty_node)?;
                 Ok(StructField {
-                    name: Spanned::from(name.into(), self.text(&name).to_string()),
+                    name: self.spanned_text(&name),
                     ty,
                 })
             })
@@ -197,25 +225,24 @@ impl<'a> Typechecker<'a> {
         let external_node = node.child_by_field("external")?;
 
         Ok(Toplevel::TopImport {
-            internal: Spanned::from(internal_node.into(), self.text(&internal_node).to_string()),
+            internal: self.spanned_text(&internal_node),
             func_ty,
-            external: Spanned::from(external_node.into(), self.text(&external_node).to_string()),
+            external: self.spanned_text(&external_node),
         })
     }
 
     fn check_struct(&mut self, node: &Node<'_>) -> TyResult<Toplevel> {
         assert!(node.kind() == "top_struct");
         let name_node = node.child_by_field("name")?;
-        let name = self.text(&name_node);
         let struct_fields = self
             .structs
-            .get(name)
+            .get(self.text(&name_node))
             .expect("Checked a struct that wasn't declared upfront");
         for ele in struct_fields {
             self.check_ty(&ele.ty.it, &ele.ty.at)?;
         }
         Ok(Toplevel::TopStruct {
-            name: Spanned::from(name_node.into(), name.to_string()),
+            name: self.spanned_text(&name_node),
             fields: struct_fields.clone(),
         })
     }
@@ -250,11 +277,10 @@ impl<'a> Typechecker<'a> {
             .filter(|n| n.kind() == "func_param")
             .map(|n| {
                 let name_node = n.child_by_field("name")?;
-                let name = self.text(&name_node).to_string();
                 let ty_node = n.child_by_field("type")?;
                 let ty = self.convert_ty(ty_node)?;
                 Ok(FuncParam {
-                    name: Spanned::from(name_node.into(), name),
+                    name: self.spanned_text(&name_node),
                     ty,
                 })
             })
@@ -273,11 +299,63 @@ impl<'a> Typechecker<'a> {
         let body = self.infer_expr(ctx, &body_node)?;
         ctx.leave_block();
         Ok(Toplevel::TopFunc {
-            name: Spanned::from(name.into(), self.text(&name).to_string()),
+            name: self.spanned_text(&name),
             params,
             return_ty,
             body,
         })
+    }
+
+    fn check_struct_fields(
+        &self,
+        expected_fields: &Vec<StructField>,
+        actual_fields: &Vec<StructFieldE>,
+        struct_name: &str,
+        span: Span,
+    ) -> TyResult<()> {
+        for expected in expected_fields {
+            let actual = actual_fields.iter().find(|f| f.name.it == expected.name.it);
+            match actual {
+                None => {
+                    return Err(Spanned::from(
+                        span.clone(),
+                        TyError::MissingField {
+                            struct_name: struct_name.to_string(),
+                            field_name: expected.name.it.clone(),
+                        },
+                    ))
+                }
+                Some(actual) => {
+                    if self
+                        .expect_ty(&expected.ty.it, &actual.expr.ty, &actual.expr.at)
+                        .is_err()
+                    {
+                        return Err(Spanned {
+                            at: actual.expr.at.clone(),
+                            it: TyError::FieldTypeMismatch {
+                                struct_name: struct_name.to_string(),
+                                field_name: actual.name.it.to_string(),
+                                expected: expected.ty.it.clone(),
+                                actual: actual.expr.ty.clone(),
+                            },
+                        });
+                    }
+                }
+            }
+        }
+        for actual in actual_fields {
+            let expected = expected_fields.iter().find(|f| f.name.it == actual.name.it);
+            if expected.is_none() {
+                return Err(Spanned {
+                    at: actual.name.at.clone(),
+                    it: TyError::ExtraField {
+                        struct_name: struct_name.to_string(),
+                        field_name: actual.name.it.clone(),
+                    },
+                });
+            }
+        }
+        Ok(())
     }
 
     fn declare_func(&mut self, node: &Node<'_>) -> TyResult<()> {
@@ -473,18 +551,17 @@ impl<'a> Typechecker<'a> {
         let at: Span = node.into();
         match node.kind() {
             "let_decl" => {
-                let name_node = node.child_by_field("binder")?;
-                let name = self.text(&name_node);
-
                 let value_node = node.child_by_field("expr")?;
                 let typed_expr = self.infer_expr(ctx, &value_node)?;
 
-                ctx.add(name.to_string(), typed_expr.ty.clone());
+                let name_node = node.child_by_field("binder")?;
+                ctx.add(self.text(&name_node).to_string(), typed_expr.ty.clone());
+
                 Ok(Typed {
                     ty: Ty::Unit,
                     at,
                     it: Declaration::Let {
-                        binder: Spanned::from(name_node.into(), name.to_string()),
+                        binder: self.spanned_text(&name_node),
                         expr: typed_expr,
                     },
                 })
@@ -635,18 +712,21 @@ impl<'a> Typechecker<'a> {
                 let call_args = self.infer_call_args(ctx, call_args_node)?;
 
                 let function_node = node.child_by_field("function")?;
-                let function = self.text(&function_node);
-
-                let func_ty = FuncTy {
-                    arguments: vec![],
-                    result: Ty::I32,
+                let func_ty = match self.functions.get(self.text(&function_node)) {
+                    Some((_, t)) => (*t).clone(),
+                    None => {
+                        return Err(Spanned {
+                            it: TyError::UnknownFunction(self.text(&function_node).to_string()),
+                            at: function_node.into(),
+                        })
+                    }
                 };
 
                 Ok(Typed {
                     ty: func_ty.result.clone(),
                     at,
                     it: Expr::Call {
-                        func: Spanned::from(function_node.into(), function.to_string()),
+                        func: self.spanned_text(&function_node),
                         func_ty,
                         arguments: call_args,
                     },
@@ -714,7 +794,63 @@ impl<'a> Typechecker<'a> {
                     },
                 })
             }
-            "struct_e" | "struct_idx_e" | "block_e" | "intrinsic_e" => Err(Spanned::from(
+            "block_e" => {
+                let mut cursor = node.walk();
+                let mut declarations = vec![];
+                for decl_node in node.children_by_field_name("block_decl", &mut cursor) {
+                    let declaration = self.infer_decl(ctx, &decl_node)?;
+                    declarations.push(declaration)
+                }
+                let ty = declarations
+                    .last()
+                    .map(|d| d.ty.clone())
+                    .unwrap_or(Ty::Unit);
+                Ok(Typed {
+                    ty: ty.clone(),
+                    at,
+                    it: Expr::Block { declarations },
+                })
+            }
+            "struct_e" => {
+                let struct_name_node = node.child_by_field("struct")?;
+                let struct_name = self.text(&struct_name_node);
+                let expected_fields = match self.structs.get(struct_name) {
+                    None => todo!(),
+                    Some(s) => s,
+                };
+                let mut cursor = node.walk();
+                let field_nodes = node
+                    .children(&mut cursor)
+                    .filter(|n| n.kind() == "struct_field_e")
+                    .collect::<Vec<_>>();
+
+                let mut actual_fields = vec![];
+                for field_node in field_nodes {
+                    let name_node = field_node.child_by_field("name")?;
+                    let expr_node = field_node.child_by_field("expr")?;
+                    let expr = self.infer_expr(ctx, &expr_node)?;
+                    let field = StructFieldE {
+                        name: self.spanned_text(&name_node),
+                        expr,
+                    };
+                    actual_fields.push(field)
+                }
+                self.check_struct_fields(
+                    expected_fields,
+                    &actual_fields,
+                    struct_name,
+                    node.into(),
+                )?;
+
+                Ok(Typed {
+                    ty: Ty::Struct(struct_name.to_string()),
+                    at,
+                    it: Expr::Struct {
+                        fields: actual_fields,
+                    },
+                })
+            }
+            "struct_idx_e" | "intrinsic_e" => Err(Spanned::from(
                 node.into(),
                 TyError::Message(format!("Unhandled expr type: {}", node.kind())),
             )),

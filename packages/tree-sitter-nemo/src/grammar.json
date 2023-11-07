@@ -176,16 +176,24 @@
       "type": "SEQ",
       "members": [
         {
-          "type": "SYMBOL",
-          "name": "lower_ident"
+          "type": "FIELD",
+          "name": "name",
+          "content": {
+            "type": "SYMBOL",
+            "name": "lower_ident"
+          }
         },
         {
           "type": "STRING",
           "value": "="
         },
         {
-          "type": "SYMBOL",
-          "name": "_expr"
+          "type": "FIELD",
+          "name": "expr",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_expr"
+          }
         }
       ]
     },
@@ -193,8 +201,12 @@
       "type": "SEQ",
       "members": [
         {
-          "type": "SYMBOL",
-          "name": "upper_ident"
+          "type": "FIELD",
+          "name": "struct",
+          "content": {
+            "type": "SYMBOL",
+            "name": "upper_ident"
+          }
         },
         {
           "type": "STRING",
@@ -368,41 +380,45 @@
           "value": "{"
         },
         {
-          "type": "FIELD",
-          "name": "declarations",
-          "content": {
-            "type": "SEQ",
-            "members": [
-              {
-                "type": "REPEAT",
-                "content": {
-                  "type": "SEQ",
-                  "members": [
-                    {
-                      "type": "SYMBOL",
-                      "name": "_decl"
-                    },
-                    {
-                      "type": "STRING",
-                      "value": ";"
-                    }
-                  ]
-                }
-              },
-              {
-                "type": "CHOICE",
+          "type": "SEQ",
+          "members": [
+            {
+              "type": "REPEAT",
+              "content": {
+                "type": "SEQ",
                 "members": [
                   {
-                    "type": "SYMBOL",
-                    "name": "_decl"
+                    "type": "FIELD",
+                    "name": "block_decl",
+                    "content": {
+                      "type": "SYMBOL",
+                      "name": "_decl"
+                    }
                   },
                   {
-                    "type": "BLANK"
+                    "type": "STRING",
+                    "value": ";"
                   }
                 ]
               }
-            ]
-          }
+            },
+            {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "FIELD",
+                  "name": "block_decl",
+                  "content": {
+                    "type": "SYMBOL",
+                    "name": "_decl"
+                  }
+                },
+                {
+                  "type": "BLANK"
+                }
+              ]
+            }
+          ]
         },
         {
           "type": "STRING",
