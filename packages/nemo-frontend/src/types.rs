@@ -1,6 +1,7 @@
 use core::fmt;
 use std::collections::HashMap;
 
+use crate::builtins;
 use crate::syntax::{
     Declaration, Expr, FuncParam, FuncTy, Intrinsic, Lit, Op, Program, SetTarget, Span, Spanned,
     StructField, StructFieldE, Toplevel, Ty, Typed, TypedDeclaration, TypedExpr,
@@ -90,6 +91,8 @@ fn is_expr_kind(s: &str) -> bool {
         "int_lit"
             | "float_lit"
             | "bool_lit"
+            | "var_e"
+            | "parenthesized_e"
             | "binary_e"
             | "block_e"
             | "array_e"
@@ -147,6 +150,19 @@ impl<'a> Typechecker<'a> {
             source: source.as_bytes(),
             structs: HashMap::new(),
             functions: HashMap::new(),
+        }
+    }
+
+    fn lookup_function(&self, name: &str, span: &Span) -> TyResult<&FuncTy> {
+        match self.functions.get(name) {
+            Some((_, ty)) => Ok(ty),
+            None => match builtins::lookup_builtin(name) {
+                Some(f) => Ok(&f.ty),
+                None => Err(Spanned::from(
+                    span.clone(),
+                    TyError::UnknownFunction(name.to_string()),
+                )),
+            },
         }
     }
 
@@ -490,6 +506,7 @@ impl<'a> Typechecker<'a> {
             .filter(|n| is_expr_kind(n.kind()))
             .map(|n| self.infer_expr(ctx, &n))
             .collect()
+
     }
 
     fn infer_set_target(&self, ctx: &mut Ctx, node: &Node) -> TyResult<Typed<SetTarget>> {
@@ -642,7 +659,7 @@ impl<'a> Typechecker<'a> {
                 })
             }
             "while_decl" => {
-                let condition_node = node.child_by_field("cond")?;
+                let condition_node = node.child_by_field("condition")?;
                 let condition = self.infer_expr(ctx, &condition_node)?;
                 self.expect_ty(&Ty::Bool, &condition.ty, &condition.at)?;
 
@@ -667,6 +684,7 @@ impl<'a> Typechecker<'a> {
     fn infer_expr(&self, ctx: &mut Ctx, node: &Node<'_>) -> TyResult<TypedExpr> {
         let at: Span = node.into();
         match node.kind() {
+            "parenthesized_e" => self.infer_expr(ctx, &node.child_by_field("expr")?),
             "int_lit" => {
                 let lit = Lit::I32(
                     self.text(node)
@@ -764,15 +782,8 @@ impl<'a> Typechecker<'a> {
                 let call_args = self.infer_call_args(ctx, call_args_node)?;
 
                 let function_node = node.child_by_field("function")?;
-                let func_ty = match self.functions.get(self.text(&function_node)) {
-                    Some((_, t)) => (*t).clone(),
-                    None => {
-                        return Err(Spanned {
-                            it: TyError::UnknownFunction(self.text(&function_node).to_string()),
-                            at: function_node.into(),
-                        })
-                    }
-                };
+                let func_ty =
+                    self.lookup_function(self.text(&function_node), &function_node.into())?;
 
                 // TODO: check types of arguments
 
@@ -781,7 +792,7 @@ impl<'a> Typechecker<'a> {
                     at,
                     it: Expr::Call {
                         func: self.spanned_text(&function_node),
-                        func_ty,
+                        func_ty: func_ty.clone(),
                         arguments: call_args,
                     },
                 })

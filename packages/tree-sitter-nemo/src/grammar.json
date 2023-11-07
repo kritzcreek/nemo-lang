@@ -144,33 +144,37 @@
       ]
     },
     "array_idx_e": {
-      "type": "SEQ",
-      "members": [
-        {
-          "type": "FIELD",
-          "name": "array",
-          "content": {
-            "type": "SYMBOL",
-            "name": "_expr"
+      "type": "PREC",
+      "value": 100,
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "FIELD",
+            "name": "array",
+            "content": {
+              "type": "SYMBOL",
+              "name": "_expr"
+            }
+          },
+          {
+            "type": "STRING",
+            "value": "["
+          },
+          {
+            "type": "FIELD",
+            "name": "index",
+            "content": {
+              "type": "SYMBOL",
+              "name": "_expr"
+            }
+          },
+          {
+            "type": "STRING",
+            "value": "]"
           }
-        },
-        {
-          "type": "STRING",
-          "value": "["
-        },
-        {
-          "type": "FIELD",
-          "name": "index",
-          "content": {
-            "type": "SYMBOL",
-            "name": "_expr"
-          }
-        },
-        {
-          "type": "STRING",
-          "value": "]"
-        }
-      ]
+        ]
+      }
     },
     "struct_field_e": {
       "type": "SEQ",
@@ -252,29 +256,33 @@
       ]
     },
     "struct_idx_e": {
-      "type": "SEQ",
-      "members": [
-        {
-          "type": "FIELD",
-          "name": "expr",
-          "content": {
-            "type": "SYMBOL",
-            "name": "_expr"
+      "type": "PREC",
+      "value": 100,
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "FIELD",
+            "name": "expr",
+            "content": {
+              "type": "SYMBOL",
+              "name": "_expr"
+            }
+          },
+          {
+            "type": "STRING",
+            "value": "."
+          },
+          {
+            "type": "FIELD",
+            "name": "index",
+            "content": {
+              "type": "SYMBOL",
+              "name": "lower_ident"
+            }
           }
-        },
-        {
-          "type": "STRING",
-          "value": "."
-        },
-        {
-          "type": "FIELD",
-          "name": "index",
-          "content": {
-            "type": "SYMBOL",
-            "name": "lower_ident"
-          }
-        }
-      ]
+        ]
+      }
     },
     "if_e": {
       "type": "SEQ",
@@ -678,7 +686,7 @@
         }
       ]
     },
-    "_parenthesized_e": {
+    "parenthesized_e": {
       "type": "SEQ",
       "members": [
         {
@@ -686,8 +694,12 @@
           "value": "("
         },
         {
-          "type": "SYMBOL",
-          "name": "_expr"
+          "type": "FIELD",
+          "name": "expr",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_expr"
+          }
         },
         {
           "type": "STRING",
@@ -721,7 +733,7 @@
         },
         {
           "type": "SYMBOL",
-          "name": "_parenthesized_e"
+          "name": "parenthesized_e"
         },
         {
           "type": "SYMBOL",
@@ -729,15 +741,7 @@
         },
         {
           "type": "SYMBOL",
-          "name": "array_idx_e"
-        },
-        {
-          "type": "SYMBOL",
           "name": "struct_e"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "struct_idx_e"
         },
         {
           "type": "SYMBOL",
@@ -754,6 +758,14 @@
         {
           "type": "SYMBOL",
           "name": "intrinsic_e"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "array_idx_e"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "struct_idx_e"
         }
       ]
     },
@@ -920,8 +932,12 @@
       ]
     },
     "expr_decl": {
-      "type": "SYMBOL",
-      "name": "_expr"
+      "type": "FIELD",
+      "name": "expr",
+      "content": {
+        "type": "SYMBOL",
+        "name": "_expr"
+      }
     },
     "_decl": {
       "type": "CHOICE",

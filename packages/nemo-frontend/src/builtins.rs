@@ -63,16 +63,33 @@ lazy_static! {
         m.insert("f32_trunc", f32_func_unary("f32_trunc", "f32_trunc"));
         m.insert("f32_nearest", f32_func_unary("f32_nearest", "f32_nearest"));
         m.insert("f32_sqrt", f32_func_unary("f32_sqrt", "f32_sqrt"));
-        m.insert("f32_copysign", f32_func_binary("f32_copysign", "f32_copysign"));
+        m.insert(
+            "f32_copysign",
+            f32_func_binary("f32_copysign", "f32_copysign"),
+        );
         m.insert("f32_min", f32_func_binary("f32_min", "f32_min"));
         m.insert("f32_max", f32_func_binary("f32_max", "f32_max"));
         m.insert(
             "f32_convert_i32_s",
-            Fn { name: "f32_convert_i32_s", ty: FuncTy { arguments: vec![Ty::I32], result: Ty::F32 }, instr: "f32_convert_i32_s" }
+            Fn {
+                name: "f32_convert_i32_s",
+                ty: FuncTy {
+                    arguments: vec![Ty::I32],
+                    result: Ty::F32,
+                },
+                instr: "f32_convert_i32_s",
+            },
         );
         m.insert(
             "f32_convert_i32_u",
-            Fn { name: "f32_convert_i32_u", ty: FuncTy { arguments: vec![Ty::I32], result: Ty::F32 }, instr: "f32_convert_i32_u" }
+            Fn {
+                name: "f32_convert_i32_u",
+                ty: FuncTy {
+                    arguments: vec![Ty::I32],
+                    result: Ty::F32,
+                },
+                instr: "f32_convert_i32_u",
+            },
         );
 
         m.insert("i32_clz", i32_func_unary("i32_clz", "i32_clz"));
@@ -85,12 +102,30 @@ lazy_static! {
         m.insert("i32_shr_s", i32_func_binary("i32_shr_s", "i32_shr_s"));
         m.insert(
             "i32_trunc_f32_s",
-            Fn { name: "i32_trunc_f32_s", ty: FuncTy { arguments: vec![Ty::F32], result: Ty::I32 }, instr: "i32_trunc_f32_s" }
+            Fn {
+                name: "i32_trunc_f32_s",
+                ty: FuncTy {
+                    arguments: vec![Ty::F32],
+                    result: Ty::I32,
+                },
+                instr: "i32_trunc_f32_s",
+            },
         );
         m.insert(
             "i32_reinterpret_f32",
-            Fn { name: "i32_reinterpret_f32", ty: FuncTy { arguments: vec![Ty::F32], result: Ty::I32 }, instr: "i32_reinterpret_f32" }
+            Fn {
+                name: "i32_reinterpret_f32",
+                ty: FuncTy {
+                    arguments: vec![Ty::F32],
+                    result: Ty::I32,
+                },
+                instr: "i32_reinterpret_f32",
+            },
         );
         m
     };
+}
+
+pub fn lookup_builtin(name: &str) -> Option<&'static Fn> {
+    BUILTINS.get(name)
 }

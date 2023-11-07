@@ -46,10 +46,10 @@ module.exports = grammar({
       // Expressions
       var_e: $ => $.lower_ident,
       array_e: $ => seq('[', comma_sep_trailing($._expr), ']'),
-      array_idx_e: $ => seq(
+      array_idx_e: $ => prec(100, seq(
         field('array', $._expr),
         '[', field('index', $._expr), ']'
-      ),
+      )),
 
       struct_field_e: $ => seq(
         field('name', $.lower_ident),
@@ -60,11 +60,12 @@ module.exports = grammar({
         field('struct', $.upper_ident),
         '{', comma_sep_trailing($.struct_field_e), '}'
       ),
-      struct_idx_e: ($) => seq(
-          field('expr', $._expr), 
-          ".", 
-          field('index', $.lower_ident)
-      ),
+      // Needs to be higher than the highest operator precedence
+      struct_idx_e: ($) => prec(100, seq(
+        field('expr', $._expr),
+        ".",
+        field('index', $.lower_ident)
+      )),
       if_e: $ => seq(
         'if',
         field('condition', $._expr),
@@ -86,12 +87,12 @@ module.exports = grammar({
       ),
 
       intrinsic_e: $ => seq(
-        field('function', $.intrinsic_ident), 
+        field('function', $.intrinsic_ident),
         field('arguments', $.call_args)
       ),
       binary_e: $ => make_binary_rules($._expr),
 
-      _parenthesized_e: $ => seq('(', $._expr, ')'),
+      parenthesized_e: $ => seq('(', field ('expr', $._expr), ')'),
 
       // Extracted this rule to make it clear that we want the parser to greedily parse:
       // my_func(args) into `(call_e ident args)` and not `(var_e ERROR)`
@@ -100,15 +101,15 @@ module.exports = grammar({
       _expr: $ => choice(
         $._lit,
         $._call_or_var,
-        $._parenthesized_e,
+        $.parenthesized_e,
         $.array_e,
-        $.array_idx_e,
         $.struct_e,
-        $.struct_idx_e,
         $.if_e,
         $.block_e,
         $.binary_e,
-        $.intrinsic_e
+        $.intrinsic_e,
+        $.array_idx_e,
+        $.struct_idx_e,
       ),
 
       // Declarations
@@ -144,7 +145,7 @@ module.exports = grammar({
         field('condition', $._expr),
         field('body', $.block_e)
       ),
-      expr_decl: $ => $._expr,
+      expr_decl: $ => field('expr', $._expr),
 
       _decl: $ => choice(
         $.let_decl,

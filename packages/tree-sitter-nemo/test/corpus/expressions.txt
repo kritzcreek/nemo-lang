@@ -158,6 +158,7 @@ let _ = Vec { x = 10, y = 1.0, };
 let _ = v.x;
 let _ = v.x.y;
 let _ = v[0].y;
+let _ = 1 + x.y;
 
 --------------------------------------------------------------------------------
 
@@ -214,7 +215,15 @@ let _ = v[0].y;
         (var_e
           (lower_ident))
         (int_lit))
-      (lower_ident))))
+      (lower_ident)))
+  (top_let
+    (lower_ident)
+    (binary_e
+      (int_lit)
+      (struct_idx_e
+        (var_e
+          (lower_ident))
+        (lower_ident)))))
 
 ================================================================================
 Call expr
@@ -553,13 +562,14 @@ fn draw_particle(particle : Particle) : f32 = {
                       (lower_ident))
                     (lower_ident))
                   (binary_e
-                    (struct_idx_e
+                    (parenthesized_e
                       (binary_e
                         (var_e
                           (lower_ident))
-                        (var_e
-                          (lower_ident)))
-                      (lower_ident))
+                        (struct_idx_e
+                          (var_e
+                            (lower_ident))
+                          (lower_ident))))
                     (float_lit))
                   (float_lit)
                   (var_e

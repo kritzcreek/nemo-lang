@@ -48,6 +48,10 @@
           "named": true
         },
         {
+          "type": "parenthesized_e",
+          "named": true
+        },
+        {
           "type": "struct_e",
           "named": true
         },
@@ -67,17 +71,9 @@
     "named": true,
     "fields": {
       "array": {
-        "multiple": true,
+        "multiple": false,
         "required": true,
         "types": [
-          {
-            "type": "(",
-            "named": false
-          },
-          {
-            "type": ")",
-            "named": false
-          },
           {
             "type": "array_e",
             "named": true
@@ -116,6 +112,10 @@
           },
           {
             "type": "intrinsic_e",
+            "named": true
+          },
+          {
+            "type": "parenthesized_e",
             "named": true
           },
           {
@@ -133,17 +133,9 @@
         ]
       },
       "index": {
-        "multiple": true,
+        "multiple": false,
         "required": true,
         "types": [
-          {
-            "type": "(",
-            "named": false
-          },
-          {
-            "type": ")",
-            "named": false
-          },
           {
             "type": "array_e",
             "named": true
@@ -182,6 +174,10 @@
           },
           {
             "type": "intrinsic_e",
+            "named": true
+          },
+          {
+            "type": "parenthesized_e",
             "named": true
           },
           {
@@ -205,17 +201,9 @@
     "named": true,
     "fields": {
       "left": {
-        "multiple": true,
+        "multiple": false,
         "required": true,
         "types": [
-          {
-            "type": "(",
-            "named": false
-          },
-          {
-            "type": ")",
-            "named": false
-          },
           {
             "type": "array_e",
             "named": true
@@ -254,6 +242,10 @@
           },
           {
             "type": "intrinsic_e",
+            "named": true
+          },
+          {
+            "type": "parenthesized_e",
             "named": true
           },
           {
@@ -325,17 +317,9 @@
         ]
       },
       "right": {
-        "multiple": true,
+        "multiple": false,
         "required": true,
         "types": [
-          {
-            "type": "(",
-            "named": false
-          },
-          {
-            "type": ")",
-            "named": false
-          },
           {
             "type": "array_e",
             "named": true
@@ -374,6 +358,10 @@
           },
           {
             "type": "intrinsic_e",
+            "named": true
+          },
+          {
+            "type": "parenthesized_e",
             "named": true
           },
           {
@@ -474,6 +462,10 @@
           "named": true
         },
         {
+          "type": "parenthesized_e",
+          "named": true
+        },
+        {
           "type": "struct_e",
           "named": true
         },
@@ -517,64 +509,69 @@
   {
     "type": "expr_decl",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": false,
-      "required": false,
-      "types": [
-        {
-          "type": "array_e",
-          "named": true
-        },
-        {
-          "type": "array_idx_e",
-          "named": true
-        },
-        {
-          "type": "binary_e",
-          "named": true
-        },
-        {
-          "type": "block_e",
-          "named": true
-        },
-        {
-          "type": "bool_lit",
-          "named": true
-        },
-        {
-          "type": "call_e",
-          "named": true
-        },
-        {
-          "type": "float_lit",
-          "named": true
-        },
-        {
-          "type": "if_e",
-          "named": true
-        },
-        {
-          "type": "int_lit",
-          "named": true
-        },
-        {
-          "type": "intrinsic_e",
-          "named": true
-        },
-        {
-          "type": "struct_e",
-          "named": true
-        },
-        {
-          "type": "struct_idx_e",
-          "named": true
-        },
-        {
-          "type": "var_e",
-          "named": true
-        }
-      ]
+    "fields": {
+      "expr": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "array_e",
+            "named": true
+          },
+          {
+            "type": "array_idx_e",
+            "named": true
+          },
+          {
+            "type": "binary_e",
+            "named": true
+          },
+          {
+            "type": "block_e",
+            "named": true
+          },
+          {
+            "type": "bool_lit",
+            "named": true
+          },
+          {
+            "type": "call_e",
+            "named": true
+          },
+          {
+            "type": "float_lit",
+            "named": true
+          },
+          {
+            "type": "if_e",
+            "named": true
+          },
+          {
+            "type": "int_lit",
+            "named": true
+          },
+          {
+            "type": "intrinsic_e",
+            "named": true
+          },
+          {
+            "type": "parenthesized_e",
+            "named": true
+          },
+          {
+            "type": "struct_e",
+            "named": true
+          },
+          {
+            "type": "struct_idx_e",
+            "named": true
+          },
+          {
+            "type": "var_e",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
@@ -709,17 +706,9 @@
     "named": true,
     "fields": {
       "condition": {
-        "multiple": true,
+        "multiple": false,
         "required": true,
         "types": [
-          {
-            "type": "(",
-            "named": false
-          },
-          {
-            "type": ")",
-            "named": false
-          },
           {
             "type": "array_e",
             "named": true
@@ -758,6 +747,10 @@
           },
           {
             "type": "intrinsic_e",
+            "named": true
+          },
+          {
+            "type": "parenthesized_e",
             "named": true
           },
           {
@@ -842,17 +835,9 @@
         ]
       },
       "expr": {
-        "multiple": true,
+        "multiple": false,
         "required": true,
         "types": [
-          {
-            "type": "(",
-            "named": false
-          },
-          {
-            "type": ")",
-            "named": false
-          },
           {
             "type": "array_e",
             "named": true
@@ -891,6 +876,78 @@
           },
           {
             "type": "intrinsic_e",
+            "named": true
+          },
+          {
+            "type": "parenthesized_e",
+            "named": true
+          },
+          {
+            "type": "struct_e",
+            "named": true
+          },
+          {
+            "type": "struct_idx_e",
+            "named": true
+          },
+          {
+            "type": "var_e",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "parenthesized_e",
+    "named": true,
+    "fields": {
+      "expr": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "array_e",
+            "named": true
+          },
+          {
+            "type": "array_idx_e",
+            "named": true
+          },
+          {
+            "type": "binary_e",
+            "named": true
+          },
+          {
+            "type": "block_e",
+            "named": true
+          },
+          {
+            "type": "bool_lit",
+            "named": true
+          },
+          {
+            "type": "call_e",
+            "named": true
+          },
+          {
+            "type": "float_lit",
+            "named": true
+          },
+          {
+            "type": "if_e",
+            "named": true
+          },
+          {
+            "type": "int_lit",
+            "named": true
+          },
+          {
+            "type": "intrinsic_e",
+            "named": true
+          },
+          {
+            "type": "parenthesized_e",
             "named": true
           },
           {
@@ -924,17 +981,9 @@
         ]
       },
       "index": {
-        "multiple": true,
+        "multiple": false,
         "required": true,
         "types": [
-          {
-            "type": "(",
-            "named": false
-          },
-          {
-            "type": ")",
-            "named": false
-          },
           {
             "type": "array_e",
             "named": true
@@ -973,6 +1022,10 @@
           },
           {
             "type": "intrinsic_e",
+            "named": true
+          },
+          {
+            "type": "parenthesized_e",
             "named": true
           },
           {
@@ -996,17 +1049,9 @@
     "named": true,
     "fields": {
       "expr": {
-        "multiple": true,
+        "multiple": false,
         "required": true,
         "types": [
-          {
-            "type": "(",
-            "named": false
-          },
-          {
-            "type": ")",
-            "named": false
-          },
           {
             "type": "array_e",
             "named": true
@@ -1045,6 +1090,10 @@
           },
           {
             "type": "intrinsic_e",
+            "named": true
+          },
+          {
+            "type": "parenthesized_e",
             "named": true
           },
           {
@@ -1181,17 +1230,9 @@
     "named": true,
     "fields": {
       "expr": {
-        "multiple": true,
+        "multiple": false,
         "required": true,
         "types": [
-          {
-            "type": "(",
-            "named": false
-          },
-          {
-            "type": ")",
-            "named": false
-          },
           {
             "type": "array_e",
             "named": true
@@ -1230,6 +1271,10 @@
           },
           {
             "type": "intrinsic_e",
+            "named": true
+          },
+          {
+            "type": "parenthesized_e",
             "named": true
           },
           {
@@ -1309,17 +1354,9 @@
     "named": true,
     "fields": {
       "expr": {
-        "multiple": true,
+        "multiple": false,
         "required": true,
         "types": [
-          {
-            "type": "(",
-            "named": false
-          },
-          {
-            "type": ")",
-            "named": false
-          },
           {
             "type": "array_e",
             "named": true
@@ -1358,6 +1395,10 @@
           },
           {
             "type": "intrinsic_e",
+            "named": true
+          },
+          {
+            "type": "parenthesized_e",
             "named": true
           },
           {
@@ -1503,17 +1544,9 @@
         ]
       },
       "expr": {
-        "multiple": true,
+        "multiple": false,
         "required": true,
         "types": [
-          {
-            "type": "(",
-            "named": false
-          },
-          {
-            "type": ")",
-            "named": false
-          },
           {
             "type": "array_e",
             "named": true
@@ -1552,6 +1585,10 @@
           },
           {
             "type": "intrinsic_e",
+            "named": true
+          },
+          {
+            "type": "parenthesized_e",
             "named": true
           },
           {
@@ -1711,17 +1748,9 @@
         ]
       },
       "condition": {
-        "multiple": true,
+        "multiple": false,
         "required": true,
         "types": [
-          {
-            "type": "(",
-            "named": false
-          },
-          {
-            "type": ")",
-            "named": false
-          },
           {
             "type": "array_e",
             "named": true
@@ -1760,6 +1789,10 @@
           },
           {
             "type": "intrinsic_e",
+            "named": true
+          },
+          {
+            "type": "parenthesized_e",
             "named": true
           },
           {
