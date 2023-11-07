@@ -163,6 +163,12 @@ pub struct Typed<T> {
     pub it: T,
 }
 
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum Intrinsic {
+    ArrayLen,
+    ArrayNew,
+}
+
 #[derive(Debug, PartialEq)]
 pub struct StructFieldE {
     pub name: Spanned<String>,
@@ -201,6 +207,14 @@ pub enum Expr {
     Struct {
         fields: Vec<StructFieldE>,
     },
+    StructIdx {
+        expr: Box<TypedExpr>,
+        index: Spanned<String>,
+    },
+    Intrinsic {
+        intrinsic: Intrinsic,
+        arguments: Vec<TypedExpr>,
+    },
 }
 
 pub type TypedDeclaration = Typed<Declaration>;
@@ -230,7 +244,7 @@ pub enum SetTarget {
     },
     Struct {
         name: Typed<String>,
-        index: String,
+        index: Spanned<String>,
     },
     Var {
         name: Typed<String>,

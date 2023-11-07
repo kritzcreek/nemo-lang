@@ -2,8 +2,8 @@ use core::fmt;
 use std::collections::HashMap;
 
 use crate::syntax::{
-    Declaration, Expr, FuncParam, FuncTy, Lit, Op, Program, SetTarget, Span, Spanned, StructField,
-    StructFieldE, Toplevel, Ty, Typed, TypedDeclaration, TypedExpr,
+    Declaration, Expr, FuncParam, FuncTy, Intrinsic, Lit, Op, Program, SetTarget, Span, Spanned,
+    StructField, StructFieldE, Toplevel, Ty, Typed, TypedDeclaration, TypedExpr,
 };
 use tree_sitter::Node;
 
@@ -16,14 +16,16 @@ pub enum TyError {
     UnknownVar(String),
     UnknownFunction(String),
     UnknownType(String),
+    UnknownIntrinsic(String, usize),
     NonArrayIdx(Ty),
+    NonStructIdx(Ty),
     FieldTypeMismatch {
         struct_name: String,
         field_name: String,
         expected: Ty,
         actual: Ty,
     },
-    ExtraField {
+    UnknownField {
         struct_name: String,
         field_name: String,
     },
@@ -47,13 +49,19 @@ impl fmt::Display for TyError {
             TyError::UnknownVar(v) => write!(f, "Unknown variable '{v}'"),
             TyError::UnknownFunction(fun) => write!(f, "Unknown function '{fun}'"),
             TyError::UnknownType(t) => write!(f, "Unknown type '{t}'"),
+            TyError::UnknownIntrinsic(i, arg_count) =>
+              write!(f, "Unknown intrinsic '{i}' with '{arg_count}' arguments"),
             TyError::NonArrayIdx(t) => write!(
                 f,
                 "Tried to access a value of type '{t}', as if it was an array"
             ),
+            TyError::NonStructIdx(t) => write!(
+                f,
+                "Tried to access a value of type '{t}', as if it was a struct"
+            ),
             TyError::FieldTypeMismatch { struct_name, field_name, expected, actual } =>
               write!(f, "Expected a value of type '{expected}' for {struct_name}.{field_name}, but got '{actual}' instead"),
-            TyError::ExtraField { struct_name, field_name } =>
+            TyError::UnknownField { struct_name, field_name } =>
               write!(f, "Unknown field '{field_name}' for struct '{struct_name}'"),
             TyError::MissingField { struct_name, field_name } =>
               write!(f, "Missing field {struct_name}.{field_name}"),
@@ -191,6 +199,16 @@ impl<'a> Typechecker<'a> {
             _ => Err(Spanned::from(
                 span.clone(),
                 TyError::Message(format!("Expected a numeric type, but got {}", ty)),
+            )),
+        }
+    }
+
+    fn expect_ty_array(&self, ty: &Ty, span: &Span) -> TyResult<()> {
+        match ty {
+            Ty::Array(_) => Ok(()),
+            _ => Err(Spanned::from(
+                span.clone(),
+                TyError::Message(format!("Expected an array type, but got {}", ty)),
             )),
         }
     }
@@ -348,7 +366,7 @@ impl<'a> Typechecker<'a> {
             if expected.is_none() {
                 return Err(Spanned {
                     at: actual.name.at.clone(),
-                    it: TyError::ExtraField {
+                    it: TyError::UnknownField {
                         struct_name: struct_name.to_string(),
                         field_name: actual.name.it.clone(),
                     },
@@ -529,21 +547,55 @@ impl<'a> Typechecker<'a> {
                     it,
                 })
             }
+            "set_struct_idx" => {
+                let struct_node = node.child_by_field("struct")?;
+                let struct_ty = ctx.lookup(self.text(&struct_node), &struct_node.into())?;
 
-            //   "set_struct_idx" => {
-            //     let struct_node = target_node.child_by_field("struct")?;
-            //     let struct_ty = self.infer_expr(ctx, &struct_node)?.ty;
+                let (fields, struct_name) = match struct_ty {
+                    Ty::Struct(ref s) => match self.structs.get(s) {
+                        None => unreachable!("Inferred an unknown struct type '{s}'"),
+                        Some(fs) => (fs, s),
+                    },
+                    t => {
+                        return Err(Spanned::from(
+                            struct_node.into(),
+                            TyError::NonStructIdx(t.clone()),
+                        ))
+                    }
+                };
 
-            //     if let Ty::Struct(fields) = struct_ty {
-            //       let field_name = self.text(&target_node.child_by_field("field")?);
-            //       fields.get(&field_name)
-            //         .cloned()
-            //         .ok_or(Spanned::from(struct_node.start_position(), TyError::MissingStructField(field_name)))
-            //     } else {
-            //       Err(Spanned::from(struct_node.start_position(), TyError::InvalidIndexTarget(struct_ty)))
-            //     }
-            //   },
-            _ => unimplemented!(),
+                let index_node = node.child_by_field("index")?;
+                let index = self.text(&index_node);
+
+                let ty = match fields.iter().find(|f| f.name.it == index) {
+                    Some(f) => f.ty.it.clone(),
+                    None => {
+                        return Err(Spanned::from(
+                            index_node.into(),
+                            TyError::UnknownField {
+                                struct_name: struct_name.to_string(),
+                                field_name: index.to_string(),
+                            },
+                        ))
+                    }
+                };
+                Ok(Typed {
+                    ty,
+                    at,
+                    it: SetTarget::Struct {
+                        name: Typed {
+                            ty: struct_ty.clone(),
+                            at: struct_node.into(),
+                            it: self.text(&struct_node).to_string(),
+                        },
+                        index: self.spanned_text(&index_node),
+                    },
+                })
+            }
+            k => Err(Spanned::from(
+                at,
+                TyError::Message(format!("Unhandled set target type: {k}")),
+            )),
         }
     }
 
@@ -722,6 +774,8 @@ impl<'a> Typechecker<'a> {
                     }
                 };
 
+                // TODO: check types of arguments
+
                 Ok(Typed {
                     ty: func_ty.result.clone(),
                     at,
@@ -850,10 +904,80 @@ impl<'a> Typechecker<'a> {
                     },
                 })
             }
-            "struct_idx_e" | "intrinsic_e" => Err(Spanned::from(
-                node.into(),
-                TyError::Message(format!("Unhandled expr type: {}", node.kind())),
-            )),
+            "struct_idx_e" => {
+                let expr_node = node.child_by_field("expr")?;
+                let expr = self.infer_expr(ctx, &expr_node)?;
+                let index_node = node.child_by_field("index")?;
+                let index = self.text(&index_node);
+
+                let (fields, struct_name) = match expr.ty {
+                    Ty::Struct(ref s) => match self.structs.get(s) {
+                        None => unreachable!("Inferred an unknown struct type '{s}'"),
+                        Some(fs) => (fs, s),
+                    },
+                    t => return Err(Spanned::from(expr.at, TyError::NonStructIdx(t))),
+                };
+
+                let ty = match fields.iter().find(|f| f.name.it == index) {
+                    Some(f) => f.ty.it.clone(),
+                    None => {
+                        return Err(Spanned::from(
+                            index_node.into(),
+                            TyError::UnknownField {
+                                struct_name: struct_name.to_string(),
+                                field_name: index.to_string(),
+                            },
+                        ))
+                    }
+                };
+
+                Ok(Typed {
+                    ty,
+                    at,
+                    it: Expr::StructIdx {
+                        expr: Box::new(expr),
+                        index: self.spanned_text(&index_node),
+                    },
+                })
+            }
+            "intrinsic_e" => {
+                let function_node = node.child_by_field("function")?;
+                let function = self.text(&function_node);
+
+                let call_args_node = node.child_by_field("arguments")?;
+                let call_args = self.infer_call_args(ctx, call_args_node)?;
+
+                match (function, call_args.len()) {
+                    ("@array_len", 1) => {
+                        self.expect_ty_array(&call_args[0].ty, &call_args[0].at)?;
+                        return Ok(Typed {
+                            ty: Ty::I32,
+                            at,
+                            it: Expr::Intrinsic {
+                                intrinsic: Intrinsic::ArrayLen,
+                                arguments: call_args,
+                            },
+                        });
+                    }
+                    ("@array_new", 2) => {
+                        self.expect_ty(&Ty::I32, &call_args[1].ty, &call_args[1].at)?;
+                        return Ok(Typed {
+                            ty: Ty::Array(Box::new(call_args[0].ty.clone())),
+                            at,
+                            it: Expr::Intrinsic {
+                                intrinsic: Intrinsic::ArrayNew,
+                                arguments: call_args,
+                            },
+                        });
+                    }
+                    (f, arg_count) => {
+                        return Err(Spanned {
+                            it: TyError::UnknownIntrinsic(f.to_string(), arg_count),
+                            at,
+                        })
+                    }
+                }
+            }
             k => unreachable!("Unknown expr type: {}", k),
         }
     }

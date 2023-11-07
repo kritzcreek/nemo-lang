@@ -60,8 +60,11 @@ module.exports = grammar({
         field('struct', $.upper_ident),
         '{', comma_sep_trailing($.struct_field_e), '}'
       ),
-      struct_idx_e: $ => seq($._expr, '.', $.lower_ident),
-
+      struct_idx_e: ($) => seq(
+          field('expr', $._expr), 
+          ".", 
+          field('index', $.lower_ident)
+      ),
       if_e: $ => seq(
         'if',
         field('condition', $._expr),
@@ -82,7 +85,10 @@ module.exports = grammar({
         '}'
       ),
 
-      intrinsic_e: $ => seq($.intrinsic_ident, $.call_args),
+      intrinsic_e: $ => seq(
+        field('function', $.intrinsic_ident), 
+        field('arguments', $.call_args)
+      ),
       binary_e: $ => make_binary_rules($._expr),
 
       _parenthesized_e: $ => seq('(', $._expr, ')'),
