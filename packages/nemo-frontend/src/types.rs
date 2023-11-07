@@ -20,6 +20,7 @@ pub enum TyError {
     UnknownIntrinsic(String, usize),
     NonArrayIdx(Ty),
     NonStructIdx(Ty),
+    ArgCountMismatch(usize, usize),
     FieldTypeMismatch {
         struct_name: String,
         field_name: String,
@@ -52,6 +53,8 @@ impl fmt::Display for TyError {
             TyError::UnknownType(t) => write!(f, "Unknown type '{t}'"),
             TyError::UnknownIntrinsic(i, arg_count) =>
               write!(f, "Unknown intrinsic '{i}' with '{arg_count}' arguments"),
+            TyError::ArgCountMismatch(expected, actual) =>
+                write!(f, "Expected {expected} arguments, but got {actual} instead"),
             TyError::NonArrayIdx(t) => write!(
                 f,
                 "Tried to access a value of type '{t}', as if it was an array"
@@ -93,6 +96,7 @@ fn is_expr_kind(s: &str) -> bool {
             | "bool_lit"
             | "var_e"
             | "parenthesized_e"
+            | "call_e"
             | "binary_e"
             | "block_e"
             | "array_e"
@@ -785,7 +789,15 @@ impl<'a> Typechecker<'a> {
                 let func_ty =
                     self.lookup_function(self.text(&function_node), &function_node.into())?;
 
-                // TODO: check types of arguments
+                if func_ty.arguments.len() != call_args.len() {
+                    return Err(
+                        Spanned { it: TyError::ArgCountMismatch(
+                            func_ty.arguments.len(),
+                            call_args.len()), at: call_args_node.into() })
+                }
+                for (expected, actual) in func_ty.arguments.iter().zip(call_args.iter()) {
+                    self.expect_ty(expected, &actual.ty, &actual.at)?
+                }
 
                 Ok(Typed {
                     ty: func_ty.result.clone(),
