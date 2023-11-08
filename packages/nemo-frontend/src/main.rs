@@ -1,4 +1,4 @@
-use nemo_frontend::types::Typechecker;
+use nemo_frontend::{types::Typechecker, pretty::Printer};
 use tree_sitter::Parser;
 use tree_sitter_nemo;
 
@@ -12,7 +12,10 @@ pub fn parse() {
 
     let tc = Typechecker::new(EXAMPLE_PROG);
     match tc.infer_prog(root_node) {
-        Ok(tl) => println!("{tl:?}"),
+        Ok(tl) => {
+            let printer = Printer::new(true);
+            println!("{}", printer.print_program(&tl))
+        },
         Err(err) => println!("{err}"),
     };
     assert!(!root_node.to_sexp().contains("ERROR"))
