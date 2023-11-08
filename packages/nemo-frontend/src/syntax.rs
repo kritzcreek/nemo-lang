@@ -205,6 +205,7 @@ pub enum Expr {
         declarations: Vec<TypedDeclaration>,
     },
     Struct {
+        name: Spanned<String>,
         fields: Vec<StructFieldE>,
     },
     StructIdx {

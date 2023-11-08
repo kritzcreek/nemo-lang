@@ -108,7 +108,7 @@ fn is_expr_kind(s: &str) -> bool {
     )
 }
 
-type TyResult<T> = Result<T, Spanned<TyError>>;
+pub type TyResult<T> = Result<T, Spanned<TyError>>;
 
 struct Ctx {
     values: Vec<HashMap<String, Ty>>,
@@ -510,7 +510,6 @@ impl<'a> Typechecker<'a> {
             .filter(|n| is_expr_kind(n.kind()))
             .map(|n| self.infer_expr(ctx, &n))
             .collect()
-
     }
 
     fn infer_set_target(&self, ctx: &mut Ctx, node: &Node) -> TyResult<Typed<SetTarget>> {
@@ -790,10 +789,10 @@ impl<'a> Typechecker<'a> {
                     self.lookup_function(self.text(&function_node), &function_node.into())?;
 
                 if func_ty.arguments.len() != call_args.len() {
-                    return Err(
-                        Spanned { it: TyError::ArgCountMismatch(
-                            func_ty.arguments.len(),
-                            call_args.len()), at: call_args_node.into() })
+                    return Err(Spanned {
+                        it: TyError::ArgCountMismatch(func_ty.arguments.len(), call_args.len()),
+                        at: call_args_node.into(),
+                    });
                 }
                 for (expected, actual) in func_ty.arguments.iter().zip(call_args.iter()) {
                     self.expect_ty(expected, &actual.ty, &actual.at)?
@@ -923,6 +922,7 @@ impl<'a> Typechecker<'a> {
                     ty: Ty::Struct(struct_name.to_string()),
                     at,
                     it: Expr::Struct {
+                        name: self.spanned_text(&struct_name_node),
                         fields: actual_fields,
                     },
                 })
