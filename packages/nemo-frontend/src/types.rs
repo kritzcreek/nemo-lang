@@ -81,7 +81,7 @@ trait TyNode {
 
 impl TyNode for Node<'_> {
     fn child_by_field(&self, field: &str) -> TyResult<Node<'_>> {
-        self.child_by_field_name(field).ok_or(Spanned::from(
+        self.child_by_field_name(field).ok_or(Spanned::new(
             self.into(),
             TyError::MissingNode(field.to_string()),
         ))
@@ -126,7 +126,7 @@ impl Ctx {
     pub fn lookup(&self, v: &str, span: &Span) -> TyResult<&Ty> {
         match self.values.iter().rev().find_map(|scope| scope.get(v)) {
             Some(t) => Ok(t),
-            None => Err(Spanned::from(
+            None => Err(Spanned::new(
                 span.clone(),
                 TyError::UnknownVar(v.to_string()),
             )),
@@ -162,7 +162,7 @@ impl<'a> Typechecker<'a> {
             Some((_, ty)) => Ok(ty),
             None => match builtins::lookup_builtin(name) {
                 Some(f) => Ok(&f.ty),
-                None => Err(Spanned::from(
+                None => Err(Spanned::new(
                     span.clone(),
                     TyError::UnknownFunction(name.to_string()),
                 )),
@@ -175,7 +175,7 @@ impl<'a> Typechecker<'a> {
     }
 
     fn spanned_text(&self, node: &Node<'_>) -> Spanned<String> {
-        Spanned::from(node.into(), self.text(node).to_string())
+        Spanned::new(node.into(), self.text(node).to_string())
     }
 
     fn check_ty(&self, ty: &Ty, span: &Span) -> TyResult<()> {
@@ -185,7 +185,7 @@ impl<'a> Typechecker<'a> {
                 if self.structs.contains_key(n) {
                     Ok(())
                 } else {
-                    Err(Spanned::from(
+                    Err(Spanned::new(
                         span.clone(),
                         TyError::UnknownType(n.to_string()),
                     ))
@@ -203,7 +203,7 @@ impl<'a> Typechecker<'a> {
             (Ty::Bool, Ty::Bool) => Ok(()),
             (Ty::Array(t1), Ty::Array(t2)) => self.expect_ty(t1, t2, span),
             (Ty::Struct(s1), Ty::Struct(s2)) if s1 == s2 => Ok(()),
-            _ => Err(Spanned::from(
+            _ => Err(Spanned::new(
                 span.clone(),
                 TyError::TypeMismatch {
                     expected: ty1.clone(),
@@ -216,7 +216,7 @@ impl<'a> Typechecker<'a> {
     fn expect_ty_num(&self, ty: &Ty, span: &Span) -> TyResult<()> {
         match ty {
             Ty::I32 | Ty::F32 => Ok(()),
-            _ => Err(Spanned::from(
+            _ => Err(Spanned::new(
                 span.clone(),
                 TyError::Message(format!("Expected a numeric type, but got {}", ty)),
             )),
@@ -226,7 +226,7 @@ impl<'a> Typechecker<'a> {
     fn expect_ty_array(&self, ty: &Ty, span: &Span) -> TyResult<()> {
         match ty {
             Ty::Array(_) => Ok(()),
-            _ => Err(Spanned::from(
+            _ => Err(Spanned::new(
                 span.clone(),
                 TyError::Message(format!("Expected an array type, but got {}", ty)),
             )),
@@ -355,7 +355,7 @@ impl<'a> Typechecker<'a> {
             let actual = actual_fields.iter().find(|f| f.name.it == expected.name.it);
             match actual {
                 None => {
-                    return Err(Spanned::from(
+                    return Err(Spanned::new(
                         span.clone(),
                         TyError::MissingField {
                             struct_name: struct_name.to_string(),
@@ -439,7 +439,7 @@ impl<'a> Typechecker<'a> {
             .collect::<TyResult<Vec<_>>>()?;
         let result_node = node.child_by_field("result")?;
         let result = self.convert_ty(result_node)?;
-        Ok(Spanned::from(
+        Ok(Spanned::new(
             node.into(),
             FuncTy {
                 arguments,
@@ -461,7 +461,7 @@ impl<'a> Typechecker<'a> {
             "ty_struct" => Ty::Struct(self.text(&node).to_string()),
             _ => unreachable!("Unknown type of type"),
         };
-        Ok(Spanned::from(node.into(), ty))
+        Ok(Spanned::new(node.into(), ty))
     }
 
     pub fn infer_prog(mut self, node: Node<'_>) -> TyResult<Program> {
@@ -542,7 +542,7 @@ impl<'a> Typechecker<'a> {
                     let elem_ty = if let Ty::Array(ref elem_ty) = array_ty {
                         *elem_ty.clone()
                     } else {
-                        return Err(Spanned::from(
+                        return Err(Spanned::new(
                             array_node.into(),
                             TyError::NonArrayIdx(array_ty.clone()),
                         ));
@@ -577,7 +577,7 @@ impl<'a> Typechecker<'a> {
                         Some(fs) => (fs, s),
                     },
                     t => {
-                        return Err(Spanned::from(
+                        return Err(Spanned::new(
                             struct_node.into(),
                             TyError::NonStructIdx(t.clone()),
                         ))
@@ -590,7 +590,7 @@ impl<'a> Typechecker<'a> {
                 let ty = match fields.iter().find(|f| f.name.it == index) {
                     Some(f) => f.ty.it.clone(),
                     None => {
-                        return Err(Spanned::from(
+                        return Err(Spanned::new(
                             index_node.into(),
                             TyError::UnknownField {
                                 struct_name: struct_name.to_string(),
@@ -612,7 +612,7 @@ impl<'a> Typechecker<'a> {
                     },
                 })
             }
-            k => Err(Spanned::from(
+            k => Err(Spanned::new(
                 at,
                 TyError::Message(format!("Unhandled set target type: {k}")),
             )),
@@ -677,7 +677,7 @@ impl<'a> Typechecker<'a> {
                 })
             }
 
-            k => Err(Spanned::from(
+            k => Err(Spanned::new(
                 at,
                 TyError::Message(format!("Unhandled decl type: {k}")),
             )),
@@ -692,7 +692,7 @@ impl<'a> Typechecker<'a> {
                 let lit = Lit::I32(
                     self.text(node)
                         .parse()
-                        .map_err(|_| Spanned::from(node.into(), TyError::InvalidLiteral))?,
+                        .map_err(|_| Spanned::new(node.into(), TyError::InvalidLiteral))?,
                 );
                 Ok(Typed {
                     ty: Ty::I32,
@@ -704,7 +704,7 @@ impl<'a> Typechecker<'a> {
                 let lit = Lit::F32(
                     self.text(node)
                         .parse()
-                        .map_err(|_| Spanned::from(node.into(), TyError::InvalidLiteral))?,
+                        .map_err(|_| Spanned::new(node.into(), TyError::InvalidLiteral))?,
                 );
                 Ok(Typed {
                     ty: Ty::F32,
@@ -716,7 +716,7 @@ impl<'a> Typechecker<'a> {
                 let lit = Lit::Bool(
                     self.text(node)
                         .parse()
-                        .map_err(|_| Spanned::from(node.into(), TyError::InvalidLiteral))?,
+                        .map_err(|_| Spanned::new(node.into(), TyError::InvalidLiteral))?,
                 );
                 Ok(Typed {
                     ty: Ty::Bool,
@@ -774,7 +774,7 @@ impl<'a> Typechecker<'a> {
                     ty,
                     at,
                     it: Expr::Binary {
-                        op: Spanned::from(op_node.into(), op),
+                        op: Spanned::new(op_node.into(), op),
                         left: Box::new(left),
                         right: Box::new(right),
                     },
@@ -837,7 +837,7 @@ impl<'a> Typechecker<'a> {
                 let index = self.infer_expr(ctx, &index_node)?;
                 let ty_elem = match array.ty {
                     Ty::Array(ref t) => *t.clone(),
-                    t => return Err(Spanned::from(at.clone(), TyError::NonArrayIdx(t))),
+                    t => return Err(Spanned::new(at.clone(), TyError::NonArrayIdx(t))),
                 };
                 self.expect_ty(&Ty::I32, &index.ty, &index.at)?;
                 Ok(Typed {
@@ -891,7 +891,7 @@ impl<'a> Typechecker<'a> {
                 let struct_name_node = node.child_by_field("struct")?;
                 let struct_name = self.text(&struct_name_node);
                 let expected_fields = match self.structs.get(struct_name) {
-                    None => return Err(Spanned::from(struct_name_node.into(), TyError::UnknownType(struct_name.to_string()))),
+                    None => return Err(Spanned::new(struct_name_node.into(), TyError::UnknownType(struct_name.to_string()))),
                     Some(s) => s,
                 };
                 let mut cursor = node.walk();
@@ -938,13 +938,13 @@ impl<'a> Typechecker<'a> {
                         None => unreachable!("Inferred an unknown struct type '{s}'"),
                         Some(fs) => (fs, s),
                     },
-                    t => return Err(Spanned::from(expr.at, TyError::NonStructIdx(t))),
+                    t => return Err(Spanned::new(expr.at, TyError::NonStructIdx(t))),
                 };
 
                 let ty = match fields.iter().find(|f| f.name.it == index) {
                     Some(f) => f.ty.it.clone(),
                     None => {
-                        return Err(Spanned::from(
+                        return Err(Spanned::new(
                             index_node.into(),
                             TyError::UnknownField {
                                 struct_name: struct_name.to_string(),

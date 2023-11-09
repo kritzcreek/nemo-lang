@@ -72,7 +72,7 @@ pub struct Spanned<T> {
 }
 
 impl<T> Spanned<T> {
-    pub fn from(at: Span, it: T) -> Spanned<T> {
+    pub fn new(at: Span, it: T) -> Spanned<T> {
         Spanned { it, at }
     }
 }
