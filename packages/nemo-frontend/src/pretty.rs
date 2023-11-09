@@ -69,7 +69,7 @@ impl Printer {
         }
     }
 
-    fn pretty_expr_list(&self, exprs: &Vec<TypedExpr>) -> Doc {
+    fn pretty_expr_list(&self, exprs: &[TypedExpr]) -> Doc {
         Doc::intersperse(
             exprs.iter().map(|e| self.pretty_expr(e)),
             Doc::text(",").append(Doc::line()),

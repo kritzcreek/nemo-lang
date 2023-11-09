@@ -180,7 +180,7 @@ impl<'a> Typechecker<'a> {
 
     fn check_ty(&self, ty: &Ty, span: &Span) -> TyResult<()> {
         match ty {
-            Ty::Array(t) => self.check_ty(&t, span),
+            Ty::Array(t) => self.check_ty(t, span),
             Ty::Struct(n) => {
                 if self.structs.contains_key(n) {
                     Ok(())
@@ -356,7 +356,7 @@ impl<'a> Typechecker<'a> {
             match actual {
                 None => {
                     return Err(Spanned::new(
-                        span.clone(),
+                        span,
                         TyError::MissingField {
                             struct_name: struct_name.to_string(),
                             field_name: expected.name.it.clone(),
@@ -500,7 +500,7 @@ impl<'a> Typechecker<'a> {
         }
         global_ctx.leave_block();
         assert!(global_ctx.values.is_empty());
-        return Ok(Program { toplevels });
+        Ok(Program { toplevels })
     }
 
     fn infer_call_args(&self, ctx: &mut Ctx, node: Node<'_>) -> TyResult<Vec<TypedExpr>> {
@@ -518,7 +518,7 @@ impl<'a> Typechecker<'a> {
             "set_var" => {
                 let name_node = node.child_by_field("name")?;
                 let name = self.text(&name_node);
-                let ty = ctx.lookup(&name, &name_node.into())?;
+                let ty = ctx.lookup(name, &name_node.into())?;
                 let it = SetTarget::Var {
                     name: Typed {
                         ty: ty.clone(),
@@ -555,7 +555,7 @@ impl<'a> Typechecker<'a> {
                 self.expect_ty(&Ty::I32, &index.ty, &index.at)?;
                 let it = SetTarget::Array {
                     name: Typed {
-                        ty: array_ty.clone(),
+                        ty: array_ty,
                         at: array_node.into(),
                         it: array.to_string(),
                     },
@@ -837,7 +837,7 @@ impl<'a> Typechecker<'a> {
                 let index = self.infer_expr(ctx, &index_node)?;
                 let ty_elem = match array.ty {
                     Ty::Array(ref t) => *t.clone(),
-                    t => return Err(Spanned::new(at.clone(), TyError::NonArrayIdx(t))),
+                    t => return Err(Spanned::new(at, TyError::NonArrayIdx(t))),
                 };
                 self.expect_ty(&Ty::I32, &index.ty, &index.at)?;
                 Ok(Typed {
@@ -881,11 +881,7 @@ impl<'a> Typechecker<'a> {
                     .last()
                     .map(|d| d.ty.clone())
                     .unwrap_or(Ty::Unit);
-                Ok(Typed {
-                    ty: ty.clone(),
-                    at,
-                    it: Expr::Block { declarations },
-                })
+                Ok(Typed {ty, at, it: Expr::Block { declarations }})
             }
             "struct_e" => {
                 let struct_name_node = node.child_by_field("struct")?;
@@ -973,28 +969,28 @@ impl<'a> Typechecker<'a> {
                 match (function, call_args.len()) {
                     ("@array_len", 1) => {
                         self.expect_ty_array(&call_args[0].ty, &call_args[0].at)?;
-                        return Ok(Typed {
+                        Ok(Typed {
                             ty: Ty::I32,
                             at,
                             it: Expr::Intrinsic {
                                 intrinsic: Intrinsic::ArrayLen,
                                 arguments: call_args,
                             },
-                        });
+                        })
                     }
                     ("@array_new", 2) => {
                         self.expect_ty(&Ty::I32, &call_args[1].ty, &call_args[1].at)?;
-                        return Ok(Typed {
+                        Ok(Typed {
                             ty: Ty::Array(Box::new(call_args[0].ty.clone())),
                             at,
                             it: Expr::Intrinsic {
                                 intrinsic: Intrinsic::ArrayNew,
                                 arguments: call_args,
                             },
-                        });
+                        })
                     }
                     (f, arg_count) => {
-                        return Err(Spanned {
+                        Err(Spanned {
                             it: TyError::UnknownIntrinsic(f.to_string(), arg_count),
                             at,
                         })

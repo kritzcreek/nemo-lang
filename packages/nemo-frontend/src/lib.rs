@@ -4,7 +4,6 @@ pub mod syntax;
 pub mod types;
 
 use tree_sitter::Parser;
-use tree_sitter_nemo;
 
 pub fn check_program(program: &str) -> types::TyResult<syntax::Program> {
     let mut parser = Parser::new();

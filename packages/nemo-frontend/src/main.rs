@@ -1,6 +1,5 @@
 use nemo_frontend::{types::Typechecker, pretty::Printer};
 use tree_sitter::Parser;
-use tree_sitter_nemo;
 
 const EXAMPLE_PROG: &str = include_str!("../example.nemo");
 
