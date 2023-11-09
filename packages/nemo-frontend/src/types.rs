@@ -973,7 +973,7 @@ impl<'a> Typechecker<'a> {
                             ty: Ty::I32,
                             at,
                             it: Expr::Intrinsic {
-                                intrinsic: Intrinsic::ArrayLen,
+                                intrinsic: Spanned::new(function_node.into(), Intrinsic::ArrayLen),
                                 arguments: call_args,
                             },
                         })
@@ -984,7 +984,7 @@ impl<'a> Typechecker<'a> {
                             ty: Ty::Array(Box::new(call_args[0].ty.clone())),
                             at,
                             it: Expr::Intrinsic {
-                                intrinsic: Intrinsic::ArrayNew,
+                                intrinsic: Spanned::new(function_node.into(), Intrinsic::ArrayNew),
                                 arguments: call_args,
                             },
                         })

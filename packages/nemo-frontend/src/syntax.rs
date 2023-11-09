@@ -213,7 +213,7 @@ pub enum Expr {
         index: Spanned<String>,
     },
     Intrinsic {
-        intrinsic: Intrinsic,
+        intrinsic: Spanned<Intrinsic>,
         arguments: Vec<TypedExpr>,
     },
 }

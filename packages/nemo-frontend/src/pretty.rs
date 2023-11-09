@@ -171,10 +171,10 @@ impl Printer {
                 .append(Doc::text("."))
                 .append(index.it.to_string()),
             Expr::Intrinsic {
-                intrinsic,
+                ref intrinsic,
                 ref arguments,
             } => self
-                .pretty_intrinsic(intrinsic)
+                .pretty_intrinsic(intrinsic.it)
                 .append(Doc::text("("))
                 .append(self.pretty_expr_list(arguments))
                 .append(Doc::text(")")),
