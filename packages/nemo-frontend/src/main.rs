@@ -4,7 +4,7 @@ use tree_sitter_nemo;
 
 const EXAMPLE_PROG: &str = include_str!("../example.nemo");
 
-pub fn parse() {
+pub fn main() {
     let mut parser = Parser::new();
     parser.set_language(tree_sitter_nemo::language()).unwrap();
     let tree = parser.parse(EXAMPLE_PROG, None).unwrap();
@@ -19,8 +19,4 @@ pub fn parse() {
         Err(err) => println!("{err}"),
     };
     assert!(!root_node.to_sexp().contains("ERROR"))
-}
-
-fn main() {
-    parse()
 }
