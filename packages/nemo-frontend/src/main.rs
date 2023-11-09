@@ -1,4 +1,4 @@
-use nemo_frontend::{types::Typechecker, pretty::Printer};
+use nemo_frontend::{pretty::Printer, types::Typechecker};
 use tree_sitter::Parser;
 
 const EXAMPLE_PROG: &str = include_str!("../example.nemo");
@@ -14,7 +14,7 @@ pub fn main() {
         Ok(tl) => {
             let printer = Printer::new(true);
             println!("{}", printer.print_program(&tl))
-        },
+        }
         Err(err) => println!("{err}"),
     };
     assert!(!root_node.to_sexp().contains("ERROR"))

@@ -881,13 +881,22 @@ impl<'a> Typechecker<'a> {
                     .last()
                     .map(|d| d.ty.clone())
                     .unwrap_or(Ty::Unit);
-                Ok(Typed {ty, at, it: Expr::Block { declarations }})
+                Ok(Typed {
+                    ty,
+                    at,
+                    it: Expr::Block { declarations },
+                })
             }
             "struct_e" => {
                 let struct_name_node = node.child_by_field("struct")?;
                 let struct_name = self.text(&struct_name_node);
                 let expected_fields = match self.structs.get(struct_name) {
-                    None => return Err(Spanned::new(struct_name_node.into(), TyError::UnknownType(struct_name.to_string()))),
+                    None => {
+                        return Err(Spanned::new(
+                            struct_name_node.into(),
+                            TyError::UnknownType(struct_name.to_string()),
+                        ))
+                    }
                     Some(s) => s,
                 };
                 let mut cursor = node.walk();
@@ -989,12 +998,10 @@ impl<'a> Typechecker<'a> {
                             },
                         })
                     }
-                    (f, arg_count) => {
-                        Err(Spanned {
-                            it: TyError::UnknownIntrinsic(f.to_string(), arg_count),
-                            at,
-                        })
-                    }
+                    (f, arg_count) => Err(Spanned {
+                        it: TyError::UnknownIntrinsic(f.to_string(), arg_count),
+                        at,
+                    }),
                 }
             }
             k => unreachable!("Unknown expr type: {}", k),

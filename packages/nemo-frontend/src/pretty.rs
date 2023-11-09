@@ -104,7 +104,8 @@ impl Printer {
                 .append(Doc::line())
                 .append(self.pretty_expr_list(elements))
                 .append(Doc::line())
-                .append(Doc::text("]")).group(),
+                .append(Doc::text("]"))
+                .group(),
             Expr::ArrayIdx {
                 ref array,
                 ref index,
@@ -130,15 +131,16 @@ impl Printer {
                 if declarations.is_empty() {
                     Doc::text("{}")
                 } else {
-                let decls = Doc::intersperse(
-                    declarations.iter().map(|d| self.pretty_decl(d)),
-                    Doc::text(";").append(Doc::hardline()),
-                );
-                Doc::text("{")
-                    .append(Doc::hardline())
-                    .append(decls.group())
-                    .append(Doc::hardline()).nest(2)
-                    .append(Doc::text("}"))
+                    let decls = Doc::intersperse(
+                        declarations.iter().map(|d| self.pretty_decl(d)),
+                        Doc::text(";").append(Doc::hardline()),
+                    );
+                    Doc::text("{")
+                        .append(Doc::hardline())
+                        .append(decls.group())
+                        .append(Doc::hardline())
+                        .nest(2)
+                        .append(Doc::text("}"))
                 }
             }
             Expr::Struct {
@@ -153,15 +155,15 @@ impl Printer {
                     }),
                     Doc::text(",").append(Doc::line()),
                 );
-                Doc::text(name.it.to_string())
-                .append(Doc::space())
-                .append(Doc::text("{")
-                  .append(Doc::line())
-                  .append(fields)
-                  .append(Doc::line())
-                  .nest(2)
-                  .append(Doc::text("}"))
-                  .group())
+                Doc::text(name.it.to_string()).append(Doc::space()).append(
+                    Doc::text("{")
+                        .append(Doc::line())
+                        .append(fields)
+                        .append(Doc::line())
+                        .nest(2)
+                        .append(Doc::text("}"))
+                        .group(),
+                )
             }
             Expr::StructIdx {
                 ref expr,
@@ -223,7 +225,8 @@ impl Printer {
                 .append(Doc::space())
                 .append(Doc::text("="))
                 .append(Doc::line())
-                .append(self.pretty_expr(expr).nest(1)).group(),
+                .append(self.pretty_expr(expr).nest(1))
+                .group(),
             Declaration::Set {
                 ref set_target,
                 ref expr,
@@ -232,7 +235,8 @@ impl Printer {
                 .append(Doc::space())
                 .append(Doc::text("="))
                 .append(Doc::line())
-                .append(self.pretty_expr(expr).nest(2)).group(),
+                .append(self.pretty_expr(expr).nest(2))
+                .group(),
             Declaration::While {
                 ref condition,
                 ref body,
@@ -281,14 +285,18 @@ impl Printer {
                 .append(Doc::space())
                 .append(Doc::text("{"))
                 .append(Doc::line())
-                .append(Doc::intersperse(
-                    fields.iter().map(|f| {
-                        Doc::text(f.name.it.to_string())
-                            .append(Doc::text(" : "))
-                            .append(self.pretty_ty(&f.ty.it))
-                    }),
-                    Doc::text(",").append(Doc::hardline()),
-                ).group()).nest(2)
+                .append(
+                    Doc::intersperse(
+                        fields.iter().map(|f| {
+                            Doc::text(f.name.it.to_string())
+                                .append(Doc::text(" : "))
+                                .append(self.pretty_ty(&f.ty.it))
+                        }),
+                        Doc::text(",").append(Doc::hardline()),
+                    )
+                    .group(),
+                )
+                .nest(2)
                 .append(Doc::line())
                 .append(Doc::text("}")),
             Toplevel::TopFunc {
@@ -299,14 +307,17 @@ impl Printer {
             } => Doc::text("fn ")
                 .append(Doc::text(name.it.to_string()))
                 .append(Doc::text("("))
-                .append(Doc::intersperse(
-                    params.iter().map(|f| {
-                        Doc::text(f.name.it.to_string())
-                            .append(Doc::text(" : "))
-                            .append(self.pretty_ty(&f.ty.it))
-                    }),
-                    Doc::text(",").append(Doc::line()),
-                ).group())
+                .append(
+                    Doc::intersperse(
+                        params.iter().map(|f| {
+                            Doc::text(f.name.it.to_string())
+                                .append(Doc::text(" : "))
+                                .append(self.pretty_ty(&f.ty.it))
+                        }),
+                        Doc::text(",").append(Doc::line()),
+                    )
+                    .group(),
+                )
                 .append(Doc::text(")"))
                 .append(self.pretty_return_ty(return_ty))
                 .append(self.pretty_expr(body)),
