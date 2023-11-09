@@ -891,7 +891,7 @@ impl<'a> Typechecker<'a> {
                 let struct_name_node = node.child_by_field("struct")?;
                 let struct_name = self.text(&struct_name_node);
                 let expected_fields = match self.structs.get(struct_name) {
-                    None => todo!(),
+                    None => return Err(Spanned::from(struct_name_node.into(), TyError::UnknownType(struct_name.to_string()))),
                     Some(s) => s,
                 };
                 let mut cursor = node.walk();
