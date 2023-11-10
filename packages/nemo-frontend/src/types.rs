@@ -8,8 +8,49 @@ use crate::syntax::{
 };
 use tree_sitter::Node;
 
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub enum Ty {
+    I32,
+    F32,
+    Unit,
+    Bool,
+    Array(Box<Ty>),
+    Struct(String),
+}
+
+impl fmt::Display for Ty {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Ty::I32 => write!(f, "i32"),
+            Ty::F32 => write!(f, "f32"),
+            Ty::Bool => write!(f, "bool"),
+            Ty::Unit => write!(f, "unit"),
+            Ty::Array(t) => write!(f, "[{}]", t),
+            Ty::Struct(t) => write!(f, "{}", t),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub struct FuncTy {
+    pub arguments: Vec<Ty>,
+    pub result: Ty,
+}
+
 #[derive(Debug)]
-pub enum TyError {
+pub struct TyError {
+    at: Span,
+    it: TyErrorData,
+}
+
+impl Spanned for TyError {
+    fn at(&self) -> &Span {
+        &self.at
+    }
+}
+
+#[derive(Debug)]
+pub enum TyErrorData {
     MissingNode(String),
     InvalidLiteral,
     InvalidOperator,
@@ -42,6 +83,12 @@ pub enum TyError {
 }
 
 impl fmt::Display for TyError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} {}", self.at, self.it)
+    }
+}
+
+impl fmt::Display for TyErrorData {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             TyError::MissingNode(s) => write!(f, "Missing node: '{s}'"),
@@ -108,7 +155,7 @@ fn is_expr_kind(s: &str) -> bool {
     )
 }
 
-pub type TyResult<T> = Result<T, Spanned<TyError>>;
+pub type TyResult<T> = Result<T, TyError>;
 
 struct Ctx {
     values: Vec<HashMap<String, Ty>>,
@@ -144,7 +191,7 @@ impl Ctx {
 
 pub struct Typechecker<'a> {
     source: &'a [u8],
-    structs: HashMap<String, Vec<StructField>>,
+    structs: HashMap<String, (Span, Vec<(Id, Ty)>)>,
     functions: HashMap<String, (Span, FuncTy)>,
 }
 
@@ -162,10 +209,20 @@ impl<'a> Typechecker<'a> {
             Some((_, ty)) => Ok(ty),
             None => match builtins::lookup_builtin(name) {
                 Some(f) => Ok(&f.ty),
-                None => Err(Spanned::new(
-                    span.clone(),
-                    TyError::UnknownFunction(name.to_string()),
-                )),
+                None => Err(TyError {
+                    at: span.clone(),
+                    it: TyErrorData::UnknownFunction(name.to_string()),
+                }),
+            },
+        }
+    }
+
+    fn lookup_struct(&self, name: &str, span: &Span) -> TyResult<&[(Id, Ty)]> {
+        match self.structs.get(name) {
+            Some((_, fields)) => fields,
+            None => TyError {
+                at: span.clone(),
+                it: TyErrorData::UnknownType(name.to_string()),
             },
         }
     }
@@ -174,14 +231,20 @@ impl<'a> Typechecker<'a> {
         node.utf8_text(self.source).unwrap()
     }
 
-    fn spanned_text(&self, node: &Node<'_>) -> Spanned<String> {
-        Spanned::new(node.into(), self.text(node).to_string())
+    fn id(&self, node: &Node<'_>) -> Id {
+        Id {
+            at: node.into(),
+            it: self.text(node).to_string(),
+        }
     }
 
-    fn check_ty(&self, ty: &Ty, span: &Span) -> TyResult<()> {
-        match ty {
-            Ty::Array(t) => self.check_ty(t, span),
-            Ty::Struct(n) => {
+    fn check_ty(&self, ty: &Type) -> TyResult<Ty> {
+        match ty.it {
+            TypeData::Array(t) => {
+                let inner = self.check_ty(t)?;
+                Ty
+            }
+            TypeData::Struct(n) => {
                 if self.structs.contains_key(n) {
                     Ok(())
                 } else {

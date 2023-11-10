@@ -65,26 +65,90 @@ impl fmt::Display for Span {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
-pub struct Spanned<T> {
-    pub it: T,
-    pub at: Span,
+pub trait Spanned {
+    fn at(&self) -> &Span;
 }
 
-impl<T> Spanned<T> {
-    pub fn new(at: Span, it: T) -> Spanned<T> {
-        Spanned { it, at }
+#[derive(Debug, PartialEq, Eq)]
+pub struct Type {
+    it: Box<TypeData>,
+    at: Span,
+    ty: Ty,
+}
+
+impl Spanned for Type {
+    fn at(&self) -> &Span {
+        &self.at
     }
 }
 
-impl<T: fmt::Display> fmt::Display for Spanned<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{} {}", self.at, self.it)
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub enum TypeData {
+    I32,
+    F32,
+    Unit,
+    Bool,
+    Array(TypeData),
+    Struct(String),
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct FuncType {
+    it: FuncTypeData,
+    at: Span,
+    ty: FuncTy,
+}
+
+impl Spanned for FuncType {
+    fn at(&self) -> &Span {
+        &self.at
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct FuncTypeData {
+    arguments: Vec<Type>,
+    result: Type,
+}
+
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub struct Id {
+    pub it: String,
+    pub span: Span,
+}
+
+impl Spanned for Id {
+    fn at(&self) -> &Span {
+        &self.at
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub struct FuncId {
+    pub it: String,
+    pub span: Span,
+    pub ty: FuncTy,
+}
+
+impl Spanned for FuncId {
+    fn at(&self) -> &Span {
+        &self.at
+    }
+}
+
+pub struct Op {
+    it: OpData,
+    at: Span,
+}
+
+impl Spanned for Op {
+    fn at(&self) -> &Span {
+        &self.at
     }
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
-pub enum Op {
+pub enum OpData {
     Add,
     Sub,
     Mul,
@@ -120,170 +184,188 @@ impl FromStr for Op {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
-pub enum Ty {
-    I32,
-    F32,
-    Unit,
-    Bool,
-    Array(Box<Ty>),
-    Struct(String),
+#[derive(Debug, PartialEq, Clone)]
+pub struct Lit {
+    it: LitData,
+    at: Span,
+    ty: Ty,
 }
 
-impl fmt::Display for Ty {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Ty::I32 => write!(f, "i32"),
-            Ty::F32 => write!(f, "f32"),
-            Ty::Bool => write!(f, "bool"),
-            Ty::Unit => write!(f, "unit"),
-            Ty::Array(t) => write!(f, "[{}]", t),
-            Ty::Struct(t) => write!(f, "{}", t),
-        }
+impl Spanned for Lit {
+    fn at(&self) -> &Span {
+        &self.at
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
-pub struct FuncTy {
-    pub arguments: Vec<Ty>,
-    pub result: Ty,
-}
-
 #[derive(Debug, PartialEq, Clone)]
-pub enum Lit {
+pub enum LitData {
     I32(i32),
     F32(f32),
     Bool(bool),
 }
 
 #[derive(Debug, PartialEq)]
-pub struct Typed<T> {
-    pub ty: Ty,
-    pub at: Span,
-    pub it: T,
+pub struct Intrinsic {
+    it: IntrinsicData,
+    at: Span,
+}
+
+impl Spanned for Intrinsic {
+    fn at(&self) -> &Span {
+        &self.at
+    }
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
-pub enum Intrinsic {
+pub enum IntrinsicData {
     ArrayLen,
     ArrayNew,
 }
 
 #[derive(Debug, PartialEq)]
-pub struct StructFieldE {
-    pub name: Spanned<String>,
-    pub expr: TypedExpr,
+pub struct Expr {
+    it: Box<ExprData>,
+    at: Span,
+    ty: Ty,
 }
 
-pub type TypedExpr = Typed<Expr>;
+impl Spanned for Expr {
+    fn at(&self) -> &Span {
+        &self.at
+    }
+}
 
 #[derive(Debug, PartialEq)]
-pub enum Expr {
+pub enum ExprData {
     Lit(Lit),
-    Var(String),
+    Var(Id),
     Call {
-        func: Spanned<String>,
-        func_ty: FuncTy,
-        arguments: Vec<TypedExpr>,
+        func: FuncId,
+        arguments: Vec<Expr>,
     },
     Binary {
-        op: Spanned<Op>,
-        left: Box<TypedExpr>,
-        right: Box<TypedExpr>,
+        op: Op,
+        left: Expr,
+        right: Expr,
     },
-    Array(Vec<TypedExpr>),
+    Array(Vec<Expr>),
     ArrayIdx {
-        array: Box<TypedExpr>,
-        index: Box<TypedExpr>,
+        array: Expr,
+        index: Expr,
     },
     If {
-        condition: Box<TypedExpr>,
-        then_branch: Box<TypedExpr>,
-        else_branch: Box<TypedExpr>,
+        condition: Expr,
+        then_branch: Expr,
+        else_branch: Expr,
     },
     Block {
-        declarations: Vec<TypedDeclaration>,
+        declarations: Vec<Declaration>,
     },
     Struct {
-        name: Spanned<String>,
-        fields: Vec<StructFieldE>,
+        name: Id,
+        fields: Vec<(Id, Expr)>,
     },
     StructIdx {
-        expr: Box<TypedExpr>,
-        index: Spanned<String>,
+        expr: Expr,
+        index: Id,
     },
     Intrinsic {
-        intrinsic: Spanned<Intrinsic>,
-        arguments: Vec<TypedExpr>,
+        intrinsic: Intrinsic,
+        arguments: Vec<Expr>,
     },
 }
 
-pub type TypedDeclaration = Typed<Declaration>;
+#[derive(Debug, PartialEq)]
+pub struct Declaration {
+    it: DeclarationData,
+    at: Span,
+    ty: Ty,
+}
+
+impl Spanned for Declaration {
+    fn at(&self) -> &Span {
+        &self.at
+    }
+}
 
 #[derive(Debug, PartialEq)]
-pub enum Declaration {
+pub enum DeclarationData {
     Let {
-        binder: Spanned<String>,
-        expr: TypedExpr,
+        binder: Id,
+        annotation: Option<Type>,
+        expr: Expr,
     },
     Set {
         set_target: Typed<SetTarget>,
-        expr: TypedExpr,
+        expr: Expr,
     },
-    Expr(TypedExpr),
+    Expr(Expr),
     While {
-        condition: TypedExpr,
-        body: TypedExpr,
+        condition: Expr,
+        body: Expr,
     },
 }
 
 #[derive(Debug, PartialEq)]
-pub enum SetTarget {
+pub struct SetTarget {
+    it: Box<SetTargetData>,
+    at: Span,
+    ty: Ty,
+}
+
+impl Spanned for SetTarget {
+    fn at(&self) -> &Span {
+        &self.at
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub enum SetTargetData {
     Array {
-        name: Typed<String>,
-        index: TypedExpr,
+        target: SetTarget,
+        index: Expr,
     },
     Struct {
-        name: Typed<String>,
+        target: SetTarget,
         index: Spanned<String>,
     },
     Var {
-        name: Typed<String>,
+        name: Id,
     },
 }
 
-#[derive(Debug, PartialEq, Clone)]
-pub struct FuncParam {
-    pub name: Spanned<String>,
-    pub ty: Spanned<Ty>,
+pub struct Toplevel {
+    it: ToplevelData,
+    at: Span,
 }
 
-#[derive(Debug, PartialEq, Clone)]
-pub struct StructField {
-    pub name: Spanned<String>,
-    pub ty: Spanned<Ty>,
+impl Spanned for Toplevel {
+    fn at(&self) -> &Span {
+        &self.at
+    }
 }
 
 #[derive(Debug, PartialEq)]
-pub enum Toplevel {
-    TopLet {
-        binder: Typed<String>,
-        expr: TypedExpr,
+pub enum ToplevelData {
+    Import {
+        internal: FuncId,
+        func_ty: FuncType,
+        external: Id,
     },
-    TopImport {
-        internal: Spanned<String>,
-        func_ty: Spanned<FuncTy>,
-        external: Spanned<String>,
+    Struct {
+        name: Id,
+        fields: Vec<(Id, Type)>,
     },
-    TopStruct {
-        name: Spanned<String>,
-        fields: Vec<StructField>,
+    Global {
+        binder: Id,
+        annotation: Option<Type>,
+        init: Expr,
     },
-    TopFunc {
-        name: Spanned<String>,
-        params: Vec<FuncParam>,
-        return_ty: Option<Spanned<Ty>>,
-        body: TypedExpr,
+    Func {
+        name: FuncId,
+        params: Vec<(Id, Type)>,
+        return_ty: Option<Type>,
+        body: Expr,
     },
 }
 

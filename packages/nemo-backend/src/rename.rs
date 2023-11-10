@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::ir::{Declaration, FuncTy, Import, Name, Program, Ty, Type, Expr};
+use crate::ir::{Declaration, Expr, FuncTy, Import, Name, Program, Ty, Type};
 use nemo_frontend::syntax::{self, Spanned, Toplevel};
 
 struct Scope(Vec<HashMap<String, Name>>);
