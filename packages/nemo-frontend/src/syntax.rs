@@ -83,7 +83,7 @@ impl<T: fmt::Display> fmt::Display for Spanned<T> {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
 pub enum Op {
     Add,
     Sub,
@@ -149,7 +149,7 @@ pub struct FuncTy {
     pub result: Ty,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Lit {
     I32(i32),
     F32(f32),

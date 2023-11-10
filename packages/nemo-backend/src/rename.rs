@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::ir::{Import, Name, Program};
+use crate::ir::{Declaration, FuncTy, Import, Name, Program, Ty, Type, Expr};
 use nemo_frontend::syntax::{self, Spanned, Toplevel};
 
 struct Scope(Vec<HashMap<String, Name>>);
@@ -120,6 +120,40 @@ impl Renamer {
         );
     }
 
+    fn lookup_ty(&self, ty: &str) -> &TypeInfo {
+        self.types.get(ty).unwrap()
+    }
+
+    fn lookup_func(&self, func: &str) -> Name {
+        self.funcs.get(func).unwrap().clone()
+    }
+
+    fn rename_ty(&self, ty: syntax::Ty) -> Ty {
+        match ty {
+            syntax::Ty::I32 => Ty::I32,
+            syntax::Ty::F32 => Ty::F32,
+            syntax::Ty::Unit => Ty::Unit,
+            syntax::Ty::Bool => Ty::Bool,
+            syntax::Ty::Array(t) => Ty::Array(Box::new(self.rename_ty(*t))),
+            syntax::Ty::Struct(s) => Ty::Struct(self.lookup_ty(&s).name),
+        }
+    }
+
+    fn rename_func_ty(&self, func_ty: syntax::FuncTy) -> FuncTy {
+        FuncTy {
+            arguments: func_ty
+                .arguments
+                .into_iter()
+                .map(|a| self.rename_ty(a))
+                .collect(),
+            result: self.rename_ty(func_ty.result),
+        }
+    }
+
+    fn rename_expr(&mut self, expr: syntax::Expr) -> Expr {
+        todo!()
+    }
+
     pub fn rename_program(
         mut self,
         program: syntax::Program,
@@ -162,8 +196,30 @@ impl Renamer {
                     internal,
                     func_ty,
                     external,
-                } => {}
-                Toplevel::TopStruct { name, fields } => {}
+                } => {
+                    let ty = self.rename_func_ty(func_ty.it);
+                    let internal = self.lookup_func(&internal.it);
+                    prog.imports.push(Import {
+                        internal,
+                        ty,
+                        external: external.it,
+                    })
+                }
+                Toplevel::TopStruct { name, fields } => {
+                    let ty_info = self.lookup_ty(&name.it);
+                    let fields = fields
+                        .into_iter()
+                        .map(|f| {
+                            let field_name = ty_info.fields.get(&f.name.it).unwrap();
+                            let ty = self.rename_ty(f.ty.it);
+                            (field_name.clone(), ty)
+                        })
+                        .collect();
+                    prog.types.push(Type {
+                        name: ty_info.name,
+                        fields,
+                    })
+                }
                 Toplevel::TopLet { binder, expr } => {}
                 Toplevel::TopFunc {
                     name,
