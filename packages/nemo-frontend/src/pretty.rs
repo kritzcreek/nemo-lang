@@ -226,7 +226,7 @@ impl Printer {
             DeclarationData::Expr(ref e) => self.pretty_expr(e),
             DeclarationData::Let {
                 ref binder,
-                ref annotation,
+                annotation: _,
                 ref expr,
             } => Doc::text("let ")
                 .append(Doc::text(binder.it.to_string()))
@@ -282,7 +282,7 @@ impl Printer {
                 .append(self.pretty_func_type(func_ty))
                 .append(Doc::text(" from "))
                 .append(Doc::text(external.it.to_string())),
-            ToplevelData::Global { ref binder, ref annotation, ref init } => Doc::text("let ")
+            ToplevelData::Global { ref binder, annotation: _, ref init } => Doc::text("let ")
                 .append(Doc::text(binder.it.to_string()))
                 .append(if self.show_let_types {
                     Doc::text(" : ").append(self.pretty_ty(&init.ty))
@@ -293,7 +293,7 @@ impl Printer {
                 .append(Doc::text("="))
                 .append(Doc::softline())
                 .append(self.pretty_expr(init).nest(4)),
-            ToplevelData::Struct { name, fields } => Doc::text("struct ")
+            ToplevelData::Struct { ref name, ref fields } => Doc::text("struct ")
                 .append(Doc::text(name.it.to_string()))
                 .append(Doc::space())
                 .append(Doc::text("{"))

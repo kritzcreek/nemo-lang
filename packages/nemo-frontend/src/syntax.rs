@@ -70,7 +70,7 @@ pub trait Spanned {
     fn at(&self) -> &Span;
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Type {
     pub it: Box<TypeData>,
     pub at: Span,
@@ -83,7 +83,7 @@ impl Spanned for Type {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum TypeData {
     I32,
     F32,
