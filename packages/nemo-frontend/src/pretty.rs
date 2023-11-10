@@ -1,9 +1,10 @@
 use pretty::RcDoc;
 
-use crate::types::Ty;
 use crate::syntax::{
-    Declaration, Expr, Intrinsic, Lit, Op, Program, SetTarget, Toplevel, DeclarationData, Type, OpData, LitData, ExprData, IntrinsicData, SetTargetData, TypeData, FuncType, ToplevelData
+    Declaration, DeclarationData, Expr, ExprData, FuncType, Intrinsic, IntrinsicData, Lit, LitData,
+    Op, OpData, Program, SetTarget, SetTargetData, Toplevel, ToplevelData, Type, TypeData,
 };
+use crate::types::Ty;
 
 type Doc<'a> = RcDoc<'a, ()>;
 
@@ -163,7 +164,7 @@ impl Printer {
                     fields.iter().map(|(name, expr)| {
                         Doc::text(name.it.to_string())
                             .append(Doc::text(" = "))
-                            .append(self.pretty_expr(&expr))
+                            .append(self.pretty_expr(expr))
                     }),
                     Doc::text(",").append(Doc::line()),
                 );
@@ -208,14 +209,16 @@ impl Printer {
             SetTargetData::Array {
                 ref target,
                 ref index,
-            } => self.pretty_set_target(target)
+            } => self
+                .pretty_set_target(target)
                 .append(Doc::text("["))
                 .append(self.pretty_expr(index))
                 .append(Doc::text("]")),
             SetTargetData::Struct {
                 ref target,
                 ref index,
-            } => self.pretty_set_target(target)
+            } => self
+                .pretty_set_target(target)
                 .append(Doc::text("."))
                 .append(index.it.to_string()),
         }
@@ -282,7 +285,11 @@ impl Printer {
                 .append(self.pretty_func_type(func_ty))
                 .append(Doc::text(" from "))
                 .append(Doc::text(external.it.to_string())),
-            ToplevelData::Global { ref binder, annotation: _, ref init } => Doc::text("let ")
+            ToplevelData::Global {
+                ref binder,
+                annotation: _,
+                ref init,
+            } => Doc::text("let ")
                 .append(Doc::text(binder.it.to_string()))
                 .append(if self.show_let_types {
                     Doc::text(" : ").append(self.pretty_ty(&init.ty))
@@ -293,7 +300,10 @@ impl Printer {
                 .append(Doc::text("="))
                 .append(Doc::softline())
                 .append(self.pretty_expr(init).nest(4)),
-            ToplevelData::Struct { ref name, ref fields } => Doc::text("struct ")
+            ToplevelData::Struct {
+                ref name,
+                ref fields,
+            } => Doc::text("struct ")
                 .append(Doc::text(name.it.to_string()))
                 .append(Doc::space())
                 .append(Doc::text("{"))
@@ -303,7 +313,7 @@ impl Printer {
                         fields.iter().map(|(name, ty)| {
                             Doc::text(name.it.to_string())
                                 .append(Doc::text(" : "))
-                                .append(self.pretty_type(&ty))
+                                .append(self.pretty_type(ty))
                         }),
                         Doc::text(",").append(Doc::hardline()),
                     )

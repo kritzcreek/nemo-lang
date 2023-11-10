@@ -56,7 +56,7 @@ pub struct FuncTy {
 
 impl FuncTy {
     fn from_syntax_data(ty: &FuncTypeData) -> FuncTy {
-        let arguments = ty.arguments.iter().map(|t| Ty::from_syntax(t)).collect();
+        let arguments = ty.arguments.iter().map(Ty::from_syntax).collect();
         FuncTy {
             arguments,
             result: Ty::from_syntax(&ty.result),
@@ -328,9 +328,13 @@ impl<'a> Typechecker<'a> {
         }
     }
 
-    fn expect_ty_struct(&'a self, ty: &'a Ty, span: &'a Span) -> TyResult<(&'a str, &'a [(Id, Type)])> {
+    fn expect_ty_struct(
+        &'a self,
+        ty: &'a Ty,
+        span: &'a Span,
+    ) -> TyResult<(&'a str, &'a [(Id, Type)])> {
         match ty {
-            Ty::Struct(s) => Ok((s, self.lookup_struct(&s, span)?)),
+            Ty::Struct(s) => Ok((s, self.lookup_struct(s, span)?)),
             _ => Err(TyError {
                 at: span.clone(),
                 it: TyErrorData::Message(format!("Expected a struct type, but got {}", ty)),
@@ -450,7 +454,10 @@ impl<'a> Typechecker<'a> {
         // TODO: Check that the return type is correct.
         let func_ty = FuncTy {
             arguments: params.iter().map(|(_, ty)| Ty::from_syntax(ty)).collect(),
-            result: return_ty.as_ref().map(|t| Ty::from_syntax(&t)).unwrap_or(Ty::Unit),
+            result: return_ty
+                .as_ref()
+                .map(Ty::from_syntax)
+                .unwrap_or(Ty::Unit),
         };
 
         Ok(Toplevel {
@@ -558,7 +565,7 @@ impl<'a> Typechecker<'a> {
         let mut cursor = node.walk();
         let arg_nodes = node.children_by_field_name("argument", &mut cursor);
         let arguments = arg_nodes
-            .map(|n| self.convert_ty(n).map(|t| t))
+            .map(|n| self.convert_ty(n))
             .collect::<TyResult<Vec<_>>>()?;
         let result_node = node.child_by_field("result")?;
         let result = self.convert_ty(result_node)?;
@@ -655,7 +662,7 @@ impl<'a> Typechecker<'a> {
                 let name = self.text(&name_node);
                 let ty = ctx.lookup(name, &name_node.into())?;
                 Ok(SetTarget {
-                    at: at.clone(),
+                    at,
                     ty: ty.clone(),
                     it: Box::new(SetTargetData::Var {
                         name: self.id(&name_node),
@@ -672,7 +679,7 @@ impl<'a> Typechecker<'a> {
                 let index = self.infer_expr(ctx, &index_node)?;
                 self.expect_ty(&Ty::I32, &index.ty, &index.at)?;
                 Ok(SetTarget {
-                    at: at.clone(),
+                    at,
                     ty: elem_ty.clone(),
                     it: Box::new(SetTargetData::Array { target, index }),
                 })
@@ -699,7 +706,7 @@ impl<'a> Typechecker<'a> {
                 };
 
                 Ok(SetTarget {
-                    at: at.clone(),
+                    at,
                     ty: field_ty,
                     it: Box::new(SetTargetData::Struct { target, index }),
                 })
@@ -872,8 +879,8 @@ impl<'a> Typechecker<'a> {
                             it: op_data,
                             at: op_node.into(),
                         },
-                        left: left,
-                        right: right,
+                        left,
+                        right,
                     }),
                 })
             }
