@@ -431,12 +431,14 @@ let _ = {
         (int_lit))
       (set_decl
         (set_array_idx
-          (lower_ident)
+          (set_var
+            (lower_ident))
           (int_lit))
         (int_lit))
       (set_decl
         (set_struct_idx
-          (lower_ident)
+          (set_var
+            (lower_ident))
           (lower_ident))
         (int_lit))
       (while_decl

@@ -782,10 +782,10 @@
       "members": [
         {
           "type": "FIELD",
-          "name": "array",
+          "name": "target",
           "content": {
             "type": "SYMBOL",
-            "name": "lower_ident"
+            "name": "_set_target"
           }
         },
         {
@@ -811,10 +811,10 @@
       "members": [
         {
           "type": "FIELD",
-          "name": "struct",
+          "name": "target",
           "content": {
             "type": "SYMBOL",
-            "name": "lower_ident"
+            "name": "_set_target"
           }
         },
         {

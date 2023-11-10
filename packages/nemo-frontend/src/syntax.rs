@@ -2,6 +2,7 @@ use core::fmt;
 use std::str::FromStr;
 
 use tree_sitter::{Node, Point};
+use crate::types::{Ty, FuncTy};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
 pub struct Pos {
@@ -71,9 +72,9 @@ pub trait Spanned {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Type {
-    it: Box<TypeData>,
-    at: Span,
-    ty: Ty,
+    pub it: Box<TypeData>,
+    pub at: Span,
+    pub ty: Ty,
 }
 
 impl Spanned for Type {
@@ -82,21 +83,21 @@ impl Spanned for Type {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum TypeData {
     I32,
     F32,
     Unit,
     Bool,
-    Array(TypeData),
+    Array(Type),
     Struct(String),
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct FuncType {
-    it: FuncTypeData,
-    at: Span,
-    ty: FuncTy,
+    pub it: FuncTypeData,
+    pub at: Span,
+    pub ty: FuncTy,
 }
 
 impl Spanned for FuncType {
@@ -107,14 +108,14 @@ impl Spanned for FuncType {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct FuncTypeData {
-    arguments: Vec<Type>,
-    result: Type,
+    pub arguments: Vec<Type>,
+    pub result: Type,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Id {
     pub it: String,
-    pub span: Span,
+    pub at: Span,
 }
 
 impl Spanned for Id {
@@ -126,7 +127,7 @@ impl Spanned for Id {
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct FuncId {
     pub it: String,
-    pub span: Span,
+    pub at: Span,
     pub ty: FuncTy,
 }
 
@@ -136,9 +137,11 @@ impl Spanned for FuncId {
     }
 }
 
+
+#[derive(Debug, PartialEq)]
 pub struct Op {
-    it: OpData,
-    at: Span,
+    pub it: OpData,
+    pub at: Span,
 }
 
 impl Spanned for Op {
@@ -163,22 +166,22 @@ pub enum OpData {
     Or,
 }
 
-impl FromStr for Op {
+impl FromStr for OpData {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "+" => Ok(Op::Add),
-            "-" => Ok(Op::Sub),
-            "*" => Ok(Op::Mul),
-            "/" => Ok(Op::Div),
-            "<" => Ok(Op::Lt),
-            "<=" => Ok(Op::Le),
-            ">" => Ok(Op::Gt),
-            ">=" => Ok(Op::Ge),
-            "==" => Ok(Op::Eq),
-            "!=" => Ok(Op::Ne),
-            "&&" => Ok(Op::And),
-            "||" => Ok(Op::Or),
+            "+" => Ok(OpData::Add),
+            "-" => Ok(OpData::Sub),
+            "*" => Ok(OpData::Mul),
+            "/" => Ok(OpData::Div),
+            "<" => Ok(OpData::Lt),
+            "<=" => Ok(OpData::Le),
+            ">" => Ok(OpData::Gt),
+            ">=" => Ok(OpData::Ge),
+            "==" => Ok(OpData::Eq),
+            "!=" => Ok(OpData::Ne),
+            "&&" => Ok(OpData::And),
+            "||" => Ok(OpData::Or),
             _ => Err(format!("Unknown operator {s}")),
         }
     }
@@ -186,9 +189,9 @@ impl FromStr for Op {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Lit {
-    it: LitData,
-    at: Span,
-    ty: Ty,
+ pub    it: LitData,
+ pub    at: Span,
+ pub    ty: Ty,
 }
 
 impl Spanned for Lit {
@@ -206,8 +209,8 @@ pub enum LitData {
 
 #[derive(Debug, PartialEq)]
 pub struct Intrinsic {
-    it: IntrinsicData,
-    at: Span,
+    pub it: IntrinsicData,
+    pub at: Span,
 }
 
 impl Spanned for Intrinsic {
@@ -224,9 +227,9 @@ pub enum IntrinsicData {
 
 #[derive(Debug, PartialEq)]
 pub struct Expr {
-    it: Box<ExprData>,
-    at: Span,
-    ty: Ty,
+    pub it: Box<ExprData>,
+    pub at: Span,
+    pub ty: Ty,
 }
 
 impl Spanned for Expr {
@@ -277,9 +280,9 @@ pub enum ExprData {
 
 #[derive(Debug, PartialEq)]
 pub struct Declaration {
-    it: DeclarationData,
-    at: Span,
-    ty: Ty,
+    pub it: DeclarationData,
+    pub at: Span,
+    pub ty: Ty,
 }
 
 impl Spanned for Declaration {
@@ -296,7 +299,7 @@ pub enum DeclarationData {
         expr: Expr,
     },
     Set {
-        set_target: Typed<SetTarget>,
+        set_target: SetTarget,
         expr: Expr,
     },
     Expr(Expr),
@@ -308,9 +311,9 @@ pub enum DeclarationData {
 
 #[derive(Debug, PartialEq)]
 pub struct SetTarget {
-    it: Box<SetTargetData>,
-    at: Span,
-    ty: Ty,
+    pub it: Box<SetTargetData>,
+    pub at: Span,
+    pub ty: Ty,
 }
 
 impl Spanned for SetTarget {
@@ -327,16 +330,17 @@ pub enum SetTargetData {
     },
     Struct {
         target: SetTarget,
-        index: Spanned<String>,
+        index: Id,
     },
     Var {
         name: Id,
     },
 }
 
+#[derive(Debug, PartialEq)]
 pub struct Toplevel {
-    it: ToplevelData,
-    at: Span,
+    pub it: ToplevelData,
+    pub at: Span,
 }
 
 impl Spanned for Toplevel {
