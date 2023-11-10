@@ -11,7 +11,7 @@ pub struct Pos {
 }
 
 impl Pos {
-    pub const SYN: Pos = Pos { line: 0, column: 0 };
+    pub const SYN: Pos = Pos { line: u32::MAX, column: u32::MAX };
 }
 
 impl From<Point> for Pos {
@@ -36,6 +36,7 @@ pub struct Span {
 }
 
 impl Span {
+    /// The synthetic Span for generated nodes
     pub const SYN: Span = Span {
         start: Pos::SYN,
         end: Pos::SYN,
