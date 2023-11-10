@@ -1,4 +1,4 @@
-use crate::syntax::{FuncTy, Ty};
+use crate::types::{FuncTy, Ty};
 use lazy_static::lazy_static;
 use std::collections::HashMap;
 

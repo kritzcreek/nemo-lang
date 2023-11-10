@@ -1,8 +1,8 @@
 use pretty::RcDoc;
 
+use crate::types::Ty;
 use crate::syntax::{
-    Declaration, Expr, FuncTy, Intrinsic, Lit, Op, Program, SetTarget, Spanned, Toplevel, Ty,
-    Typed, TypedDeclaration, TypedExpr,
+    Declaration, Expr, Intrinsic, Lit, Op, Program, SetTarget, Toplevel, DeclarationData, Type, OpData, LitData, ExprData, IntrinsicData, SetTargetData, TypeData, FuncType, ToplevelData
 };
 
 type Doc<'a> = RcDoc<'a, ()>;
@@ -17,19 +17,19 @@ impl Printer {
     }
 
     fn pretty_op(&self, op: &Op) -> Doc {
-        match op {
-            Op::Add => Doc::text("+"),
-            Op::Sub => Doc::text("-"),
-            Op::Mul => Doc::text("*"),
-            Op::Div => Doc::text("/"),
-            Op::Lt => Doc::text("<"),
-            Op::Le => Doc::text("<="),
-            Op::Gt => Doc::text(">"),
-            Op::Ge => Doc::text(">="),
-            Op::Eq => Doc::text("=="),
-            Op::Ne => Doc::text("!="),
-            Op::And => Doc::text("&&"),
-            Op::Or => Doc::text("||"),
+        match op.it {
+            OpData::Add => Doc::text("+"),
+            OpData::Sub => Doc::text("-"),
+            OpData::Mul => Doc::text("*"),
+            OpData::Div => Doc::text("/"),
+            OpData::Lt => Doc::text("<"),
+            OpData::Le => Doc::text("<="),
+            OpData::Gt => Doc::text(">"),
+            OpData::Ge => Doc::text(">="),
+            OpData::Eq => Doc::text("=="),
+            OpData::Ne => Doc::text("!="),
+            OpData::And => Doc::text("&&"),
+            OpData::Or => Doc::text("||"),
         }
     }
 
@@ -46,30 +46,43 @@ impl Printer {
         }
     }
 
+    fn pretty_type(&self, ty: &Type) -> Doc {
+        match *ty.it {
+            TypeData::I32 => Doc::text("i32"),
+            TypeData::F32 => Doc::text("f32"),
+            TypeData::Bool => Doc::text("bool"),
+            TypeData::Unit => Doc::text("unit"),
+            TypeData::Array(ref t) => Doc::text("[")
+                .append(self.pretty_type(t))
+                .append(Doc::text("]")),
+            TypeData::Struct(ref t) => Doc::text(t.to_string()),
+        }
+    }
+
     // TODO: handle indentation
-    fn pretty_func_ty(&self, func_ty: &FuncTy) -> Doc {
+    fn pretty_func_type(&self, func_ty: &FuncType) -> Doc {
         let mut doc = Doc::text("(");
-        for (i, arg) in func_ty.arguments.iter().enumerate() {
+        for (i, arg) in func_ty.it.arguments.iter().enumerate() {
             if i > 0 {
                 doc = doc.append(Doc::text(", "));
             }
-            doc = doc.append(self.pretty_ty(arg));
+            doc = doc.append(self.pretty_type(arg));
         }
         doc = doc
             .append(Doc::text(") -> "))
-            .append(self.pretty_ty(&func_ty.result));
+            .append(self.pretty_type(&func_ty.it.result));
         doc
     }
 
     fn pretty_lit(&self, lit: &Lit) -> Doc {
-        match lit {
-            Lit::Bool(b) => Doc::text(b.to_string()),
-            Lit::I32(i) => Doc::text(i.to_string()),
-            Lit::F32(f) => Doc::text(f.to_string()),
+        match lit.it {
+            LitData::Bool(b) => Doc::text(b.to_string()),
+            LitData::I32(i) => Doc::text(i.to_string()),
+            LitData::F32(f) => Doc::text(f.to_string()),
         }
     }
 
-    fn pretty_expr_list(&self, exprs: &[TypedExpr]) -> Doc {
+    fn pretty_expr_list(&self, exprs: &[Expr]) -> Doc {
         Doc::intersperse(
             exprs.iter().map(|e| self.pretty_expr(e)),
             Doc::text(",").append(Doc::line()),
@@ -78,35 +91,34 @@ impl Printer {
         .group()
     }
 
-    fn pretty_expr(&self, expr: &TypedExpr) -> Doc {
-        match expr.it {
-            Expr::Lit(ref l) => self.pretty_lit(l),
-            Expr::Var(ref v) => Doc::text(v.to_string()),
-            Expr::Call {
+    fn pretty_expr(&self, expr: &Expr) -> Doc {
+        match *expr.it {
+            ExprData::Lit(ref l) => self.pretty_lit(l),
+            ExprData::Var(ref v) => Doc::text(v.it.to_string()),
+            ExprData::Call {
                 ref func,
-                func_ty: _,
                 ref arguments,
             } => Doc::text(func.it.to_string())
                 .append(Doc::text("("))
                 .append(self.pretty_expr_list(arguments))
                 .append(")"),
-            Expr::Binary {
+            ExprData::Binary {
                 ref op,
                 ref left,
                 ref right,
             } => self
                 .pretty_expr(left)
                 .append(Doc::space())
-                .append(self.pretty_op(&op.it))
+                .append(self.pretty_op(op))
                 .append(Doc::space())
                 .append(self.pretty_expr(right)),
-            Expr::Array(ref elements) => Doc::text("[")
+            ExprData::Array(ref elements) => Doc::text("[")
                 .append(Doc::line())
                 .append(self.pretty_expr_list(elements))
                 .append(Doc::line())
                 .append(Doc::text("]"))
                 .group(),
-            Expr::ArrayIdx {
+            ExprData::ArrayIdx {
                 ref array,
                 ref index,
             } => self
@@ -114,7 +126,7 @@ impl Printer {
                 .append(Doc::text("["))
                 .append(self.pretty_expr(index))
                 .append(Doc::text("]")),
-            Expr::If {
+            ExprData::If {
                 ref condition,
                 ref then_branch,
                 ref else_branch,
@@ -127,7 +139,7 @@ impl Printer {
                 .append(Doc::text("else"))
                 .append(Doc::space())
                 .append(self.pretty_expr(else_branch)),
-            Expr::Block { ref declarations } => {
+            ExprData::Block { ref declarations } => {
                 if declarations.is_empty() {
                     Doc::text("{}")
                 } else {
@@ -143,15 +155,15 @@ impl Printer {
                         .append(Doc::text("}"))
                 }
             }
-            Expr::Struct {
+            ExprData::Struct {
                 ref name,
                 ref fields,
             } => {
                 let fields = Doc::intersperse(
-                    fields.iter().map(|f| {
-                        Doc::text(f.name.it.to_string())
+                    fields.iter().map(|(name, expr)| {
+                        Doc::text(name.it.to_string())
                             .append(Doc::text(" = "))
-                            .append(self.pretty_expr(&f.expr))
+                            .append(self.pretty_expr(&expr))
                     }),
                     Doc::text(",").append(Doc::line()),
                 );
@@ -165,55 +177,56 @@ impl Printer {
                         .group(),
                 )
             }
-            Expr::StructIdx {
+            ExprData::StructIdx {
                 ref expr,
                 ref index,
             } => self
                 .pretty_expr(expr)
                 .append(Doc::text("."))
                 .append(index.it.to_string()),
-            Expr::Intrinsic {
+            ExprData::Intrinsic {
                 ref intrinsic,
                 ref arguments,
             } => self
-                .pretty_intrinsic(intrinsic.it)
+                .pretty_intrinsic(intrinsic)
                 .append(Doc::text("("))
                 .append(self.pretty_expr_list(arguments))
                 .append(Doc::text(")")),
         }
     }
 
-    fn pretty_intrinsic(&self, intrinsic: Intrinsic) -> Doc {
-        match intrinsic {
-            Intrinsic::ArrayLen => Doc::text("@array_len"),
-            Intrinsic::ArrayNew => Doc::text("@array_new"),
+    fn pretty_intrinsic(&self, intrinsic: &Intrinsic) -> Doc {
+        match intrinsic.it {
+            IntrinsicData::ArrayLen => Doc::text("@array_len"),
+            IntrinsicData::ArrayNew => Doc::text("@array_new"),
         }
     }
 
-    fn pretty_set_target(&self, set_target: &Typed<SetTarget>) -> Doc {
-        match set_target.it {
-            SetTarget::Var { ref name } => Doc::text(name.it.to_string()),
-            SetTarget::Array {
-                ref name,
+    fn pretty_set_target(&self, set_target: &SetTarget) -> Doc {
+        match *set_target.it {
+            SetTargetData::Var { ref name } => Doc::text(name.it.to_string()),
+            SetTargetData::Array {
+                ref target,
                 ref index,
-            } => Doc::text(name.it.to_string())
+            } => self.pretty_set_target(target)
                 .append(Doc::text("["))
                 .append(self.pretty_expr(index))
                 .append(Doc::text("]")),
-            SetTarget::Struct {
-                ref name,
+            SetTargetData::Struct {
+                ref target,
                 ref index,
-            } => Doc::text(name.it.to_string())
+            } => self.pretty_set_target(target)
                 .append(Doc::text("."))
                 .append(index.it.to_string()),
         }
     }
 
-    fn pretty_decl(&self, decl: &TypedDeclaration) -> Doc {
+    fn pretty_decl(&self, decl: &Declaration) -> Doc {
         match decl.it {
-            Declaration::Expr(ref e) => self.pretty_expr(e),
-            Declaration::Let {
+            DeclarationData::Expr(ref e) => self.pretty_expr(e),
+            DeclarationData::Let {
                 ref binder,
+                ref annotation,
                 ref expr,
             } => Doc::text("let ")
                 .append(Doc::text(binder.it.to_string()))
@@ -227,7 +240,7 @@ impl Printer {
                 .append(Doc::line())
                 .append(self.pretty_expr(expr).nest(1))
                 .group(),
-            Declaration::Set {
+            DeclarationData::Set {
                 ref set_target,
                 ref expr,
             } => Doc::text("set ")
@@ -237,7 +250,7 @@ impl Printer {
                 .append(Doc::line())
                 .append(self.pretty_expr(expr).nest(2))
                 .group(),
-            Declaration::While {
+            DeclarationData::While {
                 ref condition,
                 ref body,
             } => Doc::text("while")
@@ -248,49 +261,49 @@ impl Printer {
         }
     }
 
-    fn pretty_return_ty(&self, return_ty: &Option<Spanned<Ty>>) -> Doc {
+    fn pretty_return_ty(&self, return_ty: &Option<Type>) -> Doc {
         match return_ty {
             Some(ty) => Doc::text(" : ")
-                .append(self.pretty_ty(&ty.it))
+                .append(self.pretty_type(ty))
                 .append(Doc::space()),
             None => Doc::space(),
         }
     }
 
     fn pretty_toplevel(&self, toplevel: &Toplevel) -> Doc {
-        match toplevel {
-            Toplevel::TopImport {
+        match toplevel.it {
+            ToplevelData::Import {
                 ref internal,
                 ref func_ty,
                 ref external,
             } => Doc::text("import ")
                 .append(Doc::text(internal.it.to_string()))
                 .append(Doc::text(" : "))
-                .append(self.pretty_func_ty(&func_ty.it))
+                .append(self.pretty_func_type(func_ty))
                 .append(Doc::text(" from "))
                 .append(Doc::text(external.it.to_string())),
-            Toplevel::TopLet { binder, expr } => Doc::text("let ")
+            ToplevelData::Global { ref binder, ref annotation, ref init } => Doc::text("let ")
                 .append(Doc::text(binder.it.to_string()))
                 .append(if self.show_let_types {
-                    Doc::text(" : ").append(self.pretty_ty(&expr.ty))
+                    Doc::text(" : ").append(self.pretty_ty(&init.ty))
                 } else {
                     Doc::nil()
                 })
                 .append(Doc::space())
                 .append(Doc::text("="))
                 .append(Doc::softline())
-                .append(self.pretty_expr(expr).nest(1)),
-            Toplevel::TopStruct { name, fields } => Doc::text("struct ")
+                .append(self.pretty_expr(init).nest(4)),
+            ToplevelData::Struct { name, fields } => Doc::text("struct ")
                 .append(Doc::text(name.it.to_string()))
                 .append(Doc::space())
                 .append(Doc::text("{"))
                 .append(Doc::line())
                 .append(
                     Doc::intersperse(
-                        fields.iter().map(|f| {
-                            Doc::text(f.name.it.to_string())
+                        fields.iter().map(|(name, ty)| {
+                            Doc::text(name.it.to_string())
                                 .append(Doc::text(" : "))
-                                .append(self.pretty_ty(&f.ty.it))
+                                .append(self.pretty_type(&ty))
                         }),
                         Doc::text(",").append(Doc::hardline()),
                     )
@@ -299,20 +312,20 @@ impl Printer {
                 .nest(2)
                 .append(Doc::line())
                 .append(Doc::text("}")),
-            Toplevel::TopFunc {
-                name,
-                params,
-                return_ty,
-                body,
+            ToplevelData::Func {
+                ref name,
+                ref params,
+                ref return_ty,
+                ref body,
             } => Doc::text("fn ")
                 .append(Doc::text(name.it.to_string()))
                 .append(Doc::text("("))
                 .append(
                     Doc::intersperse(
-                        params.iter().map(|f| {
-                            Doc::text(f.name.it.to_string())
+                        params.iter().map(|(name, ty)| {
+                            Doc::text(name.it.to_string())
                                 .append(Doc::text(" : "))
-                                .append(self.pretty_ty(&f.ty.it))
+                                .append(self.pretty_type(ty))
                         }),
                         Doc::text(",").append(Doc::line()),
                     )
