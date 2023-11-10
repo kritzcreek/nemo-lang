@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
-use crate::ir::{FuncTy, Name, Program, Ty};
+use crate::ir::{Expr, Func, FuncTy, Global, Import, Name, Program, Struct, Ty};
 use nemo_frontend::{
-    syntax::{self, FuncId, Id, Toplevel, ToplevelData},
+    syntax::{self, FuncId, Id, ToplevelData},
     types,
 };
 
@@ -18,8 +18,8 @@ impl Scope {
         self.0.last_mut().unwrap().insert(s, name);
     }
 
-    fn get(&self, s: String) -> Option<Name> {
-        self.0.iter().rev().find_map(|block| block.get(&s)).copied()
+    fn get(&self, s: &str) -> Option<Name> {
+        self.0.iter().rev().find_map(|block| block.get(s)).copied()
     }
 
     fn enter_block(&mut self) {
@@ -72,6 +72,7 @@ impl Lower {
     fn local_idx(&mut self, local: Id) -> Name {
         self.local += 1;
         let name = Name::Local(self.local);
+        self.scope.insert(local.it.clone(), name);
         self.name_map.insert(name, local);
         name
     }
@@ -139,26 +140,129 @@ impl Lower {
         self.funcs.get(func).unwrap().clone()
     }
 
-    fn lower_ty(&self, ty: types::Ty) -> Ty {
+    fn lookup_var(&self, var: &str) -> Name {
+        self.scope.get(var).unwrap()
+    }
+
+    fn lower_type(&self, ty: &syntax::Type) -> Ty {
+        self.lower_ty(&ty.ty)
+    }
+
+    fn lower_ty(&self, ty: &types::Ty) -> Ty {
         match ty {
             types::Ty::I32 => Ty::I32,
             types::Ty::F32 => Ty::F32,
             types::Ty::Unit => Ty::Unit,
             types::Ty::Bool => Ty::Bool,
-            types::Ty::Array(t) => Ty::Array(Box::new(self.lower_ty(*t))),
-            types::Ty::Struct(s) => Ty::Struct(self.lookup_ty(&s).name),
+            types::Ty::Array(t) => Ty::Array(Box::new(self.lower_ty(t))),
+            types::Ty::Struct(s) => Ty::Struct(self.lookup_ty(s).name),
         }
     }
 
-    fn rename_func_ty(&self, func_ty: types::FuncTy) -> FuncTy {
+    fn rename_func_ty(&self, func_ty: &types::FuncTy) -> FuncTy {
         FuncTy {
-            arguments: func_ty
-                .arguments
-                .into_iter()
-                .map(|a| self.lower_ty(a))
-                .collect(),
-            result: self.lower_ty(func_ty.result),
+            arguments: func_ty.arguments.iter().map(|a| self.lower_ty(a)).collect(),
+            result: self.lower_ty(&func_ty.result),
         }
+    }
+
+    fn rename_import(&self, toplevel: syntax::Toplevel) -> Import {
+        if let syntax::ToplevelData::Import {
+            internal,
+            func_ty,
+            external,
+        } = toplevel.it
+        {
+            Import {
+                span: toplevel.at,
+                internal: self.lookup_func(&internal.it),
+                func_ty: self.rename_func_ty(&func_ty.ty),
+                external: external.it,
+            }
+        } else {
+            unreachable!("Passed a non-import to rename_import")
+        }
+    }
+
+    fn rename_struct(&self, toplevel: syntax::Toplevel) -> Struct {
+        if let syntax::ToplevelData::Struct { name, fields } = toplevel.it {
+            let ty_info = self.lookup_ty(&name.it);
+            Struct {
+                span: toplevel.at,
+                name: ty_info.name,
+                fields: fields
+                    .into_iter()
+                    .map(|(name, ty)| {
+                        (
+                            ty_info.fields.get(&name.it).unwrap().clone(),
+                            self.lower_type(&ty),
+                        )
+                    })
+                    .collect(),
+            }
+        } else {
+            unreachable!("Passed a non-struct to rename_struct")
+        }
+    }
+
+    fn lower_global(&mut self, toplevel: syntax::Toplevel) -> Global {
+        if let syntax::ToplevelData::Global {
+            binder,
+            annotation: _,
+            init,
+        } = toplevel.it
+        {
+            Global {
+                span: toplevel.at,
+                binder: self.lookup_var(&binder.it),
+                init: self.lower_expr(init),
+            }
+        } else {
+            unreachable!("Passed a non-global to lower_global")
+        }
+    }
+
+    fn lower_func(&mut self, toplevel: syntax::Toplevel) -> Func {
+        if let syntax::ToplevelData::Func {
+            name,
+            params,
+            return_ty,
+            body,
+        } = toplevel.it
+        {
+            self.scope.enter_block();
+            let params: Vec<_> = params
+                .into_iter()
+                .map(|(name, ty)| (self.local_idx(name), self.lower_type(&ty)))
+                .collect();
+            let func = Func {
+                name: self.lookup_func(&name.it),
+                params,
+                return_ty: return_ty.map(|t| self.lower_type(&t)).unwrap_or(Ty::Unit),
+                body: self.lower_expr(body),
+            };
+            self.scope.leave_block();
+            func
+        } else {
+            unreachable!("Passed a non-func to lower_func")
+        }
+    }
+
+    fn lower_expr(&mut self, expr: syntax::Expr) -> Expr {
+        let expr_data = match *expr.it {
+            syntax::ExprData::Lit(l) => todo!(),
+            syntax::ExprData::Var(v) => todo!(),
+            syntax::ExprData::Call { func, arguments } => todo!(),
+            syntax::ExprData::Binary { op, left, right } => todo!(),
+            syntax::ExprData::Array(_) => todo!(),
+            syntax::ExprData::ArrayIdx { array, index } => todo!(),
+            syntax::ExprData::If { condition, then_branch, else_branch } => todo!(),
+            syntax::ExprData::Block { declarations } => todo!(),
+            syntax::ExprData::Struct { name, fields } => todo!(),
+            syntax::ExprData::StructIdx { expr, index } => todo!(),
+            syntax::ExprData::Intrinsic { intrinsic, arguments } => todo!(),
+        };
+        Expr { it: expr_data, at: expr.at, ty: expr.ty }
     }
 
     pub fn rename_program(mut self, program: syntax::Program) -> (Program, HashMap<Name, Id>) {
@@ -192,6 +296,16 @@ impl Lower {
             globals: vec![],
             funcs: vec![],
         };
+
+        for toplevel in program.toplevels {
+            match toplevel.it {
+                ToplevelData::Import { .. } => prog.imports.push(self.rename_import(toplevel)),
+                ToplevelData::Struct { .. } => prog.structs.push(self.rename_struct(toplevel)),
+                ToplevelData::Global { .. } => prog.globals.push(self.lower_global(toplevel)),
+                ToplevelData::Func { .. } => prog.funcs.push(self.lower_func(toplevel)),
+            }
+        }
+
         (prog, self.name_map)
     }
 }

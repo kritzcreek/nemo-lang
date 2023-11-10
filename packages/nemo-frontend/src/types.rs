@@ -63,7 +63,7 @@ impl FuncTy {
         }
     }
 
-    fn from_syntax(ty: &FuncType) -> FuncTy {
+    pub fn from_syntax(ty: &FuncType) -> FuncTy {
         FuncTy::from_syntax_data(&ty.it)
     }
 }
