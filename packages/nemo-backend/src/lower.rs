@@ -1,7 +1,10 @@
 use std::collections::HashMap;
 
-use crate::ir::{Name, Ty, FuncTy, Program};
-use nemo_frontend::{syntax::{self, Toplevel, Id, ToplevelData, FuncId}, types};
+use crate::ir::{FuncTy, Name, Program, Ty};
+use nemo_frontend::{
+    syntax::{self, FuncId, Id, Toplevel, ToplevelData},
+    types,
+};
 
 // Tracks local names
 struct Scope(Vec<HashMap<String, Name>>);
@@ -83,7 +86,13 @@ impl Lower {
     fn func_idx(&mut self, func: FuncId) -> Name {
         self.func += 1;
         let name = Name::Func(self.func);
-        self.name_map.insert(name, Id { it: func.it, at: func.at });
+        self.name_map.insert(
+            name,
+            Id {
+                it: func.it,
+                at: func.at,
+            },
+        );
         name
     }
 
@@ -152,10 +161,7 @@ impl Lower {
         }
     }
 
-    pub fn rename_program(
-        mut self,
-        program: syntax::Program,
-    ) -> (Program, HashMap<Name, Id>) {
+    pub fn rename_program(mut self, program: syntax::Program) -> (Program, HashMap<Name, Id>) {
         for ele in program.toplevels.iter() {
             match ele.it {
                 ToplevelData::Import { ref internal, .. } => {

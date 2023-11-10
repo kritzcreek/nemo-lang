@@ -454,10 +454,7 @@ impl<'a> Typechecker<'a> {
         // TODO: Check that the return type is correct.
         let func_ty = FuncTy {
             arguments: params.iter().map(|(_, ty)| Ty::from_syntax(ty)).collect(),
-            result: return_ty
-                .as_ref()
-                .map(Ty::from_syntax)
-                .unwrap_or(Ty::Unit),
+            result: return_ty.as_ref().map(Ty::from_syntax).unwrap_or(Ty::Unit),
         };
 
         Ok(Toplevel {

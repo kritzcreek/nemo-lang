@@ -41,7 +41,7 @@ pub struct FuncTy {
     pub result: Ty,
 }
 
-// Our backend ast is very similar to our syntax ast. 
+// Our backend ast is very similar to our syntax ast.
 //
 // The main differences at this point in time are:
 // 1. All names are replaced with unique numeric identifiers the `Name` type in this module
@@ -97,9 +97,9 @@ pub enum OpData {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Lit {
- pub it: LitData,
- pub at: Span,
- pub ty: Ty,
+    pub it: LitData,
+    pub at: Span,
+    pub ty: Ty,
 }
 
 impl Spanned for Lit {
@@ -202,19 +202,10 @@ impl Spanned for Declaration {
 
 #[derive(Debug, PartialEq)]
 pub enum DeclarationData {
-    Let {
-        binder: Name,
-        expr: Expr,
-    },
-    Set {
-        set_target: SetTarget,
-        expr: Expr,
-    },
+    Let { binder: Name, expr: Expr },
+    Set { set_target: SetTarget, expr: Expr },
     Expr(Expr),
-    While {
-        condition: Expr,
-        body: Expr,
-    },
+    While { condition: Expr, body: Expr },
 }
 
 #[derive(Debug, PartialEq)]
@@ -232,17 +223,9 @@ impl Spanned for SetTarget {
 
 #[derive(Debug, PartialEq)]
 pub enum SetTargetData {
-    Array {
-        target: Name,
-        index: Expr,
-    },
-    Struct {
-        target: Name,
-        index: Name,
-    },
-    Var {
-        name: Name,
-    },
+    Array { target: Name, index: Expr },
+    Struct { target: Name, index: Name },
+    Var { name: Name },
 }
 
 #[derive(Debug, PartialEq)]

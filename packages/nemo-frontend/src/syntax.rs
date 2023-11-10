@@ -1,8 +1,8 @@
 use core::fmt;
 use std::str::FromStr;
 
+use crate::types::{FuncTy, Ty};
 use tree_sitter::{Node, Point};
-use crate::types::{Ty, FuncTy};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
 pub struct Pos {
@@ -11,7 +11,10 @@ pub struct Pos {
 }
 
 impl Pos {
-    pub const SYN: Pos = Pos { line: u32::MAX, column: u32::MAX };
+    pub const SYN: Pos = Pos {
+        line: u32::MAX,
+        column: u32::MAX,
+    };
 }
 
 impl From<Point> for Pos {
@@ -138,7 +141,6 @@ impl Spanned for FuncId {
     }
 }
 
-
 #[derive(Debug, PartialEq)]
 pub struct Op {
     pub it: OpData,
@@ -190,9 +192,9 @@ impl FromStr for OpData {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Lit {
- pub    it: LitData,
- pub    at: Span,
- pub    ty: Ty,
+    pub it: LitData,
+    pub at: Span,
+    pub ty: Ty,
 }
 
 impl Spanned for Lit {
@@ -325,17 +327,9 @@ impl Spanned for SetTarget {
 
 #[derive(Debug, PartialEq)]
 pub enum SetTargetData {
-    Array {
-        target: SetTarget,
-        index: Expr,
-    },
-    Struct {
-        target: SetTarget,
-        index: Id,
-    },
-    Var {
-        name: Id,
-    },
+    Array { target: SetTarget, index: Expr },
+    Struct { target: SetTarget, index: Id },
+    Var { name: Id },
 }
 
 #[derive(Debug, PartialEq)]
