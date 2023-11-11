@@ -970,16 +970,6 @@
     "type": "set_array_idx",
     "named": true,
     "fields": {
-      "array": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "lower_ident",
-            "named": true
-          }
-        ]
-      },
       "index": {
         "multiple": false,
         "required": true,
@@ -1038,6 +1028,24 @@
           },
           {
             "type": "var_e",
+            "named": true
+          }
+        ]
+      },
+      "target": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "set_array_idx",
+            "named": true
+          },
+          {
+            "type": "set_struct_idx",
+            "named": true
+          },
+          {
+            "type": "set_var",
             "named": true
           }
         ]
@@ -1144,12 +1152,20 @@
           }
         ]
       },
-      "struct": {
+      "target": {
         "multiple": false,
         "required": true,
         "types": [
           {
-            "type": "lower_ident",
+            "type": "set_array_idx",
+            "named": true
+          },
+          {
+            "type": "set_struct_idx",
+            "named": true
+          },
+          {
+            "type": "set_var",
             "named": true
           }
         ]
