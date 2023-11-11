@@ -3,13 +3,85 @@ use std::collections::HashMap;
 
 use crate::builtins;
 use crate::syntax::{
-    Declaration, Expr, FuncParam, FuncTy, Intrinsic, Lit, Op, Program, SetTarget, Span, Spanned,
-    StructField, StructFieldE, Toplevel, Ty, Typed, TypedDeclaration, TypedExpr,
+    Declaration, DeclarationData, Expr, ExprData, FuncId, FuncType, FuncTypeData, Id, Intrinsic,
+    IntrinsicData, Lit, LitData, Op, OpData, Program, SetTarget, SetTargetData, Span, Spanned,
+    Toplevel, ToplevelData, Type, TypeData,
 };
 use tree_sitter::Node;
 
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub enum Ty {
+    I32,
+    F32,
+    Unit,
+    Bool,
+    Array(Box<Ty>),
+    Struct(String),
+}
+
+impl Ty {
+    pub fn from_syntax(ty: &Type) -> Ty {
+        Ty::from_syntax_data(&ty.it)
+    }
+    pub fn from_syntax_data(ty: &TypeData) -> Ty {
+        match ty {
+            TypeData::I32 => Ty::I32,
+            TypeData::F32 => Ty::F32,
+            TypeData::Unit => Ty::Unit,
+            TypeData::Bool => Ty::Bool,
+            TypeData::Array(ref t) => Ty::Array(Box::new(Ty::from_syntax(t))),
+            TypeData::Struct(ref s) => Ty::Struct(s.clone()),
+        }
+    }
+}
+
+impl fmt::Display for Ty {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Ty::I32 => write!(f, "i32"),
+            Ty::F32 => write!(f, "f32"),
+            Ty::Bool => write!(f, "bool"),
+            Ty::Unit => write!(f, "unit"),
+            Ty::Array(t) => write!(f, "[{}]", t),
+            Ty::Struct(t) => write!(f, "{}", t),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub struct FuncTy {
+    pub arguments: Vec<Ty>,
+    pub result: Ty,
+}
+
+impl FuncTy {
+    fn from_syntax_data(ty: &FuncTypeData) -> FuncTy {
+        let arguments = ty.arguments.iter().map(Ty::from_syntax).collect();
+        FuncTy {
+            arguments,
+            result: Ty::from_syntax(&ty.result),
+        }
+    }
+
+    pub fn from_syntax(ty: &FuncType) -> FuncTy {
+        FuncTy::from_syntax_data(&ty.it)
+    }
+}
+
 #[derive(Debug)]
-pub enum TyError {
+pub struct TyError {
+    at: Span,
+    it: TyErrorData,
+}
+
+impl Spanned for TyError {
+    fn at(&self) -> &Span {
+        &self.at
+    }
+}
+
+#[derive(Debug)]
+pub enum TyErrorData {
     MissingNode(String),
     InvalidLiteral,
     InvalidOperator,
@@ -43,33 +115,39 @@ pub enum TyError {
 
 impl fmt::Display for TyError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} {}", self.at, self.it)
+    }
+}
+
+impl fmt::Display for TyErrorData {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            TyError::MissingNode(s) => write!(f, "Missing node: '{s}'"),
-            TyError::InvalidLiteral => write!(f, "Invalid literal"),
-            TyError::InvalidOperator => write!(f, "Invalid operator"),
-            TyError::Message(m) => write!(f, "{m}"),
-            TyError::UnknownVar(v) => write!(f, "Unknown variable '{v}'"),
-            TyError::UnknownFunction(fun) => write!(f, "Unknown function '{fun}'"),
-            TyError::UnknownType(t) => write!(f, "Unknown type '{t}'"),
-            TyError::UnknownIntrinsic(i, arg_count) =>
+            TyErrorData::MissingNode(s) => write!(f, "Missing node: '{s}'"),
+            TyErrorData::InvalidLiteral => write!(f, "Invalid literal"),
+            TyErrorData::InvalidOperator => write!(f, "Invalid operator"),
+            TyErrorData::Message(m) => write!(f, "{m}"),
+            TyErrorData::UnknownVar(v) => write!(f, "Unknown variable '{v}'"),
+            TyErrorData::UnknownFunction(fun) => write!(f, "Unknown function '{fun}'"),
+            TyErrorData::UnknownType(t) => write!(f, "Unknown type '{t}'"),
+            TyErrorData::UnknownIntrinsic(i, arg_count) =>
               write!(f, "Unknown intrinsic '{i}' with '{arg_count}' arguments"),
-            TyError::ArgCountMismatch(expected, actual) =>
+            TyErrorData::ArgCountMismatch(expected, actual) =>
                 write!(f, "Expected {expected} arguments, but got {actual} instead"),
-            TyError::NonArrayIdx(t) => write!(
+            TyErrorData::NonArrayIdx(t) => write!(
                 f,
                 "Tried to access a value of type '{t}', as if it was an array"
             ),
-            TyError::NonStructIdx(t) => write!(
+            TyErrorData::NonStructIdx(t) => write!(
                 f,
                 "Tried to access a value of type '{t}', as if it was a struct"
             ),
-            TyError::FieldTypeMismatch { struct_name, field_name, expected, actual } =>
+            TyErrorData::FieldTypeMismatch { struct_name, field_name, expected, actual } =>
               write!(f, "Expected a value of type '{expected}' for {struct_name}.{field_name}, but got '{actual}' instead"),
-            TyError::UnknownField { struct_name, field_name } =>
+            TyErrorData::UnknownField { struct_name, field_name } =>
               write!(f, "Unknown field '{field_name}' for struct '{struct_name}'"),
-            TyError::MissingField { struct_name, field_name } =>
+            TyErrorData::MissingField { struct_name, field_name } =>
               write!(f, "Missing field {struct_name}.{field_name}"),
-            TyError::TypeMismatch { expected, actual } =>
+            TyErrorData::TypeMismatch { expected, actual } =>
                 write!(f, "Expected type: '{expected}', but got '{actual}'"),
             }
     }
@@ -81,10 +159,10 @@ trait TyNode {
 
 impl TyNode for Node<'_> {
     fn child_by_field(&self, field: &str) -> TyResult<Node<'_>> {
-        self.child_by_field_name(field).ok_or(Spanned::new(
-            self.into(),
-            TyError::MissingNode(field.to_string()),
-        ))
+        self.child_by_field_name(field).ok_or(TyError {
+            at: self.into(),
+            it: TyErrorData::MissingNode(field.to_string()),
+        })
     }
 }
 
@@ -108,7 +186,7 @@ fn is_expr_kind(s: &str) -> bool {
     )
 }
 
-pub type TyResult<T> = Result<T, Spanned<TyError>>;
+pub type TyResult<T> = Result<T, TyError>;
 
 struct Ctx {
     values: Vec<HashMap<String, Ty>>,
@@ -126,10 +204,10 @@ impl Ctx {
     pub fn lookup(&self, v: &str, span: &Span) -> TyResult<&Ty> {
         match self.values.iter().rev().find_map(|scope| scope.get(v)) {
             Some(t) => Ok(t),
-            None => Err(Spanned::new(
-                span.clone(),
-                TyError::UnknownVar(v.to_string()),
-            )),
+            None => Err(TyError {
+                at: span.clone(),
+                it: TyErrorData::UnknownVar(v.to_string()),
+            }),
         }
     }
 
@@ -144,8 +222,8 @@ impl Ctx {
 
 pub struct Typechecker<'a> {
     source: &'a [u8],
-    structs: HashMap<String, Vec<StructField>>,
-    functions: HashMap<String, (Span, FuncTy)>,
+    structs: HashMap<String, Vec<(Id, Type)>>,
+    functions: HashMap<String, FuncTy>,
 }
 
 impl<'a> Typechecker<'a> {
@@ -159,14 +237,24 @@ impl<'a> Typechecker<'a> {
 
     fn lookup_function(&self, name: &str, span: &Span) -> TyResult<&FuncTy> {
         match self.functions.get(name) {
-            Some((_, ty)) => Ok(ty),
+            Some(ty) => Ok(ty),
             None => match builtins::lookup_builtin(name) {
                 Some(f) => Ok(&f.ty),
-                None => Err(Spanned::new(
-                    span.clone(),
-                    TyError::UnknownFunction(name.to_string()),
-                )),
+                None => Err(TyError {
+                    at: span.clone(),
+                    it: TyErrorData::UnknownFunction(name.to_string()),
+                }),
             },
+        }
+    }
+
+    fn lookup_struct(&self, name: &str, span: &Span) -> TyResult<&[(Id, Type)]> {
+        match self.structs.get(name) {
+            Some(fields) => Ok(fields),
+            None => Err(TyError {
+                at: span.clone(),
+                it: TyErrorData::UnknownType(name.to_string()),
+            }),
         }
     }
 
@@ -174,24 +262,41 @@ impl<'a> Typechecker<'a> {
         node.utf8_text(self.source).unwrap()
     }
 
-    fn spanned_text(&self, node: &Node<'_>) -> Spanned<String> {
-        Spanned::new(node.into(), self.text(node).to_string())
+    fn id(&self, node: &Node<'_>) -> Id {
+        Id {
+            at: node.into(),
+            it: self.text(node).to_string(),
+        }
     }
 
-    fn check_ty(&self, ty: &Ty, span: &Span) -> TyResult<()> {
-        match ty {
-            Ty::Array(t) => self.check_ty(t, span),
-            Ty::Struct(n) => {
+    fn func_id(&self, node: &Node<'_>, ty: FuncTy) -> FuncId {
+        FuncId {
+            at: node.into(),
+            it: self.text(node).to_string(),
+            ty,
+        }
+    }
+
+    fn check_ty(&self, ty: &Type) -> TyResult<Ty> {
+        match *ty.it {
+            TypeData::Array(ref t) => {
+                let inner = self.check_ty(t)?;
+                Ok(Ty::Array(Box::new(inner)))
+            }
+            TypeData::Struct(ref n) => {
                 if self.structs.contains_key(n) {
-                    Ok(())
+                    Ok(Ty::Struct(n.clone()))
                 } else {
-                    Err(Spanned::new(
-                        span.clone(),
-                        TyError::UnknownType(n.to_string()),
-                    ))
+                    Err(TyError {
+                        at: ty.at.clone(),
+                        it: TyErrorData::UnknownType(n.to_string()),
+                    })
                 }
             }
-            _ => Ok(()),
+            TypeData::I32 => Ok(Ty::I32),
+            TypeData::F32 => Ok(Ty::F32),
+            TypeData::Unit => Ok(Ty::Unit),
+            TypeData::Bool => Ok(Ty::Bool),
         }
     }
 
@@ -203,33 +308,47 @@ impl<'a> Typechecker<'a> {
             (Ty::Bool, Ty::Bool) => Ok(()),
             (Ty::Array(t1), Ty::Array(t2)) => self.expect_ty(t1, t2, span),
             (Ty::Struct(s1), Ty::Struct(s2)) if s1 == s2 => Ok(()),
-            _ => Err(Spanned::new(
-                span.clone(),
-                TyError::TypeMismatch {
+            _ => Err(TyError {
+                at: span.clone(),
+                it: TyErrorData::TypeMismatch {
                     expected: ty1.clone(),
                     actual: ty2.clone(),
                 },
-            )),
+            }),
         }
     }
 
     fn expect_ty_num(&self, ty: &Ty, span: &Span) -> TyResult<()> {
         match ty {
             Ty::I32 | Ty::F32 => Ok(()),
-            _ => Err(Spanned::new(
-                span.clone(),
-                TyError::Message(format!("Expected a numeric type, but got {}", ty)),
-            )),
+            _ => Err(TyError {
+                at: span.clone(),
+                it: TyErrorData::Message(format!("Expected a numeric type, but got {}", ty)),
+            }),
         }
     }
 
-    fn expect_ty_array(&self, ty: &Ty, span: &Span) -> TyResult<()> {
+    fn expect_ty_struct(
+        &'a self,
+        ty: &'a Ty,
+        span: &'a Span,
+    ) -> TyResult<(&'a str, &'a [(Id, Type)])> {
         match ty {
-            Ty::Array(_) => Ok(()),
-            _ => Err(Spanned::new(
-                span.clone(),
-                TyError::Message(format!("Expected an array type, but got {}", ty)),
-            )),
+            Ty::Struct(s) => Ok((s, self.lookup_struct(s, span)?)),
+            _ => Err(TyError {
+                at: span.clone(),
+                it: TyErrorData::Message(format!("Expected a struct type, but got {}", ty)),
+            }),
+        }
+    }
+
+    fn expect_ty_array(&self, ty: &'a Ty, span: &Span) -> TyResult<&'a Ty> {
+        match ty {
+            Ty::Array(t) => Ok(t),
+            _ => Err(TyError {
+                at: span.clone(),
+                it: TyErrorData::Message(format!("Expected an array type, but got {}", ty)),
+            }),
         }
     }
 
@@ -244,10 +363,7 @@ impl<'a> Typechecker<'a> {
                 let name = n.child_by_field("name")?;
                 let ty_node = n.child_by_field("type")?;
                 let ty = self.convert_ty(ty_node)?;
-                Ok(StructField {
-                    name: self.spanned_text(&name),
-                    ty,
-                })
+                Ok((self.id(&name), ty))
             })
             .collect::<TyResult<Vec<_>>>()?;
         self.structs
@@ -262,10 +378,13 @@ impl<'a> Typechecker<'a> {
         let func_ty = self.convert_func_ty(func_ty_node)?;
         let external_node = node.child_by_field("external")?;
 
-        Ok(Toplevel::TopImport {
-            internal: self.spanned_text(&internal_node),
-            func_ty,
-            external: self.spanned_text(&external_node),
+        Ok(Toplevel {
+            at: node.into(),
+            it: ToplevelData::Import {
+                internal: self.func_id(&internal_node, FuncTy::from_syntax(&func_ty)),
+                func_ty,
+                external: self.id(&external_node),
+            },
         })
     }
 
@@ -276,32 +395,30 @@ impl<'a> Typechecker<'a> {
             .structs
             .get(self.text(&name_node))
             .expect("Checked a struct that wasn't declared upfront");
-        for ele in struct_fields {
-            self.check_ty(&ele.ty.it, &ele.ty.at)?;
+        for (_, ty) in struct_fields {
+            self.check_ty(ty)?;
         }
-        Ok(Toplevel::TopStruct {
-            name: self.spanned_text(&name_node),
-            fields: struct_fields.clone(),
+        Ok(Toplevel {
+            at: node.into(),
+            it: ToplevelData::Struct {
+                name: self.id(&name_node),
+                fields: struct_fields.clone(),
+            },
         })
     }
 
-    fn check_top_let(
-        &self,
-        ctx: &mut Ctx,
-        node: &Node<'_>,
-    ) -> TyResult<(Typed<String>, TypedExpr)> {
+    fn check_top_let(&self, ctx: &mut Ctx, node: &Node<'_>) -> TyResult<(Id, Expr)> {
         assert!(node.kind() == "top_let");
         let binder = node.child_by_field("binder")?;
         // let ty = node.child_by_field("ty")?;
         let expr_node = node.child_by_field("expr")?;
         let typed_expr = self.infer_expr(ctx, &expr_node)?;
-        let typed_binder = Typed {
-            ty: typed_expr.ty.clone(),
+        let binder = Id {
             at: binder.into(),
             it: self.text(&binder).to_string(),
         };
 
-        Ok((typed_binder, typed_expr))
+        Ok((binder, typed_expr))
     }
 
     fn check_func(&self, ctx: &mut Ctx, node: &Node<'_>) -> TyResult<Toplevel> {
@@ -317,78 +434,89 @@ impl<'a> Typechecker<'a> {
                 let name_node = n.child_by_field("name")?;
                 let ty_node = n.child_by_field("type")?;
                 let ty = self.convert_ty(ty_node)?;
-                Ok(FuncParam {
-                    name: self.spanned_text(&name_node),
-                    ty,
-                })
+                Ok((self.id(&name_node), ty))
             })
-            .collect::<TyResult<Vec<FuncParam>>>()?;
+            .collect::<TyResult<Vec<_>>>()?;
         let return_ty = match node.child_by_field_name("result") {
             Some(n) => Some(self.convert_ty(n)?),
             None => None,
         };
 
         ctx.enter_block();
-        for param in params.iter() {
-            ctx.add(param.name.it.clone(), param.ty.it.clone())
+        for (name, ty) in params.iter() {
+            ctx.add(name.it.clone(), ty.ty.clone())
         }
 
         let body_node = node.child_by_field("body")?;
         let body = self.infer_expr(ctx, &body_node)?;
         ctx.leave_block();
-        Ok(Toplevel::TopFunc {
-            name: self.spanned_text(&name),
-            params,
-            return_ty,
-            body,
+
+        // TODO: Check that the return type is correct.
+        let func_ty = FuncTy {
+            arguments: params.iter().map(|(_, ty)| Ty::from_syntax(ty)).collect(),
+            result: return_ty.as_ref().map(Ty::from_syntax).unwrap_or(Ty::Unit),
+        };
+
+        Ok(Toplevel {
+            at: node.into(),
+            it: ToplevelData::Func {
+                name: self.func_id(&name, func_ty),
+                params,
+                return_ty,
+                body,
+            },
         })
     }
 
     fn check_struct_fields(
         &self,
-        expected_fields: &Vec<StructField>,
-        actual_fields: &Vec<StructFieldE>,
+        expected_fields: &Vec<(Id, Type)>,
+        actual_fields: &Vec<(Id, Expr)>,
         struct_name: &str,
         span: Span,
     ) -> TyResult<()> {
-        for expected in expected_fields {
-            let actual = actual_fields.iter().find(|f| f.name.it == expected.name.it);
+        for (expected_name, expected_ty) in expected_fields {
+            let actual = actual_fields
+                .iter()
+                .find(|(name, _)| name.it == expected_name.it);
             match actual {
                 None => {
-                    return Err(Spanned::new(
-                        span,
-                        TyError::MissingField {
+                    return Err(TyError {
+                        at: span,
+                        it: TyErrorData::MissingField {
                             struct_name: struct_name.to_string(),
-                            field_name: expected.name.it.clone(),
+                            field_name: expected_name.it.clone(),
                         },
-                    ))
+                    })
                 }
-                Some(actual) => {
+                Some((actual_name, actual_expr)) => {
                     if self
-                        .expect_ty(&expected.ty.it, &actual.expr.ty, &actual.expr.at)
+                        .expect_ty(&expected_ty.ty, &actual_expr.ty, &actual_name.at)
                         .is_err()
                     {
-                        return Err(Spanned {
-                            at: actual.expr.at.clone(),
-                            it: TyError::FieldTypeMismatch {
+                        return Err(TyError {
+                            at: actual_name.at.clone(),
+                            it: TyErrorData::FieldTypeMismatch {
                                 struct_name: struct_name.to_string(),
-                                field_name: actual.name.it.to_string(),
-                                expected: expected.ty.it.clone(),
-                                actual: actual.expr.ty.clone(),
+                                field_name: actual_name.it.to_string(),
+                                expected: expected_ty.ty.clone(),
+                                actual: actual_expr.ty.clone(),
                             },
                         });
                     }
                 }
             }
         }
-        for actual in actual_fields {
-            let expected = expected_fields.iter().find(|f| f.name.it == actual.name.it);
+        for (actual_name, _) in actual_fields {
+            let expected = expected_fields
+                .iter()
+                .find(|(name, _)| name.it == actual_name.it);
             if expected.is_none() {
-                return Err(Spanned {
-                    at: actual.name.at.clone(),
-                    it: TyError::UnknownField {
+                return Err(TyError {
+                    at: actual_name.at.clone(),
+                    it: TyErrorData::UnknownField {
                         struct_name: struct_name.to_string(),
-                        field_name: actual.name.it.clone(),
+                        field_name: actual_name.it.clone(),
                     },
                 });
             }
@@ -407,16 +535,15 @@ impl<'a> Typechecker<'a> {
             .map(|n| {
                 n.child_by_field("type")
                     .and_then(|n| self.convert_ty(n))
-                    .map(|t| t.it)
+                    .map(|t| Ty::from_syntax(&t))
             })
             .collect::<TyResult<Vec<Ty>>>()?;
         let result = match node.child_by_field_name("result") {
-            Some(n) => self.convert_ty(n)?.it,
+            Some(n) => Ty::from_syntax(&self.convert_ty(n)?),
             None => Ty::Unit,
         };
         let func_ty = FuncTy { arguments, result };
-        self.functions
-            .insert(self.text(&name).to_string(), (name.into(), func_ty));
+        self.functions.insert(self.text(&name).to_string(), func_ty);
         Ok(())
     }
 
@@ -426,42 +553,45 @@ impl<'a> Typechecker<'a> {
         let func_ty_node = node.child_by_field("type")?;
         let func_ty = self.convert_func_ty(func_ty_node)?;
         self.functions
-            .insert(self.text(&name).to_string(), (func_ty.at, func_ty.it));
+            .insert(self.text(&name).to_string(), FuncTy::from_syntax(&func_ty));
         Ok(())
     }
 
-    fn convert_func_ty(&self, node: Node<'_>) -> TyResult<Spanned<FuncTy>> {
+    fn convert_func_ty(&self, node: Node<'_>) -> TyResult<FuncType> {
         assert!(node.kind() == "func_type");
         let mut cursor = node.walk();
         let arg_nodes = node.children_by_field_name("argument", &mut cursor);
         let arguments = arg_nodes
-            .map(|n| self.convert_ty(n).map(|t| t.it))
+            .map(|n| self.convert_ty(n))
             .collect::<TyResult<Vec<_>>>()?;
         let result_node = node.child_by_field("result")?;
         let result = self.convert_ty(result_node)?;
-        Ok(Spanned::new(
-            node.into(),
-            FuncTy {
-                arguments,
-                result: result.it,
-            },
-        ))
+        let func_type = FuncTypeData { arguments, result };
+        Ok(FuncType {
+            at: node.into(),
+            ty: FuncTy::from_syntax_data(&func_type),
+            it: func_type,
+        })
     }
 
-    fn convert_ty(&self, node: Node<'_>) -> TyResult<Spanned<Ty>> {
-        let ty = match node.kind() {
-            "ty_i32" => Ty::I32,
-            "ty_f32" => Ty::F32,
-            "ty_bool" => Ty::Bool,
-            "ty_unit" => Ty::Unit,
+    fn convert_ty(&self, node: Node<'_>) -> TyResult<Type> {
+        let ty_data = match node.kind() {
+            "ty_i32" => TypeData::I32,
+            "ty_f32" => TypeData::F32,
+            "ty_bool" => TypeData::Bool,
+            "ty_unit" => TypeData::Unit,
             "ty_array" => {
                 let elem_ty = self.convert_ty(node.child_by_field("elem_ty")?)?;
-                Ty::Array(Box::new(elem_ty.it))
+                TypeData::Array(elem_ty)
             }
-            "ty_struct" => Ty::Struct(self.text(&node).to_string()),
+            "ty_struct" => TypeData::Struct(self.text(&node).to_string()),
             _ => unreachable!("Unknown type of type"),
         };
-        Ok(Spanned::new(node.into(), ty))
+        Ok(Type {
+            at: node.into(),
+            ty: Ty::from_syntax_data(&ty_data),
+            it: Box::new(ty_data),
+        })
     }
 
     pub fn infer_prog(mut self, node: Node<'_>) -> TyResult<Program> {
@@ -490,8 +620,17 @@ impl<'a> Typechecker<'a> {
                 "top_let" => {
                     // TODO: check top lets before top funcs
                     let (binder, expr) = self.check_top_let(&mut global_ctx, &top_level_node)?;
-                    global_ctx.add(binder.it.clone(), binder.ty.clone());
-                    Toplevel::TopLet { binder, expr }
+                    // TODO: parse and check annotation
+                    global_ctx.add(binder.it.clone(), expr.ty.clone());
+                    let top_data = ToplevelData::Global {
+                        binder,
+                        annotation: None,
+                        init: expr,
+                    };
+                    Toplevel {
+                        it: top_data,
+                        at: top_level_node.into(),
+                    }
                 }
                 "top_func" => self.check_func(&mut global_ctx, &top_level_node)?,
                 k => unreachable!("Unknown top_level {}", k),
@@ -503,7 +642,7 @@ impl<'a> Typechecker<'a> {
         Ok(Program { toplevels })
     }
 
-    fn infer_call_args(&self, ctx: &mut Ctx, node: Node<'_>) -> TyResult<Vec<TypedExpr>> {
+    fn infer_call_args(&self, ctx: &mut Ctx, node: Node<'_>) -> TyResult<Vec<Expr>> {
         assert!(node.kind() == "call_args");
         let mut cursor = node.walk();
         node.children(&mut cursor)
@@ -512,114 +651,71 @@ impl<'a> Typechecker<'a> {
             .collect()
     }
 
-    fn infer_set_target(&self, ctx: &mut Ctx, node: &Node) -> TyResult<Typed<SetTarget>> {
+    fn infer_set_target(&self, ctx: &mut Ctx, node: &Node) -> TyResult<SetTarget> {
         let at: Span = node.into();
         match node.kind() {
             "set_var" => {
                 let name_node = node.child_by_field("name")?;
                 let name = self.text(&name_node);
                 let ty = ctx.lookup(name, &name_node.into())?;
-                let it = SetTarget::Var {
-                    name: Typed {
-                        ty: ty.clone(),
-                        at: at.clone(),
-                        it: name.to_string(),
-                    },
-                };
-                Ok(Typed {
-                    ty: ty.clone(),
+                Ok(SetTarget {
                     at,
-                    it,
+                    ty: ty.clone(),
+                    it: Box::new(SetTargetData::Var {
+                        name: self.id(&name_node),
+                    }),
                 })
             }
 
             "set_array_idx" => {
-                let array_node = node.child_by_field("array")?;
-                let array = self.text(&array_node);
-
-                let (array_ty, elem_ty) = {
-                    let array_ty = ctx.lookup(array, &array_node.into())?;
-                    let elem_ty = if let Ty::Array(ref elem_ty) = array_ty {
-                        *elem_ty.clone()
-                    } else {
-                        return Err(Spanned::new(
-                            array_node.into(),
-                            TyError::NonArrayIdx(array_ty.clone()),
-                        ));
-                    };
-                    (array_ty.clone(), elem_ty)
-                };
+                let target_node = node.child_by_field("target")?;
+                let target = self.infer_set_target(ctx, &target_node)?;
+                let elem_ty = self.expect_ty_array(&target.ty, &target.at)?;
 
                 let index_node = node.child_by_field("index")?;
                 let index = self.infer_expr(ctx, &index_node)?;
                 self.expect_ty(&Ty::I32, &index.ty, &index.at)?;
-                let it = SetTarget::Array {
-                    name: Typed {
-                        ty: array_ty,
-                        at: array_node.into(),
-                        it: array.to_string(),
-                    },
-                    index,
-                };
-                Ok(Typed {
-                    ty: elem_ty,
+                Ok(SetTarget {
                     at,
-                    it,
+                    ty: elem_ty.clone(),
+                    it: Box::new(SetTargetData::Array { target, index }),
                 })
             }
             "set_struct_idx" => {
-                let struct_node = node.child_by_field("struct")?;
-                let struct_ty = ctx.lookup(self.text(&struct_node), &struct_node.into())?;
-
-                let (fields, struct_name) = match struct_ty {
-                    Ty::Struct(ref s) => match self.structs.get(s) {
-                        None => unreachable!("Inferred an unknown struct type '{s}'"),
-                        Some(fs) => (fs, s),
-                    },
-                    t => {
-                        return Err(Spanned::new(
-                            struct_node.into(),
-                            TyError::NonStructIdx(t.clone()),
-                        ))
-                    }
-                };
+                let target_node = node.child_by_field("target")?;
+                let target = self.infer_set_target(ctx, &target_node)?;
+                let (struct_name, fields) = self.expect_ty_struct(&target.ty, &target.at)?;
 
                 let index_node = node.child_by_field("index")?;
-                let index = self.text(&index_node);
+                let index = self.id(&index_node);
 
-                let ty = match fields.iter().find(|f| f.name.it == index) {
-                    Some(f) => f.ty.it.clone(),
+                let field_ty = match fields.iter().find(|(name, _)| name.it == index.it) {
+                    Some((_, ty)) => Ty::from_syntax(ty),
                     None => {
-                        return Err(Spanned::new(
-                            index_node.into(),
-                            TyError::UnknownField {
+                        return Err(TyError {
+                            at: index_node.into(),
+                            it: TyErrorData::UnknownField {
                                 struct_name: struct_name.to_string(),
-                                field_name: index.to_string(),
+                                field_name: index.it.to_string(),
                             },
-                        ))
+                        })
                     }
                 };
-                Ok(Typed {
-                    ty,
+
+                Ok(SetTarget {
                     at,
-                    it: SetTarget::Struct {
-                        name: Typed {
-                            ty: struct_ty.clone(),
-                            at: struct_node.into(),
-                            it: self.text(&struct_node).to_string(),
-                        },
-                        index: self.spanned_text(&index_node),
-                    },
+                    ty: field_ty,
+                    it: Box::new(SetTargetData::Struct { target, index }),
                 })
             }
-            k => Err(Spanned::new(
+            k => Err(TyError {
                 at,
-                TyError::Message(format!("Unhandled set target type: {k}")),
-            )),
+                it: TyErrorData::Message(format!("Unhandled set target type: {k}")),
+            }),
         }
     }
 
-    fn infer_decl(&self, ctx: &mut Ctx, node: &Node<'_>) -> TyResult<TypedDeclaration> {
+    fn infer_decl(&self, ctx: &mut Ctx, node: &Node<'_>) -> TyResult<Declaration> {
         let at: Span = node.into();
         match node.kind() {
             "let_decl" => {
@@ -629,11 +725,13 @@ impl<'a> Typechecker<'a> {
                 let name_node = node.child_by_field("binder")?;
                 ctx.add(self.text(&name_node).to_string(), typed_expr.ty.clone());
 
-                Ok(Typed {
+                Ok(Declaration {
                     ty: Ty::Unit,
                     at,
-                    it: Declaration::Let {
-                        binder: self.spanned_text(&name_node),
+                    it: DeclarationData::Let {
+                        binder: self.id(&name_node),
+                        // TODO
+                        annotation: None,
                         expr: typed_expr,
                     },
                 })
@@ -646,19 +744,19 @@ impl<'a> Typechecker<'a> {
                 let expr = self.infer_expr(ctx, &expr_node)?;
 
                 self.expect_ty(&set_target.ty, &expr.ty, &expr.at)?;
-                Ok(Typed {
+                Ok(Declaration {
                     ty: Ty::Unit,
                     at,
-                    it: Declaration::Set { set_target, expr },
+                    it: DeclarationData::Set { set_target, expr },
                 })
             }
             "expr_decl" => {
                 let expr_node = node.child_by_field("expr")?;
                 let expr = self.infer_expr(ctx, &expr_node)?;
-                Ok(Typed {
+                Ok(Declaration {
                     ty: expr.ty.clone(),
                     at,
-                    it: Declaration::Expr(expr),
+                    it: DeclarationData::Expr(expr),
                 })
             }
             "while_decl" => {
@@ -670,68 +768,68 @@ impl<'a> Typechecker<'a> {
                 let body = self.infer_expr(ctx, &body_node)?;
                 self.expect_ty(&Ty::Unit, &body.ty, &body.at)?;
 
-                Ok(Typed {
+                Ok(Declaration {
                     ty: Ty::Unit,
                     at,
-                    it: Declaration::While { condition, body },
+                    it: DeclarationData::While { condition, body },
                 })
             }
 
-            k => Err(Spanned::new(
+            k => Err(TyError {
                 at,
-                TyError::Message(format!("Unhandled decl type: {k}")),
-            )),
+                it: TyErrorData::Message(format!("Unhandled decl type: {k}")),
+            }),
         }
     }
 
-    fn infer_expr(&self, ctx: &mut Ctx, node: &Node<'_>) -> TyResult<TypedExpr> {
+    fn infer_expr(&self, ctx: &mut Ctx, node: &Node<'_>) -> TyResult<Expr> {
         let at: Span = node.into();
         match node.kind() {
             "parenthesized_e" => self.infer_expr(ctx, &node.child_by_field("expr")?),
             "int_lit" => {
-                let lit = Lit::I32(
-                    self.text(node)
-                        .parse()
-                        .map_err(|_| Spanned::new(node.into(), TyError::InvalidLiteral))?,
-                );
-                Ok(Typed {
-                    ty: Ty::I32,
-                    at,
-                    it: Expr::Lit(lit),
+                let lit = LitData::I32(self.text(node).parse().map_err(|_| TyError {
+                    at: node.into(),
+                    it: TyErrorData::InvalidLiteral,
+                })?);
+                let ty = Ty::I32;
+                Ok(Expr {
+                    ty: ty.clone(),
+                    at: at.clone(),
+                    it: Box::new(ExprData::Lit(Lit { at, ty, it: lit })),
                 })
             }
             "float_lit" => {
-                let lit = Lit::F32(
-                    self.text(node)
-                        .parse()
-                        .map_err(|_| Spanned::new(node.into(), TyError::InvalidLiteral))?,
-                );
-                Ok(Typed {
-                    ty: Ty::F32,
-                    at,
-                    it: Expr::Lit(lit),
+                let lit = LitData::F32(self.text(node).parse().map_err(|_| TyError {
+                    at: node.into(),
+                    it: TyErrorData::InvalidLiteral,
+                })?);
+                let ty = Ty::F32;
+                Ok(Expr {
+                    ty: ty.clone(),
+                    at: at.clone(),
+                    it: Box::new(ExprData::Lit(Lit { at, ty, it: lit })),
                 })
             }
             "bool_lit" => {
-                let lit = Lit::Bool(
-                    self.text(node)
-                        .parse()
-                        .map_err(|_| Spanned::new(node.into(), TyError::InvalidLiteral))?,
-                );
-                Ok(Typed {
-                    ty: Ty::Bool,
-                    at,
-                    it: Expr::Lit(lit),
+                let lit = LitData::Bool(self.text(node).parse().map_err(|_| TyError {
+                    at: node.into(),
+                    it: TyErrorData::InvalidLiteral,
+                })?);
+                let ty = Ty::Bool;
+                Ok(Expr {
+                    ty: ty.clone(),
+                    at: at.clone(),
+                    it: Box::new(ExprData::Lit(Lit { at, ty, it: lit })),
                 })
             }
             "var_e" => {
                 let name_node = node.child(0).expect("Expected a name in a var_e node");
-                let name = self.text(&name_node);
-                let ty = ctx.lookup(name, &name_node.into())?;
-                Ok(Typed {
+                let name = self.id(&name_node);
+                let ty = ctx.lookup(&name.it, &name_node.into())?;
+                Ok(Expr {
                     ty: ty.clone(),
                     at,
-                    it: Expr::Var(name.to_string()),
+                    it: Box::new(ExprData::Var(name)),
                 })
             }
             "binary_e" => {
@@ -742,42 +840,45 @@ impl<'a> Typechecker<'a> {
                 let right = self.infer_expr(ctx, &right_node)?;
 
                 let op_node = node.child_by_field("op")?;
-                let op: Op = self
+                let op_data: OpData = self
                     .text(&op_node)
                     .parse()
                     .expect("failed to parse operator");
 
-                let ty = match op {
-                    Op::Add | Op::Sub | Op::Mul | Op::Div => {
+                let ty = match op_data {
+                    OpData::Add | OpData::Sub | OpData::Mul | OpData::Div => {
                         self.expect_ty_num(&left.ty, &left.at)?;
                         self.expect_ty(&left.ty, &right.ty, &right.at)?;
                         left.ty.clone()
                     }
-                    Op::Lt | Op::Le | Op::Gt | Op::Ge => {
+                    OpData::Lt | OpData::Le | OpData::Gt | OpData::Ge => {
                         self.expect_ty_num(&left.ty, &left.at)?;
                         self.expect_ty(&left.ty, &right.ty, &right.at)?;
                         Ty::Bool
                     }
-                    Op::And | Op::Or => {
+                    OpData::And | OpData::Or => {
                         self.expect_ty(&Ty::Bool, &left.ty, &left.at)?;
                         self.expect_ty(&Ty::Bool, &right.ty, &right.at)?;
                         Ty::Bool
                     }
-                    Op::Eq | Op::Ne => {
+                    OpData::Eq | OpData::Ne => {
                         self.expect_ty_num(&left.ty, &left.at)?;
                         self.expect_ty(&left.ty, &right.ty, &right.at)?;
                         Ty::Bool
                     }
                 };
 
-                Ok(Typed {
+                Ok(Expr {
                     ty,
                     at,
-                    it: Expr::Binary {
-                        op: Spanned::new(op_node.into(), op),
-                        left: Box::new(left),
-                        right: Box::new(right),
-                    },
+                    it: Box::new(ExprData::Binary {
+                        op: Op {
+                            it: op_data,
+                            at: op_node.into(),
+                        },
+                        left,
+                        right,
+                    }),
                 })
             }
             "call_e" => {
@@ -789,8 +890,8 @@ impl<'a> Typechecker<'a> {
                     self.lookup_function(self.text(&function_node), &function_node.into())?;
 
                 if func_ty.arguments.len() != call_args.len() {
-                    return Err(Spanned {
-                        it: TyError::ArgCountMismatch(func_ty.arguments.len(), call_args.len()),
+                    return Err(TyError {
+                        it: TyErrorData::ArgCountMismatch(func_ty.arguments.len(), call_args.len()),
                         at: call_args_node.into(),
                     });
                 }
@@ -798,14 +899,13 @@ impl<'a> Typechecker<'a> {
                     self.expect_ty(expected, &actual.ty, &actual.at)?
                 }
 
-                Ok(Typed {
+                Ok(Expr {
                     ty: func_ty.result.clone(),
                     at,
-                    it: Expr::Call {
-                        func: self.spanned_text(&function_node),
-                        func_ty: func_ty.clone(),
+                    it: Box::new(ExprData::Call {
+                        func: self.func_id(&function_node, func_ty.clone()),
                         arguments: call_args,
-                    },
+                    }),
                 })
             }
             "array_e" => {
@@ -824,10 +924,10 @@ impl<'a> Typechecker<'a> {
                     }
                     None => Ty::Unit,
                 };
-                Ok(Typed {
+                Ok(Expr {
                     ty: Ty::Array(Box::new(ty_elem)),
                     at,
-                    it: Expr::Array(elems),
+                    it: Box::new(ExprData::Array(elems)),
                 })
             }
             "array_idx_e" => {
@@ -837,16 +937,18 @@ impl<'a> Typechecker<'a> {
                 let index = self.infer_expr(ctx, &index_node)?;
                 let ty_elem = match array.ty {
                     Ty::Array(ref t) => *t.clone(),
-                    t => return Err(Spanned::new(at, TyError::NonArrayIdx(t))),
+                    t => {
+                        return Err(TyError {
+                            at,
+                            it: TyErrorData::NonArrayIdx(t),
+                        })
+                    }
                 };
                 self.expect_ty(&Ty::I32, &index.ty, &index.at)?;
-                Ok(Typed {
+                Ok(Expr {
                     ty: ty_elem,
                     at,
-                    it: Expr::ArrayIdx {
-                        array: Box::new(array),
-                        index: Box::new(index),
-                    },
+                    it: Box::new(ExprData::ArrayIdx { array, index }),
                 })
             }
             "if_e" => {
@@ -860,14 +962,14 @@ impl<'a> Typechecker<'a> {
                 self.expect_ty(&Ty::Bool, &condition.ty, &condition.at)?;
                 self.expect_ty(&then_branch.ty, &else_branch.ty, &then_branch.at)?;
 
-                Ok(Typed {
+                Ok(Expr {
                     ty: then_branch.ty.clone(),
                     at,
-                    it: Expr::If {
-                        condition: Box::new(condition),
-                        then_branch: Box::new(then_branch),
-                        else_branch: Box::new(else_branch),
-                    },
+                    it: Box::new(ExprData::If {
+                        condition,
+                        then_branch,
+                        else_branch,
+                    }),
                 })
             }
             "block_e" => {
@@ -881,10 +983,10 @@ impl<'a> Typechecker<'a> {
                     .last()
                     .map(|d| d.ty.clone())
                     .unwrap_or(Ty::Unit);
-                Ok(Typed {
+                Ok(Expr {
                     ty,
                     at,
-                    it: Expr::Block { declarations },
+                    it: Box::new(ExprData::Block { declarations }),
                 })
             }
             "struct_e" => {
@@ -892,10 +994,10 @@ impl<'a> Typechecker<'a> {
                 let struct_name = self.text(&struct_name_node);
                 let expected_fields = match self.structs.get(struct_name) {
                     None => {
-                        return Err(Spanned::new(
-                            struct_name_node.into(),
-                            TyError::UnknownType(struct_name.to_string()),
-                        ))
+                        return Err(TyError {
+                            at: struct_name_node.into(),
+                            it: TyErrorData::UnknownType(struct_name.to_string()),
+                        })
                     }
                     Some(s) => s,
                 };
@@ -910,10 +1012,7 @@ impl<'a> Typechecker<'a> {
                     let name_node = field_node.child_by_field("name")?;
                     let expr_node = field_node.child_by_field("expr")?;
                     let expr = self.infer_expr(ctx, &expr_node)?;
-                    let field = StructFieldE {
-                        name: self.spanned_text(&name_node),
-                        expr,
-                    };
+                    let field = (self.id(&name_node), expr);
                     actual_fields.push(field)
                 }
                 self.check_struct_fields(
@@ -923,13 +1022,13 @@ impl<'a> Typechecker<'a> {
                     node.into(),
                 )?;
 
-                Ok(Typed {
+                Ok(Expr {
                     ty: Ty::Struct(struct_name.to_string()),
                     at,
-                    it: Expr::Struct {
-                        name: self.spanned_text(&struct_name_node),
+                    it: Box::new(ExprData::Struct {
+                        name: self.id(&struct_name_node),
                         fields: actual_fields,
-                    },
+                    }),
                 })
             }
             "struct_idx_e" => {
@@ -943,29 +1042,34 @@ impl<'a> Typechecker<'a> {
                         None => unreachable!("Inferred an unknown struct type '{s}'"),
                         Some(fs) => (fs, s),
                     },
-                    t => return Err(Spanned::new(expr.at, TyError::NonStructIdx(t))),
-                };
-
-                let ty = match fields.iter().find(|f| f.name.it == index) {
-                    Some(f) => f.ty.it.clone(),
-                    None => {
-                        return Err(Spanned::new(
-                            index_node.into(),
-                            TyError::UnknownField {
-                                struct_name: struct_name.to_string(),
-                                field_name: index.to_string(),
-                            },
-                        ))
+                    t => {
+                        return Err(TyError {
+                            at: expr.at,
+                            it: TyErrorData::NonStructIdx(t),
+                        })
                     }
                 };
 
-                Ok(Typed {
+                let ty = match fields.iter().find(|(name, _)| name.it == index) {
+                    Some((_, ty)) => ty.ty.clone(),
+                    None => {
+                        return Err(TyError {
+                            at: index_node.into(),
+                            it: TyErrorData::UnknownField {
+                                struct_name: struct_name.to_string(),
+                                field_name: index.to_string(),
+                            },
+                        })
+                    }
+                };
+
+                Ok(Expr {
                     ty,
                     at,
-                    it: Expr::StructIdx {
-                        expr: Box::new(expr),
-                        index: self.spanned_text(&index_node),
-                    },
+                    it: Box::new(ExprData::StructIdx {
+                        expr,
+                        index: self.id(&index_node),
+                    }),
                 })
             }
             "intrinsic_e" => {
@@ -978,28 +1082,34 @@ impl<'a> Typechecker<'a> {
                 match (function, call_args.len()) {
                     ("@array_len", 1) => {
                         self.expect_ty_array(&call_args[0].ty, &call_args[0].at)?;
-                        Ok(Typed {
+                        Ok(Expr {
                             ty: Ty::I32,
                             at,
-                            it: Expr::Intrinsic {
-                                intrinsic: Spanned::new(function_node.into(), Intrinsic::ArrayLen),
+                            it: Box::new(ExprData::Intrinsic {
+                                intrinsic: Intrinsic {
+                                    at: function_node.into(),
+                                    it: IntrinsicData::ArrayLen,
+                                },
                                 arguments: call_args,
-                            },
+                            }),
                         })
                     }
                     ("@array_new", 2) => {
                         self.expect_ty(&Ty::I32, &call_args[1].ty, &call_args[1].at)?;
-                        Ok(Typed {
+                        Ok(Expr {
                             ty: Ty::Array(Box::new(call_args[0].ty.clone())),
                             at,
-                            it: Expr::Intrinsic {
-                                intrinsic: Spanned::new(function_node.into(), Intrinsic::ArrayNew),
+                            it: Box::new(ExprData::Intrinsic {
+                                intrinsic: Intrinsic {
+                                    at: function_node.into(),
+                                    it: IntrinsicData::ArrayNew,
+                                },
                                 arguments: call_args,
-                            },
+                            }),
                         })
                     }
-                    (f, arg_count) => Err(Spanned {
-                        it: TyError::UnknownIntrinsic(f.to_string(), arg_count),
+                    (f, arg_count) => Err(TyError {
+                        it: TyErrorData::UnknownIntrinsic(f.to_string(), arg_count),
                         at,
                     }),
                 }

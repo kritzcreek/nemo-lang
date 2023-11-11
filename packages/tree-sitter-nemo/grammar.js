@@ -115,11 +115,11 @@ module.exports = grammar({
       // Declarations
       set_var: $ => field('name', $.lower_ident),
       set_array_idx: $ => seq(
-        field('array', $.lower_ident),
+        field('target', $._set_target),
         '[', field('index', $._expr), ']'
       ),
       set_struct_idx: $ => seq(
-        field('struct', $.lower_ident),
+        field('target', $._set_target),
         '.', field('index', $.lower_ident)
       ),
       _set_target: $ => choice(
