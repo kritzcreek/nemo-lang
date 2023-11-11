@@ -1,3 +1,4 @@
+pub mod codegen;
 pub mod ir;
 pub mod lower;
-pub mod codegen;
+mod wasm_builder;

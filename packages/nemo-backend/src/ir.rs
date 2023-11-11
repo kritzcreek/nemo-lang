@@ -25,7 +25,7 @@ impl fmt::Display for Name {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub enum Ty {
     I32,
     F32,
