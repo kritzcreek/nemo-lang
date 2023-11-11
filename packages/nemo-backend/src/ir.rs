@@ -210,7 +210,7 @@ pub enum DeclarationData {
 
 #[derive(Debug, PartialEq)]
 pub struct SetTarget {
-    pub it: Box<SetTargetData>,
+    pub it: SetTargetData,
     pub at: Span,
     pub ty: Ty,
 }
@@ -223,8 +223,8 @@ impl Spanned for SetTarget {
 
 #[derive(Debug, PartialEq)]
 pub enum SetTargetData {
-    Array { target: Name, index: Expr },
-    Struct { target: Name, index: Name },
+    Array { target: Expr, index: Expr },
+    Struct { target: Expr, index: Name },
     Var { name: Name },
 }
 

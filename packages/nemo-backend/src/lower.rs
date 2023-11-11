@@ -1,6 +1,9 @@
 use std::collections::HashMap;
 
-use crate::ir::{Expr, Func, FuncTy, Global, Import, Name, Program, Struct, Ty};
+use crate::ir::{
+    Declaration, DeclarationData, Expr, ExprData, Func, FuncTy, Global, Import, Intrinsic,
+    IntrinsicData, Lit, LitData, Name, Op, OpData, Program, SetTarget, SetTargetData, Struct, Ty,
+};
 use nemo_frontend::{
     syntax::{self, FuncId, Id, ToplevelData},
     types,
@@ -53,7 +56,7 @@ pub struct Lower {
 }
 
 impl Lower {
-    fn new() -> Lower {
+    pub fn new() -> Lower {
         Lower {
             local: 0,
             global: 0,
@@ -137,7 +140,21 @@ impl Lower {
     }
 
     fn lookup_func(&self, func: &str) -> Name {
-        self.funcs.get(func).unwrap().clone()
+        *self.funcs.get(func).unwrap()
+    }
+
+    fn lookup_field(&self, struct_name: &str, field: &str) -> Name {
+        *self.lookup_ty(struct_name)
+            .fields
+            .get(field)
+            .unwrap()
+    }
+    fn lookup_field_ty(&self, ty: &types::Ty, field: &str) -> Name {
+        if let types::Ty::Struct(struct_name) = ty {
+            self.lookup_field(struct_name, field)
+        } else {
+            unreachable!("Tried to look up a non-existing struct type {ty}")
+        }
     }
 
     fn lookup_var(&self, var: &str) -> Name {
@@ -194,7 +211,7 @@ impl Lower {
                     .into_iter()
                     .map(|(name, ty)| {
                         (
-                            ty_info.fields.get(&name.it).unwrap().clone(),
+                            *ty_info.fields.get(&name.it).unwrap(),
                             self.lower_type(&ty),
                         )
                     })
@@ -248,21 +265,184 @@ impl Lower {
         }
     }
 
+    fn lower_lit(&self, lit: syntax::Lit) -> Lit {
+        Lit {
+            at: lit.at,
+            ty: self.lower_ty(&lit.ty),
+            it: match lit.it {
+                syntax::LitData::I32(i) => LitData::I32(i),
+                syntax::LitData::F32(f) => LitData::F32(f),
+                syntax::LitData::Bool(b) => LitData::Bool(b),
+            },
+        }
+    }
+
+    fn lower_intrinsic(&self, intrinsic: syntax::Intrinsic) -> crate::ir::Intrinsic {
+        let it = match intrinsic.it {
+            syntax::IntrinsicData::ArrayLen => IntrinsicData::ArrayLen,
+            syntax::IntrinsicData::ArrayNew => IntrinsicData::ArrayNew,
+        };
+        Intrinsic {
+            it,
+            at: intrinsic.at,
+        }
+    }
+
     fn lower_expr(&mut self, expr: syntax::Expr) -> Expr {
         let expr_data = match *expr.it {
-            syntax::ExprData::Lit(l) => todo!(),
-            syntax::ExprData::Var(v) => todo!(),
-            syntax::ExprData::Call { func, arguments } => todo!(),
-            syntax::ExprData::Binary { op, left, right } => todo!(),
-            syntax::ExprData::Array(_) => todo!(),
-            syntax::ExprData::ArrayIdx { array, index } => todo!(),
-            syntax::ExprData::If { condition, then_branch, else_branch } => todo!(),
-            syntax::ExprData::Block { declarations } => todo!(),
-            syntax::ExprData::Struct { name, fields } => todo!(),
-            syntax::ExprData::StructIdx { expr, index } => todo!(),
-            syntax::ExprData::Intrinsic { intrinsic, arguments } => todo!(),
+            syntax::ExprData::Lit(l) => ExprData::Lit(self.lower_lit(l)),
+            syntax::ExprData::Var(v) => ExprData::Var(self.lookup_var(&v.it)),
+            syntax::ExprData::Call { func, arguments } => ExprData::Call {
+                func: self.lookup_func(&func.it),
+                arguments: arguments.into_iter().map(|e| self.lower_expr(e)).collect(),
+            },
+            syntax::ExprData::Binary { op, left, right } => {
+                let op = self.lower_op(op, &left.ty, &right.ty);
+
+                ExprData::Binary {
+                    op,
+                    left: self.lower_expr(left),
+                    right: self.lower_expr(right),
+                }
+            }
+            syntax::ExprData::Array(elements) => {
+                ExprData::Array(elements.into_iter().map(|e| self.lower_expr(e)).collect())
+            }
+            syntax::ExprData::ArrayIdx { array, index } => ExprData::ArrayIdx {
+                array: self.lower_expr(array),
+                index: self.lower_expr(index),
+            },
+            syntax::ExprData::If {
+                condition,
+                then_branch,
+                else_branch,
+            } => ExprData::If {
+                condition: self.lower_expr(condition),
+                then_branch: self.lower_expr(then_branch),
+                else_branch: self.lower_expr(else_branch),
+            },
+            syntax::ExprData::Block { declarations } => {
+                self.scope.enter_block();
+                let block = ExprData::Block {
+                    declarations: declarations
+                        .into_iter()
+                        .map(|d| self.lower_decl(d))
+                        .collect(),
+                };
+                self.scope.leave_block();
+                block
+            }
+            syntax::ExprData::Struct { name, fields } => {
+                let fields = fields
+                    .into_iter()
+                    .map(|(field_name, expr)| {
+                        (
+                            self.lookup_field(&name.it, &field_name.it),
+                            self.lower_expr(expr),
+                        )
+                    })
+                    .collect();
+                let ty_info = self.lookup_ty(&name.it);
+                ExprData::Struct {
+                    name: ty_info.name,
+                    fields,
+                }
+            }
+            syntax::ExprData::StructIdx { expr, index } => {
+                let index = self.lookup_field_ty(&expr.ty, &index.it);
+                ExprData::StructIdx {
+                    expr: self.lower_expr(expr),
+                    index,
+                }
+            }
+            syntax::ExprData::Intrinsic {
+                intrinsic,
+                arguments,
+            } => ExprData::Intrinsic {
+                intrinsic: self.lower_intrinsic(intrinsic),
+                arguments: arguments.into_iter().map(|e| self.lower_expr(e)).collect(),
+            },
         };
-        Expr { it: expr_data, at: expr.at, ty: expr.ty }
+        Expr {
+            it: Box::new(expr_data),
+            at: expr.at,
+            ty: self.lower_ty(&expr.ty),
+        }
+    }
+
+    fn set_target_to_expr(&mut self, set_target: syntax::SetTarget) -> Expr {
+        let it = match *set_target.it {
+            syntax::SetTargetData::Array { target, index } => {
+                let array = self.set_target_to_expr(target);
+                ExprData::ArrayIdx {
+                    array,
+                    index: self.lower_expr(index),
+                }
+            }
+            syntax::SetTargetData::Struct { target, index } => {
+                let index = self.lookup_field_ty(&target.ty, &index.it);
+                let expr = self.set_target_to_expr(target);
+                ExprData::StructIdx { expr, index }
+            }
+            syntax::SetTargetData::Var { name } => ExprData::Var(self.lookup_var(&name.it)),
+        };
+        Expr {
+            it: Box::new(it),
+            at: set_target.at,
+            ty: self.lower_ty(&set_target.ty),
+        }
+    }
+
+    fn lower_set_target(&mut self, set_target: syntax::SetTarget) -> SetTarget {
+        let set_target_data = match *set_target.it {
+            syntax::SetTargetData::Array { target, index } => SetTargetData::Array {
+                target: self.set_target_to_expr(target),
+                index: self.lower_expr(index),
+            },
+            syntax::SetTargetData::Struct { target, index } => {
+                let index = self.lookup_field_ty(&target.ty, &index.it);
+                SetTargetData::Struct {
+                    target: self.set_target_to_expr(target),
+                    index,
+                }
+            }
+            syntax::SetTargetData::Var { name } => SetTargetData::Var {
+                name: self.lookup_var(&name.it),
+            },
+        };
+        SetTarget {
+            it: set_target_data,
+            at: set_target.at,
+            ty: self.lower_ty(&set_target.ty),
+        }
+    }
+
+    fn lower_decl(&mut self, decl: syntax::Declaration) -> Declaration {
+        let declaration_data = match decl.it {
+            syntax::DeclarationData::Let {
+                binder,
+                annotation: _,
+                expr,
+            } => {
+                let expr = self.lower_expr(expr);
+                let binder = self.local_idx(binder);
+                DeclarationData::Let { binder, expr }
+            }
+            syntax::DeclarationData::Set { set_target, expr } => DeclarationData::Set {
+                set_target: self.lower_set_target(set_target),
+                expr: self.lower_expr(expr),
+            },
+            syntax::DeclarationData::Expr(e) => DeclarationData::Expr(self.lower_expr(e)),
+            syntax::DeclarationData::While { condition, body } => DeclarationData::While {
+                condition: self.lower_expr(condition),
+                body: self.lower_expr(body),
+            },
+        };
+        Declaration {
+            it: declaration_data,
+            at: decl.at,
+            ty: self.lower_ty(&decl.ty),
+        }
     }
 
     pub fn rename_program(mut self, program: syntax::Program) -> (Program, HashMap<Name, Id>) {
@@ -305,7 +485,42 @@ impl Lower {
                 ToplevelData::Func { .. } => prog.funcs.push(self.lower_func(toplevel)),
             }
         }
-
         (prog, self.name_map)
+    }
+
+    fn lower_op(&self, op: syntax::Op, ty_left: &types::Ty, ty_right: &types::Ty) -> crate::ir::Op {
+        let op_data = match (op.it, ty_left, ty_right) {
+            (syntax::OpData::Add, types::Ty::I32, types::Ty::I32) => OpData::I32Add,
+            (syntax::OpData::Sub, types::Ty::I32, types::Ty::I32) => OpData::I32Sub,
+            (syntax::OpData::Mul, types::Ty::I32, types::Ty::I32) => OpData::I32Mul,
+            (syntax::OpData::Div, types::Ty::I32, types::Ty::I32) => OpData::I32Div,
+            (syntax::OpData::Lt, types::Ty::I32, types::Ty::I32) => OpData::I32Lt,
+            (syntax::OpData::Le, types::Ty::I32, types::Ty::I32) => OpData::I32Le,
+            (syntax::OpData::Gt, types::Ty::I32, types::Ty::I32) => OpData::I32Gt,
+            (syntax::OpData::Ge, types::Ty::I32, types::Ty::I32) => OpData::I32Ge,
+            (syntax::OpData::Eq, types::Ty::I32, types::Ty::I32) => OpData::I32Eq,
+            (syntax::OpData::Ne, types::Ty::I32, types::Ty::I32) => OpData::I32Ne,
+
+            (syntax::OpData::Add, types::Ty::F32, types::Ty::F32) => OpData::F32Add,
+            (syntax::OpData::Sub, types::Ty::F32, types::Ty::F32) => OpData::F32Sub,
+            (syntax::OpData::Mul, types::Ty::F32, types::Ty::F32) => OpData::F32Mul,
+            (syntax::OpData::Div, types::Ty::F32, types::Ty::F32) => OpData::F32Div,
+            (syntax::OpData::Lt, types::Ty::F32, types::Ty::F32) => OpData::F32Lt,
+            (syntax::OpData::Le, types::Ty::F32, types::Ty::F32) => OpData::F32Le,
+            (syntax::OpData::Gt, types::Ty::F32, types::Ty::F32) => OpData::F32Gt,
+            (syntax::OpData::Ge, types::Ty::F32, types::Ty::F32) => OpData::F32Ge,
+            (syntax::OpData::Eq, types::Ty::F32, types::Ty::F32) => OpData::F32Eq,
+            (syntax::OpData::Ne, types::Ty::F32, types::Ty::F32) => OpData::F32Ne,
+
+            (syntax::OpData::Eq, types::Ty::Bool, types::Ty::Bool) => OpData::BoolEq,
+            (syntax::OpData::Ne, types::Ty::Bool, types::Ty::Bool) => OpData::BoolNe,
+            (syntax::OpData::And, types::Ty::Bool, types::Ty::Bool) => OpData::BoolAnd,
+            (syntax::OpData::Or, types::Ty::Bool, types::Ty::Bool) => OpData::BoolOr,
+            (_, _, _) => unreachable!("Can't lower {:?} for types {ty_left} and {ty_right}", op.it),
+        };
+        Op {
+            it: op_data,
+            at: op.at,
+        }
     }
 }
