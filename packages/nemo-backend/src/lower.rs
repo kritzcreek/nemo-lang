@@ -39,7 +39,7 @@ struct TypeInfo {
     fields: HashMap<String, Name>,
 }
 
-pub struct Lower {
+struct Lower {
     // Name supply
     local: u32,
     global: u32,
@@ -51,12 +51,12 @@ pub struct Lower {
     funcs: HashMap<String, Name>,
 
     scope: Scope,
-    // For debugging purposes (let's us map renamed identifiers back to their original source)
+    // For debugging purposes (lets us map lowerd identifiers back to their original source)
     name_map: HashMap<Name, Id>,
 }
 
 impl Lower {
-    pub fn new() -> Lower {
+    fn new() -> Lower {
         Lower {
             local: 0,
             global: 0,
@@ -144,10 +144,7 @@ impl Lower {
     }
 
     fn lookup_field(&self, struct_name: &str, field: &str) -> Name {
-        *self.lookup_ty(struct_name)
-            .fields
-            .get(field)
-            .unwrap()
+        *self.lookup_ty(struct_name).fields.get(field).unwrap()
     }
     fn lookup_field_ty(&self, ty: &types::Ty, field: &str) -> Name {
         if let types::Ty::Struct(struct_name) = ty {
@@ -176,14 +173,14 @@ impl Lower {
         }
     }
 
-    fn rename_func_ty(&self, func_ty: &types::FuncTy) -> FuncTy {
+    fn lower_func_ty(&self, func_ty: &types::FuncTy) -> FuncTy {
         FuncTy {
             arguments: func_ty.arguments.iter().map(|a| self.lower_ty(a)).collect(),
             result: self.lower_ty(&func_ty.result),
         }
     }
 
-    fn rename_import(&self, toplevel: syntax::Toplevel) -> Import {
+    fn lower_import(&self, toplevel: syntax::Toplevel) -> Import {
         if let syntax::ToplevelData::Import {
             internal,
             func_ty,
@@ -193,15 +190,15 @@ impl Lower {
             Import {
                 span: toplevel.at,
                 internal: self.lookup_func(&internal.it),
-                func_ty: self.rename_func_ty(&func_ty.ty),
+                func_ty: self.lower_func_ty(&func_ty.ty),
                 external: external.it,
             }
         } else {
-            unreachable!("Passed a non-import to rename_import")
+            unreachable!("Passed a non-import to lower_import")
         }
     }
 
-    fn rename_struct(&self, toplevel: syntax::Toplevel) -> Struct {
+    fn lower_struct(&self, toplevel: syntax::Toplevel) -> Struct {
         if let syntax::ToplevelData::Struct { name, fields } = toplevel.it {
             let ty_info = self.lookup_ty(&name.it);
             Struct {
@@ -210,15 +207,12 @@ impl Lower {
                 fields: fields
                     .into_iter()
                     .map(|(name, ty)| {
-                        (
-                            *ty_info.fields.get(&name.it).unwrap(),
-                            self.lower_type(&ty),
-                        )
+                        (*ty_info.fields.get(&name.it).unwrap(), self.lower_type(&ty))
                     })
                     .collect(),
             }
         } else {
-            unreachable!("Passed a non-struct to rename_struct")
+            unreachable!("Passed a non-struct to lower_struct")
         }
     }
 
@@ -445,7 +439,7 @@ impl Lower {
         }
     }
 
-    pub fn rename_program(mut self, program: syntax::Program) -> (Program, HashMap<Name, Id>) {
+    fn lower_program(mut self, program: syntax::Program) -> (Program, HashMap<Name, Id>) {
         for ele in program.toplevels.iter() {
             match ele.it {
                 ToplevelData::Import { ref internal, .. } => {
@@ -479,8 +473,8 @@ impl Lower {
 
         for toplevel in program.toplevels {
             match toplevel.it {
-                ToplevelData::Import { .. } => prog.imports.push(self.rename_import(toplevel)),
-                ToplevelData::Struct { .. } => prog.structs.push(self.rename_struct(toplevel)),
+                ToplevelData::Import { .. } => prog.imports.push(self.lower_import(toplevel)),
+                ToplevelData::Struct { .. } => prog.structs.push(self.lower_struct(toplevel)),
                 ToplevelData::Global { .. } => prog.globals.push(self.lower_global(toplevel)),
                 ToplevelData::Func { .. } => prog.funcs.push(self.lower_func(toplevel)),
             }
@@ -523,4 +517,8 @@ impl Lower {
             at: op.at,
         }
     }
+}
+
+pub fn lower(program: syntax::Program) -> (Program, HashMap<Name, Id>) {
+    Lower::new().lower_program(program)
 }
