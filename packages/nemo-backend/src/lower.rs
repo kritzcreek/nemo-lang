@@ -246,6 +246,7 @@ impl Lower {
                 .into_iter()
                 .map(|(name, ty)| (self.local_idx(name), self.lower_type(&ty)))
                 .collect();
+            // TODO: resolve built-ins
             let func = Func {
                 name: self.lookup_func(&name.it),
                 params,

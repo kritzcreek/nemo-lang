@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 use std::iter;
 
-use crate::ir::{FuncTy, Import, Name, Ty};
+use crate::ir::{FuncTy, Import, Name, Struct, Ty};
 use wasm_encoder::{
     self, ArrayType, CodeSection, CompositeType, ConstExpr, EntityType, ExportKind, ExportSection,
     FieldType, FuncType, Function, FunctionSection, GlobalSection, GlobalType, HeapType,
-    ImportSection, Instruction, Module, RefType, StartSection, StorageType, SubType, TypeSection,
-    ValType,
+    ImportSection, Instruction, Module, RefType, StartSection, StorageType, StructType, SubType,
+    TypeSection, ValType,
 };
 
 type FuncIdx = u32;
@@ -135,6 +135,23 @@ impl<'a> Builder<'a> {
         module.finish()
     }
 
+    pub fn declare_struct(&mut self, ty: Struct) {
+        let mut fields = vec![];
+        let mut field_names = vec![];
+        for (name, ty) in ty.fields {
+            field_names.push(name);
+            let val_ty = self.val_ty(&ty);
+            fields.push(FieldType { element_type: StorageType::Val(val_ty), mutable: true })
+        }
+        let index = self.types.len() as u32;
+        self.types.push(vec![SubType {
+            is_final: true,
+            supertype_idx: None,
+            composite_type: CompositeType::Struct(StructType { fields: Box::new([]) }),
+        }]);
+        self.structs.insert(ty.name, (index, field_names));
+    }
+
     pub fn func_type(&mut self, ty: &FuncTy) -> TypeIdx {
         let res_ty = self.val_ty(&ty.result);
         let arguments = ty.arguments.iter().map(|t| self.val_ty(t));
@@ -248,9 +265,12 @@ impl<'a> Builder<'a> {
         self.start_fn = Some(index)
     }
 
-    pub fn declare_func(&'a mut self, name: Name, func_ty: &FuncTy, params: Vec<(Name, Ty)>) -> BodyBuilder<'a> {
+    pub fn declare_func(
+        &mut self,
+        name: Name,
+        func_ty: FuncTy
+    ) {
         let index = (self.imports.len() + self.funcs.len()) as u32;
-        let params = params.into_iter().map(|(name, ty)| (name, self.val_ty(&ty))).collect();
         let ty = self.func_type(&func_ty);
         self.funcs.insert(
             name,
@@ -261,7 +281,6 @@ impl<'a> Builder<'a> {
                 body: None,
             },
         );
-        BodyBuilder::new(self, name, params)
     }
 
     pub fn fill_func(&mut self, name: Name, locals: Vec<ValType>, body: Vec<Instruction<'a>>) {
@@ -281,19 +300,17 @@ struct LocalData {
     ty: ValType,
 }
 
-pub struct BodyBuilder<'a> {
+pub struct BodyBuilder {
     params: usize,
     locals: HashMap<Name, LocalData>,
-    builder: &'a mut Builder<'a>,
     func_name: Name,
 }
 
-impl<'a> BodyBuilder<'a> {
-    fn new(
-        builder: &'a mut Builder<'a>,
+impl BodyBuilder {
+    pub fn new(
         func_name: Name,
         params: Vec<(Name, ValType)>,
-    ) -> BodyBuilder<'a> {
+    ) -> BodyBuilder {
         BodyBuilder {
             params: params.len(),
             locals: HashMap::from_iter(params.into_iter().enumerate().map(
@@ -307,30 +324,28 @@ impl<'a> BodyBuilder<'a> {
                     )
                 },
             )),
-            builder,
             func_name,
         }
     }
 
-    pub fn new_local(&mut self, name: Name, ty: &Ty) -> LocalIdx {
+    pub fn new_local(&mut self, name: Name, ty: ValType) -> LocalIdx {
         let index = self.locals.len() as u32;
-        let ty = self.builder.val_ty(&ty);
         self.locals.insert(name, LocalData { index, ty });
         index
     }
 
-    pub fn lookup_local(&self, name: &Name) -> LocalIdx {
-        self.locals.get(name).unwrap().index
+    pub fn lookup_local(&self, name: &Name) -> Option<LocalIdx> {
+        self.locals.get(name).map(|v| v.index)
     }
 
-    pub fn finish(mut self, body: Vec<Instruction<'a>>) {
+    pub fn finish<'a>(mut self, body: Vec<Instruction<'a>>, builder: &'a mut Builder<'a>) {
         let mut locals: Vec<LocalData> = self
             .locals
             .into_values()
             .filter(|l| l.index >= self.params as u32)
             .collect();
         locals.sort_by_key(|l| l.index);
-        self.builder.fill_func(
+        builder.fill_func(
             self.func_name,
             locals.into_iter().map(|l| l.ty).collect(),
             body,

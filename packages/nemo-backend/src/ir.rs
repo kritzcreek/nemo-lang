@@ -258,6 +258,15 @@ pub struct Func {
     pub body: Expr,
 }
 
+impl Func {
+    pub fn func_ty(&self) -> FuncTy {
+        FuncTy {
+            arguments: self.params.iter().map(|(_, t)| t.clone()).collect(),
+            result: self.return_ty.clone(),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct Program {
     pub imports: Vec<Import>,
