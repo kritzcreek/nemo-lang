@@ -1,7 +1,10 @@
 use wasm_encoder::{BlockType, ConstExpr, Function, HeapType, Instruction};
 
 use crate::{
-    ir::{Expr, ExprData, Lit, LitData, Op, OpData, Program, Ty},
+    ir::{
+        Declaration, DeclarationData, Expr, ExprData, Lit, LitData, Name, Op, OpData, Program,
+        SetTarget, SetTargetData, Ty,
+    },
     wasm_builder::{BodyBuilder, Builder},
 };
 
@@ -43,11 +46,11 @@ impl<'a> Codegen<'a> {
             Ty::I32 | Ty::Unit | Ty::Bool => ConstExpr::i32_const(0),
             Ty::F32 => ConstExpr::f32_const(0.0),
             Ty::Array(t) => {
-                let ty_idx = self.builder.array_type_elem(&t);
+                let ty_idx = self.builder.array_type_elem(t);
                 ConstExpr::ref_null(HeapType::Concrete(ty_idx))
             }
             Ty::Struct(s) => {
-                let (ty_idx, _) = self.builder.struct_type(&s);
+                let (ty_idx, _) = self.builder.struct_type(s);
                 ConstExpr::ref_null(HeapType::Concrete(ty_idx))
             }
         }
@@ -147,7 +150,14 @@ impl<'a> Codegen<'a> {
                 instrs.push(Instruction::End);
                 instrs
             }
-            ExprData::Block { declarations } => todo!(),
+            ExprData::Block { declarations, expr } => {
+                let mut instrs = vec![];
+                for declaration in declarations {
+                    instrs.extend(self.compile_decl(body, declaration))
+                }
+                instrs.extend(self.compile_expr(body, expr));
+                instrs
+            }
             ExprData::Struct { name, mut fields } => {
                 let (struct_ty, field_order) = self.builder.struct_type(&name);
                 let mut instrs = vec![];
@@ -174,6 +184,90 @@ impl<'a> Codegen<'a> {
         }
     }
 
+    fn compile_decl(&mut self, body: &mut BodyBuilder, decl: Declaration) -> Vec<Instruction<'a>> {
+        match decl.it {
+            DeclarationData::Let { binder, expr } => {
+                let val_ty = self.builder.val_ty(&expr.ty);
+                let mut instrs = self.compile_expr(body, expr);
+                let local_idx = body.new_local(binder, val_ty);
+                instrs.push(Instruction::LocalSet(local_idx));
+                instrs
+            }
+            DeclarationData::Set { set_target, expr } => {
+                self.compile_set_target(body, set_target, expr)
+            }
+            DeclarationData::Expr(e) => {
+                let mut instrs = self.compile_expr(body, e);
+                instrs.push(Instruction::Drop);
+                instrs
+            }
+            DeclarationData::While {
+                condition,
+                body: body_expr,
+            } => {
+                let mut instrs = vec![];
+                let condition_instructions = self.compile_expr(body, condition);
+                instrs.push(Instruction::Block(BlockType::Empty));
+
+                instrs.extend(condition_instructions.clone());
+                instrs.push(Instruction::I32Eqz);
+                instrs.push(Instruction::BrIf(0));
+
+                instrs.push(Instruction::Loop(BlockType::Empty));
+                instrs.extend(self.compile_expr(body, body_expr));
+
+                instrs.extend(condition_instructions);
+                instrs.push(Instruction::I32Eqz);
+                instrs.push(Instruction::BrIf(1));
+                instrs.push(Instruction::Br(0));
+
+                instrs.push(Instruction::End);
+                instrs.push(Instruction::End);
+                instrs
+            }
+        }
+    }
+
+    fn compile_set_target(
+        &mut self,
+        body: &mut BodyBuilder,
+        set_target: SetTarget,
+        expr: Expr,
+    ) -> Vec<Instruction<'a>> {
+        match set_target.it {
+            SetTargetData::Array { target, index } => {
+                let array_ty = self.builder.array_type(&set_target.ty);
+                let mut instrs = self.compile_expr(body, target);
+                instrs.extend(self.compile_expr(body, index));
+                instrs.extend(self.compile_expr(body, expr));
+                instrs.push(Instruction::ArraySet(array_ty));
+                instrs
+            }
+            SetTargetData::Struct { target, index } => {
+                let (struct_ty, field_idx) = self.builder.lookup_field(&index);
+                let mut instrs = self.compile_expr(body, target);
+                instrs.extend(self.compile_expr(body, expr));
+                instrs.push(Instruction::StructSet(struct_ty, field_idx));
+                instrs
+            }
+            SetTargetData::Var { name } => {
+                let mut instrs = self.compile_expr(body, expr);
+                match name {
+                    Name::Global(_) => {
+                        instrs.push(Instruction::GlobalSet(self.builder.lookup_global(&name)));
+                    }
+                    Name::Local(_) => {
+                        instrs.push(Instruction::GlobalSet(body.lookup_local(&name).unwrap()));
+                    }
+                    Name::Func(_) | Name::Type(_) | Name::Field(_) | Name::Builtin(_) => {
+                        unreachable!("can't set a non local/global variable")
+                    }
+                };
+                instrs
+            }
+        }
+    }
+
     pub fn compile_program(&mut self, program: Program) {
         for import in program.imports {
             self.builder.declare_import(import);
@@ -184,7 +278,7 @@ impl<'a> Codegen<'a> {
         }
 
         for func in program.funcs.iter() {
-            self.builder.declare_func(func.name.clone(), func.func_ty());
+            self.builder.declare_func(func.name, func.func_ty());
         }
 
         let mut start_func = Function::new([]);

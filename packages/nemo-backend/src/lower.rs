@@ -5,7 +5,7 @@ use crate::ir::{
     IntrinsicData, Lit, LitData, Name, Op, OpData, Program, SetTarget, SetTargetData, Struct, Ty,
 };
 use nemo_frontend::{
-    syntax::{self, FuncId, Id, ToplevelData},
+    syntax::{self, FuncId, Id, Span, ToplevelData},
     types,
 };
 
@@ -156,6 +156,18 @@ impl Lower {
 
     fn lookup_var(&self, var: &str) -> Name {
         self.scope.get(var).unwrap()
+    }
+
+    fn gen_unit(&self) -> Expr {
+        Expr {
+            it: Box::new(ExprData::Lit(Lit {
+                it: LitData::Unit,
+                at: Span::SYN,
+                ty: Ty::Unit,
+            })),
+            at: Span::SYN,
+            ty: Ty::Unit,
+        }
     }
 
     fn lower_type(&self, ty: &syntax::Type) -> Ty {
@@ -316,16 +328,30 @@ impl Lower {
                 then_branch: self.lower_expr(then_branch),
                 else_branch: self.lower_expr(else_branch),
             },
-            syntax::ExprData::Block { declarations } => {
+            syntax::ExprData::Block { mut declarations } => {
                 self.scope.enter_block();
-                let block = ExprData::Block {
-                    declarations: declarations
-                        .into_iter()
-                        .map(|d| self.lower_decl(d))
-                        .collect(),
+                let last = declarations.pop();
+
+                let mut declarations: Vec<Declaration> = declarations
+                    .into_iter()
+                    .map(|d| self.lower_decl(d))
+                    .collect();
+
+                let expr = match last {
+                    Some(syntax::Declaration {
+                        it: syntax::DeclarationData::Expr(e),
+                        ..
+                    }) => self.lower_expr(e),
+                    Some(decl) => {
+                        declarations.push(self.lower_decl(decl));
+                        self.gen_unit()
+                    }
+                    None => self.gen_unit(),
                 };
+
                 self.scope.leave_block();
-                block
+
+                ExprData::Block { declarations, expr }
             }
             syntax::ExprData::Struct { name, fields } => {
                 let fields = fields

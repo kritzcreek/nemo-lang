@@ -195,7 +195,7 @@ impl<'a> Builder<'a> {
                 })
             }
             Ty::Array(el_ty) => {
-                let idx = self.array_type_elem(&el_ty);
+                let idx = self.array_type_elem(el_ty);
                 ValType::Ref(RefType {
                     nullable: true,
                     heap_type: HeapType::Concrete(idx),
@@ -213,7 +213,7 @@ impl<'a> Builder<'a> {
     }
 
     pub fn array_type_elem(&mut self, elem_ty: &Ty) -> TypeIdx {
-        let elem_val_ty = self.val_ty(&elem_ty);
+        let elem_val_ty = self.val_ty(elem_ty);
         match self.arrays.get(&elem_val_ty) {
             Some(ix) => *ix,
             None => {

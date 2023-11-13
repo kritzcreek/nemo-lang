@@ -48,8 +48,11 @@ pub struct FuncTy {
 // 2. All syntactic type annotations are omitted, as we only care about the infered/semantic ones
 // 3. All type-based resolution is done during lowering -> + becomes f32.+ or i32.+ and all struct indexes are
 //    unique based on their type
-// 4. The only desugaring we do at this point in time is to transform set_targets to expr + index pairs, which
-//    which makes it easier to generate code for these eventually
+// 4. The only desugarings we do at this point in time:
+//    a) Transform set_targets to expr + index pairs, which which makes it easier to generate
+//       code for these eventually
+//    b) Transform all blocks into a list of declarations and a trailing expression, inserting
+//       a dummy Unit expression if the last declaration is not a Declaration::Expr
 //
 // We also try to keep as many Spans around as possible, mostly to help us when debugging our compiler
 
@@ -172,6 +175,8 @@ pub enum ExprData {
     },
     Block {
         declarations: Vec<Declaration>,
+        // All IR blocks end in an expression, lowering inserts a dummy unit expression
+        expr: Expr,
     },
     Struct {
         name: Name,
