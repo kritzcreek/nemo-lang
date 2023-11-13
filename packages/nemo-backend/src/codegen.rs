@@ -5,8 +5,8 @@ use wasm_encoder::{BlockType, ConstExpr, HeapType, Instruction};
 
 use crate::{
     ir::{
-        Declaration, DeclarationData, Expr, ExprData, FuncOrBuiltin, FuncTy, IntrinsicData, Lit,
-        LitData, Name, Op, OpData, Program, SetTarget, SetTargetData, Ty,
+        Declaration, DeclarationData, Expr, ExprData, FuncOrBuiltin, IntrinsicData, Lit, LitData,
+        Name, Op, OpData, Program, SetTarget, SetTargetData, Ty,
     },
     wasm_builder::{BodyBuilder, Builder},
 };
@@ -304,14 +304,6 @@ impl<'a> Codegen<'a> {
             self.builder.declare_func(func.name, func.func_ty());
         }
 
-        self.builder.declare_func(
-            program.start_fn,
-            FuncTy {
-                arguments: vec![],
-                result: Ty::Unit,
-            },
-        );
-
         {
             let mut start_body = BodyBuilder::new(vec![]);
             let mut start_instrs = vec![];
@@ -333,9 +325,9 @@ impl<'a> Codegen<'a> {
                 }
             }
             let start_locals = start_body.get_locals();
+            self.builder.declare_start(program.start_fn);
             self.builder
                 .fill_func(program.start_fn, start_locals, start_instrs);
-            self.builder.declare_start(&program.start_fn);
         }
 
         for func in program.funcs {
