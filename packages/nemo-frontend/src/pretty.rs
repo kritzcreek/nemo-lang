@@ -248,6 +248,11 @@ impl Printer {
                 ref expr,
             } => Doc::text("set ")
                 .append(self.pretty_set_target(set_target))
+                .append(if self.show_let_types {
+                    Doc::text(" : ").append(self.pretty_ty(&set_target.ty))
+                } else {
+                    Doc::nil()
+                })
                 .append(Doc::space())
                 .append(Doc::text("="))
                 .append(Doc::line())

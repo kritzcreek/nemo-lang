@@ -54,7 +54,7 @@ fn i32_func_binary(name: &'static str, instr: &'static str) -> Fn {
 }
 
 lazy_static! {
-    static ref BUILTINS: HashMap<&'static str, Fn> = {
+    pub static ref BUILTINS: HashMap<&'static str, Fn> = {
         let mut m = HashMap::new();
         m.insert("f32_neg", f32_func_unary("f32_neg", "f32_neg"));
         m.insert("f32_abs", f32_func_unary("f32_abs", "f32_abs"));

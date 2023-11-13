@@ -1,11 +1,13 @@
 use std::collections::HashMap;
 
 use crate::ir::{
-    Declaration, DeclarationData, Expr, ExprData, Func, FuncTy, Global, Import, Intrinsic,
-    IntrinsicData, Lit, LitData, Name, Op, OpData, Program, SetTarget, SetTargetData, Struct, Ty,
+    Declaration, DeclarationData, Expr, ExprData, Func, FuncOrBuiltin, FuncTy, Global, Import,
+    Intrinsic, IntrinsicData, Lit, LitData, Name, Op, OpData, Program, SetTarget, SetTargetData,
+    Struct, Ty,
 };
 use nemo_frontend::{
-    syntax::{self, FuncId, Id, ToplevelData},
+    builtins,
+    syntax::{self, FuncId, Id, Span, ToplevelData},
     types,
 };
 
@@ -87,7 +89,7 @@ impl Lower {
         name
     }
 
-    fn func_idx(&mut self, func: FuncId) -> Name {
+    fn func_idx(&mut self, func: Id) -> Name {
         self.func += 1;
         let name = Name::Func(self.func);
         self.name_map.insert(
@@ -115,7 +117,7 @@ impl Lower {
     }
 
     fn declare_func(&mut self, func: FuncId) {
-        let name = self.func_idx(func.clone());
+        let name = self.func_idx(func.clone().to_id());
         self.funcs.insert(func.it, name);
     }
 
@@ -139,6 +141,10 @@ impl Lower {
         self.types.get(ty).unwrap()
     }
 
+    fn func_exists(&self, func: &str) -> bool {
+        self.funcs.contains_key(func)
+    }
+
     fn lookup_func(&self, func: &str) -> Name {
         *self.funcs.get(func).unwrap()
     }
@@ -156,6 +162,18 @@ impl Lower {
 
     fn lookup_var(&self, var: &str) -> Name {
         self.scope.get(var).unwrap()
+    }
+
+    fn gen_unit(&self) -> Expr {
+        Expr {
+            it: Box::new(ExprData::Lit(Lit {
+                it: LitData::Unit,
+                at: Span::SYN,
+                ty: Ty::Unit,
+            })),
+            at: Span::SYN,
+            ty: Ty::Unit,
+        }
     }
 
     fn lower_type(&self, ty: &syntax::Type) -> Ty {
@@ -246,6 +264,7 @@ impl Lower {
                 .into_iter()
                 .map(|(name, ty)| (self.local_idx(name), self.lower_type(&ty)))
                 .collect();
+            // TODO: resolve built-ins
             let func = Func {
                 name: self.lookup_func(&name.it),
                 params,
@@ -286,10 +305,20 @@ impl Lower {
         let expr_data = match *expr.it {
             syntax::ExprData::Lit(l) => ExprData::Lit(self.lower_lit(l)),
             syntax::ExprData::Var(v) => ExprData::Var(self.lookup_var(&v.it)),
-            syntax::ExprData::Call { func, arguments } => ExprData::Call {
-                func: self.lookup_func(&func.it),
-                arguments: arguments.into_iter().map(|e| self.lower_expr(e)).collect(),
-            },
+            syntax::ExprData::Call { func, arguments } => {
+                let func = if self.func_exists(&func.it) {
+                    FuncOrBuiltin::Func(self.lookup_func(&func.it))
+                } else {
+                    match builtins::lookup_builtin(&func.it) {
+                        Some(fun) => FuncOrBuiltin::Builtin(fun.name),
+                        None => unreachable!("Can't resolve function: {}", func.to_id()),
+                    }
+                };
+                ExprData::Call {
+                    func,
+                    arguments: arguments.into_iter().map(|e| self.lower_expr(e)).collect(),
+                }
+            }
             syntax::ExprData::Binary { op, left, right } => {
                 let op = self.lower_op(op, &left.ty, &right.ty);
 
@@ -315,16 +344,30 @@ impl Lower {
                 then_branch: self.lower_expr(then_branch),
                 else_branch: self.lower_expr(else_branch),
             },
-            syntax::ExprData::Block { declarations } => {
+            syntax::ExprData::Block { mut declarations } => {
                 self.scope.enter_block();
-                let block = ExprData::Block {
-                    declarations: declarations
-                        .into_iter()
-                        .map(|d| self.lower_decl(d))
-                        .collect(),
+                let last = declarations.pop();
+
+                let mut declarations: Vec<Declaration> = declarations
+                    .into_iter()
+                    .map(|d| self.lower_decl(d))
+                    .collect();
+
+                let expr = match last {
+                    Some(syntax::Declaration {
+                        it: syntax::DeclarationData::Expr(e),
+                        ..
+                    }) => self.lower_expr(e),
+                    Some(decl) => {
+                        declarations.push(self.lower_decl(decl));
+                        self.gen_unit()
+                    }
+                    None => self.gen_unit(),
                 };
+
                 self.scope.leave_block();
-                block
+
+                ExprData::Block { declarations, expr }
             }
             syntax::ExprData::Struct { name, fields } => {
                 let fields = fields
@@ -464,11 +507,17 @@ impl Lower {
             }
         }
 
+        let start_fn = self.func_idx(Id {
+            it: "$start".to_string(),
+            at: Span::SYN,
+        });
+
         let mut prog = Program {
             imports: vec![],
             structs: vec![],
             globals: vec![],
             funcs: vec![],
+            start_fn,
         };
 
         for toplevel in program.toplevels {
