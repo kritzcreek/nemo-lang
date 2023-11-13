@@ -45,6 +45,10 @@ let tick = () => { }
 let autoRecompile = true
 let useCanvas = true
 
+function clearInfo() {
+  document.getElementById("info-box").innerText = ""
+}
+
 function setInfo(text) {
   document.getElementById("info-box").innerText = text
 }
@@ -85,7 +89,12 @@ document.getElementById("startBtn").onclick = function (e) {
   e.stopPropagation()
 
   console.log("Starting")
-  restartRender()
+  if (useCanvas) {
+    restartRender()
+  } else {
+    clearInfo()
+    runStaticWasm()
+  }
 }
 
 document.getElementById("toggleAuto").onclick = function (e) {
@@ -94,6 +103,10 @@ document.getElementById("toggleAuto").onclick = function (e) {
 
   autoRecompile = !autoRecompile
   localStorage.setItem("autoRecompile", autoRecompile)
+  displayToggleAuto()
+}
+
+function displayToggleAuto() {
   document.getElementById("toggleAuto").innerText = autoRecompile ? "Recompile: On" : "Recompile: Off";
 }
 
@@ -103,16 +116,18 @@ document.getElementById("toggleCanvas").onclick = function (e) {
 
   useCanvas = !useCanvas
   localStorage.setItem("useCanvas", useCanvas)
-
   if (useCanvas) {
     setEditorContent(canvasProgram())
-    document.getElementById("toggleCanvas").innerText = "Use canvas: On"
   } else {
     clear_canvas()
     stopRender()
     setEditorContent(mainProgram())
-    document.getElementById("toggleCanvas").innerText = "Use canvas: Off"
   }
+  displayUseCanvas()
+}
+
+function displayUseCanvas() {
+  document.getElementById("toggleCanvas").innerText = useCanvas ? "Use canvas: On" : "Use canvas: Off"
 }
 
 async function runCompiler(code) {
@@ -212,6 +227,9 @@ function loadSettings() {
 
 loadSettings()
 setEditorContent(useCanvas ? canvasProgram() : mainProgram())
+console.log(useCanvas, autoRecompile)
+displayToggleAuto()
+displayUseCanvas()
 
 if (useCanvas) {
   restartRender()
