@@ -87,7 +87,7 @@ impl Lower {
         name
     }
 
-    fn func_idx(&mut self, func: FuncId) -> Name {
+    fn func_idx(&mut self, func: Id) -> Name {
         self.func += 1;
         let name = Name::Func(self.func);
         self.name_map.insert(
@@ -115,7 +115,7 @@ impl Lower {
     }
 
     fn declare_func(&mut self, func: FuncId) {
-        let name = self.func_idx(func.clone());
+        let name = self.func_idx(func.clone().to_id());
         self.funcs.insert(func.it, name);
     }
 
@@ -491,11 +491,17 @@ impl Lower {
             }
         }
 
+        let start_fn = self.func_idx(Id {
+            it: "$start".to_string(),
+            at: Span::SYN,
+        });
+
         let mut prog = Program {
             imports: vec![],
             structs: vec![],
             globals: vec![],
             funcs: vec![],
+            start_fn,
         };
 
         for toplevel in program.toplevels {

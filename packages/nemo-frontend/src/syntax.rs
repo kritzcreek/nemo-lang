@@ -141,6 +141,15 @@ impl Spanned for FuncId {
     }
 }
 
+impl FuncId {
+    pub fn to_id(self) -> Id {
+        Id {
+            it: self.it,
+            at: self.at,
+        }
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct Op {
     pub it: OpData,

@@ -2,8 +2,8 @@ use wasm_encoder::{BlockType, ConstExpr, Function, HeapType, Instruction};
 
 use crate::{
     ir::{
-        Declaration, DeclarationData, Expr, ExprData, Lit, LitData, Name, Op, OpData, Program,
-        SetTarget, SetTargetData, Ty,
+        Declaration, DeclarationData, Expr, ExprData, FuncTy, IntrinsicData, Lit, LitData, Name,
+        Op, OpData, Program, SetTarget, SetTargetData, Ty,
     },
     wasm_builder::{BodyBuilder, Builder},
 };
@@ -180,7 +180,20 @@ impl<'a> Codegen<'a> {
             ExprData::Intrinsic {
                 intrinsic,
                 arguments,
-            } => todo!(),
+            } => {
+                let mut instrs = vec![];
+                for argument in arguments {
+                    instrs.extend(self.compile_expr(body, argument))
+                }
+                match intrinsic.it {
+                    IntrinsicData::ArrayLen => instrs.push(Instruction::ArrayLen),
+                    IntrinsicData::ArrayNew => {
+                        let array_ty = self.builder.array_type(&expr.ty);
+                        instrs.push(Instruction::ArrayNew(array_ty))
+                    }
+                }
+                instrs
+            }
         }
     }
 
@@ -281,31 +294,38 @@ impl<'a> Codegen<'a> {
             self.builder.declare_func(func.name, func.func_ty());
         }
 
-        let mut start_func = Function::new([]);
+        self.builder.declare_func(
+            program.start_fn,
+            FuncTy {
+                arguments: vec![],
+                result: Ty::Unit,
+            },
+        );
 
-        for global in program.globals {
-            match Self::const_expr(&global.init) {
-                Some(e) => {
-                    self.builder
-                        .declare_global(global.binder, &global.init.ty, e);
-                }
-                None => {
-                    let pre_init = self.const_init_for_ty(&global.init.ty);
-                    let index =
+        {
+            let mut start_body = BodyBuilder::new(program.start_fn, vec![]);
+            let mut start_instrs = vec![];
+            for global in program.globals {
+                match Self::const_expr(&global.init) {
+                    Some(e) => {
                         self.builder
-                            .declare_global(global.binder, &global.init.ty, pre_init);
+                            .declare_global(global.binder, &global.init.ty, e);
+                    }
+                    None => {
+                        let pre_init = self.const_init_for_ty(&global.init.ty);
+                        let index =
+                            self.builder
+                                .declare_global(global.binder, &global.init.ty, pre_init);
 
-                    // TODO: Lazy initialization of globals
-                    // let instrs = self.compile_expr(&global.init);
-                    // for inst in instrs {
-                    //     start_func.instruction(&inst);
-                    // }
-                    // start_func.instruction(&Instruction::GlobalSet(index));
+                        start_instrs.extend(self.compile_expr(&mut start_body, global.init));
+                        start_instrs.push(Instruction::GlobalSet(index))
+                    }
                 }
             }
+            let start_locals = start_body.get_locals();
+            self.builder
+                .fill_func(program.start_fn, start_locals, start_instrs);
         }
-        // TODO: declare start func
-        // self.builder.declare_func(, func_ty)
 
         for func in program.funcs {
             let params = func
@@ -314,6 +334,9 @@ impl<'a> Codegen<'a> {
                 .map(|(name, ty)| (name, self.builder.val_ty(&ty)))
                 .collect();
             let mut body_builder = BodyBuilder::new(func.name, params);
+            let body = self.compile_expr(&mut body_builder, func.body);
+            let locals = body_builder.get_locals();
+            self.builder.fill_func(func.name, locals, body);
         }
     }
 }

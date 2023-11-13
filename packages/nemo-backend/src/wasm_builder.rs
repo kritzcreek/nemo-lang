@@ -346,17 +346,13 @@ impl BodyBuilder {
         self.locals.get(name).map(|v| v.index)
     }
 
-    pub fn finish<'a>(mut self, body: Vec<Instruction<'a>>, builder: &'a mut Builder<'a>) {
+    pub fn get_locals(self) -> Vec<ValType> {
         let mut locals: Vec<LocalData> = self
             .locals
             .into_values()
             .filter(|l| l.index >= self.params as u32)
             .collect();
         locals.sort_by_key(|l| l.index);
-        builder.fill_func(
-            self.func_name,
-            locals.into_iter().map(|l| l.ty).collect(),
-            body,
-        )
+        locals.into_iter().map(|l| l.ty).collect()
     }
 }

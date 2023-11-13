@@ -278,4 +278,5 @@ pub struct Program {
     pub structs: Vec<Struct>,
     pub globals: Vec<Global>,
     pub funcs: Vec<Func>,
+    pub start_fn: Name,
 }
