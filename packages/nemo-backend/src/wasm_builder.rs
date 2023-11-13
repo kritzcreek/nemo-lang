@@ -124,6 +124,7 @@ impl<'a> Builder<'a> {
             for instr in func.body.unwrap() {
                 func_body.instruction(&instr);
             }
+            func_body.instruction(&Instruction::End);
             code_section.function(&func_body);
         }
         // data_section
