@@ -280,7 +280,7 @@ impl<'a> Codegen<'a> {
                         instrs.push(Instruction::GlobalSet(self.builder.lookup_global(&name)));
                     }
                     Name::Local(_) => {
-                        instrs.push(Instruction::GlobalSet(body.lookup_local(&name).unwrap()));
+                        instrs.push(Instruction::LocalSet(body.lookup_local(&name).unwrap()));
                     }
                     Name::Func(_) | Name::Type(_) | Name::Field(_) => {
                         unreachable!("can't set a non local/global variable")
