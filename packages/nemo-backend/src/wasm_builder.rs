@@ -292,8 +292,25 @@ impl<'a> Builder<'a> {
         });
     }
 
-    pub fn declare_start(&mut self, name: &Name) {
-        let index = self.lookup_func(name);
+    // TODO: bit a weird reimplementation of a couple functions in here
+    // this can be much nicer with StackReps for unit returning functions
+    pub fn declare_start(&mut self, name: Name) {
+        let index = (self.imports.len() + self.funcs.len()) as u32;
+        let ty = self.types.len() as u32;
+        self.types.push(vec![SubType {
+            is_final: true,
+            supertype_idx: None,
+            composite_type: CompositeType::Func(FuncType::new(vec![], vec![])),
+        }]);
+        self.funcs.insert(
+            name,
+            FuncData {
+                index,
+                ty,
+                locals: None,
+                body: None,
+            },
+        );
         self.start_fn = Some(index)
     }
 

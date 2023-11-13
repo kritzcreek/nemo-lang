@@ -1,18 +1,26 @@
 use nemo_backend::{codegen::codegen, lower::lower};
 use nemo_frontend::pretty::Printer;
-use std::fs;
-
-const EXAMPLE_PROG: &str = include_str!("../../../example.nemo");
+use std::{
+    fs,
+    io::{stdout, Read, Write},
+};
 
 pub fn main() {
-    match nemo_frontend::check_program(EXAMPLE_PROG) {
+    let mut code = Vec::new();
+    let stdin = std::io::stdin();
+    let mut handle = stdin.lock();
+    handle.read_to_end(&mut code).unwrap();
+
+    match nemo_frontend::check_program(&String::from_utf8_lossy(&code)) {
         Ok(program) => {
             let printer = Printer::new(true);
-            println!("{}", printer.print_program(&program));
+            eprintln!("{}", printer.print_program(&program));
             let (lowered, name_map) = lower(program);
             let bytes = codegen(lowered, name_map);
-            fs::write("program.wasm", bytes).unwrap();
+            fs::write("bytes.wasm", &bytes).unwrap();
+            stdout().write_all(&bytes).unwrap();
+            stdout().flush().unwrap();
         }
-        Err(err) => println!("{err}"),
+        Err(err) => eprintln!("{err}"),
     };
 }
