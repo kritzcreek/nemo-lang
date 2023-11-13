@@ -28,7 +28,11 @@ impl From<Point> for Pos {
 
 impl fmt::Display for Pos {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}:{}", self.line + 1, self.column + 1)
+        if *self == Pos::SYN {
+            write!(f, "<syn>")
+        } else {
+            write!(f, "{}:{}", self.line + 1, self.column + 1)
+        }
     }
 }
 
@@ -128,6 +132,12 @@ impl Spanned for Id {
     }
 }
 
+impl fmt::Display for Id {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} {}", self.at, self.it)
+    }
+}
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct FuncId {
     pub it: String,
@@ -138,6 +148,15 @@ pub struct FuncId {
 impl Spanned for FuncId {
     fn at(&self) -> &Span {
         &self.at
+    }
+}
+
+impl FuncId {
+    pub fn to_id(self) -> Id {
+        Id {
+            it: self.it,
+            at: self.at,
+        }
     }
 }
 

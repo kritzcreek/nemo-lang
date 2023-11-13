@@ -8,8 +8,6 @@ pub enum Name {
     Func(u32),
     Type(u32),
     Field(u32),
-    // TODO
-    Builtin(u32),
 }
 
 impl fmt::Display for Name {
@@ -20,12 +18,11 @@ impl fmt::Display for Name {
             Name::Func(x) => write!(f, "$fn:{x}"),
             Name::Type(x) => write!(f, "$t:{x}"),
             Name::Field(x) => write!(f, "$f:{x}"),
-            Name::Builtin(x) => write!(f, "$b:{x}"),
         }
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub enum Ty {
     I32,
     F32,
@@ -48,8 +45,11 @@ pub struct FuncTy {
 // 2. All syntactic type annotations are omitted, as we only care about the infered/semantic ones
 // 3. All type-based resolution is done during lowering -> + becomes f32.+ or i32.+ and all struct indexes are
 //    unique based on their type
-// 4. The only desugaring we do at this point in time is to transform set_targets to expr + index pairs, which
-//    which makes it easier to generate code for these eventually
+// 4. The only desugarings we do at this point in time:
+//    a) Transform set_targets to expr + index pairs, which which makes it easier to generate
+//       code for these eventually
+//    b) Transform all blocks into a list of declarations and a trailing expression, inserting
+//       a dummy Unit expression if the last declaration is not a Declaration::Expr
 //
 // We also try to keep as many Spans around as possible, mostly to help us when debugging our compiler
 
@@ -148,11 +148,17 @@ impl Spanned for Expr {
 }
 
 #[derive(Debug, PartialEq)]
+pub enum FuncOrBuiltin {
+    Func(Name),
+    Builtin(&'static str),
+}
+
+#[derive(Debug, PartialEq)]
 pub enum ExprData {
     Lit(Lit),
     Var(Name),
     Call {
-        func: Name,
+        func: FuncOrBuiltin,
         arguments: Vec<Expr>,
     },
     Binary {
@@ -172,6 +178,8 @@ pub enum ExprData {
     },
     Block {
         declarations: Vec<Declaration>,
+        // All IR blocks end in an expression, lowering inserts a dummy unit expression
+        expr: Expr,
     },
     Struct {
         name: Name,
@@ -258,10 +266,20 @@ pub struct Func {
     pub body: Expr,
 }
 
+impl Func {
+    pub fn func_ty(&self) -> FuncTy {
+        FuncTy {
+            arguments: self.params.iter().map(|(_, t)| t.clone()).collect(),
+            result: self.return_ty.clone(),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct Program {
     pub imports: Vec<Import>,
     pub structs: Vec<Struct>,
     pub globals: Vec<Global>,
     pub funcs: Vec<Func>,
+    pub start_fn: Name,
 }
