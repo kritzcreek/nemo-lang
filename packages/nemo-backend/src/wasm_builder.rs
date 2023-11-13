@@ -76,8 +76,18 @@ impl<'a> Builder<'a> {
         }
     }
 
+    fn _print_funcs(&self) {
+        for (name, id) in &self.name_map {
+            match name {
+                Name::Func(n) => eprintln!("$fn:{n} = {id}"),
+                _ => {}
+            }
+        }
+    }
+
     pub fn finish(self) -> Vec<u8> {
         let mut module = Module::new();
+        // self._print_funcs();
 
         // type_section
         let mut type_section = TypeSection::new();
@@ -86,14 +96,17 @@ impl<'a> Builder<'a> {
         }
         // import_section
         let mut import_section = ImportSection::new();
-        for (_, data) in self.imports {
+        let _import_count = self.imports.len();
+        let mut imports: Vec<_> = self.imports.into_iter().collect();
+        imports.sort_by_key(|(_, v)| v.index);
+        for (_, data) in imports {
             import_section.import(&data.ns, &data.func, EntityType::Function(data.ty_idx));
         }
         // function_section
         let mut function_section = FunctionSection::new();
-        let mut funcs: Vec<_> = self.funcs.into_values().collect();
-        funcs.sort_by_key(|v| v.index);
-        for func in funcs.iter() {
+        let mut funcs: Vec<_> = self.funcs.into_iter().collect();
+        funcs.sort_by_key(|(_, v)| v.index);
+        for (_, func) in funcs.iter() {
             function_section.function(func.ty);
         }
 
@@ -108,7 +121,7 @@ impl<'a> Builder<'a> {
         }
         // export_section
         let mut export_section = ExportSection::new();
-        for ele in self.exports {
+        for ele in self.exports.iter() {
             export_section.export(&ele.name, ele.desc.0, ele.desc.1);
         }
 
@@ -119,8 +132,12 @@ impl<'a> Builder<'a> {
         // elem_section
         // code_section
         let mut code_section = CodeSection::new();
-        for func in funcs {
+        for (_ix, (_name, func)) in funcs.into_iter().enumerate() {
+            let _ix = _ix + _import_count;
             let mut func_body = Function::new_with_locals_types(func.locals.unwrap());
+            // if _ix == 14 {
+            //     eprintln!("func #{_ix} = {}\n{:#?}", _name, func.body.clone().unwrap())
+            // }
             for instr in func.body.unwrap() {
                 func_body.instruction(&instr);
             }
@@ -139,14 +156,15 @@ impl<'a> Builder<'a> {
         module.finish()
     }
 
-    pub fn resolve_name(&self, name: Name) -> &Id {
+    pub fn resolve_name(&self, name: Name) -> Id {
         self.name_map
             .get(&name)
             .expect(&format!("Failed to resolve: {name:?}"))
+            .clone()
     }
 
     pub fn declare_struct(&mut self, ty: Struct) {
-        let mut fields = vec![];
+        let mut fields = Vec::with_capacity(ty.fields.len());
         let mut field_names = vec![];
         for (name, ty) in ty.fields {
             field_names.push(name);
@@ -166,7 +184,7 @@ impl<'a> Builder<'a> {
             is_final: true,
             supertype_idx: None,
             composite_type: CompositeType::Struct(StructType {
-                fields: Box::new([]),
+                fields: fields.into_boxed_slice(),
             }),
         }]);
         self.structs.insert(ty.name, (index, field_names));
