@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::iter;
 
 use crate::ir::{FuncTy, Import, Name, Struct, Ty};
+use nemo_frontend::syntax::Id;
 use wasm_encoder::{
     self, ArrayType, CodeSection, CompositeType, ConstExpr, EntityType, ExportKind, ExportSection,
     FieldType, FuncType, Function, FunctionSection, GlobalSection, GlobalType, HeapType,
@@ -43,6 +44,7 @@ pub struct Export {
 }
 
 pub struct Builder<'a> {
+    name_map: HashMap<Name, Id>,
     funcs: HashMap<Name, FuncData<'a>>,
     globals: HashMap<Name, GlobalData>,
     types: Vec<RecType>,
@@ -58,8 +60,9 @@ pub struct Builder<'a> {
 }
 
 impl<'a> Builder<'a> {
-    pub fn new() -> Builder<'a> {
+    pub fn new(name_map: HashMap<Name, Id>) -> Builder<'a> {
         Builder {
+            name_map,
             funcs: HashMap::new(),
             globals: HashMap::new(),
             types: vec![],
@@ -135,6 +138,12 @@ impl<'a> Builder<'a> {
         module.finish()
     }
 
+    pub fn resolve_name(&self, name: Name) -> &Id {
+        self.name_map
+            .get(&name)
+            .expect(&format!("Failed to resolve: {name:?}"))
+    }
+
     pub fn declare_struct(&mut self, ty: Struct) {
         let mut fields = vec![];
         let mut field_names = vec![];
@@ -147,6 +156,11 @@ impl<'a> Builder<'a> {
             })
         }
         let index = self.types.len() as u32;
+
+        for (field_idx, field_name) in field_names.iter().enumerate() {
+            self.fields.insert(*field_name, (index, field_idx as u32));
+        }
+
         self.types.push(vec![SubType {
             is_final: true,
             supertype_idx: None,
@@ -207,7 +221,7 @@ impl<'a> Builder<'a> {
     pub fn array_type(&mut self, array_ty: &Ty) -> TypeIdx {
         let elem_ty = match array_ty {
             Ty::Array(elem_ty) => elem_ty,
-            _ => unreachable!("non-array type passed to array_type"),
+            t => unreachable!("non-array type passed to array_type: {t:?}"),
         };
         self.array_type_elem(elem_ty)
     }
@@ -232,7 +246,10 @@ impl<'a> Builder<'a> {
     }
 
     pub fn lookup_field(&self, name: &Name) -> (TypeIdx, FieldIdx) {
-        *self.fields.get(name).unwrap()
+        match self.fields.get(name) {
+            Some(f) => *f,
+            None => panic!("{}", self.resolve_name(*name).it),
+        }
     }
 
     pub fn declare_import(&mut self, import: Import) {
@@ -302,7 +319,15 @@ impl<'a> Builder<'a> {
     }
 
     pub fn lookup_func(&self, name: &Name) -> FuncIdx {
-        self.funcs.get(name).unwrap().index
+        match self
+            .funcs
+            .get(name)
+            .map(|f| f.index)
+            .or_else(|| self.lookup_import(name))
+        {
+            Some(f) => f,
+            None => panic!("Couldn't find a function for {}", self.resolve_name(*name)),
+        }
     }
 }
 
@@ -314,11 +339,10 @@ struct LocalData {
 pub struct BodyBuilder {
     params: usize,
     locals: HashMap<Name, LocalData>,
-    func_name: Name,
 }
 
 impl BodyBuilder {
-    pub fn new(func_name: Name, params: Vec<(Name, ValType)>) -> BodyBuilder {
+    pub fn new(params: Vec<(Name, ValType)>) -> BodyBuilder {
         BodyBuilder {
             params: params.len(),
             locals: HashMap::from_iter(params.into_iter().enumerate().map(
@@ -332,7 +356,6 @@ impl BodyBuilder {
                     )
                 },
             )),
-            func_name,
         }
     }
 

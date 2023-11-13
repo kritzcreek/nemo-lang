@@ -8,8 +8,6 @@ pub enum Name {
     Func(u32),
     Type(u32),
     Field(u32),
-    // TODO
-    Builtin(u32),
 }
 
 impl fmt::Display for Name {
@@ -20,7 +18,6 @@ impl fmt::Display for Name {
             Name::Func(x) => write!(f, "$fn:{x}"),
             Name::Type(x) => write!(f, "$t:{x}"),
             Name::Field(x) => write!(f, "$f:{x}"),
-            Name::Builtin(x) => write!(f, "$b:{x}"),
         }
     }
 }
@@ -151,11 +148,17 @@ impl Spanned for Expr {
 }
 
 #[derive(Debug, PartialEq)]
+pub enum FuncOrBuiltin {
+    Func(Name),
+    Builtin(&'static str),
+}
+
+#[derive(Debug, PartialEq)]
 pub enum ExprData {
     Lit(Lit),
     Var(Name),
     Call {
-        func: Name,
+        func: FuncOrBuiltin,
         arguments: Vec<Expr>,
     },
     Binary {

@@ -1,10 +1,12 @@
 use std::collections::HashMap;
 
 use crate::ir::{
-    Declaration, DeclarationData, Expr, ExprData, Func, FuncTy, Global, Import, Intrinsic,
-    IntrinsicData, Lit, LitData, Name, Op, OpData, Program, SetTarget, SetTargetData, Struct, Ty,
+    Declaration, DeclarationData, Expr, ExprData, Func, FuncOrBuiltin, FuncTy, Global, Import,
+    Intrinsic, IntrinsicData, Lit, LitData, Name, Op, OpData, Program, SetTarget, SetTargetData,
+    Struct, Ty,
 };
 use nemo_frontend::{
+    builtins,
     syntax::{self, FuncId, Id, Span, ToplevelData},
     types,
 };
@@ -137,6 +139,10 @@ impl Lower {
 
     fn lookup_ty(&self, ty: &str) -> &TypeInfo {
         self.types.get(ty).unwrap()
+    }
+
+    fn func_exists(&self, func: &str) -> bool {
+        self.funcs.contains_key(func)
     }
 
     fn lookup_func(&self, func: &str) -> Name {
@@ -299,10 +305,20 @@ impl Lower {
         let expr_data = match *expr.it {
             syntax::ExprData::Lit(l) => ExprData::Lit(self.lower_lit(l)),
             syntax::ExprData::Var(v) => ExprData::Var(self.lookup_var(&v.it)),
-            syntax::ExprData::Call { func, arguments } => ExprData::Call {
-                func: self.lookup_func(&func.it),
-                arguments: arguments.into_iter().map(|e| self.lower_expr(e)).collect(),
-            },
+            syntax::ExprData::Call { func, arguments } => {
+                let func = if self.func_exists(&func.it) {
+                    FuncOrBuiltin::Func(self.lookup_func(&func.it))
+                } else {
+                    match builtins::lookup_builtin(&func.it) {
+                        Some(fun) => FuncOrBuiltin::Builtin(fun.name),
+                        None => unreachable!("Can't resolve function: {}", func.to_id()),
+                    }
+                };
+                ExprData::Call {
+                    func,
+                    arguments: arguments.into_iter().map(|e| self.lower_expr(e)).collect(),
+                }
+            }
             syntax::ExprData::Binary { op, left, right } => {
                 let op = self.lower_op(op, &left.ty, &right.ty);
 

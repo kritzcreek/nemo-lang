@@ -1,17 +1,21 @@
-use wasm_encoder::{BlockType, ConstExpr, Function, HeapType, Instruction};
+use std::collections::HashMap;
+
+use nemo_frontend::syntax::Id;
+use wasm_encoder::{BlockType, ConstExpr, HeapType, Instruction};
 
 use crate::{
     ir::{
-        Declaration, DeclarationData, Expr, ExprData, FuncTy, IntrinsicData, Lit, LitData, Name,
-        Op, OpData, Program, SetTarget, SetTargetData, Ty,
+        Declaration, DeclarationData, Expr, ExprData, FuncOrBuiltin, FuncTy, IntrinsicData, Lit,
+        LitData, Name, Op, OpData, Program, SetTarget, SetTargetData, Ty,
     },
     wasm_builder::{BodyBuilder, Builder},
 };
 
-pub fn codegen(program: Program) -> Vec<u8> {
-    let mut builder = Builder::new();
-
-    builder.finish()
+pub fn codegen(program: Program, name_map: HashMap<Name, Id>) -> Vec<u8> {
+    let builder = Builder::new(name_map);
+    let mut codegen = Codegen { builder };
+    codegen.compile_program(program);
+    codegen.finish()
 }
 
 struct Codegen<'a> {
@@ -102,13 +106,19 @@ impl<'a> Codegen<'a> {
                 None => vec![Instruction::GlobalGet(self.builder.lookup_global(&v))],
             },
             ExprData::Call { func, arguments } => {
-                let func_idx = self.builder.lookup_func(&func);
                 let mut instrs = vec![];
                 for arg in arguments {
                     let arg_instrs = self.compile_expr(body, arg);
                     instrs.extend(arg_instrs);
                 }
-                instrs.push(Instruction::Call(func_idx));
+
+                match func {
+                    FuncOrBuiltin::Func(name) => {
+                        let func_idx = self.builder.lookup_func(&name);
+                        instrs.push(Instruction::Call(func_idx));
+                    }
+                    FuncOrBuiltin::Builtin(builtin) => instrs.push(builtin_instruction(builtin)),
+                }
                 instrs
             }
             ExprData::Binary { op, left, right } => {
@@ -129,7 +139,7 @@ impl<'a> Codegen<'a> {
                 instrs
             }
             ExprData::ArrayIdx { array, index } => {
-                let array_ty = self.builder.array_type(&expr.ty);
+                let array_ty = self.builder.array_type(&array.ty);
                 let mut instrs = self.compile_expr(body, array);
                 instrs.extend(self.compile_expr(body, index));
                 instrs.push(Instruction::ArrayGet(array_ty));
@@ -249,7 +259,7 @@ impl<'a> Codegen<'a> {
     ) -> Vec<Instruction<'a>> {
         match set_target.it {
             SetTargetData::Array { target, index } => {
-                let array_ty = self.builder.array_type(&set_target.ty);
+                let array_ty = self.builder.array_type(&target.ty);
                 let mut instrs = self.compile_expr(body, target);
                 instrs.extend(self.compile_expr(body, index));
                 instrs.extend(self.compile_expr(body, expr));
@@ -272,7 +282,7 @@ impl<'a> Codegen<'a> {
                     Name::Local(_) => {
                         instrs.push(Instruction::GlobalSet(body.lookup_local(&name).unwrap()));
                     }
-                    Name::Func(_) | Name::Type(_) | Name::Field(_) | Name::Builtin(_) => {
+                    Name::Func(_) | Name::Type(_) | Name::Field(_) => {
                         unreachable!("can't set a non local/global variable")
                     }
                 };
@@ -303,7 +313,7 @@ impl<'a> Codegen<'a> {
         );
 
         {
-            let mut start_body = BodyBuilder::new(program.start_fn, vec![]);
+            let mut start_body = BodyBuilder::new(vec![]);
             let mut start_instrs = vec![];
             for global in program.globals {
                 match Self::const_expr(&global.init) {
@@ -325,6 +335,7 @@ impl<'a> Codegen<'a> {
             let start_locals = start_body.get_locals();
             self.builder
                 .fill_func(program.start_fn, start_locals, start_instrs);
+            self.builder.declare_start(&program.start_fn);
         }
 
         for func in program.funcs {
@@ -333,10 +344,46 @@ impl<'a> Codegen<'a> {
                 .into_iter()
                 .map(|(name, ty)| (name, self.builder.val_ty(&ty)))
                 .collect();
-            let mut body_builder = BodyBuilder::new(func.name, params);
+            let mut body_builder = BodyBuilder::new(params);
             let body = self.compile_expr(&mut body_builder, func.body);
             let locals = body_builder.get_locals();
             self.builder.fill_func(func.name, locals, body);
+            self.builder.declare_export(
+                func.name,
+                self.builder.resolve_name(func.name).it.to_string(),
+            );
         }
+    }
+
+    pub fn finish(self) -> Vec<u8> {
+        self.builder.finish()
+    }
+}
+
+fn builtin_instruction(builtin: &str) -> Instruction<'static> {
+    match builtin {
+        "f32_neg" => Instruction::F32Neg,
+        "f32_abs" => Instruction::F32Abs,
+        "f32_ceil" => Instruction::F32Ceil,
+        "f32_floor" => Instruction::F32Floor,
+        "f32_trunc" => Instruction::F32Trunc,
+        "f32_nearest" => Instruction::F32Nearest,
+        "f32_sqrt" => Instruction::F32Sqrt,
+        "f32_copysign" => Instruction::F32Copysign,
+        "f32_min" => Instruction::F32Min,
+        "f32_max" => Instruction::F32Max,
+        "f32_convert_i32_s" => Instruction::F32ConvertI32S,
+        "f32_convert_i32_u" => Instruction::F32ConvertI32U,
+        "i32_clz" => Instruction::I32Clz,
+        "i32_ctz" => Instruction::I32Ctz,
+        "i32_popcnt" => Instruction::I32Popcnt,
+        "i32_rotl" => Instruction::I32Rotl,
+        "i32_rotr" => Instruction::I32Rotr,
+        "i32_rem_s" => Instruction::I32RemS,
+        "i32_shl" => Instruction::I32Shl,
+        "i32_shr_s" => Instruction::I32ShrS,
+        "i32_trunc_f32_s" => Instruction::I32TruncF32S,
+        "i32_reinterpret_f32" => Instruction::I32ReinterpretF32,
+        b => unreachable!("Unknown builtin {b}"),
     }
 }
