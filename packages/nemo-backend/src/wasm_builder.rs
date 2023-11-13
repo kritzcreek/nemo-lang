@@ -141,13 +141,18 @@ impl<'a> Builder<'a> {
         for (name, ty) in ty.fields {
             field_names.push(name);
             let val_ty = self.val_ty(&ty);
-            fields.push(FieldType { element_type: StorageType::Val(val_ty), mutable: true })
+            fields.push(FieldType {
+                element_type: StorageType::Val(val_ty),
+                mutable: true,
+            })
         }
         let index = self.types.len() as u32;
         self.types.push(vec![SubType {
             is_final: true,
             supertype_idx: None,
-            composite_type: CompositeType::Struct(StructType { fields: Box::new([]) }),
+            composite_type: CompositeType::Struct(StructType {
+                fields: Box::new([]),
+            }),
         }]);
         self.structs.insert(ty.name, (index, field_names));
     }
@@ -170,10 +175,12 @@ impl<'a> Builder<'a> {
         }
     }
 
-    pub fn struct_type(&self, name: &Name) -> &(TypeIdx, Vec<Name>) {
+    pub fn struct_type(&self, name: &Name) -> (TypeIdx, Vec<Name>) {
+        // TODO: Try to get rid of this clone
         self.structs
             .get(name)
             .expect("Tried to get struct type before declaring it")
+            .clone()
     }
 
     pub fn val_ty(&mut self, ty: &Ty) -> ValType {
@@ -184,11 +191,11 @@ impl<'a> Builder<'a> {
                 let (idx, _) = self.struct_type(s);
                 ValType::Ref(RefType {
                     nullable: true,
-                    heap_type: HeapType::Concrete(*idx),
+                    heap_type: HeapType::Concrete(idx),
                 })
             }
             Ty::Array(el_ty) => {
-                let idx = self.array_type(&el_ty);
+                let idx = self.array_type_elem(&el_ty);
                 ValType::Ref(RefType {
                     nullable: true,
                     heap_type: HeapType::Concrete(idx),
@@ -197,7 +204,15 @@ impl<'a> Builder<'a> {
         }
     }
 
-    pub fn array_type(&mut self, elem_ty: &Ty) -> TypeIdx {
+    pub fn array_type(&mut self, array_ty: &Ty) -> TypeIdx {
+        let elem_ty = match array_ty {
+            Ty::Array(elem_ty) => elem_ty,
+            _ => unreachable!("non-array type passed to array_type"),
+        };
+        self.array_type_elem(elem_ty)
+    }
+
+    pub fn array_type_elem(&mut self, elem_ty: &Ty) -> TypeIdx {
         let elem_val_ty = self.val_ty(&elem_ty);
         match self.arrays.get(&elem_val_ty) {
             Some(ix) => *ix,
@@ -265,11 +280,7 @@ impl<'a> Builder<'a> {
         self.start_fn = Some(index)
     }
 
-    pub fn declare_func(
-        &mut self,
-        name: Name,
-        func_ty: FuncTy
-    ) {
+    pub fn declare_func(&mut self, name: Name, func_ty: FuncTy) {
         let index = (self.imports.len() + self.funcs.len()) as u32;
         let ty = self.func_type(&func_ty);
         self.funcs.insert(
@@ -307,10 +318,7 @@ pub struct BodyBuilder {
 }
 
 impl BodyBuilder {
-    pub fn new(
-        func_name: Name,
-        params: Vec<(Name, ValType)>,
-    ) -> BodyBuilder {
+    pub fn new(func_name: Name, params: Vec<(Name, ValType)>) -> BodyBuilder {
         BodyBuilder {
             params: params.len(),
             locals: HashMap::from_iter(params.into_iter().enumerate().map(

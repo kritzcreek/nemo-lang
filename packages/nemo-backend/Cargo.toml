@@ -6,5 +6,5 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-nemo-frontend = { path = "../nemo-frontend"}
-wasm-encoder = "0.36.2"
+nemo-frontend = { path = "../nemo-frontend" }
+wasm-encoder = { git = "https://github.com/kritzcreek/wasm-tools.git", rev = "33c2da4" }

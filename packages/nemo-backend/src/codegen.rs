@@ -1,7 +1,7 @@
-use wasm_encoder::{ConstExpr, Function, HeapType, Instruction, BlockType};
+use wasm_encoder::{BlockType, ConstExpr, Function, HeapType, Instruction};
 
 use crate::{
-    ir::{Expr, ExprData, Lit, LitData, Program, Ty, Op, OpData},
+    ir::{Expr, ExprData, Lit, LitData, Op, OpData, Program, Ty},
     wasm_builder::{BodyBuilder, Builder},
 };
 
@@ -43,12 +43,12 @@ impl<'a> Codegen<'a> {
             Ty::I32 | Ty::Unit | Ty::Bool => ConstExpr::i32_const(0),
             Ty::F32 => ConstExpr::f32_const(0.0),
             Ty::Array(t) => {
-                let ty_idx = self.builder.array_type(&t);
+                let ty_idx = self.builder.array_type_elem(&t);
                 ConstExpr::ref_null(HeapType::Concrete(ty_idx))
             }
             Ty::Struct(s) => {
                 let (ty_idx, _) = self.builder.struct_type(&s);
-                ConstExpr::ref_null(HeapType::Concrete(*ty_idx))
+                ConstExpr::ref_null(HeapType::Concrete(ty_idx))
             }
         }
     }
@@ -91,7 +91,7 @@ impl<'a> Codegen<'a> {
         }
     }
 
-    fn compile_expr(&mut self, body: &mut BodyBuilder, expr: Expr) -> Vec<Instruction> {
+    fn compile_expr(&mut self, body: &mut BodyBuilder, expr: Expr) -> Vec<Instruction<'a>> {
         match *expr.it {
             ExprData::Lit(l) => Self::compile_lit(l),
             ExprData::Var(v) => match body.lookup_local(&v) {
@@ -99,48 +99,74 @@ impl<'a> Codegen<'a> {
                 None => vec![Instruction::GlobalGet(self.builder.lookup_global(&v))],
             },
             ExprData::Call { func, arguments } => {
-                let mut instrs: Vec<Instruction<'_>> = arguments
-                    .into_iter()
-                    .flat_map(|arg| self.compile_expr(body, arg))
-                    .collect();
-                // TODO: Built-ins
-                instrs.push(Instruction::Call(self.builder.lookup_func(&func)));
+                let func_idx = self.builder.lookup_func(&func);
+                let mut instrs = vec![];
+                for arg in arguments {
+                    let arg_instrs = self.compile_expr(body, arg);
+                    instrs.extend(arg_instrs);
+                }
+                instrs.push(Instruction::Call(func_idx));
                 instrs
             }
             ExprData::Binary { op, left, right } => {
-                let mut instrs = vec![];
-                instrs.extend(self.compile_expr(body, left));
+                let mut instrs = self.compile_expr(body, left);
                 instrs.extend(self.compile_expr(body, right));
                 instrs.extend(Self::compile_op(&op));
                 instrs
-            },
-            ExprData::Array(_) => todo!(),
-            ExprData::ArrayIdx { array, index } => todo!(),
+            }
+            ExprData::Array(elements) => {
+                let elem_count = elements.len() as u32;
+                let ty_idx = self.builder.array_type(&expr.ty);
+
+                let mut instrs = vec![];
+                for element in elements {
+                    instrs.extend(self.compile_expr(body, element));
+                }
+                instrs.push(Instruction::ArrayNewFixed(ty_idx, elem_count));
+                instrs
+            }
+            ExprData::ArrayIdx { array, index } => {
+                let array_ty = self.builder.array_type(&expr.ty);
+                let mut instrs = self.compile_expr(body, array);
+                instrs.extend(self.compile_expr(body, index));
+                instrs.push(Instruction::ArrayGet(array_ty));
+                instrs
+            }
             ExprData::If {
                 condition,
                 then_branch,
                 else_branch,
             } => {
                 let block_ty = BlockType::Result(self.builder.val_ty(&expr.ty));
-                
-                let mut instrs = vec![];
-                instrs.extend(self.compile_expr(body, condition));
+
+                let mut instrs = self.compile_expr(body, condition);
                 instrs.push(Instruction::If(block_ty));
                 instrs.extend(self.compile_expr(body, then_branch));
                 instrs.push(Instruction::Else);
                 instrs.extend(self.compile_expr(body, else_branch));
                 instrs.push(Instruction::End);
                 instrs
-            },
+            }
             ExprData::Block { declarations } => todo!(),
-            ExprData::Struct { name, fields } => todo!(),
+            ExprData::Struct { name, mut fields } => {
+                let (struct_ty, field_order) = self.builder.struct_type(&name);
+                let mut instrs = vec![];
+                // Sort fields according to field_order
+                fields.sort_by_cached_key(|(name, _)| {
+                    field_order.iter().position(|f| name == f).unwrap()
+                });
+                for (_, expr) in fields {
+                    instrs.extend(self.compile_expr(body, expr));
+                }
+                instrs.push(Instruction::StructNew(struct_ty));
+                instrs
+            }
             ExprData::StructIdx { expr, index } => {
                 let (struct_ty, field_index) = self.builder.lookup_field(&index);
                 let mut instrs = self.compile_expr(body, expr);
-                // struct.get is not implemented in wasm-encoder yet
-                // instrs.push(Instruction::StructGet());
+                instrs.push(Instruction::StructGet(struct_ty, field_index));
                 instrs
-            },
+            }
             ExprData::Intrinsic {
                 intrinsic,
                 arguments,
@@ -175,11 +201,12 @@ impl<'a> Codegen<'a> {
                         self.builder
                             .declare_global(global.binder, &global.init.ty, pre_init);
 
-                    let instrs = self.compile_expr(&global.init);
-                    for inst in instrs {
-                        start_func.instruction(&inst);
-                    }
-                    start_func.instruction(&Instruction::GlobalSet(index));
+                    // TODO: Lazy initialization of globals
+                    // let instrs = self.compile_expr(&global.init);
+                    // for inst in instrs {
+                    //     start_func.instruction(&inst);
+                    // }
+                    // start_func.instruction(&Instruction::GlobalSet(index));
                 }
             }
         }
