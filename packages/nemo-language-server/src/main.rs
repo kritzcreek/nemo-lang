@@ -12,6 +12,7 @@ use lsp_types::{
 };
 
 use lsp_server::{Connection, ExtractError, Message, Request, RequestId, Response};
+use nemo_frontend::parser::HIGHLIGHT_NAMES;
 use tree_sitter_highlight::{Highlight, HighlightEvent};
 
 fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
@@ -32,15 +33,10 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
                     work_done_progress: None,
                 },
                 legend: SemanticTokensLegend {
-                    token_types: vec![
-                        SemanticTokenType::KEYWORD,
-                        SemanticTokenType::TYPE,
-                        SemanticTokenType::FUNCTION,
-                        SemanticTokenType::OPERATOR,
-                        SemanticTokenType::PROPERTY,
-                        SemanticTokenType::NUMBER,
-                        SemanticTokenType::COMMENT,
-                    ],
+                    token_types: HIGHLIGHT_NAMES
+                        .into_iter()
+                        .map(SemanticTokenType::new)
+                        .collect(),
                     token_modifiers: vec![],
                 },
                 range: None,

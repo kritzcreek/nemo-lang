@@ -3,7 +3,7 @@ use tree_sitter_highlight::HighlightConfiguration;
 use tree_sitter_highlight::HighlightEvent;
 use tree_sitter_highlight::Highlighter;
 
-const HIGHLIGHT_NAMES: [&'static str; 7] = [
+pub const HIGHLIGHT_NAMES: [&'static str; 7] = [
     "keyword", "type", "function", "operator", "property", "number", "comment",
 ];
 
@@ -28,19 +28,5 @@ pub fn highlight(program: &str) -> Vec<HighlightEvent> {
         .highlight(&nemo_config, program.as_bytes(), None, |_| None)
         .unwrap();
 
-    return highlights.map(|e| e.unwrap()).collect();
-    // for event in highlights {
-    //     match event.unwrap() {
-    //         HighlightEvent::Source { start, end } => {
-    //             eprintln!("source: {}-{}", start, end);
-    //         }
-    //         HighlightEvent::HighlightStart(s) => {
-    //             let name = HIGHLIGHT_NAMES[s.0];
-    //             eprintln!("highlight style started: {}", name);
-    //         }
-    //         HighlightEvent::HighlightEnd => {
-    //             eprintln!("highlight style ended");
-    //         }
-    //     }
-    // }
+    highlights.map(|e| e.unwrap()).collect()
 }
