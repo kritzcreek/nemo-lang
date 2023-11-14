@@ -10,4 +10,5 @@ ariadne = { version = "0.3.0", features = ["auto-color"] }
 lazy_static = "1.4.0"
 pretty = "0.12.3"
 tree-sitter = "0.20.10"
+tree-sitter-highlight = "0.20.1"
 tree-sitter-nemo = { path = "../tree-sitter-nemo" }
