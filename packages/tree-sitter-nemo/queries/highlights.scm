@@ -41,3 +41,5 @@
 "-" @operator
 "*" @operator
 "/" @operator
+
+(comment) @comment
