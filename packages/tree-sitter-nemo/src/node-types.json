@@ -507,6 +507,11 @@
     }
   },
   {
+    "type": "comment",
+    "named": true,
+    "fields": {}
+  },
+  {
     "type": "expr_decl",
     "named": true,
     "fields": {
@@ -1869,6 +1874,10 @@
   },
   {
     "type": "/",
+    "named": false
+  },
+  {
+    "type": "//",
     "named": false
   },
   {

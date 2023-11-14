@@ -166,9 +166,16 @@ impl TyNode for Node<'_> {
     }
 }
 
-fn is_expr_kind(s: &str) -> bool {
+fn is_toplevel_kind(n: &Node<'_>) -> bool {
     matches!(
-        s,
+        n.kind(),
+        "top_import" | "top_let" | "top_struct" | "top_func"
+    )
+}
+
+fn is_expr_kind(n: &Node<'_>) -> bool {
+    matches!(
+        n.kind(),
         "int_lit"
             | "float_lit"
             | "bool_lit"
@@ -606,7 +613,11 @@ impl<'a> Typechecker<'a> {
     pub fn infer_prog(mut self, node: Node<'_>) -> TyResult<Program> {
         assert!(node.kind() == "source_file");
         let mut cursor = node.walk();
-        for top_level_node in node.children(&mut cursor) {
+        for top_level_node in node
+            .children(&mut cursor)
+            .into_iter()
+            .filter(is_toplevel_kind)
+        {
             match top_level_node.kind() {
                 "top_import" => self.declare_import(&top_level_node)?,
                 "top_struct" => self.declare_struct(&top_level_node)?,
@@ -622,7 +633,11 @@ impl<'a> Typechecker<'a> {
         let mut global_ctx = Ctx::new();
         global_ctx.enter_block();
         let mut toplevels = vec![];
-        for top_level_node in node.children(&mut cursor) {
+        for top_level_node in node
+            .children(&mut cursor)
+            .into_iter()
+            .filter(is_toplevel_kind)
+        {
             let toplevel = match top_level_node.kind() {
                 "top_import" => self.check_import(&top_level_node)?,
                 "top_struct" => self.check_struct(&top_level_node)?,
@@ -655,7 +670,7 @@ impl<'a> Typechecker<'a> {
         assert!(node.kind() == "call_args");
         let mut cursor = node.walk();
         node.children(&mut cursor)
-            .filter(|n| is_expr_kind(n.kind()))
+            .filter(is_expr_kind)
             .map(|n| self.infer_expr(ctx, &n))
             .collect()
     }
@@ -921,7 +936,7 @@ impl<'a> Typechecker<'a> {
                 let mut cursor = node.walk();
                 let elems = node
                     .children(&mut cursor)
-                    .filter(|n| is_expr_kind(n.kind()))
+                    .filter(is_expr_kind)
                     .map(|n| self.infer_expr(ctx, &n))
                     .collect::<TyResult<Vec<_>>>()?;
                 let ty_elem = match elems.get(0) {

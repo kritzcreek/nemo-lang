@@ -29,9 +29,12 @@ function make_binary_rules(expr) {
 module.exports = grammar({
   name: 'nemo',
   word: $ => $.lower_ident,
+  extras: $ => [/\s+/, $.comment],
 
   rules: {
     source_file: $ => repeat($._toplevel),
+
+    comment: $ => seq('//', /[^\n]*/),
 
     lower_ident: $ => /[a-z_][a-zA-Z0-9_]*/,
     upper_ident: $ => /[A-Z][a-zA-Z0-9_]*/,
