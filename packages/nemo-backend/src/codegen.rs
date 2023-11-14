@@ -54,8 +54,8 @@ impl<'a> Codegen<'a> {
                 ConstExpr::ref_null(HeapType::Concrete(ty_idx))
             }
             Ty::Struct(s) => {
-                let (ty_idx, _) = self.builder.struct_type(s);
-                ConstExpr::ref_null(HeapType::Concrete(ty_idx))
+                let (ty_idx, _) = self.builder.struct_type(*s);
+                ConstExpr::ref_null(HeapType::Concrete(*ty_idx))
             }
         }
     }
@@ -169,12 +169,15 @@ impl<'a> Codegen<'a> {
                 instrs
             }
             ExprData::Struct { name, mut fields } => {
-                let (struct_ty, field_order) = self.builder.struct_type(&name);
                 let mut instrs = vec![];
-                // Sort fields according to field_order
-                fields.sort_by_cached_key(|(name, _)| {
-                    field_order.iter().position(|f| name == f).unwrap()
-                });
+                let struct_ty = {
+                    let (struct_ty, field_order) = self.builder.struct_type(name);
+                    // Sort fields according to field_order
+                    fields.sort_by_cached_key(|(name, _)| {
+                        field_order.iter().position(|f| name == f).unwrap()
+                    });
+                    *struct_ty
+                };
                 for (_, expr) in fields {
                     instrs.extend(self.compile_expr(body, expr));
                 }

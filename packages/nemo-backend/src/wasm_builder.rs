@@ -208,12 +208,10 @@ impl<'a> Builder<'a> {
         }
     }
 
-    pub fn struct_type(&self, name: &Name) -> (TypeIdx, Vec<Name>) {
-        // TODO: Try to get rid of this clone
+    pub fn struct_type(&'a self, name: Name) -> &'a (TypeIdx, Vec<Name>) {
         self.structs
-            .get(name)
+            .get(&name)
             .expect("Tried to get struct type before declaring it")
-            .clone()
     }
 
     pub fn val_ty(&mut self, ty: &Ty) -> ValType {
@@ -221,10 +219,10 @@ impl<'a> Builder<'a> {
             Ty::F32 => ValType::F32,
             Ty::I32 | Ty::Unit | Ty::Bool => ValType::I32,
             Ty::Struct(s) => {
-                let (idx, _) = self.struct_type(s);
+                let (idx, _) = self.struct_type(*s);
                 ValType::Ref(RefType {
                     nullable: true,
-                    heap_type: HeapType::Concrete(idx),
+                    heap_type: HeapType::Concrete(*idx),
                 })
             }
             Ty::Array(el_ty) => {
