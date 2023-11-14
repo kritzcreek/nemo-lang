@@ -57,8 +57,7 @@ let particles = RingBuffer {
 };
 
 fn add_particle(p : Particle) = {
-  let buffer = particles.buffer;
-  set buffer[particles.watermark] = p;
+  set particles.buffer[particles.watermark] = p;
   set particles.watermark =
     i32_rem_s(particles.watermark + 1, @array_len(particles.buffer))
 }
