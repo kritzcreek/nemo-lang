@@ -26,6 +26,8 @@ struct Wasm {
 async fn main() {
     pretty_env_logger::init();
 
+    println!("Open your browser at http://127.0.0.1:3030");
+
     // POST /compile  {"code": "fn main(): i32 = { 10 + 23 }"}
     let compile = warp::post()
         .and(warp::path("compile"))
