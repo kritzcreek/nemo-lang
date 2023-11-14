@@ -7,6 +7,12 @@
     "parsing",
     "incremental"
   ],
+  "tree-sitter": [
+    {
+      "scope": "source.nemo",
+      "file-types": [ "nemo" ]
+    }
+  ],
   "dependencies": {
     "nan": "^2.12.1"
   },
