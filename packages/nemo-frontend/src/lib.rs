@@ -1,15 +1,13 @@
 pub mod builtins;
+pub mod parser;
 pub mod pretty;
 pub mod syntax;
 pub mod types;
 
-use tree_sitter::Parser;
+use parser::parse_program;
 
 pub fn check_program(program: &str) -> types::TyResult<syntax::Program> {
-    let mut parser = Parser::new();
-    parser.set_language(tree_sitter_nemo::language()).unwrap();
-    let tree = parser.parse(program, None).unwrap();
-
+    let parse_tree = parse_program(program);
     let tc = types::Typechecker::new(program);
-    tc.infer_prog(tree.root_node())
+    tc.infer_prog(parse_tree.root_node())
 }
