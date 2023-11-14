@@ -451,10 +451,19 @@ impl<'a> Typechecker<'a> {
         let body = self.infer_expr(ctx, &body_node)?;
         ctx.leave_block();
 
-        // TODO: Check that the return type is correct.
+        let result = return_ty.as_ref().map(Ty::from_syntax).unwrap_or(Ty::Unit);
+        self.expect_ty(
+            &result,
+            &body.ty,
+            &return_ty
+                .as_ref()
+                .map(|t| t.at.clone())
+                .unwrap_or(body_node.into()),
+        )?;
+
         let func_ty = FuncTy {
             arguments: params.iter().map(|(_, ty)| Ty::from_syntax(ty)).collect(),
-            result: return_ty.as_ref().map(Ty::from_syntax).unwrap_or(Ty::Unit),
+            result,
         };
 
         Ok(Toplevel {
