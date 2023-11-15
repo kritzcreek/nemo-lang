@@ -40,6 +40,8 @@ impl fmt::Display for Pos {
 pub struct Span {
     pub start: Pos,
     pub end: Pos,
+    pub byte_start: u32,
+    pub byte_end: u32,
 }
 
 impl Span {
@@ -47,6 +49,8 @@ impl Span {
     pub const SYN: Span = Span {
         start: Pos::SYN,
         end: Pos::SYN,
+        byte_start: 0,
+        byte_end: 0,
     };
 }
 
@@ -55,6 +59,8 @@ impl From<Node<'_>> for Span {
         Span {
             start: value.start_position().into(),
             end: value.end_position().into(),
+            byte_start: value.start_byte() as u32,
+            byte_end: value.end_byte() as u32,
         }
     }
 }
@@ -64,6 +70,8 @@ impl From<&Node<'_>> for Span {
         Span {
             start: value.start_position().into(),
             end: value.end_position().into(),
+            byte_start: value.start_byte() as u32,
+            byte_end: value.end_byte() as u32,
         }
     }
 }

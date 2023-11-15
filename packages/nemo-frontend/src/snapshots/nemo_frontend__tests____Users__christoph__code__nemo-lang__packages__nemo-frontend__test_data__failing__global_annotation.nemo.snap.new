@@ -1,0 +1,14 @@
+---
+source: packages/nemo-frontend/src/lib.rs
+assertion_line: 30
+expression: "render_ty_error(&source, &err)"
+input_file: packages/nemo-frontend/test_data/failing/global_annotation.nemo
+---
+[00] Error: Type mismatch. Expected i32, but got f32
+   ╭─[source.nemo:1:13]
+   │
+ 1 │ let x : i32 = 10.0
+   │         ─┬─  
+   │          ╰─── Expected type: 'i32', but got 'f32'
+───╯
+

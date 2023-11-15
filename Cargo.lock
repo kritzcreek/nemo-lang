@@ -92,6 +92,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "bstr"
+version = "1.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "542f33a8835a0884b006a0c3df3dadd99c0c3f296ed26c2fdc8028e01ad6230c"
+dependencies = [
+ "memchr",
+ "serde",
+]
+
+[[package]]
 name = "byteorder"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -135,6 +145,18 @@ version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "88d11d52c3d7ca2e6d0040212be9e4dbbcd78b6447f535b6b561f449427944cf"
 dependencies = [
+ "windows-sys 0.45.0",
+]
+
+[[package]]
+name = "console"
+version = "0.15.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c926e00cc70edefdc64d3a5ff31cc65bb97a3460097762bd23afb4d8145fccf8"
+dependencies = [
+ "encode_unicode",
+ "lazy_static",
+ "libc",
  "windows-sys 0.45.0",
 ]
 
@@ -191,6 +213,12 @@ dependencies = [
  "block-buffer",
  "crypto-common",
 ]
+
+[[package]]
+name = "encode_unicode"
+version = "0.3.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a357d28ed41a50f9c765dbfe56cbc04a64e53e5fc58ba79fbc34c10ef3df831f"
 
 [[package]]
 name = "encoding_rs"
@@ -307,6 +335,19 @@ name = "gimli"
 version = "0.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6fb8d784f27acf97159b40fc4db5ecd8aa23b9ad5ef69cdd136d3bc80665f0c0"
+
+[[package]]
+name = "globset"
+version = "0.4.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "759c97c1e17c55525b57192c06a267cda0ac5210b222d6b82189a2338fa1c13d"
+dependencies = [
+ "aho-corasick",
+ "bstr",
+ "fnv",
+ "log",
+ "regex",
+]
 
 [[package]]
 name = "h2"
@@ -448,6 +489,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "insta"
+version = "1.34.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5d64600be34b2fcfc267740a243fa7744441bb4947a619ac4e5bb6507f35fbfc"
+dependencies = [
+ "console",
+ "globset",
+ "lazy_static",
+ "linked-hash-map",
+ "similar",
+ "walkdir",
+ "yaml-rust",
+]
+
+[[package]]
 name = "is-terminal"
 version = "0.4.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -481,6 +537,12 @@ name = "libc"
 version = "0.2.149"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a08173bc88b7955d1b3145aa561539096c421ac8debde8cbc3612ec635fee29b"
+
+[[package]]
+name = "linked-hash-map"
+version = "0.5.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0717cef1bc8b636c6e1c1bbdefc09e6322da8a9321966e8928ef80d20f7f770f"
 
 [[package]]
 name = "linux-raw-sys"
@@ -592,6 +654,7 @@ name = "nemo-frontend"
 version = "0.1.0"
 dependencies = [
  "ariadne",
+ "insta",
  "lazy_static",
  "pretty",
  "tree-sitter",
@@ -824,6 +887,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1ad4cc8da4ef723ed60bced201181d83791ad433213d8c24efffda1eec85d741"
 
 [[package]]
+name = "same-file"
+version = "1.0.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "93fc1dc3aaa9bfed95e02e6eadabb4baf7e3078b0bd1b4d7b6b0b68378900502"
+dependencies = [
+ "winapi-util",
+]
+
+[[package]]
 name = "scoped-tls"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -893,6 +965,12 @@ dependencies = [
  "cpufeatures",
  "digest",
 ]
+
+[[package]]
+name = "similar"
+version = "2.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2aeaf503862c419d66959f5d7ca015337d864e9c49485d771b732e2a20453597"
 
 [[package]]
 name = "slab"
@@ -1202,6 +1280,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 
 [[package]]
+name = "walkdir"
+version = "2.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d71d857dc86794ca4c280d616f7da00d2dbfd8cd788846559a6813e6aa4b54ee"
+dependencies = [
+ "same-file",
+ "winapi-util",
+]
+
+[[package]]
 name = "want"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1417,6 +1505,15 @@ name = "windows_x86_64_msvc"
 version = "0.48.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ed94fce61571a4006852b7389a063ab983c02eb1bb37b47f8272ce92d06d9538"
+
+[[package]]
+name = "yaml-rust"
+version = "0.4.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "56c1936c4cc7a1c9ab21a1ebb602eb942ba868cbd44a99cb7cdc5892335e1c85"
+dependencies = [
+ "linked-hash-map",
+]
 
 [[package]]
 name = "yansi"

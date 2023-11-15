@@ -7,6 +7,7 @@ use crate::syntax::{
     IntrinsicData, Lit, LitData, Op, OpData, Program, SetTarget, SetTargetData, Span, Spanned,
     Toplevel, ToplevelData, Type, TypeData,
 };
+use crate::type_errors::{render_ty_error, TyError, TyErrorData};
 use tree_sitter::Node;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -65,91 +66,6 @@ impl FuncTy {
 
     pub fn from_syntax(ty: &FuncType) -> FuncTy {
         FuncTy::from_syntax_data(&ty.it)
-    }
-}
-
-#[derive(Debug)]
-pub struct TyError {
-    at: Span,
-    it: TyErrorData,
-}
-
-impl Spanned for TyError {
-    fn at(&self) -> &Span {
-        &self.at
-    }
-}
-
-#[derive(Debug)]
-pub enum TyErrorData {
-    MissingNode(String),
-    InvalidLiteral,
-    InvalidOperator,
-    Message(String),
-    UnknownVar(String),
-    UnknownFunction(String),
-    UnknownType(String),
-    UnknownIntrinsic(String, usize),
-    NonArrayIdx(Ty),
-    NonStructIdx(Ty),
-    ArgCountMismatch(usize, usize),
-    FieldTypeMismatch {
-        struct_name: String,
-        field_name: String,
-        expected: Ty,
-        actual: Ty,
-    },
-    UnknownField {
-        struct_name: String,
-        field_name: String,
-    },
-    MissingField {
-        struct_name: String,
-        field_name: String,
-    },
-    TypeMismatch {
-        expected: Ty,
-        actual: Ty,
-    },
-}
-
-impl fmt::Display for TyError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{} {}", self.at, self.it)
-    }
-}
-
-impl fmt::Display for TyErrorData {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            TyErrorData::MissingNode(s) => write!(f, "Missing node: '{s}'"),
-            TyErrorData::InvalidLiteral => write!(f, "Invalid literal"),
-            TyErrorData::InvalidOperator => write!(f, "Invalid operator"),
-            TyErrorData::Message(m) => write!(f, "{m}"),
-            TyErrorData::UnknownVar(v) => write!(f, "Unknown variable '{v}'"),
-            TyErrorData::UnknownFunction(fun) => write!(f, "Unknown function '{fun}'"),
-            TyErrorData::UnknownType(t) => write!(f, "Unknown type '{t}'"),
-            TyErrorData::UnknownIntrinsic(i, arg_count) =>
-              write!(f, "Unknown intrinsic '{i}' with '{arg_count}' arguments"),
-            TyErrorData::ArgCountMismatch(expected, actual) =>
-                write!(f, "Expected {expected} arguments, but got {actual} instead"),
-            TyErrorData::NonArrayIdx(t) => write!(
-                f,
-                "Tried to access a value of type '{t}', as if it was an array"
-            ),
-            TyErrorData::NonStructIdx(t) => write!(
-                f,
-                "Tried to access a value of type '{t}', as if it was a struct"
-            ),
-            TyErrorData::FieldTypeMismatch { struct_name, field_name, expected, actual } =>
-              write!(f, "Expected a value of type '{expected}' for {struct_name}.{field_name}, but got '{actual}' instead"),
-            TyErrorData::UnknownField { struct_name, field_name } =>
-              write!(f, "Unknown field '{field_name}' for struct '{struct_name}'"),
-            TyErrorData::MissingField { struct_name, field_name } =>
-              write!(f, "Missing field {struct_name}.{field_name}"),
-            TyErrorData::TypeMismatch { expected, actual } =>
-                write!(f, "Expected type: '{expected}', but got '{actual}'"),
-            }
     }
 }
 

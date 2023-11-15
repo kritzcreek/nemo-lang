@@ -12,3 +12,6 @@ pretty = "0.12.3"
 tree-sitter = "0.20.10"
 tree-sitter-highlight = "0.20.1"
 tree-sitter-nemo = { path = "../tree-sitter-nemo" }
+
+[dev-dependencies]
+insta = {version = "1.34.0", features = ["glob"] }
