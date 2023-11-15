@@ -829,6 +829,36 @@
     "type": "let_decl",
     "named": true,
     "fields": {
+      "annotation": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "ty_array",
+            "named": true
+          },
+          {
+            "type": "ty_bool",
+            "named": true
+          },
+          {
+            "type": "ty_f32",
+            "named": true
+          },
+          {
+            "type": "ty_i32",
+            "named": true
+          },
+          {
+            "type": "ty_struct",
+            "named": true
+          },
+          {
+            "type": "ty_unit",
+            "named": true
+          }
+        ]
+      },
       "binder": {
         "multiple": false,
         "required": true,
@@ -1554,6 +1584,36 @@
     "type": "top_let",
     "named": true,
     "fields": {
+      "annotation": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "ty_array",
+            "named": true
+          },
+          {
+            "type": "ty_bool",
+            "named": true
+          },
+          {
+            "type": "ty_f32",
+            "named": true
+          },
+          {
+            "type": "ty_i32",
+            "named": true
+          },
+          {
+            "type": "ty_struct",
+            "named": true
+          },
+          {
+            "type": "ty_unit",
+            "named": true
+          }
+        ]
+      },
       "binder": {
         "multiple": false,
         "required": true,
@@ -1622,40 +1682,6 @@
           },
           {
             "type": "var_e",
-            "named": true
-          }
-        ]
-      },
-      "ty": {
-        "multiple": true,
-        "required": false,
-        "types": [
-          {
-            "type": ":",
-            "named": false
-          },
-          {
-            "type": "ty_array",
-            "named": true
-          },
-          {
-            "type": "ty_bool",
-            "named": true
-          },
-          {
-            "type": "ty_f32",
-            "named": true
-          },
-          {
-            "type": "ty_i32",
-            "named": true
-          },
-          {
-            "type": "ty_struct",
-            "named": true
-          },
-          {
-            "type": "ty_unit",
             "named": true
           }
         ]

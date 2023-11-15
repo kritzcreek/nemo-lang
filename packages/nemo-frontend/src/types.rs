@@ -414,18 +414,36 @@ impl<'a> Typechecker<'a> {
         })
     }
 
-    fn check_top_let(&self, ctx: &mut Ctx, node: &Node<'_>) -> TyResult<(Id, Expr)> {
+    fn check_top_let(&self, ctx: &mut Ctx, node: &Node<'_>) -> TyResult<Toplevel> {
         assert!(node.kind() == "top_let");
         let binder = node.child_by_field("binder")?;
-        // let ty = node.child_by_field("ty")?;
+        let annotation = match node.child_by_field("annotation") {
+            Ok(ty_node) => Some(self.convert_ty(ty_node)?),
+            Err(_) => None,
+        };
         let expr_node = node.child_by_field("expr")?;
         let typed_expr = self.infer_expr(ctx, &expr_node)?;
+
+        match annotation {
+            Some(ref ann_ty) => self.expect_ty(&ann_ty.ty, &typed_expr.ty, &ann_ty.at)?,
+            None => {}
+        }
+
         let binder = Id {
             at: binder.into(),
             it: self.text(&binder).to_string(),
         };
+        ctx.add(binder.it.clone(), typed_expr.ty.clone());
 
-        Ok((binder, typed_expr))
+        let top_data = ToplevelData::Global {
+            binder,
+            annotation,
+            init: typed_expr,
+        };
+        Ok(Toplevel {
+            it: top_data,
+            at: node.into(),
+        })
     }
 
     fn check_func(&self, ctx: &mut Ctx, node: &Node<'_>) -> TyResult<Toplevel> {
@@ -601,7 +619,7 @@ impl<'a> Typechecker<'a> {
                 TypeData::Array(elem_ty)
             }
             "ty_struct" => TypeData::Struct(self.text(&node).to_string()),
-            _ => unreachable!("Unknown type of type"),
+            t => unreachable!("Unknown type of type {t}"),
         };
         Ok(Type {
             at: node.into(),
@@ -613,10 +631,8 @@ impl<'a> Typechecker<'a> {
     fn infer_prog(mut self, node: Node<'_>) -> TyResult<Program> {
         assert!(node.kind() == "source_file");
         let mut cursor = node.walk();
-        for top_level_node in node
-            .children(&mut cursor)
-            .filter(is_toplevel_kind)
-        {
+        let mut global_nodes = vec![];
+        for top_level_node in node.children(&mut cursor).filter(is_toplevel_kind) {
             match top_level_node.kind() {
                 "top_import" => self.declare_import(&top_level_node)?,
                 "top_struct" => self.declare_struct(&top_level_node)?,
@@ -624,36 +640,26 @@ impl<'a> Typechecker<'a> {
                 "top_let" => {
                     // Globals can't be forward declared as we need to infer their
                     // assigned expression to get their types
+                    global_nodes.push(top_level_node)
                 }
                 k => unreachable!("Unknown top_level {}", k),
             }
         }
 
+        // 1. Declare structs
+        // 2. declare imports/declare function
+        // 3. declare and check globals
+
         let mut global_ctx = Ctx::new();
         global_ctx.enter_block();
         let mut toplevels = vec![];
-        for top_level_node in node
-            .children(&mut cursor)
-            .filter(is_toplevel_kind)
-        {
+        for top_level_node in node.children(&mut cursor).filter(is_toplevel_kind) {
             let toplevel = match top_level_node.kind() {
                 "top_import" => self.check_import(&top_level_node)?,
+                // TODO: Group structs into recursive binding groups
                 "top_struct" => self.check_struct(&top_level_node)?,
-                "top_let" => {
-                    // TODO: check top lets before top funcs
-                    let (binder, expr) = self.check_top_let(&mut global_ctx, &top_level_node)?;
-                    // TODO: parse and check annotation
-                    global_ctx.add(binder.it.clone(), expr.ty.clone());
-                    let top_data = ToplevelData::Global {
-                        binder,
-                        annotation: None,
-                        init: expr,
-                    };
-                    Toplevel {
-                        it: top_data,
-                        at: top_level_node.into(),
-                    }
-                }
+                // TODO: check top lets before top funcs
+                "top_let" => self.check_top_let(&mut global_ctx, &top_level_node)?,
                 "top_func" => self.check_func(&mut global_ctx, &top_level_node)?,
                 k => unreachable!("Unknown top_level {}", k),
             };
@@ -741,10 +747,19 @@ impl<'a> Typechecker<'a> {
         let at: Span = node.into();
         match node.kind() {
             "let_decl" => {
+                let name_node = node.child_by_field("binder")?;
+                let annotation = match node.child_by_field("annotation") {
+                    Ok(ty_node) => Some(self.convert_ty(ty_node)?),
+                    Err(_) => None,
+                };
                 let value_node = node.child_by_field("expr")?;
                 let typed_expr = self.infer_expr(ctx, &value_node)?;
 
-                let name_node = node.child_by_field("binder")?;
+                match annotation {
+                    Some(ref ann_ty) => self.expect_ty(&ann_ty.ty, &typed_expr.ty, &ann_ty.at)?,
+                    None => {}
+                }
+
                 ctx.add(self.text(&name_node).to_string(), typed_expr.ty.clone());
 
                 Ok(Declaration {
@@ -752,8 +767,7 @@ impl<'a> Typechecker<'a> {
                     at,
                     it: DeclarationData::Let {
                         binder: self.id(&name_node),
-                        // TODO
-                        annotation: None,
+                        annotation,
                         expr: typed_expr,
                     },
                 })
@@ -1144,4 +1158,40 @@ impl<'a> Typechecker<'a> {
 pub fn typecheck(source: &str, program: Node<'_>) -> TyResult<Program> {
     let typechecker = Typechecker::new(source);
     typechecker.infer_prog(program)
+}
+
+#[derive(Debug, PartialEq)]
+pub struct ToplevelPartial {
+    pub it: ToplevelPartialData,
+    pub at: Span,
+}
+
+impl Spanned for ToplevelPartial {
+    fn at(&self) -> &Span {
+        &self.at
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub enum ToplevelPartialData {
+    Import {
+        internal: Option<FuncId>,
+        func_ty: Option<FuncType>,
+        external: Id,
+    },
+    Struct {
+        name: Id,
+        fields: Vec<(Id, Type)>,
+    },
+    Global {
+        binder: Id,
+        annotation: Option<Type>,
+        init: Expr,
+    },
+    Func {
+        name: FuncId,
+        params: Vec<(Id, Type)>,
+        return_ty: Option<Type>,
+        body: Expr,
+    },
 }
