@@ -1,15 +1,17 @@
 use std::collections::HashMap;
-use std::path::{PathBuf, Path};
-use std::io;
 use std::fs;
+use std::io;
+use std::path::{Path, PathBuf};
 
 pub struct Vfs {
-    files: HashMap<PathBuf, String>
+    files: HashMap<PathBuf, String>,
 }
 
 impl Vfs {
     pub fn new() -> Vfs {
-        Vfs { files: HashMap::new() }
+        Vfs {
+            files: HashMap::new(),
+        }
     }
     pub fn open_file<'a>(&'a mut self, path: PathBuf) -> io::Result<()> {
         // TODO error if file is already held?
@@ -27,7 +29,10 @@ impl Vfs {
     }
 
     pub fn update_file<'a, 'b>(&'a mut self, path: &'b Path, content: String) {
-        let entry = self.files.get_mut(path).expect("Tried to update a non-existing file");
+        let entry = self
+            .files
+            .get_mut(path)
+            .expect("Tried to update a non-existing file");
         *entry = content;
     }
 

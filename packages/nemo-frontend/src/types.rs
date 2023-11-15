@@ -615,7 +615,6 @@ impl<'a> Typechecker<'a> {
         let mut cursor = node.walk();
         for top_level_node in node
             .children(&mut cursor)
-            .into_iter()
             .filter(is_toplevel_kind)
         {
             match top_level_node.kind() {
@@ -635,7 +634,6 @@ impl<'a> Typechecker<'a> {
         let mut toplevels = vec![];
         for top_level_node in node
             .children(&mut cursor)
-            .into_iter()
             .filter(is_toplevel_kind)
         {
             let toplevel = match top_level_node.kind() {
@@ -1142,7 +1140,6 @@ impl<'a> Typechecker<'a> {
         }
     }
 }
-
 
 pub fn typecheck(source: &str, program: Node<'_>) -> TyResult<Program> {
     let typechecker = Typechecker::new(source);
