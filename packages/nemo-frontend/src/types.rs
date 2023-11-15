@@ -200,15 +200,15 @@ struct Ctx {
 }
 
 impl Ctx {
-    pub fn new() -> Ctx {
+    fn new() -> Ctx {
         Ctx { values: vec![] }
     }
 
-    pub fn add(&mut self, v: String, ty: Ty) {
+    fn add(&mut self, v: String, ty: Ty) {
         let _ = self.values.last_mut().unwrap().insert(v, ty);
     }
 
-    pub fn lookup(&self, v: &str, span: &Span) -> TyResult<&Ty> {
+    fn lookup(&self, v: &str, span: &Span) -> TyResult<&Ty> {
         match self.values.iter().rev().find_map(|scope| scope.get(v)) {
             Some(t) => Ok(t),
             None => Err(TyError {
@@ -218,11 +218,11 @@ impl Ctx {
         }
     }
 
-    pub fn enter_block(&mut self) {
+    fn enter_block(&mut self) {
         self.values.push(HashMap::new())
     }
 
-    pub fn leave_block(&mut self) {
+    fn leave_block(&mut self) {
         self.values.pop().expect("Tried to pop from an empty Ctx");
     }
 }
@@ -234,7 +234,7 @@ pub struct Typechecker<'a> {
 }
 
 impl<'a> Typechecker<'a> {
-    pub fn new(source: &'a str) -> Typechecker<'a> {
+    fn new(source: &'a str) -> Typechecker<'a> {
         Typechecker {
             source: source.as_bytes(),
             structs: HashMap::new(),
@@ -610,7 +610,7 @@ impl<'a> Typechecker<'a> {
         })
     }
 
-    pub fn infer_prog(mut self, node: Node<'_>) -> TyResult<Program> {
+    fn infer_prog(mut self, node: Node<'_>) -> TyResult<Program> {
         assert!(node.kind() == "source_file");
         let mut cursor = node.walk();
         for top_level_node in node
@@ -1141,4 +1141,10 @@ impl<'a> Typechecker<'a> {
             k => unreachable!("Unknown expr type: {}", k),
         }
     }
+}
+
+
+pub fn typecheck(source: &str, program: Node<'_>) -> TyResult<Program> {
+    let typechecker = Typechecker::new(source);
+    typechecker.infer_prog(program)
 }
