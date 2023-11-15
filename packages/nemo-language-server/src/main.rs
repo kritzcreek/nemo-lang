@@ -1,14 +1,14 @@
 use std::error::Error;
 
-use lsp_types::notification::{DidOpenTextDocument, DidChangeTextDocument, DidCloseTextDocument};
+use lsp_types::notification::{DidChangeTextDocument, DidCloseTextDocument, DidOpenTextDocument};
 use lsp_types::request::SemanticTokensFullRequest;
 use lsp_types::{
-    SemanticToken, SemanticTokenType, SemanticTokens, SemanticTokensFullOptions,
+    InitializeParams, SemanticToken, SemanticTokenType, SemanticTokens, SemanticTokensFullOptions,
     SemanticTokensLegend, SemanticTokensOptions, SemanticTokensServerCapabilities,
-    WorkDoneProgressOptions, InitializeParams, ServerCapabilities, TextDocumentSyncCapability, TextDocumentSyncKind
+    ServerCapabilities, TextDocumentSyncCapability, TextDocumentSyncKind, WorkDoneProgressOptions,
 };
 
-use lsp_server::{Connection, ExtractError, Message, Request, RequestId, Response, Notification};
+use lsp_server::{Connection, ExtractError, Message, Notification, Request, RequestId, Response};
 use nemo_frontend::parser::HIGHLIGHT_NAMES;
 use nemo_language_server::vfs::Vfs;
 use tree_sitter_highlight::{Highlight, HighlightEvent};
@@ -80,7 +80,7 @@ fn main_loop(
                             None => {
                                 vfs.open_file(file_path.clone()).unwrap();
                                 vfs.read_file(&file_path).unwrap()
-                            },
+                            }
                         };
 
                         let events = nemo_frontend::parser::highlight(program);
@@ -109,9 +109,12 @@ fn main_loop(
                 eprintln!("got notification: {not:?}");
                 let not = match cast_notification::<DidOpenTextDocument>(not) {
                     Ok(params) => {
-                        vfs.insert_file(params.text_document.uri.to_file_path().unwrap(), params.text_document.text);
+                        vfs.insert_file(
+                            params.text_document.uri.to_file_path().unwrap(),
+                            params.text_document.text,
+                        );
                         continue;
-                    },
+                    }
                     Err(err @ ExtractError::JsonError { .. }) => panic!("{err:?}"),
                     Err(ExtractError::MethodMismatch(not)) => not,
                 };
@@ -119,10 +122,10 @@ fn main_loop(
                     Ok(params) => {
                         vfs.update_file(
                             &params.text_document.uri.to_file_path().unwrap(),
-                            params.content_changes[0].text.clone()
+                            params.content_changes[0].text.clone(),
                         );
                         continue;
-                    },
+                    }
                     Err(err @ ExtractError::JsonError { .. }) => panic!("{err:?}"),
                     Err(ExtractError::MethodMismatch(not)) => not,
                 };
@@ -130,7 +133,7 @@ fn main_loop(
                     Ok(params) => {
                         vfs.remove_file(&params.text_document.uri.to_file_path().unwrap());
                         continue;
-                    },
+                    }
                     Err(err @ ExtractError::JsonError { .. }) => panic!("{err:?}"),
                     Err(ExtractError::MethodMismatch(not)) => not,
                 };
