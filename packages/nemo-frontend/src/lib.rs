@@ -5,9 +5,9 @@ pub mod syntax;
 pub mod types;
 
 use parser::parse_program;
+use types::typecheck;
 
 pub fn check_program(program: &str) -> types::TyResult<syntax::Program> {
     let parse_tree = parse_program(program);
-    let tc = types::Typechecker::new(program);
-    tc.infer_prog(parse_tree.root_node())
+    typecheck(program, parse_tree.root_node())
 }
