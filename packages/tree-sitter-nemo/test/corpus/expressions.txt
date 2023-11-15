@@ -407,6 +407,7 @@ Declarations
 
 let _ = {
     let x = 1;
+    let y : i32 = 10;
     set x = 1;
     set x[0] = 1;
     set x.y = 1;
@@ -424,6 +425,10 @@ let _ = {
     (block_e
       (let_decl
         (lower_ident)
+        (int_lit))
+      (let_decl
+        (lower_ident)
+        (ty_i32)
         (int_lit))
       (set_decl
         (set_var
@@ -462,9 +467,10 @@ struct Vec {
 }
 
 let x = 10;
+let y : f32 = 10.0;
 
 fn main() = {
-  
+
 }
 
 fn add(x : i32, y : i32) : i32 = {
@@ -491,6 +497,10 @@ fn add(x : i32, y : i32) : i32 = {
   (top_let
     (lower_ident)
     (int_lit))
+  (top_let
+    (lower_ident)
+    (ty_f32)
+    (float_lit))
   (top_func
     (lower_ident)
     (func_params)

@@ -134,6 +134,7 @@ module.exports = grammar({
     let_decl: $ => seq(
       'let',
       field('binder', $.lower_ident),
+      optional(seq(':', field('annotation', $._type))),
       '=',
       field('expr', $._expr)
     ),
@@ -187,7 +188,7 @@ module.exports = grammar({
     top_let: $ => seq(
       'let',
       field('binder', $.lower_ident),
-      field('ty', optional(seq(':', $._type))),
+      optional(seq(':', field('annotation', $._type))),
       '=',
       field('expr', $._expr),
       ';'
