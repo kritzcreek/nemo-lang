@@ -7,6 +7,7 @@
 "if" @keyword
 "else" @keyword
 "while" @keyword
+(bool_lit) @keyword
 
 (ty_i32) @type
 (ty_f32) @type
@@ -25,9 +26,8 @@
 (struct_idx_e index: (lower_ident) @property)
 (set_struct_idx index: (lower_ident) @property)
 
-(float_lit) @literal
-(int_lit) @literal
-(bool_lit) @literal
+(float_lit) @number
+(int_lit) @number
 
 "&&" @operator
 "||" @operator
