@@ -1,18 +1,16 @@
 use std::error::Error;
-use std::fs;
 
-use lsp_types::request::{HoverRequest, SemanticTokensFullRequest};
+use lsp_types::notification::{DidOpenTextDocument, DidChangeTextDocument, DidCloseTextDocument};
+use lsp_types::request::SemanticTokensFullRequest;
 use lsp_types::{
-    request::GotoDefinition, GotoDefinitionResponse, InitializeParams, ServerCapabilities,
-};
-use lsp_types::{
-    Hover, HoverContents, OneOf, SemanticToken, SemanticTokenType, SemanticTokens,
-    SemanticTokensFullOptions, SemanticTokensLegend, SemanticTokensOptions,
-    SemanticTokensServerCapabilities, WorkDoneProgressOptions,
+    SemanticToken, SemanticTokenType, SemanticTokens, SemanticTokensFullOptions,
+    SemanticTokensLegend, SemanticTokensOptions, SemanticTokensServerCapabilities,
+    WorkDoneProgressOptions, InitializeParams, ServerCapabilities, TextDocumentSyncCapability, TextDocumentSyncKind
 };
 
-use lsp_server::{Connection, ExtractError, Message, Request, RequestId, Response};
+use lsp_server::{Connection, ExtractError, Message, Request, RequestId, Response, Notification};
 use nemo_frontend::parser::HIGHLIGHT_NAMES;
+use nemo_language_server::vfs::Vfs;
 use tree_sitter_highlight::{Highlight, HighlightEvent};
 
 fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
@@ -25,8 +23,7 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
 
     // Run the server and wait for the two threads to end (typically by trigger LSP Exit event).
     let server_capabilities = serde_json::to_value(&ServerCapabilities {
-        definition_provider: Some(OneOf::Left(true)),
-        hover_provider: Some(lsp_types::HoverProviderCapability::Simple(true)),
+        text_document_sync: Some(TextDocumentSyncCapability::Kind(TextDocumentSyncKind::FULL)),
         semantic_tokens_provider: Some(SemanticTokensServerCapabilities::SemanticTokensOptions(
             SemanticTokensOptions {
                 work_done_progress_options: WorkDoneProgressOptions {
@@ -60,6 +57,8 @@ fn main_loop(
     connection: Connection,
     params: serde_json::Value,
 ) -> Result<(), Box<dyn Error + Sync + Send>> {
+    let mut vfs = Vfs::new();
+
     let _params: InitializeParams = serde_json::from_value(params).unwrap();
     eprintln!("starting example main loop");
     for msg in &connection.receiver {
@@ -70,55 +69,24 @@ fn main_loop(
                     return Ok(());
                 }
                 eprintln!("got request: {req:?}");
-                let req = match cast::<GotoDefinition>(req) {
-                    Ok((id, params)) => {
-                        eprintln!("got gotoDefinition request #{id}: {params:?}");
-                        let result = Some(GotoDefinitionResponse::Array(Vec::new()));
-                        let result = serde_json::to_value(&result).unwrap();
-                        let resp = Response {
-                            id,
-                            result: Some(result),
-                            error: None,
-                        };
-                        connection.sender.send(Message::Response(resp))?;
-                        continue;
-                    }
-                    Err(err @ ExtractError::JsonError { .. }) => panic!("{err:?}"),
-                    Err(ExtractError::MethodMismatch(req)) => req,
-                };
-
-                let req = match cast::<HoverRequest>(req) {
-                    Ok((id, _params)) => {
-                        let result = Hover {
-                            contents: HoverContents::Markup(lsp_types::MarkupContent {
-                                kind: lsp_types::MarkupKind::Markdown,
-                                value: "Hello hover".to_string(),
-                            }),
-                            range: None,
-                        };
-                        let result = serde_json::to_value(&result).unwrap();
-                        let resp = Response {
-                            id,
-                            result: Some(result),
-                            error: None,
-                        };
-                        connection.sender.send(Message::Response(resp))?;
-                        continue;
-                    }
-                    Err(err @ ExtractError::JsonError { .. }) => panic!("{err:?}"),
-                    Err(ExtractError::MethodMismatch(req)) => req,
-                };
-                match cast::<SemanticTokensFullRequest>(req) {
+                match cast_request::<SemanticTokensFullRequest>(req) {
                     Ok((id, params)) => {
                         let uri = params.text_document.uri;
                         let file_path = uri.to_file_path().unwrap();
                         eprintln!("Attempting to read {uri} as file {}", file_path.display());
-                        let program = fs::read_to_string(file_path).unwrap();
 
-                        let events = nemo_frontend::parser::highlight(&program);
+                        let program = match vfs.read_file(&file_path) {
+                            Some(program) => program.as_str(),
+                            None => {
+                                vfs.open_file(file_path.clone()).unwrap();
+                                vfs.read_file(&file_path).unwrap()
+                            },
+                        };
+
+                        let events = nemo_frontend::parser::highlight(program);
                         let result = SemanticTokens {
                             result_id: None,
-                            data: semantic_tokens(&program, events),
+                            data: semantic_tokens(program, events),
                         };
                         let result = serde_json::to_value(&result).unwrap();
 
@@ -139,6 +107,34 @@ fn main_loop(
             }
             Message::Notification(not) => {
                 eprintln!("got notification: {not:?}");
+                let not = match cast_notification::<DidOpenTextDocument>(not) {
+                    Ok(params) => {
+                        vfs.insert_file(params.text_document.uri.to_file_path().unwrap(), params.text_document.text);
+                        continue;
+                    },
+                    Err(err @ ExtractError::JsonError { .. }) => panic!("{err:?}"),
+                    Err(ExtractError::MethodMismatch(not)) => not,
+                };
+                let not = match cast_notification::<DidChangeTextDocument>(not) {
+                    Ok(params) => {
+                        vfs.update_file(
+                            &params.text_document.uri.to_file_path().unwrap(),
+                            params.content_changes[0].text.clone()
+                        );
+                        continue;
+                    },
+                    Err(err @ ExtractError::JsonError { .. }) => panic!("{err:?}"),
+                    Err(ExtractError::MethodMismatch(not)) => not,
+                };
+                let not = match cast_notification::<DidCloseTextDocument>(not) {
+                    Ok(params) => {
+                        vfs.remove_file(&params.text_document.uri.to_file_path().unwrap());
+                        continue;
+                    },
+                    Err(err @ ExtractError::JsonError { .. }) => panic!("{err:?}"),
+                    Err(ExtractError::MethodMismatch(not)) => not,
+                };
+                eprintln!("got notification: {not:?}");
             }
         }
     }
@@ -153,13 +149,14 @@ fn semantic_tokens(content: &str, events: Vec<HighlightEvent>) -> Vec<SemanticTo
     for event in events {
         match event {
             HighlightEvent::Source { start, end } => {
+                // As long as no highlight type is set we 'concat' all
+                // event sources
                 let token_type = match highlight {
                     None => continue,
                     Some(Highlight(token_type)) => token_type as u32,
                 };
 
                 let skipped = &content[prev_token_start..start];
-                eprintln!("skipped: {skipped}, {prev_token_start}:{start}");
                 let mut delta_line = 0;
                 let mut delta_start = 0;
                 for line in skipped.split("\n") {
@@ -167,9 +164,8 @@ fn semantic_tokens(content: &str, events: Vec<HighlightEvent>) -> Vec<SemanticTo
                     delta_start = line.chars().count() as u32;
                 }
                 delta_line -= 1;
-                let token_str = &content[start..end];
-                eprintln!("token: {token_str}, {start}:{end}");
-                let length = token_str.chars().count() as u32;
+
+                let length = content[start..end].chars().count() as u32;
                 tokens.push(SemanticToken {
                     delta_line,
                     delta_start,
@@ -184,14 +180,21 @@ fn semantic_tokens(content: &str, events: Vec<HighlightEvent>) -> Vec<SemanticTo
         }
     }
 
-    eprintln!("semantic tokens: {tokens:#?}");
     tokens
 }
 
-fn cast<R>(req: Request) -> Result<(RequestId, R::Params), ExtractError<Request>>
+fn cast_request<R>(req: Request) -> Result<(RequestId, R::Params), ExtractError<Request>>
 where
     R: lsp_types::request::Request,
     R::Params: serde::de::DeserializeOwned,
 {
     req.extract(R::METHOD)
+}
+
+fn cast_notification<R>(not: Notification) -> Result<R::Params, ExtractError<Notification>>
+where
+    R: lsp_types::notification::Notification,
+    R::Params: serde::de::DeserializeOwned,
+{
+    not.extract(R::METHOD)
 }
