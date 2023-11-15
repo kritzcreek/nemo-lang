@@ -39,7 +39,7 @@ let cubes = [
 ];
 
 fn clamp(min : f32, val : f32, max : f32) : f32 = {
-  f32_min(500.0, f32_max(0.0, val))
+  f32_min(max, f32_max(min, val))
 }
 
 fn draw_cube(cube : Cube) : f32 = {
