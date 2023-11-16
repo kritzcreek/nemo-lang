@@ -58,7 +58,7 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
             match check_program(&source) {
                 Ok(_) => Ok(()),
                 Err(err) => {
-                    eprintln!("{}", render_ty_error(&source, &err));
+                    eprintln!("{}", render_ty_error(&source, &err, true));
                     std::process::exit(1)
                 }
             }

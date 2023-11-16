@@ -1,0 +1,13 @@
+---
+source: packages/nemo-frontend/tests/type_errors.rs
+expression: "type_errors::render_ty_error(&source, &err, false)"
+input_file: packages/nemo-frontend/test_data/failing/missing_field.nemo
+---
+[14] Error: Missing field. F.x was not provided
+   ╭─[source:2:2]
+   │
+ 6 │   F { }
+   │   ──┬──  
+   │     ╰──── Missing field F.x
+───╯
+

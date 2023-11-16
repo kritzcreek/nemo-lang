@@ -1,6 +1,6 @@
 use crate::syntax::{Span, Spanned};
 use crate::types::Ty;
-use ariadne::{Color, ColorGenerator, Config, Fmt, Label, Report, ReportKind, Source};
+use ariadne::{Color, Config, Label, Report, ReportKind, Source};
 use core::fmt;
 
 #[derive(Debug)]
@@ -89,7 +89,23 @@ impl fmt::Display for TyErrorData {
 }
 
 fn code_for_error(err_data: &TyErrorData) -> i32 {
-    0
+    match err_data {
+        TyErrorData::MissingNode(_) => 1,
+        TyErrorData::InvalidLiteral => 2,
+        TyErrorData::InvalidOperator => 3,
+        TyErrorData::Message(_) => 4,
+        TyErrorData::UnknownVar(_) => 5,
+        TyErrorData::UnknownFunction(_) => 6,
+        TyErrorData::UnknownType(_) => 7,
+        TyErrorData::UnknownIntrinsic(_, _) => 8,
+        TyErrorData::NonArrayIdx(_) => 9,
+        TyErrorData::NonStructIdx(_) => 10,
+        TyErrorData::ArgCountMismatch(_, _) => 11,
+        TyErrorData::FieldTypeMismatch { .. } => 12,
+        TyErrorData::UnknownField { .. } => 13,
+        TyErrorData::MissingField { .. } => 14,
+        TyErrorData::TypeMismatch { .. } => 15,
+    }
 }
 
 fn error_label(err_data: &TyErrorData) -> String {
@@ -127,14 +143,9 @@ fn error_label(err_data: &TyErrorData) -> String {
     }
 }
 
-pub fn render_ty_error(source: &str, ty_error: &TyError) -> String {
-    // let mut colors = ColorGenerator::new();
+pub fn render_ty_error(source: &str, ty_error: &TyError, colors: bool) -> String {
+    let file_name = "source";
 
-    let file_name = "source.nemo";
-
-    // Generate & choose some colours for each of our elements
-    // let a = colors.next();
-    // let b = colors.next();
     let out = Color::Fixed(81);
     let cache = (file_name, Source::from(source));
 
@@ -155,7 +166,7 @@ pub fn render_ty_error(source: &str, ty_error: &TyError) -> String {
         //     "Outputs of {} expressions must coerce to the same type",
         //     "match".fg(out)
         // ))
-        .with_config(Config::default().with_color(false))
+        .with_config(Config::default().with_color(colors))
         .finish()
         .write(cache, &mut output)
         .unwrap();

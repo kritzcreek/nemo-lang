@@ -1,0 +1,13 @@
+---
+source: packages/nemo-frontend/tests/type_errors.rs
+expression: "type_errors::render_ty_error(&source, &err, false)"
+input_file: packages/nemo-frontend/test_data/failing/field_type_mismatch.nemo
+---
+[12] Error: Mismatched field type. F.x expects i32, but got bool
+   ╭─[source:2:2]
+   │
+ 6 │   F { x = true }
+   │       ┬  
+   │       ╰── Expected a value of type 'i32' for F.x, but got 'bool' instead
+───╯
+

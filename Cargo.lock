@@ -771,6 +771,7 @@ dependencies = [
  "tree-sitter",
  "tree-sitter-highlight",
  "tree-sitter-nemo",
+ "yansi",
 ]
 
 [[package]]

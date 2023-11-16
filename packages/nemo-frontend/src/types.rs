@@ -7,7 +7,7 @@ use crate::syntax::{
     IntrinsicData, Lit, LitData, Op, OpData, Program, SetTarget, SetTargetData, Span, Spanned,
     Toplevel, ToplevelData, Type, TypeData,
 };
-use crate::type_errors::{render_ty_error, TyError, TyErrorData};
+use crate::type_errors::{TyError, TyErrorData};
 use tree_sitter::Node;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
