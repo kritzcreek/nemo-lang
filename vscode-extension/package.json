@@ -8,26 +8,41 @@
     "type": "git",
     "url": "https://github.com/kritzcreek/nemo-lang"
   },
+  "categories": [
+    "Programming Languages"
+  ],
   "engines": {
     "vscode": "^1.75.0"
   },
-  "activationEvents": [
-    "onLanguage:plaintext"
-  ],
+    "@types/vscode": "^1.75.1",
   "main": "./out/extension",
   "contributes": {
+    "languages": [
+      {
+        "id": "nemo",
+        "extensions": [
+          ".nemo"
+        ],
+        "aliases": [
+          "Nemo"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -b",
     "watch": "tsc -b -w"
   },
+  "activationEvents": [ "onLanguage:nemo" ],
   "dependencies": {
     "@types/vscode": "^1.75.1",
     "vscode-languageclient": "^8.1.0"
   },
   "devDependencies": {
     "@types/node": "^16.18.34",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "vsce": "^2.15.0"
   }
 }

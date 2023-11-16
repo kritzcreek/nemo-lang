@@ -16,7 +16,7 @@ export function activate(context: ExtensionContext) {
   };
 
   const clientOptions: LanguageClientOptions = {
-    documentSelector: [{ scheme: "file", pattern: "**/*.nemo" }],
+    documentSelector: [{ scheme: "file", language: "nemo", pattern: "**/*.nemo" }],
     synchronize: {
       fileEvents: workspace.createFileSystemWatcher("**/.clientrc"),
     },
