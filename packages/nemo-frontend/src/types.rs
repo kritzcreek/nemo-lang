@@ -4,8 +4,8 @@ use std::collections::HashMap;
 use crate::builtins;
 use crate::syntax::{
     Declaration, DeclarationData, Expr, ExprData, FuncId, FuncType, FuncTypeData, Id, Intrinsic,
-    IntrinsicData, Lit, LitData, Op, OpData, Program, SetTarget, SetTargetData, Span, Spanned,
-    Toplevel, ToplevelData, Type, TypeData,
+    IntrinsicData, Lit, LitData, Op, OpData, Program, SetTarget, SetTargetData, Span, Toplevel,
+    ToplevelData, Type, TypeData,
 };
 use crate::type_errors::{TyError, TyErrorData};
 use tree_sitter::Node;
@@ -1074,40 +1074,4 @@ impl<'a> Typechecker<'a> {
 pub fn typecheck(source: &str, program: Node<'_>) -> TyResult<Program> {
     let typechecker = Typechecker::new(source);
     typechecker.infer_prog(program)
-}
-
-#[derive(Debug, PartialEq)]
-pub struct ToplevelPartial {
-    pub it: ToplevelPartialData,
-    pub at: Span,
-}
-
-impl Spanned for ToplevelPartial {
-    fn at(&self) -> &Span {
-        &self.at
-    }
-}
-
-#[derive(Debug, PartialEq)]
-pub enum ToplevelPartialData {
-    Import {
-        internal: Option<FuncId>,
-        func_ty: Option<FuncType>,
-        external: Id,
-    },
-    Struct {
-        name: Id,
-        fields: Vec<(Id, Type)>,
-    },
-    Global {
-        binder: Id,
-        annotation: Option<Type>,
-        init: Expr,
-    },
-    Func {
-        name: FuncId,
-        params: Vec<(Id, Type)>,
-        return_ty: Option<Type>,
-        body: Expr,
-    },
 }
