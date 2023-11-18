@@ -1,11 +1,11 @@
-import clear : () -> i32 from clear_canvas
-import begin_path : (f32) -> f32 from begin_path
-import move_to : (f32, f32) -> f32 from move_to
-import line_to : (f32, f32) -> f32 from line_to
-import arc : (f32, f32, f32, f32, f32) -> f32 from arc
-import close_path : (f32) -> f32 from close_path
-import set_stroke_color : (f32, f32, f32) -> f32 from set_stroke_color
-import stroke : (f32) -> f32 from stroke
+import clear : () -> unit from clear_canvas
+import begin_path : (f32) -> unit from begin_path
+import move_to : (f32, f32) -> unit from move_to
+import line_to : (f32, f32) -> unit from line_to
+import arc : (f32, f32, f32, f32, f32) -> unit from arc
+import close_path : (f32) -> unit from close_path
+import set_stroke_color : (f32, f32, f32) -> unit from set_stroke_color
+import stroke : (f32) -> unit from stroke
 
 struct Color {
   r : f32,
@@ -66,7 +66,7 @@ fn clamp(min : f32, val : f32, max : f32) : f32 = {
   f32_min(max, f32_max(min, val))
 }
 
-fn draw_cube(cube : Cube) : f32 = {
+fn draw_cube(cube : Cube) = {
   let x = cube.x;
   let y = cube.y;
   let size = cube.size;
@@ -80,14 +80,14 @@ fn draw_cube(cube : Cube) : f32 = {
   stroke(0.0)
 }
 
-fn draw_particle(particle : Particle) : f32 = {
+fn draw_particle(particle : Particle) = {
 
   if particle.time > 0.0 {
     begin_path(0.0);
     arc(particle.x, particle.y, (particle_timer - particle.time) / 2.0, 0.0, two_pi);
     set_stroke_color(particle.color.r, particle.color.g, particle.color.b);
     stroke(0.0)
-  } else { 0.0 }
+  } else {}
 }
 
 fn collide_cubes(c1 : Cube, c2 : Cube) = {
