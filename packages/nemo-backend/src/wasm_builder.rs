@@ -78,9 +78,8 @@ impl<'a> Builder<'a> {
 
     fn _print_funcs(&self) {
         for (name, id) in &self.name_map {
-            match name {
-                Name::Func(n) => eprintln!("$fn:{n} = {id}"),
-                _ => {}
+            if let Name::Func(n) = name {
+                eprintln!("$fn:{n} = {id}")
             }
         }
     }
@@ -159,8 +158,8 @@ impl<'a> Builder<'a> {
     pub fn resolve_name(&self, name: Name) -> Id {
         self.name_map
             .get(&name)
-            .expect(&format!("Failed to resolve: {name:?}"))
-            .clone()
+            .cloned()
+            .unwrap_or_else(|| panic!("Failed to resolve: {name:?}"))
     }
 
     pub fn declare_struct(&mut self, ty: Struct) {

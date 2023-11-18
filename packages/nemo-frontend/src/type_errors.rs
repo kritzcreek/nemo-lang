@@ -116,11 +116,11 @@ fn error_label(err_data: &TyErrorData) -> String {
         TyErrorData::MissingNode(n) =>
             format!("Internal/Parse error: Expected a node labeled {n}"),
         TyErrorData::InvalidLiteral =>
-            format!("Invalid literal couldn't be parsed"),
+            "Invalid literal couldn't be parsed".to_string(),
         TyErrorData::InvalidOperator =>
-            format!("The impossible happened! An invalid operator"),
+            "The impossible happened! An invalid operator".to_string(),
         TyErrorData::Message(m) =>
-            format!("{m}"),
+            m.clone(),
         TyErrorData::UnknownVar(v) =>
             format!("Unknown variable {v}"),
         TyErrorData::UnknownFunction(f) =>

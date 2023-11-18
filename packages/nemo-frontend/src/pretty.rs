@@ -62,7 +62,7 @@ impl Printer {
                 .append(self.pretty_ty(t))
                 .append(Doc::text("]")),
             Ty::Struct(ref t) => Doc::text(t.to_string()),
-            Ty::Func(ref func_ty) => self.pretty_func_ty(&*func_ty),
+            Ty::Func(ref func_ty) => self.pretty_func_ty(func_ty),
         }
     }
 

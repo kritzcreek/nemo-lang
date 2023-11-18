@@ -370,13 +370,11 @@ impl<'a> Typechecker<'a> {
             Err(_) => None,
         };
         let expr_node = node.child_by_field("expr")?;
-        // TODO: Forbid function references? Probably not, but need to
-        // check that global names and function names don't overlap
+        // TODO: need to check that global names and function names don't overlap
         let typed_expr = self.infer_expr(ctx, &expr_node)?;
 
-        match annotation {
-            Some(ref ann_ty) => self.expect_ty(&ann_ty.ty, &typed_expr.ty, &ann_ty.at)?,
-            None => {}
+        if let Some(ref ann_ty) = annotation {
+            self.expect_ty(&ann_ty.ty, &typed_expr.ty, &ann_ty.at)?
         }
 
         let binder = Id {
@@ -714,9 +712,8 @@ impl<'a> Typechecker<'a> {
                 let value_node = node.child_by_field("expr")?;
                 let typed_expr = self.infer_expr(ctx, &value_node)?;
 
-                match annotation {
-                    Some(ref ann_ty) => self.expect_ty(&ann_ty.ty, &typed_expr.ty, &ann_ty.at)?,
-                    None => {}
+                if let Some(ref ann_ty) = annotation {
+                    self.expect_ty(&ann_ty.ty, &typed_expr.ty, &ann_ty.at)?
                 }
 
                 ctx.add(self.text(&name_node).to_string(), typed_expr.ty.clone());

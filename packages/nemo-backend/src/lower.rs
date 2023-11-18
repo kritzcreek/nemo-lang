@@ -152,6 +152,7 @@ impl Lower {
     fn lookup_field(&self, struct_name: &str, field: &str) -> Name {
         *self.lookup_ty(struct_name).fields.get(field).unwrap()
     }
+
     fn lookup_field_ty(&self, ty: &types::Ty, field: &str) -> Name {
         if let types::Ty::Struct(struct_name) = ty {
             self.lookup_field(struct_name, field)
@@ -313,18 +314,14 @@ impl Lower {
             syntax::ExprData::Lit(l) => ExprData::Lit(self.lower_lit(l)),
             syntax::ExprData::Var(v) => ExprData::Var(self.lookup_var_or_func(&v.it)),
             syntax::ExprData::Call { func, arguments } => {
-                let func = match self.scope.get(&func.it) {
-                    Some(n) => FuncOrBuiltin::FuncRef(n, self.lower_func_ty(&func.ty)),
-                    None => {
-                        if self.func_exists(&func.it) {
-                            FuncOrBuiltin::Func(self.lookup_func(&func.it))
-                        } else {
-                            match builtins::lookup_builtin(&func.it) {
-                                Some(fun) => FuncOrBuiltin::Builtin(fun.name),
-                                None => unreachable!("Can't resolve function: {}", func.to_id()),
-                            }
-                        }
-                    }
+                let func = if let Some(n) = self.scope.get(&func.it) {
+                    FuncOrBuiltin::FuncRef(n, self.lower_func_ty(&func.ty))
+                } else if self.func_exists(&func.it) {
+                    FuncOrBuiltin::Func(self.lookup_func(&func.it))
+                } else if let Some(fun) = builtins::lookup_builtin(&func.it) {
+                    FuncOrBuiltin::Builtin(fun.name)
+                } else {
+                    unreachable!("Can't resolve function: {}", func.to_id())
                 };
                 ExprData::Call {
                     func,
