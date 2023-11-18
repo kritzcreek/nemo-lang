@@ -107,6 +107,7 @@ pub enum TypeData {
     Bool,
     Array(Type),
     Struct(String),
+    Func(Vec<Type>, Type),
 }
 
 #[derive(Debug, PartialEq, Eq)]

@@ -165,14 +165,22 @@ module.exports = grammar({
     ty_unit: $ => 'unit',
     ty_array: $ => seq('[', field('elem_ty', $._type) ,']'),
     ty_struct: $ => $.upper_ident,
-
+    ty_func: $ => seq(
+      'fn',
+      '(',
+      comma_sep_trailing(field('argument', $._type)),
+      ')',
+      '->',
+      field('result', $._type)
+    ),
     _type: $ => choice(
       $.ty_i32,
       $.ty_f32,
       $.ty_bool,
       $.ty_unit,
       $.ty_array,
-      $.ty_struct
+      $.ty_struct,
+      $.ty_func
     ),
 
     func_type: $ => seq(

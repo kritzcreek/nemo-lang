@@ -1039,6 +1039,76 @@
       "type": "SYMBOL",
       "name": "upper_ident"
     },
+    "ty_func": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "fn"
+        },
+        {
+          "type": "STRING",
+          "value": "("
+        },
+        {
+          "type": "SEQ",
+          "members": [
+            {
+              "type": "REPEAT",
+              "content": {
+                "type": "SEQ",
+                "members": [
+                  {
+                    "type": "FIELD",
+                    "name": "argument",
+                    "content": {
+                      "type": "SYMBOL",
+                      "name": "_type"
+                    }
+                  },
+                  {
+                    "type": "STRING",
+                    "value": ","
+                  }
+                ]
+              }
+            },
+            {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "FIELD",
+                  "name": "argument",
+                  "content": {
+                    "type": "SYMBOL",
+                    "name": "_type"
+                  }
+                },
+                {
+                  "type": "BLANK"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "STRING",
+          "value": ")"
+        },
+        {
+          "type": "STRING",
+          "value": "->"
+        },
+        {
+          "type": "FIELD",
+          "name": "result",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_type"
+          }
+        }
+      ]
+    },
     "_type": {
       "type": "CHOICE",
       "members": [
@@ -1065,6 +1135,10 @@
         {
           "type": "SYMBOL",
           "name": "ty_struct"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "ty_func"
         }
       ]
     },

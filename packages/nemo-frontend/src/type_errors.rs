@@ -27,6 +27,7 @@ pub enum TyErrorData {
     UnknownIntrinsic(String, usize),
     NonArrayIdx(Ty),
     NonStructIdx(Ty),
+    NotAFunction(Ty),
     ArgCountMismatch(usize, usize),
     FieldTypeMismatch {
         struct_name: String,
@@ -76,6 +77,7 @@ impl fmt::Display for TyErrorData {
                 f,
                 "Tried to access a value of type '{t}', as if it was a struct"
             ),
+            TyErrorData::NotAFunction(t) => write!(f, "Can't a call a value of type '{t}' as a function"),
             TyErrorData::FieldTypeMismatch { struct_name, field_name, expected, actual } =>
               write!(f, "Expected a value of type '{expected}' for {struct_name}.{field_name}, but got '{actual}' instead"),
             TyErrorData::UnknownField { struct_name, field_name } =>
@@ -105,6 +107,7 @@ fn code_for_error(err_data: &TyErrorData) -> i32 {
         TyErrorData::UnknownField { .. } => 13,
         TyErrorData::MissingField { .. } => 14,
         TyErrorData::TypeMismatch { .. } => 15,
+        TyErrorData::NotAFunction(_) => 16,
     }
 }
 
@@ -130,6 +133,8 @@ fn error_label(err_data: &TyErrorData) -> String {
             format!("Tried to index into a non-array type {ty}"),
         TyErrorData::NonStructIdx(ty) =>
             format!("Tried to index into a non-struct type {ty}"),
+        TyErrorData::NotAFunction(t) =>
+            format!("Can't a call a value of type '{t}' as a function"),
         TyErrorData::ArgCountMismatch(expected, actual) =>
             format!("Mismatched arg count. Expected {expected} arguments, but got {actual}"),
         TyErrorData::FieldTypeMismatch { struct_name, field_name, expected, actual } =>

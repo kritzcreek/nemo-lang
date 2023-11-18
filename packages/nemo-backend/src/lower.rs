@@ -188,6 +188,7 @@ impl Lower {
             types::Ty::Bool => Ty::Bool,
             types::Ty::Array(t) => Ty::Array(Box::new(self.lower_ty(t))),
             types::Ty::Struct(s) => Ty::Struct(self.lookup_ty(s).name),
+            types::Ty::Func(func_ty) => todo!(),
         }
     }
 
