@@ -3,7 +3,7 @@ use tree_sitter_highlight::HighlightConfiguration;
 use tree_sitter_highlight::HighlightEvent;
 use tree_sitter_highlight::Highlighter;
 
-pub const HIGHLIGHT_NAMES: [&'static str; 7] = [
+pub const HIGHLIGHT_NAMES: [&str; 7] = [
     "keyword", "type", "function", "operator", "property", "number", "comment",
 ];
 

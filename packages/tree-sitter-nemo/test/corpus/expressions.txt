@@ -46,6 +46,8 @@ let _ : unit = 0;
 let _ : Struct = 0;
 let _ : [i32] = 0;
 let _ : [[Struct]] = 0;
+let _ : fn(i32) -> f32 = 0;
+let _ : fn(i32, f32, fn(i32) -> i32) -> f32 = 0;
 
 --------------------------------------------------------------------------------
 
@@ -82,6 +84,22 @@ let _ : [[Struct]] = 0;
       (ty_array
         (ty_struct
           (upper_ident))))
+    (int_lit))
+  (top_let
+    (lower_ident)
+    (ty_func
+      (ty_i32)
+      (ty_f32))
+    (int_lit))
+  (top_let
+    (lower_ident)
+    (ty_func
+      (ty_i32)
+      (ty_f32)
+      (ty_func
+        (ty_i32)
+        (ty_i32))
+      (ty_f32))
     (int_lit)))
 
 ================================================================================
@@ -233,9 +251,12 @@ let _ = f();
 let _ = f(1);
 let _ = f(1, 2,);
 let _ = f(1, f(2));
+let _ = x.f();
+let _ = x[1].f();
+let _ = f(1)(x);
+let _ = f32_abs(delta_x) > f32_abs(delta_y);
 let _ = @array_len([]);
 let _ = @array_new(1, 2);
-
 
 --------------------------------------------------------------------------------
 
@@ -243,31 +264,80 @@ let _ = @array_new(1, 2);
   (top_let
     (lower_ident)
     (call_e
-      (lower_ident)
+      (var_e
+        (lower_ident))
       (call_args)))
   (top_let
     (lower_ident)
     (call_e
-      (lower_ident)
+      (var_e
+        (lower_ident))
       (call_args
         (int_lit))))
   (top_let
     (lower_ident)
     (call_e
-      (lower_ident)
+      (var_e
+        (lower_ident))
       (call_args
         (int_lit)
         (int_lit))))
   (top_let
     (lower_ident)
     (call_e
-      (lower_ident)
+      (var_e
+        (lower_ident))
       (call_args
         (int_lit)
         (call_e
-          (lower_ident)
+          (var_e
+            (lower_ident))
           (call_args
             (int_lit))))))
+  (top_let
+    (lower_ident)
+    (call_e
+      (struct_idx_e
+        (var_e
+          (lower_ident))
+        (lower_ident))
+      (call_args)))
+  (top_let
+    (lower_ident)
+    (call_e
+      (struct_idx_e
+        (array_idx_e
+          (var_e
+            (lower_ident))
+          (int_lit))
+        (lower_ident))
+      (call_args)))
+  (top_let
+    (lower_ident)
+    (call_e
+      (call_e
+        (var_e
+          (lower_ident))
+        (call_args
+          (int_lit)))
+      (call_args
+        (var_e
+          (lower_ident)))))
+  (top_let
+    (lower_ident)
+    (binary_e
+      (call_e
+        (var_e
+          (lower_ident))
+        (call_args
+          (var_e
+            (lower_ident))))
+      (call_e
+        (var_e
+          (lower_ident))
+        (call_args
+          (var_e
+            (lower_ident))))))
   (top_let
     (lower_ident)
     (intrinsic_e
@@ -522,97 +592,3 @@ fn add(x : i32, y : i32) : i32 = {
             (lower_ident))
           (var_e
             (lower_ident)))))))
-
-================================================================================
-TESTINGU
-================================================================================
-fn draw_particle(particle : Particle) : f32 = {
-
-  if particle.time > 0.0 {
-    begin_path(0.0);
-    arc(particle.x, particle.y, (particle_timer - particle.time) / 2.0, 0.0, two_pi);
-    set_stroke_color(particle.color.r, particle.color.g, particle.color.b);
-    stroke(0.0)
-  } else { 0.0 }
-}
---------------------------------------------------------------------------------
-
-(source_file
-  (top_func
-    (lower_ident)
-    (func_params
-      (func_param
-        (lower_ident)
-        (ty_struct
-          (upper_ident))))
-    (ty_f32)
-    (block_e
-      (expr_decl
-        (if_e
-          (binary_e
-            (struct_idx_e
-              (var_e
-                (lower_ident))
-              (lower_ident))
-            (float_lit))
-          (block_e
-            (expr_decl
-              (call_e
-                (lower_ident)
-                (call_args
-                  (float_lit))))
-            (expr_decl
-              (call_e
-                (lower_ident)
-                (call_args
-                  (struct_idx_e
-                    (var_e
-                      (lower_ident))
-                    (lower_ident))
-                  (struct_idx_e
-                    (var_e
-                      (lower_ident))
-                    (lower_ident))
-                  (binary_e
-                    (parenthesized_e
-                      (binary_e
-                        (var_e
-                          (lower_ident))
-                        (struct_idx_e
-                          (var_e
-                            (lower_ident))
-                          (lower_ident))))
-                    (float_lit))
-                  (float_lit)
-                  (var_e
-                    (lower_ident)))))
-            (expr_decl
-              (call_e
-                (lower_ident)
-                (call_args
-                  (struct_idx_e
-                    (struct_idx_e
-                      (var_e
-                        (lower_ident))
-                      (lower_ident))
-                    (lower_ident))
-                  (struct_idx_e
-                    (struct_idx_e
-                      (var_e
-                        (lower_ident))
-                      (lower_ident))
-                    (lower_ident))
-                  (struct_idx_e
-                    (struct_idx_e
-                      (var_e
-                        (lower_ident))
-                      (lower_ident))
-                    (lower_ident)))))
-            (expr_decl
-              (call_e
-                (lower_ident)
-                (call_args
-                  (float_lit)))))
-          (block_e
-            (expr_decl
-              (float_lit))))))))

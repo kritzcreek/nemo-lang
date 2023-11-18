@@ -1,9 +1,8 @@
 use std::collections::HashMap;
 
 use crate::ir::{
-    Declaration, DeclarationData, Expr, ExprData, Func, FuncOrBuiltin, FuncTy, Global, Import,
-    Intrinsic, IntrinsicData, Lit, LitData, Name, Op, OpData, Program, SetTarget, SetTargetData,
-    Struct, Ty,
+    Callee, Declaration, DeclarationData, Expr, ExprData, Func, FuncTy, Global, Import, Intrinsic,
+    IntrinsicData, Lit, LitData, Name, Op, OpData, Program, SetTarget, SetTargetData, Struct, Ty,
 };
 use nemo_frontend::{
     builtins,
@@ -152,11 +151,19 @@ impl Lower {
     fn lookup_field(&self, struct_name: &str, field: &str) -> Name {
         *self.lookup_ty(struct_name).fields.get(field).unwrap()
     }
+
     fn lookup_field_ty(&self, ty: &types::Ty, field: &str) -> Name {
         if let types::Ty::Struct(struct_name) = ty {
             self.lookup_field(struct_name, field)
         } else {
             unreachable!("Tried to look up a non-existing struct type {ty}")
+        }
+    }
+
+    fn lookup_var_or_func(&self, var: &str) -> Name {
+        match self.scope.get(var) {
+            Some(n) => n,
+            None => self.lookup_func(var),
         }
     }
 
@@ -188,6 +195,7 @@ impl Lower {
             types::Ty::Bool => Ty::Bool,
             types::Ty::Array(t) => Ty::Array(Box::new(self.lower_ty(t))),
             types::Ty::Struct(s) => Ty::Struct(self.lookup_ty(s).name),
+            types::Ty::Func(ref func_ty) => Ty::Func(Box::new(self.lower_func_ty(func_ty))),
         }
     }
 
@@ -303,14 +311,24 @@ impl Lower {
     fn lower_expr(&mut self, expr: syntax::Expr) -> Expr {
         let expr_data = match *expr.it {
             syntax::ExprData::Lit(l) => ExprData::Lit(self.lower_lit(l)),
-            syntax::ExprData::Var(v) => ExprData::Var(self.lookup_var(&v.it)),
+            syntax::ExprData::Var(v) => ExprData::Var(self.lookup_var_or_func(&v.it)),
             syntax::ExprData::Call { func, arguments } => {
-                let func = if self.func_exists(&func.it) {
-                    FuncOrBuiltin::Func(self.lookup_func(&func.it))
-                } else {
-                    match builtins::lookup_builtin(&func.it) {
-                        Some(fun) => FuncOrBuiltin::Builtin(fun.name),
-                        None => unreachable!("Can't resolve function: {}", func.to_id()),
+                let func = match *func.it {
+                    syntax::ExprData::Var(ref v) => {
+                        if self.scope.get(&v.it).is_some() {
+                            let fn_expr = self.lower_expr(func);
+                            Callee::FuncRef(fn_expr)
+                        } else if self.func_exists(&v.it) {
+                            Callee::Func(self.lookup_func(&v.it))
+                        } else if let Some(fun) = builtins::lookup_builtin(&v.it) {
+                            Callee::Builtin(fun.name)
+                        } else {
+                            unreachable!("Can't resolve function: {}", v)
+                        }
+                    }
+                    _ => {
+                        let fn_expr = self.lower_expr(func);
+                        Callee::FuncRef(fn_expr)
                     }
                 };
                 ExprData::Call {

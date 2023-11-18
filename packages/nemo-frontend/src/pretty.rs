@@ -4,7 +4,7 @@ use crate::syntax::{
     Declaration, DeclarationData, Expr, ExprData, FuncType, Intrinsic, IntrinsicData, Lit, LitData,
     Op, OpData, Program, SetTarget, SetTargetData, Toplevel, ToplevelData, Type, TypeData,
 };
-use crate::types::Ty;
+use crate::types::{FuncTy, Ty};
 
 type Doc<'a> = RcDoc<'a, ()>;
 
@@ -34,6 +34,24 @@ impl Printer {
         }
     }
 
+    fn pretty_ty_list(&self, tys: &[Ty]) -> Doc {
+        Doc::intersperse(
+            tys.iter().map(|t| self.pretty_ty(t)),
+            Doc::text(",").append(Doc::line()),
+        )
+        .nest(2)
+        .group()
+    }
+
+    fn pretty_type_list(&self, tys: &[Type]) -> Doc {
+        Doc::intersperse(
+            tys.iter().map(|t| self.pretty_type(t)),
+            Doc::text(",").append(Doc::line()),
+        )
+        .nest(2)
+        .group()
+    }
+
     fn pretty_ty(&self, ty: &Ty) -> Doc {
         match ty {
             Ty::I32 => Doc::text("i32"),
@@ -44,6 +62,7 @@ impl Printer {
                 .append(self.pretty_ty(t))
                 .append(Doc::text("]")),
             Ty::Struct(ref t) => Doc::text(t.to_string()),
+            Ty::Func(ref func_ty) => self.pretty_func_ty(func_ty),
         }
     }
 
@@ -57,22 +76,32 @@ impl Printer {
                 .append(self.pretty_type(t))
                 .append(Doc::text("]")),
             TypeData::Struct(ref t) => Doc::text(t.to_string()),
+            TypeData::Func(ref args, ref result) => Doc::text("fn")
+                .append(Doc::space())
+                .append(Doc::text("("))
+                .append(self.pretty_type_list(args))
+                .append(Doc::text(")"))
+                .append(Doc::space())
+                .append(Doc::text("->"))
+                .append(Doc::space())
+                .append(self.pretty_type(result)),
         }
     }
 
-    // TODO: handle indentation
     fn pretty_func_type(&self, func_ty: &FuncType) -> Doc {
-        let mut doc = Doc::text("(");
-        for (i, arg) in func_ty.it.arguments.iter().enumerate() {
-            if i > 0 {
-                doc = doc.append(Doc::text(", "));
-            }
-            doc = doc.append(self.pretty_type(arg));
-        }
-        doc = doc
-            .append(Doc::text(") -> "))
-            .append(self.pretty_type(&func_ty.it.result));
-        doc
+        self.pretty_func_ty(&func_ty.ty)
+    }
+
+    fn pretty_func_ty(&self, func_ty: &FuncTy) -> Doc {
+        Doc::text("fn")
+            .append(Doc::space())
+            .append(Doc::text("("))
+            .append(self.pretty_ty_list(&func_ty.arguments))
+            .append(Doc::text(")"))
+            .append(Doc::space())
+            .append(Doc::text("->"))
+            .append(Doc::space())
+            .append(self.pretty_ty(&func_ty.result))
     }
 
     fn pretty_lit(&self, lit: &Lit) -> Doc {
@@ -99,7 +128,8 @@ impl Printer {
             ExprData::Call {
                 ref func,
                 ref arguments,
-            } => Doc::text(func.it.to_string())
+            } => self
+                .pretty_expr(func)
                 .append(Doc::text("("))
                 .append(self.pretty_expr_list(arguments))
                 .append(")"),

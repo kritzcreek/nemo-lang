@@ -5,8 +5,8 @@ use wasm_encoder::{BlockType, ConstExpr, HeapType, Instruction};
 
 use crate::{
     ir::{
-        Declaration, DeclarationData, Expr, ExprData, FuncOrBuiltin, IntrinsicData, Lit, LitData,
-        Name, Op, OpData, Program, SetTarget, SetTargetData, Ty,
+        Callee, Declaration, DeclarationData, Expr, ExprData, IntrinsicData, Lit, LitData, Name,
+        Op, OpData, Program, SetTarget, SetTargetData, Ty,
     },
     wasm_builder::{BodyBuilder, Builder},
 };
@@ -57,6 +57,10 @@ impl<'a> Codegen<'a> {
                 let (ty_idx, _) = self.builder.struct_type(*s);
                 ConstExpr::ref_null(HeapType::Concrete(*ty_idx))
             }
+            Ty::Func(ty) => {
+                let ty_idx = self.builder.func_type(ty);
+                ConstExpr::ref_null(HeapType::Concrete(ty_idx))
+            }
         }
     }
 
@@ -101,9 +105,11 @@ impl<'a> Codegen<'a> {
     fn compile_expr(&mut self, body: &mut BodyBuilder, expr: Expr) -> Vec<Instruction<'a>> {
         match *expr.it {
             ExprData::Lit(l) => Self::compile_lit(l),
-            ExprData::Var(v) => match body.lookup_local(&v) {
-                Some(ix) => vec![Instruction::LocalGet(ix)],
-                None => vec![Instruction::GlobalGet(self.builder.lookup_global(&v))],
+            ExprData::Var(v) => match v {
+                Name::Local(_) => vec![Instruction::LocalGet(body.lookup_local(&v).unwrap())],
+                Name::Global(_) => vec![Instruction::GlobalGet(self.builder.lookup_global(&v))],
+                Name::Func(_) => vec![Instruction::RefFunc(self.builder.lookup_func(&v))],
+                n => unreachable!("Cannot compile a variable reference to {n}"),
             },
             ExprData::Call { func, arguments } => {
                 let mut instrs = vec![];
@@ -113,11 +119,19 @@ impl<'a> Codegen<'a> {
                 }
 
                 match func {
-                    FuncOrBuiltin::Func(name) => {
+                    Callee::Func(name) => {
                         let func_idx = self.builder.lookup_func(&name);
                         instrs.push(Instruction::Call(func_idx));
                     }
-                    FuncOrBuiltin::Builtin(builtin) => instrs.push(builtin_instruction(builtin)),
+                    Callee::FuncRef(callee) => {
+                        let Ty::Func(ty) = &callee.ty else {
+                            unreachable!("Non-function type for callee")
+                        };
+                        let ty_idx = self.builder.func_type(ty);
+                        instrs.extend(self.compile_expr(body, callee));
+                        instrs.push(Instruction::CallRef(ty_idx))
+                    }
+                    Callee::Builtin(builtin) => instrs.push(builtin_instruction(builtin)),
                 }
                 instrs
             }

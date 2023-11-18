@@ -107,6 +107,7 @@ pub enum TypeData {
     Bool,
     Array(Type),
     Struct(String),
+    Func(Vec<Type>, Type),
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -273,7 +274,7 @@ pub enum ExprData {
     Lit(Lit),
     Var(Id),
     Call {
-        func: FuncId,
+        func: Expr,
         arguments: Vec<Expr>,
     },
     Binary {
