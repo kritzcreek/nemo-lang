@@ -30,9 +30,10 @@ pub enum Ty {
     Bool,
     Array(Box<Ty>),
     Struct(Name),
+    Func(Box<FuncTy>),
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub struct FuncTy {
     pub arguments: Vec<Ty>,
     pub result: Ty,
@@ -149,6 +150,7 @@ impl Spanned for Expr {
 
 #[derive(Debug, PartialEq)]
 pub enum FuncOrBuiltin {
+    FuncRef(Name, FuncTy),
     Func(Name),
     Builtin(&'static str),
 }

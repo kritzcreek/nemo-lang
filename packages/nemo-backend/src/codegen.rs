@@ -57,6 +57,10 @@ impl<'a> Codegen<'a> {
                 let (ty_idx, _) = self.builder.struct_type(*s);
                 ConstExpr::ref_null(HeapType::Concrete(*ty_idx))
             }
+            Ty::Func(ty) => {
+                let ty_idx = self.builder.func_type(ty);
+                ConstExpr::ref_null(HeapType::Concrete(ty_idx))
+            }
         }
     }
 
@@ -101,9 +105,11 @@ impl<'a> Codegen<'a> {
     fn compile_expr(&mut self, body: &mut BodyBuilder, expr: Expr) -> Vec<Instruction<'a>> {
         match *expr.it {
             ExprData::Lit(l) => Self::compile_lit(l),
-            ExprData::Var(v) => match body.lookup_local(&v) {
-                Some(ix) => vec![Instruction::LocalGet(ix)],
-                None => vec![Instruction::GlobalGet(self.builder.lookup_global(&v))],
+            ExprData::Var(v) => match v {
+                Name::Local(_) => vec![Instruction::LocalGet(body.lookup_local(&v).unwrap())],
+                Name::Global(_) => vec![Instruction::GlobalGet(self.builder.lookup_global(&v))],
+                Name::Func(_) => vec![Instruction::RefFunc(self.builder.lookup_func(&v))],
+                n => unreachable!("Cannot compile a variable reference to {n}"),
             },
             ExprData::Call { func, arguments } => {
                 let mut instrs = vec![];
@@ -116,6 +122,19 @@ impl<'a> Codegen<'a> {
                     FuncOrBuiltin::Func(name) => {
                         let func_idx = self.builder.lookup_func(&name);
                         instrs.push(Instruction::Call(func_idx));
+                    }
+                    FuncOrBuiltin::FuncRef(name, ty) => {
+                        let ty_idx = self.builder.func_type(&ty);
+                        match name {
+                            Name::Local(_) => instrs
+                                .push(Instruction::LocalGet(body.lookup_local(&name).unwrap())),
+                            Name::Global(_) => instrs
+                                .push(Instruction::GlobalGet(self.builder.lookup_global(&name))),
+                            n => unreachable!(
+                                "Tried to codegen a func_ref that isn't a local or global: {n}"
+                            ),
+                        }
+                        instrs.push(Instruction::CallRef(ty_idx))
                     }
                     FuncOrBuiltin::Builtin(builtin) => instrs.push(builtin_instruction(builtin)),
                 }

@@ -160,6 +160,13 @@ impl Lower {
         }
     }
 
+    fn lookup_var_or_func(&self, var: &str) -> Name {
+        match self.scope.get(var) {
+            Some(n) => n,
+            None => self.lookup_func(var),
+        }
+    }
+
     fn lookup_var(&self, var: &str) -> Name {
         self.scope.get(var).unwrap()
     }
@@ -188,7 +195,7 @@ impl Lower {
             types::Ty::Bool => Ty::Bool,
             types::Ty::Array(t) => Ty::Array(Box::new(self.lower_ty(t))),
             types::Ty::Struct(s) => Ty::Struct(self.lookup_ty(s).name),
-            types::Ty::Func(func_ty) => todo!(),
+            types::Ty::Func(ref func_ty) => Ty::Func(Box::new(self.lower_func_ty(func_ty))),
         }
     }
 
@@ -304,14 +311,19 @@ impl Lower {
     fn lower_expr(&mut self, expr: syntax::Expr) -> Expr {
         let expr_data = match *expr.it {
             syntax::ExprData::Lit(l) => ExprData::Lit(self.lower_lit(l)),
-            syntax::ExprData::Var(v) => ExprData::Var(self.lookup_var(&v.it)),
+            syntax::ExprData::Var(v) => ExprData::Var(self.lookup_var_or_func(&v.it)),
             syntax::ExprData::Call { func, arguments } => {
-                let func = if self.func_exists(&func.it) {
-                    FuncOrBuiltin::Func(self.lookup_func(&func.it))
-                } else {
-                    match builtins::lookup_builtin(&func.it) {
-                        Some(fun) => FuncOrBuiltin::Builtin(fun.name),
-                        None => unreachable!("Can't resolve function: {}", func.to_id()),
+                let func = match self.scope.get(&func.it) {
+                    Some(n) => FuncOrBuiltin::FuncRef(n, self.lower_func_ty(&func.ty)),
+                    None => {
+                        if self.func_exists(&func.it) {
+                            FuncOrBuiltin::Func(self.lookup_func(&func.it))
+                        } else {
+                            match builtins::lookup_builtin(&func.it) {
+                                Some(fun) => FuncOrBuiltin::Builtin(fun.name),
+                                None => unreachable!("Can't resolve function: {}", func.to_id()),
+                            }
+                        }
                     }
                 };
                 ExprData::Call {

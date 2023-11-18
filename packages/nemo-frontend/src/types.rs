@@ -370,6 +370,8 @@ impl<'a> Typechecker<'a> {
             Err(_) => None,
         };
         let expr_node = node.child_by_field("expr")?;
+        // TODO: Forbid function references? Probably not, but need to
+        // check that global names and function names don't overlap
         let typed_expr = self.infer_expr(ctx, &expr_node)?;
 
         match annotation {
@@ -824,7 +826,6 @@ impl<'a> Typechecker<'a> {
                         let func_ty = self.lookup_function(&name.it, &name.at).map_err(|_| err)?;
                         Ty::Func(Box::new(func_ty.clone()))
                     }
-
                 };
                 Ok(Expr {
                     ty,

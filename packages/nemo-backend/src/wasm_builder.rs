@@ -232,6 +232,13 @@ impl<'a> Builder<'a> {
                     heap_type: HeapType::Concrete(idx),
                 })
             }
+            Ty::Func(func_ty) => {
+                let ty_idx = self.func_type(func_ty);
+                ValType::Ref(RefType {
+                    nullable: false,
+                    heap_type: HeapType::Concrete(ty_idx),
+                })
+            }
         }
     }
 
