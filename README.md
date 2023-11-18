@@ -95,6 +95,7 @@ Most features can be directly mapped to Wasm GC constructs. I'm just listing the
 - Globals
 - Primitive types: i32, f32, bool, unit
 - Composite types: Structs (nominal), Arrays (structural)
+- Typed function references (no closures)
 - if-expressions
 - while
 - Infix operators for most numeric instructions

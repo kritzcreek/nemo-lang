@@ -18,6 +18,7 @@ pub enum Ty {
     Bool,
     Array(Box<Ty>),
     Struct(String),
+    Func(Box<FuncTy>),
 }
 
 impl Ty {
@@ -32,6 +33,11 @@ impl Ty {
             TypeData::Bool => Ty::Bool,
             TypeData::Array(ref t) => Ty::Array(Box::new(Ty::from_syntax(t))),
             TypeData::Struct(ref s) => Ty::Struct(s.clone()),
+            TypeData::Func(ref args, ref result) => {
+                let arguments = args.iter().map(Ty::from_syntax).collect();
+                let result = Ty::from_syntax(result);
+                Ty::Func(Box::new(FuncTy { arguments, result }))
+            }
         }
     }
 }
@@ -45,6 +51,7 @@ impl fmt::Display for Ty {
             Ty::Unit => write!(f, "unit"),
             Ty::Array(t) => write!(f, "[{}]", t),
             Ty::Struct(t) => write!(f, "{}", t),
+            Ty::Func(func_ty) => write!(f, "{func_ty}"),
         }
     }
 }
@@ -53,6 +60,21 @@ impl fmt::Display for Ty {
 pub struct FuncTy {
     pub arguments: Vec<Ty>,
     pub result: Ty,
+}
+
+impl fmt::Display for FuncTy {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "fn ({}) -> {}",
+            self.arguments
+                .iter()
+                .map(|a| format!("{a}"))
+                .collect::<Vec<String>>()
+                .join(", "),
+            self.result
+        )
+    }
 }
 
 impl FuncTy {
@@ -202,6 +224,14 @@ impl<'a> Typechecker<'a> {
 
     fn check_ty(&self, ty: &Type) -> TyResult<Ty> {
         match *ty.it {
+            TypeData::Func(ref args, ref result) => {
+                let arguments = args
+                    .iter()
+                    .map(|a| self.check_ty(a))
+                    .collect::<TyResult<Vec<_>>>()?;
+                let result = self.check_ty(result)?;
+                Ok(Ty::Func(Box::new(FuncTy { arguments, result })))
+            }
             TypeData::Array(ref t) => {
                 let inner = self.check_ty(t)?;
                 Ok(Ty::Array(Box::new(inner)))
@@ -231,6 +261,8 @@ impl<'a> Typechecker<'a> {
             (Ty::Bool, Ty::Bool) => Ok(()),
             (Ty::Array(t1), Ty::Array(t2)) => self.expect_ty(t1, t2, span),
             (Ty::Struct(s1), Ty::Struct(s2)) if s1 == s2 => Ok(()),
+            // TODO: Write a equality traversal for func_ty
+            (Ty::Func(f1), Ty::Func(f2)) if f1 == f2 => Ok(()),
             _ => Err(TyError {
                 at: span.clone(),
                 it: TyErrorData::TypeMismatch {
@@ -338,11 +370,11 @@ impl<'a> Typechecker<'a> {
             Err(_) => None,
         };
         let expr_node = node.child_by_field("expr")?;
+        // TODO: need to check that global names and function names don't overlap
         let typed_expr = self.infer_expr(ctx, &expr_node)?;
 
-        match annotation {
-            Some(ref ann_ty) => self.expect_ty(&ann_ty.ty, &typed_expr.ty, &ann_ty.at)?,
-            None => {}
+        if let Some(ref ann_ty) = annotation {
+            self.expect_ty(&ann_ty.ty, &typed_expr.ty, &ann_ty.at)?
         }
 
         let binder = Id {
@@ -535,6 +567,15 @@ impl<'a> Typechecker<'a> {
                 TypeData::Array(elem_ty)
             }
             "ty_struct" => TypeData::Struct(self.text(&node).to_string()),
+            "ty_func" => {
+                let mut cursor = node.walk();
+                let args = node
+                    .children_by_field_name("argument", &mut cursor)
+                    .map(|n| self.convert_ty(n))
+                    .collect::<TyResult<Vec<Type>>>()?;
+                let result = self.convert_ty(node.child_by_field("result")?)?;
+                TypeData::Func(args, result)
+            }
             t => unreachable!("Unknown type of type {t}"),
         };
         Ok(Type {
@@ -671,9 +712,8 @@ impl<'a> Typechecker<'a> {
                 let value_node = node.child_by_field("expr")?;
                 let typed_expr = self.infer_expr(ctx, &value_node)?;
 
-                match annotation {
-                    Some(ref ann_ty) => self.expect_ty(&ann_ty.ty, &typed_expr.ty, &ann_ty.at)?,
-                    None => {}
+                if let Some(ref ann_ty) = annotation {
+                    self.expect_ty(&ann_ty.ty, &typed_expr.ty, &ann_ty.at)?
                 }
 
                 ctx.add(self.text(&name_node).to_string(), typed_expr.ty.clone());
@@ -777,9 +817,15 @@ impl<'a> Typechecker<'a> {
             "var_e" => {
                 let name_node = node.child(0).expect("Expected a name in a var_e node");
                 let name = self.id(&name_node);
-                let ty = ctx.lookup(&name.it, &name_node.into())?;
+                let ty = match ctx.lookup(&name.it, &name_node.into()) {
+                    Ok(ty) => ty.clone(),
+                    Err(err) => {
+                        let func_ty = self.lookup_function(&name.it, &name.at).map_err(|_| err)?;
+                        Ty::Func(Box::new(func_ty.clone()))
+                    }
+                };
                 Ok(Expr {
-                    ty: ty.clone(),
+                    ty,
                     at,
                     it: Box::new(ExprData::Var(name)),
                 })
@@ -837,14 +883,19 @@ impl<'a> Typechecker<'a> {
                 let call_args_node = node.child_by_field("arguments")?;
                 let call_args = self.infer_call_args(ctx, call_args_node)?;
 
-                let function_node = node.child_by_field("function")?;
-                let func_ty =
-                    self.lookup_function(self.text(&function_node), &function_node.into())?;
+                let func_node = node.child_by_field("function")?;
+                let func = self.infer_expr(ctx, &func_node)?;
 
+                let Ty::Func(ref func_ty) = func.ty else {
+                    return Err(TyError {
+                        at: func_node.into(),
+                        it: TyErrorData::NotAFunction(func.ty.clone()),
+                    });
+                };
                 if func_ty.arguments.len() != call_args.len() {
                     return Err(TyError {
-                        it: TyErrorData::ArgCountMismatch(func_ty.arguments.len(), call_args.len()),
                         at: call_args_node.into(),
+                        it: TyErrorData::ArgCountMismatch(func_ty.arguments.len(), call_args.len()),
                     });
                 }
                 for (expected, actual) in func_ty.arguments.iter().zip(call_args.iter()) {
@@ -855,7 +906,7 @@ impl<'a> Typechecker<'a> {
                     ty: func_ty.result.clone(),
                     at,
                     it: Box::new(ExprData::Call {
-                        func: self.func_id(&function_node, func_ty.clone()),
+                        func,
                         arguments: call_args,
                     }),
                 })
