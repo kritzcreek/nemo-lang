@@ -5,8 +5,8 @@ use wasm_encoder::{BlockType, ConstExpr, HeapType, Instruction};
 
 use crate::{
     ir::{
-        Declaration, DeclarationData, Expr, ExprData, FuncOrBuiltin, IntrinsicData, Lit, LitData,
-        Name, Op, OpData, Program, SetTarget, SetTargetData, Ty,
+        Callee, Declaration, DeclarationData, Expr, ExprData, IntrinsicData, Lit, LitData, Name,
+        Op, OpData, Program, SetTarget, SetTargetData, Ty,
     },
     wasm_builder::{BodyBuilder, Builder},
 };
@@ -119,24 +119,19 @@ impl<'a> Codegen<'a> {
                 }
 
                 match func {
-                    FuncOrBuiltin::Func(name) => {
+                    Callee::Func(name) => {
                         let func_idx = self.builder.lookup_func(&name);
                         instrs.push(Instruction::Call(func_idx));
                     }
-                    FuncOrBuiltin::FuncRef(name, ty) => {
-                        let ty_idx = self.builder.func_type(&ty);
-                        match name {
-                            Name::Local(_) => instrs
-                                .push(Instruction::LocalGet(body.lookup_local(&name).unwrap())),
-                            Name::Global(_) => instrs
-                                .push(Instruction::GlobalGet(self.builder.lookup_global(&name))),
-                            n => unreachable!(
-                                "Tried to codegen a func_ref that isn't a local or global: {n}"
-                            ),
-                        }
+                    Callee::FuncRef(callee) => {
+                        let Ty::Func(ty) = &callee.ty else {
+                            unreachable!("Non-function type for callee")
+                        };
+                        let ty_idx = self.builder.func_type(ty);
+                        instrs.extend(self.compile_expr(body, callee));
                         instrs.push(Instruction::CallRef(ty_idx))
                     }
-                    FuncOrBuiltin::Builtin(builtin) => instrs.push(builtin_instruction(builtin)),
+                    Callee::Builtin(builtin) => instrs.push(builtin_instruction(builtin)),
                 }
                 instrs
             }

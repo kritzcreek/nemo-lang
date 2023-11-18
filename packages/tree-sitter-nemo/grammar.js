@@ -80,7 +80,7 @@ module.exports = grammar({
 
     call_args: $ => seq('(', comma_sep_trailing($._expr), ')'),
     call_e: $ => seq(
-      field('function', $.lower_ident),
+      field('function', $._callee),
       field('arguments', $.call_args)
     ),
     block_e: $ => seq(
@@ -96,6 +96,18 @@ module.exports = grammar({
     binary_e: $ => make_binary_rules($._expr),
 
     parenthesized_e: $ => seq('(', field ('expr', $._expr), ')'),
+
+    _callee: $ => choice(
+      $._lit,
+      $._call_or_var,
+      $.parenthesized_e,
+      $.array_e,
+      $.struct_e,
+      $.if_e,
+      $.intrinsic_e,
+      $.array_idx_e,
+      $.struct_idx_e,
+    ),
 
     // Extracted this rule to make it clear that we want the parser to greedily parse:
     // my_func(args) into `(call_e ident args)` and not `(var_e ERROR)`

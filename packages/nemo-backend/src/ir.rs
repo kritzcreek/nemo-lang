@@ -149,8 +149,8 @@ impl Spanned for Expr {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum FuncOrBuiltin {
-    FuncRef(Name, FuncTy),
+pub enum Callee {
+    FuncRef(Expr),
     Func(Name),
     Builtin(&'static str),
 }
@@ -160,7 +160,7 @@ pub enum ExprData {
     Lit(Lit),
     Var(Name),
     Call {
-        func: FuncOrBuiltin,
+        func: Callee,
         arguments: Vec<Expr>,
     },
     Binary {

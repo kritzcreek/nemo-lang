@@ -883,23 +883,19 @@ impl<'a> Typechecker<'a> {
                 let call_args_node = node.child_by_field("arguments")?;
                 let call_args = self.infer_call_args(ctx, call_args_node)?;
 
-                let function_node = node.child_by_field("function")?;
-                let func_name = self.text(&function_node);
+                let func_node = node.child_by_field("function")?;
+                let func = self.infer_expr(ctx, &func_node)?;
 
-                let func_ty = match ctx.lookup(func_name, &function_node.into()) {
-                    Ok(Ty::Func(ref func_ty)) => func_ty,
-                    Ok(ty) => {
-                        return Err(TyError {
-                            at: function_node.into(),
-                            it: TyErrorData::NotAFunction(ty.clone()),
-                        })
-                    }
-                    Err(_) => self.lookup_function(func_name, &function_node.into())?,
+                let Ty::Func(ref func_ty) = func.ty else {
+                    return Err(TyError {
+                        at: func_node.into(),
+                        it: TyErrorData::NotAFunction(func.ty.clone()),
+                    });
                 };
                 if func_ty.arguments.len() != call_args.len() {
                     return Err(TyError {
-                        it: TyErrorData::ArgCountMismatch(func_ty.arguments.len(), call_args.len()),
                         at: call_args_node.into(),
+                        it: TyErrorData::ArgCountMismatch(func_ty.arguments.len(), call_args.len()),
                     });
                 }
                 for (expected, actual) in func_ty.arguments.iter().zip(call_args.iter()) {
@@ -910,7 +906,7 @@ impl<'a> Typechecker<'a> {
                     ty: func_ty.result.clone(),
                     at,
                     it: Box::new(ExprData::Call {
-                        func: self.func_id(&function_node, func_ty.clone()),
+                        func,
                         arguments: call_args,
                     }),
                 })

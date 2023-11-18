@@ -499,7 +499,51 @@
         "required": true,
         "types": [
           {
-            "type": "lower_ident",
+            "type": "array_e",
+            "named": true
+          },
+          {
+            "type": "array_idx_e",
+            "named": true
+          },
+          {
+            "type": "bool_lit",
+            "named": true
+          },
+          {
+            "type": "call_e",
+            "named": true
+          },
+          {
+            "type": "float_lit",
+            "named": true
+          },
+          {
+            "type": "if_e",
+            "named": true
+          },
+          {
+            "type": "int_lit",
+            "named": true
+          },
+          {
+            "type": "intrinsic_e",
+            "named": true
+          },
+          {
+            "type": "parenthesized_e",
+            "named": true
+          },
+          {
+            "type": "struct_e",
+            "named": true
+          },
+          {
+            "type": "struct_idx_e",
+            "named": true
+          },
+          {
+            "type": "var_e",
             "named": true
           }
         ]

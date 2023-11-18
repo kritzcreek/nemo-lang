@@ -20,7 +20,8 @@
     "tree-sitter-cli": "^0.20.8"
   },
   "scripts": {
-    "test": "tree-sitter test",
+    "test": "tree-sitter generate && tree-sitter test",
+    "test:update": "tree-sitter generate && tree-sitter test -u",
     "play": "tree-sitter build-wasm && tree-sitter playground"
   }
 }

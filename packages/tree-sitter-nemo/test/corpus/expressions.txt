@@ -251,9 +251,12 @@ let _ = f();
 let _ = f(1);
 let _ = f(1, 2,);
 let _ = f(1, f(2));
+let _ = x.f();
+let _ = x[1].f();
+let _ = f(1)(x);
+let _ = f32_abs(delta_x) > f32_abs(delta_y);
 let _ = @array_len([]);
 let _ = @array_new(1, 2);
-
 
 --------------------------------------------------------------------------------
 
@@ -261,31 +264,80 @@ let _ = @array_new(1, 2);
   (top_let
     (lower_ident)
     (call_e
-      (lower_ident)
+      (var_e
+        (lower_ident))
       (call_args)))
   (top_let
     (lower_ident)
     (call_e
-      (lower_ident)
+      (var_e
+        (lower_ident))
       (call_args
         (int_lit))))
   (top_let
     (lower_ident)
     (call_e
-      (lower_ident)
+      (var_e
+        (lower_ident))
       (call_args
         (int_lit)
         (int_lit))))
   (top_let
     (lower_ident)
     (call_e
-      (lower_ident)
+      (var_e
+        (lower_ident))
       (call_args
         (int_lit)
         (call_e
-          (lower_ident)
+          (var_e
+            (lower_ident))
           (call_args
             (int_lit))))))
+  (top_let
+    (lower_ident)
+    (call_e
+      (struct_idx_e
+        (var_e
+          (lower_ident))
+        (lower_ident))
+      (call_args)))
+  (top_let
+    (lower_ident)
+    (call_e
+      (struct_idx_e
+        (array_idx_e
+          (var_e
+            (lower_ident))
+          (int_lit))
+        (lower_ident))
+      (call_args)))
+  (top_let
+    (lower_ident)
+    (call_e
+      (call_e
+        (var_e
+          (lower_ident))
+        (call_args
+          (int_lit)))
+      (call_args
+        (var_e
+          (lower_ident)))))
+  (top_let
+    (lower_ident)
+    (binary_e
+      (call_e
+        (var_e
+          (lower_ident))
+        (call_args
+          (var_e
+            (lower_ident))))
+      (call_e
+        (var_e
+          (lower_ident))
+        (call_args
+          (var_e
+            (lower_ident))))))
   (top_let
     (lower_ident)
     (intrinsic_e

@@ -274,7 +274,7 @@ pub enum ExprData {
     Lit(Lit),
     Var(Id),
     Call {
-        func: FuncId,
+        func: Expr,
         arguments: Vec<Expr>,
     },
     Binary {

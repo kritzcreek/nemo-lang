@@ -18,7 +18,7 @@
 (struct_e struct: (upper_ident) @type)
 
 (top_func name: (lower_ident) @function)
-(call_e function: (lower_ident) @function)
+(call_e function: (var_e (lower_ident)) @function)
 (intrinsic_ident) @function
 
 (struct_field_e name: (lower_ident) @property)

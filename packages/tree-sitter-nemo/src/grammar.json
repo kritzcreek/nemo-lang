@@ -388,7 +388,7 @@
           "name": "function",
           "content": {
             "type": "SYMBOL",
-            "name": "lower_ident"
+            "name": "_callee"
           }
         },
         {
@@ -717,6 +717,47 @@
         {
           "type": "STRING",
           "value": ")"
+        }
+      ]
+    },
+    "_callee": {
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "SYMBOL",
+          "name": "_lit"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_call_or_var"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "parenthesized_e"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "array_e"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "struct_e"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "if_e"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "intrinsic_e"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "array_idx_e"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "struct_idx_e"
         }
       ]
     },

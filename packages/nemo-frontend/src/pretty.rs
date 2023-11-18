@@ -128,7 +128,8 @@ impl Printer {
             ExprData::Call {
                 ref func,
                 ref arguments,
-            } => Doc::text(func.it.to_string())
+            } => self
+                .pretty_expr(func)
                 .append(Doc::text("("))
                 .append(self.pretty_expr_list(arguments))
                 .append(")"),

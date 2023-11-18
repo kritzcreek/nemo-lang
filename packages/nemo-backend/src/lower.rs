@@ -1,9 +1,8 @@
 use std::collections::HashMap;
 
 use crate::ir::{
-    Declaration, DeclarationData, Expr, ExprData, Func, FuncOrBuiltin, FuncTy, Global, Import,
-    Intrinsic, IntrinsicData, Lit, LitData, Name, Op, OpData, Program, SetTarget, SetTargetData,
-    Struct, Ty,
+    Callee, Declaration, DeclarationData, Expr, ExprData, Func, FuncTy, Global, Import, Intrinsic,
+    IntrinsicData, Lit, LitData, Name, Op, OpData, Program, SetTarget, SetTargetData, Struct, Ty,
 };
 use nemo_frontend::{
     builtins,
@@ -314,14 +313,23 @@ impl Lower {
             syntax::ExprData::Lit(l) => ExprData::Lit(self.lower_lit(l)),
             syntax::ExprData::Var(v) => ExprData::Var(self.lookup_var_or_func(&v.it)),
             syntax::ExprData::Call { func, arguments } => {
-                let func = if let Some(n) = self.scope.get(&func.it) {
-                    FuncOrBuiltin::FuncRef(n, self.lower_func_ty(&func.ty))
-                } else if self.func_exists(&func.it) {
-                    FuncOrBuiltin::Func(self.lookup_func(&func.it))
-                } else if let Some(fun) = builtins::lookup_builtin(&func.it) {
-                    FuncOrBuiltin::Builtin(fun.name)
-                } else {
-                    unreachable!("Can't resolve function: {}", func.to_id())
+                let func = match *func.it {
+                    syntax::ExprData::Var(ref v) => {
+                        if self.scope.get(&v.it).is_some() {
+                            let fn_expr = self.lower_expr(func);
+                            Callee::FuncRef(fn_expr)
+                        } else if self.func_exists(&v.it) {
+                            Callee::Func(self.lookup_func(&v.it))
+                        } else if let Some(fun) = builtins::lookup_builtin(&v.it) {
+                            Callee::Builtin(fun.name)
+                        } else {
+                            unreachable!("Can't resolve function: {}", v)
+                        }
+                    }
+                    _ => {
+                        let fn_expr = self.lower_expr(func);
+                        Callee::FuncRef(fn_expr)
+                    }
                 };
                 ExprData::Call {
                     func,
