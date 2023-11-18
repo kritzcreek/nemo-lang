@@ -8,4 +8,4 @@ license = "MIT"
 
 [dependencies]
 nemo-frontend = { path = "../nemo-frontend" }
-wasm-encoder = { git = "https://github.com/kritzcreek/wasm-tools.git", rev = "33c2da4" }
+wasm-encoder = "0.37"
