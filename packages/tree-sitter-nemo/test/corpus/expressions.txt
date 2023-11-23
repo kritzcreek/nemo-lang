@@ -529,7 +529,7 @@ let _ = {
 Top levels
 ================================================================================
 
-import internal : (i32, f32) -> i32 from external
+import internal : fn (i32, f32) -> i32 from external
 
 struct Vec {
   x : f32,
@@ -551,7 +551,7 @@ fn add(x : i32, y : i32) : i32 = {
 (source_file
   (top_import
     (lower_ident)
-    (func_type
+    (ty_func
       (ty_i32)
       (ty_f32)
       (ty_i32))

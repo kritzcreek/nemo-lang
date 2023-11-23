@@ -195,14 +195,6 @@ module.exports = grammar({
       $.ty_func
     ),
 
-    func_type: $ => seq(
-      '(',
-      comma_sep_trailing(field('argument', $._type))
-      ,')',
-      '->',
-      field('result', $._type)
-    ),
-
     // Toplevel
 
     top_let: $ => seq(
@@ -218,7 +210,7 @@ module.exports = grammar({
       'import',
       field('internal', $.lower_ident),
       ':',
-      field('type', $.func_type),
+      field('type', $.ty_func),
       'from',
       field('external', $.lower_ident)
     ),

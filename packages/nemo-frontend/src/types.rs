@@ -180,15 +180,12 @@ impl<'a> Typechecker<'a> {
         }
     }
 
-    fn lookup_function(&self, name: &str, span: &Span) -> TyResult<&FuncTy> {
+    fn lookup_function(&self, name: &str) -> Option<&FuncTy> {
         match self.functions.get(name) {
-            Some(ty) => Ok(ty),
+            Some(ty) => Some(ty),
             None => match builtins::lookup_builtin(name) {
-                Some(f) => Ok(&f.ty),
-                None => Err(TyError {
-                    at: span.clone(),
-                    it: TyErrorData::UnknownFunction(name.to_string()),
-                }),
+                Some(f) => Some(&f.ty),
+                None => None,
             },
         }
     }
@@ -540,7 +537,7 @@ impl<'a> Typechecker<'a> {
     }
 
     fn convert_func_ty(&self, node: Node<'_>) -> TyResult<FuncType> {
-        assert!(node.kind() == "func_type");
+        assert!(node.kind() == "ty_func");
         let mut cursor = node.walk();
         let arg_nodes = node.children_by_field_name("argument", &mut cursor);
         let arguments = arg_nodes
@@ -820,7 +817,7 @@ impl<'a> Typechecker<'a> {
                 let ty = match ctx.lookup(&name.it, &name_node.into()) {
                     Ok(ty) => ty.clone(),
                     Err(err) => {
-                        let func_ty = self.lookup_function(&name.it, &name.at).map_err(|_| err)?;
+                        let func_ty = self.lookup_function(&name.it).ok_or(err)?;
                         Ty::Func(Box::new(func_ty.clone()))
                     }
                 };
