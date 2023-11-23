@@ -23,7 +23,7 @@ pub fn start_language_server() -> Result<(), Box<dyn Error + Sync + Send>> {
     let (connection, io_threads) = Connection::stdio();
 
     // Run the server and wait for the two threads to end (typically by trigger LSP Exit event).
-    let server_capabilities = serde_json::to_value(&ServerCapabilities {
+    let server_capabilities = serde_json::to_value(ServerCapabilities {
         text_document_sync: Some(TextDocumentSyncCapability::Kind(TextDocumentSyncKind::FULL)),
         semantic_tokens_provider: Some(SemanticTokensServerCapabilities::SemanticTokensOptions(
             SemanticTokensOptions {
@@ -163,7 +163,7 @@ fn semantic_tokens(content: &str, events: Vec<HighlightEvent>) -> Vec<SemanticTo
                 let skipped = &content[prev_token_start..start];
                 let mut delta_line = 0;
                 let mut delta_start = 0;
-                for line in skipped.split("\n") {
+                for line in skipped.split('\n') {
                     delta_line += 1;
                     delta_start = line.chars().count() as u32;
                 }

@@ -689,80 +689,6 @@
     }
   },
   {
-    "type": "func_type",
-    "named": true,
-    "fields": {
-      "argument": {
-        "multiple": true,
-        "required": false,
-        "types": [
-          {
-            "type": "ty_array",
-            "named": true
-          },
-          {
-            "type": "ty_bool",
-            "named": true
-          },
-          {
-            "type": "ty_f32",
-            "named": true
-          },
-          {
-            "type": "ty_func",
-            "named": true
-          },
-          {
-            "type": "ty_i32",
-            "named": true
-          },
-          {
-            "type": "ty_struct",
-            "named": true
-          },
-          {
-            "type": "ty_unit",
-            "named": true
-          }
-        ]
-      },
-      "result": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "ty_array",
-            "named": true
-          },
-          {
-            "type": "ty_bool",
-            "named": true
-          },
-          {
-            "type": "ty_f32",
-            "named": true
-          },
-          {
-            "type": "ty_func",
-            "named": true
-          },
-          {
-            "type": "ty_i32",
-            "named": true
-          },
-          {
-            "type": "ty_struct",
-            "named": true
-          },
-          {
-            "type": "ty_unit",
-            "named": true
-          }
-        ]
-      }
-    }
-  },
-  {
     "type": "if_e",
     "named": true,
     "fields": {
@@ -1641,7 +1567,7 @@
         "required": true,
         "types": [
           {
-            "type": "func_type",
+            "type": "ty_func",
             "named": true
           }
         ]

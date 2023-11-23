@@ -1,11 +1,11 @@
-import clear : () -> unit from clear_canvas
-import begin_path : (f32) -> unit from begin_path
-import move_to : (f32, f32) -> unit from move_to
-import line_to : (f32, f32) -> unit from line_to
-import arc : (f32, f32, f32, f32, f32) -> unit from arc
-import close_path : (f32) -> unit from close_path
-import set_stroke_color : (f32, f32, f32) -> unit from set_stroke_color
-import stroke : (f32) -> unit from stroke
+import clear : fn () -> unit from clear_canvas
+import begin_path : fn (f32) -> unit from begin_path
+import move_to : fn (f32, f32) -> unit from move_to
+import line_to : fn (f32, f32) -> unit from line_to
+import arc : fn (f32, f32, f32, f32, f32) -> unit from arc
+import close_path : fn (f32) -> unit from close_path
+import set_stroke_color : fn (f32, f32, f32) -> unit from set_stroke_color
+import stroke : fn (f32) -> unit from stroke
 
 struct Color {
   r : f32,

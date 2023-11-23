@@ -1,7 +1,6 @@
 use nemo_backend::{codegen::codegen, lower::lower};
 use nemo_frontend::{check_program, print_program};
 use serde_derive::{Deserialize, Serialize};
-use tokio;
 
 use warp::{hyper::StatusCode, Filter};
 

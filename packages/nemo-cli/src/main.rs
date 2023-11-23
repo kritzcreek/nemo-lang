@@ -54,7 +54,7 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
             Ok(())
         }
         Commands::Check { input_file } => {
-            let source = fs::read_to_string(&input_file)?;
+            let source = fs::read_to_string(input_file)?;
             match check_program(&source) {
                 Ok(_) => Ok(()),
                 Err(err) => {
