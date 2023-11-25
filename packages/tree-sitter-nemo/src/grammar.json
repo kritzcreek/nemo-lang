@@ -1553,8 +1553,12 @@
                         "type": "SEQ",
                         "members": [
                           {
-                            "type": "SYMBOL",
-                            "name": "variant_field_top"
+                            "type": "FIELD",
+                            "name": "field",
+                            "content": {
+                              "type": "SYMBOL",
+                              "name": "variant_field_top"
+                            }
                           },
                           {
                             "type": "STRING",
@@ -1567,8 +1571,12 @@
                       "type": "CHOICE",
                       "members": [
                         {
-                          "type": "SYMBOL",
-                          "name": "variant_field_top"
+                          "type": "FIELD",
+                          "name": "field",
+                          "content": {
+                            "type": "SYMBOL",
+                            "name": "variant_field_top"
+                          }
                         },
                         {
                           "type": "BLANK"
@@ -1618,8 +1626,12 @@
                 "type": "SEQ",
                 "members": [
                   {
-                    "type": "SYMBOL",
-                    "name": "variant_alternative_top"
+                    "type": "FIELD",
+                    "name": "alternative",
+                    "content": {
+                      "type": "SYMBOL",
+                      "name": "variant_alternative_top"
+                    }
                   },
                   {
                     "type": "STRING",
@@ -1632,8 +1644,12 @@
               "type": "CHOICE",
               "members": [
                 {
-                  "type": "SYMBOL",
-                  "name": "variant_alternative_top"
+                  "type": "FIELD",
+                  "name": "alternative",
+                  "content": {
+                    "type": "SYMBOL",
+                    "name": "variant_alternative_top"
+                  }
                 },
                 {
                   "type": "BLANK"

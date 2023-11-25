@@ -1,0 +1,27 @@
+import log : fn (f32) -> unit from log
+
+struct Point {
+  x : f32,
+  y : f32
+}
+
+variant Shape {
+  Square { length : f32 },
+  Rect { width : f32, height : f32 }
+}
+
+fn area_shape(shape : Shape) : f32 = {
+   match shape {
+     Shape::Square { length = length } =>
+       length * length,
+     Shape::Rect { width = width, height = height } =>
+       width * height
+   }
+}
+
+// 1. (struct (i32)) -> $VARIANT
+// 2. (struct (i32) (f32)) -> $Shape::Square
+// 3. (struct (i32) (f32) (f32)) -> $Shape::Rect
+
+// 2 <: 1
+// 3 <: 1

@@ -6,7 +6,7 @@ use crate::ir::{
 };
 use nemo_frontend::{
     builtins,
-    syntax::{self, FuncId, Id, Span, ToplevelData},
+    syntax::{self, FuncId, Id, Span},
     types,
 };
 
@@ -47,8 +47,10 @@ struct Lower {
     func: u32,
     typ: u32,
     field: u32,
+    alt: u32,
 
-    types: HashMap<String, TypeInfo>,
+    variants: HashMap<String, (Name, HashMap<String, TypeInfo>)>,
+    structs: HashMap<String, TypeInfo>,
     funcs: HashMap<String, Name>,
 
     scope: Scope,
@@ -64,8 +66,10 @@ impl Lower {
             func: 0,
             typ: 0,
             field: 0,
+            alt: 0,
 
-            types: HashMap::new(),
+            variants: HashMap::new(),
+            structs: HashMap::new(),
             funcs: HashMap::new(),
 
             scope: Scope::new(),
@@ -108,6 +112,13 @@ impl Lower {
         name
     }
 
+    fn alternative_idx(&mut self, alt: Id) -> Name {
+        self.alt += 1;
+        let name = Name::Alternative(self.alt);
+        self.name_map.insert(name, alt);
+        name
+    }
+
     fn field_idx(&mut self, field: Id) -> Name {
         self.field += 1;
         let name = Name::Field(self.field);
@@ -127,7 +138,7 @@ impl Lower {
             let field_idx = self.field_idx(field.clone());
             field_info.insert(field.it, field_idx);
         }
-        self.types.insert(
+        self.structs.insert(
             ty.it,
             TypeInfo {
                 name: ty_name,
@@ -136,8 +147,31 @@ impl Lower {
         );
     }
 
-    fn lookup_ty(&self, ty: &str) -> &TypeInfo {
-        self.types.get(ty).unwrap()
+    fn declare_variant(&mut self, ty: Id, alternatives: &Vec<syntax::Alternative>) {
+        let ty_name = self.type_idx(ty.clone());
+        let mut alternative_info = HashMap::with_capacity(alternatives.len());
+        for alternative in alternatives.iter() {
+            let alternative_idx = self.alternative_idx(alternative.name.clone());
+            let mut field_info = HashMap::with_capacity(alternative.fields.len());
+            for (field, _) in alternative.fields.iter() {
+                let field_idx = self.field_idx(field.clone());
+                field_info.insert(field.it.clone(), field_idx);
+            }
+            alternative_info.insert(
+                alternative.name.it.to_string(),
+                TypeInfo {
+                    name: alternative_idx,
+                    fields: field_info,
+                },
+            );
+        }
+
+        self.variants
+            .insert(ty.it.clone(), (ty_name, alternative_info));
+    }
+
+    fn lookup_struct(&self, ty: &str) -> &TypeInfo {
+        self.structs.get(ty).unwrap()
     }
 
     fn func_exists(&self, func: &str) -> bool {
@@ -149,7 +183,7 @@ impl Lower {
     }
 
     fn lookup_field(&self, struct_name: &str, field: &str) -> Name {
-        *self.lookup_ty(struct_name).fields.get(field).unwrap()
+        *self.lookup_struct(struct_name).fields.get(field).unwrap()
     }
 
     fn lookup_field_ty(&self, ty: &types::Ty, field: &str) -> Name {
@@ -194,7 +228,7 @@ impl Lower {
             types::Ty::Unit => Ty::Unit,
             types::Ty::Bool => Ty::Bool,
             types::Ty::Array(t) => Ty::Array(Box::new(self.lower_ty(t))),
-            types::Ty::Struct(s) => Ty::Struct(self.lookup_ty(s).name),
+            types::Ty::Struct(s) => Ty::Struct(self.lookup_struct(s).name),
             types::Ty::Func(ref func_ty) => Ty::Func(Box::new(self.lower_func_ty(func_ty))),
         }
     }
@@ -226,7 +260,7 @@ impl Lower {
 
     fn lower_struct(&self, toplevel: syntax::Toplevel) -> Struct {
         if let syntax::ToplevelData::Struct { name, fields } = toplevel.it {
-            let ty_info = self.lookup_ty(&name.it);
+            let ty_info = self.lookup_struct(&name.it);
             Struct {
                 span: toplevel.at,
                 name: ty_info.name,
@@ -396,7 +430,7 @@ impl Lower {
                         )
                     })
                     .collect();
-                let ty_info = self.lookup_ty(&name.it);
+                let ty_info = self.lookup_struct(&name.it);
                 ExprData::Struct {
                     name: ty_info.name,
                     fields,
@@ -502,10 +536,10 @@ impl Lower {
     fn lower_program(mut self, program: syntax::Program) -> (Program, HashMap<Name, Id>) {
         for ele in program.toplevels.iter() {
             match ele.it {
-                ToplevelData::Import { ref internal, .. } => {
+                syntax::ToplevelData::Import { ref internal, .. } => {
                     self.declare_func(internal.clone());
                 }
-                ToplevelData::Struct {
+                syntax::ToplevelData::Struct {
                     ref name,
                     ref fields,
                 } => {
@@ -514,11 +548,17 @@ impl Lower {
                         fields.iter().map(|(name, _)| name.clone()).collect(),
                     );
                 }
-                ToplevelData::Global { ref binder, .. } => {
+                syntax::ToplevelData::Variant {
+                    ref name,
+                    ref alternatives,
+                } => {
+                    self.declare_variant(name.clone(), alternatives);
+                }
+                syntax::ToplevelData::Global { ref binder, .. } => {
                     let global_name = self.global_idx(binder.clone());
                     self.scope.insert(binder.it.clone(), global_name);
                 }
-                ToplevelData::Func { ref name, .. } => {
+                syntax::ToplevelData::Func { ref name, .. } => {
                     self.declare_func(name.clone());
                 }
             }
@@ -539,10 +579,17 @@ impl Lower {
 
         for toplevel in program.toplevels {
             match toplevel.it {
-                ToplevelData::Import { .. } => prog.imports.push(self.lower_import(toplevel)),
-                ToplevelData::Struct { .. } => prog.structs.push(self.lower_struct(toplevel)),
-                ToplevelData::Global { .. } => prog.globals.push(self.lower_global(toplevel)),
-                ToplevelData::Func { .. } => prog.funcs.push(self.lower_func(toplevel)),
+                syntax::ToplevelData::Import { .. } => {
+                    prog.imports.push(self.lower_import(toplevel))
+                }
+                syntax::ToplevelData::Struct { .. } => {
+                    prog.structs.push(self.lower_struct(toplevel))
+                }
+                syntax::ToplevelData::Variant { .. } => todo!(),
+                syntax::ToplevelData::Global { .. } => {
+                    prog.globals.push(self.lower_global(toplevel))
+                }
+                syntax::ToplevelData::Func { .. } => prog.funcs.push(self.lower_func(toplevel)),
             }
         }
         (prog, self.name_map)

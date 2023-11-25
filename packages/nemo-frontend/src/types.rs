@@ -3,9 +3,9 @@ use std::collections::HashMap;
 
 use crate::builtins;
 use crate::syntax::{
-    Declaration, DeclarationData, Expr, ExprData, FuncId, FuncType, FuncTypeData, Id, Intrinsic,
-    IntrinsicData, Lit, LitData, Op, OpData, Program, SetTarget, SetTargetData, Span, Toplevel,
-    ToplevelData, Type, TypeData,
+    Alternative, Declaration, DeclarationData, Expr, ExprData, FuncId, FuncType, FuncTypeData, Id,
+    Intrinsic, IntrinsicData, Lit, LitData, Op, OpData, Program, SetTarget, SetTargetData, Span,
+    Toplevel, ToplevelData, Type, TypeData,
 };
 use crate::type_errors::{TyError, TyErrorData};
 use tree_sitter::Node;
@@ -107,7 +107,7 @@ impl TyNode for Node<'_> {
 fn is_toplevel_kind(n: &Node<'_>) -> bool {
     matches!(
         n.kind(),
-        "top_import" | "top_let" | "top_struct" | "top_func"
+        "top_import" | "top_let" | "top_struct" | "top_variant" | "top_func"
     )
 }
 
@@ -168,6 +168,7 @@ impl Ctx {
 pub struct Typechecker<'a> {
     source: &'a [u8],
     structs: HashMap<String, Vec<(Id, Type)>>,
+    variants: HashMap<String, HashMap<String, Vec<(String, Ty)>>>,
     functions: HashMap<String, FuncTy>,
 }
 
@@ -176,6 +177,7 @@ impl<'a> Typechecker<'a> {
         Typechecker {
             source: source.as_bytes(),
             structs: HashMap::new(),
+            variants: HashMap::new(),
             functions: HashMap::new(),
         }
     }
@@ -323,6 +325,14 @@ impl<'a> Typechecker<'a> {
         Ok(())
     }
 
+    fn declare_variant(&mut self, node: &Node<'_>) -> TyResult<()> {
+        assert!(node.kind() == "top_variant");
+        let name = node.child_by_field("name")?;
+        self.variants
+            .insert(self.text(&name).to_string(), HashMap::new());
+        Ok(())
+    }
+
     fn check_import(&mut self, node: &Node<'_>) -> TyResult<Toplevel> {
         assert!(node.kind() == "top_import");
         let internal_node = node.child_by_field("internal")?;
@@ -356,6 +366,48 @@ impl<'a> Typechecker<'a> {
                 name: self.id(&name_node),
                 fields: struct_fields.clone(),
             },
+        })
+    }
+
+    fn check_variant(&mut self, node: &Node<'_>) -> TyResult<Toplevel> {
+        assert!(node.kind() == "top_variant");
+        let name_node = node.child_by_field("name")?;
+        let mut cursor = node.walk();
+        let mut alternatives = vec![];
+        for alternative in node.children_by_field_name("alternative", &mut cursor) {
+            let alternative_name = alternative.child_by_field("name")?;
+            let mut fields = vec![];
+            let mut cursor = alternative.walk();
+            for field in alternative.children_by_field_name("field", &mut cursor) {
+                let field_name = field.child_by_field("name")?;
+                let field_ty_node = field.child_by_field("type")?;
+                let field_ty = self.convert_ty(field_ty_node)?;
+                fields.push((self.id(&field_name), field_ty))
+            }
+            alternatives.push(Alternative {
+                name: self.id(&alternative_name),
+                fields,
+            });
+        }
+        let name = self.id(&name_node);
+        let ty_variants = self
+            .variants
+            .get_mut(&name.it)
+            .expect("checking a non-declared variant");
+        for alternative in alternatives.iter() {
+            ty_variants.insert(
+                alternative.name.it.clone(),
+                alternative
+                    .fields
+                    .iter()
+                    .map(|field| (field.0.it.clone(), field.1.ty.clone()))
+                    .collect(),
+            );
+        }
+        let data = ToplevelData::Variant { name, alternatives };
+        Ok(Toplevel {
+            it: data,
+            at: node.into(),
         })
     }
 
@@ -590,6 +642,7 @@ impl<'a> Typechecker<'a> {
             match top_level_node.kind() {
                 "top_import" => self.declare_import(&top_level_node)?,
                 "top_struct" => self.declare_struct(&top_level_node)?,
+                "top_variant" => self.declare_variant(&top_level_node)?,
                 "top_func" => self.declare_func(&top_level_node)?,
                 "top_let" => {
                     // Globals can't be forward declared as we need to infer their
@@ -612,6 +665,7 @@ impl<'a> Typechecker<'a> {
                 "top_import" => self.check_import(&top_level_node)?,
                 // TODO: Group structs into recursive binding groups
                 "top_struct" => self.check_struct(&top_level_node)?,
+                "top_variant" => self.check_variant(&top_level_node)?,
                 // TODO: check top lets before top funcs
                 "top_let" => self.check_top_let(&mut global_ctx, &top_level_node)?,
                 "top_func" => self.check_func(&mut global_ctx, &top_level_node)?,

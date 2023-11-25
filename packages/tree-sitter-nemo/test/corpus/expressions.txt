@@ -570,6 +570,23 @@ fn add(x : i32, y : i32) : i32 = {
     (struct_field_top
       (lower_ident)
       (ty_f32)))
+  (top_variant
+    (upper_ident)
+    (variant_alternative_top
+      (upper_ident))
+    (variant_alternative_top
+      (upper_ident)
+      (variant_field_top
+        (lower_ident)
+        (ty_f32)))
+    (variant_alternative_top
+      (upper_ident)
+      (variant_field_top
+        (lower_ident)
+        (ty_f32))
+      (variant_field_top
+        (lower_ident)
+        (ty_f32))))
   (top_let
     (lower_ident)
     (int_lit))

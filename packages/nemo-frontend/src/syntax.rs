@@ -373,6 +373,12 @@ impl Spanned for Toplevel {
 }
 
 #[derive(Debug, PartialEq)]
+pub struct Alternative {
+    pub name: Id,
+    pub fields: Vec<(Id, Type)>,
+}
+
+#[derive(Debug, PartialEq)]
 pub enum ToplevelData {
     Import {
         internal: FuncId,
@@ -382,6 +388,10 @@ pub enum ToplevelData {
     Struct {
         name: Id,
         fields: Vec<(Id, Type)>,
+    },
+    Variant {
+        name: Id,
+        alternatives: Vec<Alternative>,
     },
     Global {
         binder: Id,

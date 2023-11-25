@@ -255,7 +255,7 @@ module.exports = grammar({
       field('name', $.upper_ident),
       optional(seq(
         '{',
-        comma_sep_trailing($.variant_field_top),
+        comma_sep_trailing(field('field', $.variant_field_top)),
         '}'
       ))
     ),
@@ -264,7 +264,7 @@ module.exports = grammar({
       'variant',
       field('name', $.upper_ident),
       '{',
-      comma_sep_trailing($.variant_alternative_top),
+      comma_sep_trailing(field('alternative', $.variant_alternative_top)),
       '}'
     ),
 

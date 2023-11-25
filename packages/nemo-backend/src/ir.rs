@@ -8,6 +8,7 @@ pub enum Name {
     Func(u32),
     Type(u32),
     Field(u32),
+    Alternative(u32),
 }
 
 impl fmt::Display for Name {
@@ -18,6 +19,7 @@ impl fmt::Display for Name {
             Name::Func(x) => write!(f, "$fn:{x}"),
             Name::Type(x) => write!(f, "$t:{x}"),
             Name::Field(x) => write!(f, "$f:{x}"),
+            Name::Alternative(x) => write!(f, "$a:{x}"),
         }
     }
 }
