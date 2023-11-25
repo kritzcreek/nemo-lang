@@ -221,6 +221,7 @@ module.exports = grammar({
       field('type', $._type)
     ),
     func_params: $ => seq('(', comma_sep_trailing($.func_param), ')'),
+
     top_func: $ => seq(
       'fn',
       field('name', $.lower_ident),
@@ -235,6 +236,7 @@ module.exports = grammar({
       ':',
       field('type', $._type)
     ),
+
     top_struct: $ => seq(
       'struct',
       field('name', $.upper_ident),
@@ -243,11 +245,35 @@ module.exports = grammar({
       '}'
     ),
 
+    variant_field_top: $ => seq(
+      field('name', $.lower_ident),
+      ':',
+      field('type', $._type)
+    ),
+
+    variant_alternative_top: $ => seq(
+      field('name', $.upper_ident),
+      optional(seq(
+        '{',
+        comma_sep_trailing($.variant_field_top),
+        '}'
+      ))
+    ),
+
+    top_variant: $ => seq(
+      'variant',
+      field('name', $.upper_ident),
+      '{',
+      comma_sep_trailing($.variant_alternative_top),
+      '}'
+    ),
+
     _toplevel: $ => choice(
       $.top_let,
       $.top_import,
       $.top_func,
-      $.top_struct
+      $.top_struct,
+      $.top_variant
     )
   }
 });

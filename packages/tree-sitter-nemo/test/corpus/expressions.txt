@@ -536,6 +536,12 @@ struct Vec {
   y : f32,
 }
 
+variant Shape {
+  Point,
+  Square { length : f32 },
+  Rect { width : f32, height : f32 }
+}
+
 let x = 10;
 let y : f32 = 10.0;
 
