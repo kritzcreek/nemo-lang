@@ -369,25 +369,31 @@ impl<'a> Typechecker<'a> {
         })
     }
 
+    // TODO: This overlaps with declare_struct, see if this can't be refactored
+    fn check_alterantive(&mut self, node: Node<'_>) -> TyResult<Alternative> {
+        let alternative_name = node.child_by_field("name")?;
+        let mut cursor = node.walk();
+        let mut fields = vec![];
+        for field in node.children_by_field_name("field", &mut cursor) {
+            let field_name = field.child_by_field("name")?;
+            let field_ty_node = field.child_by_field("type")?;
+            let field_ty = self.convert_ty(field_ty_node)?;
+            fields.push((self.id(&field_name), field_ty))
+        }
+        Ok(Alternative {
+            name: self.id(&alternative_name),
+            fields,
+        })
+    }
+
     fn check_variant(&mut self, node: &Node<'_>) -> TyResult<Toplevel> {
         assert!(node.kind() == "top_variant");
         let name_node = node.child_by_field("name")?;
         let mut cursor = node.walk();
         let mut alternatives = vec![];
-        for alternative in node.children_by_field_name("alternative", &mut cursor) {
-            let alternative_name = alternative.child_by_field("name")?;
-            let mut fields = vec![];
-            let mut cursor = alternative.walk();
-            for field in alternative.children_by_field_name("field", &mut cursor) {
-                let field_name = field.child_by_field("name")?;
-                let field_ty_node = field.child_by_field("type")?;
-                let field_ty = self.convert_ty(field_ty_node)?;
-                fields.push((self.id(&field_name), field_ty))
-            }
-            alternatives.push(Alternative {
-                name: self.id(&alternative_name),
-                fields,
-            });
+        for alternative_node in node.children_by_field_name("alternative", &mut cursor) {
+            let alternative = self.check_alterantive(alternative_node)?;
+            alternatives.push(alternative);
         }
         let name = self.id(&name_node);
         let ty_variants = self
@@ -404,9 +410,8 @@ impl<'a> Typechecker<'a> {
                     .collect(),
             );
         }
-        let data = ToplevelData::Variant { name, alternatives };
         Ok(Toplevel {
-            it: data,
+            it: ToplevelData::Variant { name, alternatives },
             at: node.into(),
         })
     }
