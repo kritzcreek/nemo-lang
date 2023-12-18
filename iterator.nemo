@@ -1,0 +1,49 @@
+import log : fn (f32) -> unit from log
+
+struct IterState {
+  array : [f32]
+  ix : i32
+}
+
+struct ArrayIter {
+  state : IterState,
+  has_next : fn (IterState) -> bool,
+  next : fn (IterState) -> f32
+}
+
+fn array_has_next(state: IterState) : bool = {
+  state.ix < @array_len(state.array)
+}
+
+fn array_next(state : IterState) : f32 = {
+  let result = state.array[state.ix];
+  set state.ix = state.ix + 1;
+  result
+}
+
+fn f32_iter(array: [f32]) : ArrayIter = {
+  ArrayIter {
+    state = IterState { array = array, ix = 0 },
+    has_next = array_has_next,
+    next = array_next
+  }
+}
+
+fn sum(iter: ArrayIter) -> f32 {
+   let result = 0.0;
+   while iter.has_next(iter.state) {
+     set result = result + iter.next(iter.state);
+   };
+   result
+}
+
+fn main() = {
+   let fs = [1.0, 2.0, 3.0, 4.0, 13.3];
+   let iter = f32_iter(fs);
+   log(sum(iter))
+   let iter = f32_iter(fs);
+   while iter.has_next(iter.state) {
+     let item = iter.next(iter.state);
+     log(item)
+   }
+}
