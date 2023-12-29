@@ -11,7 +11,8 @@ let client: LanguageClient;
 
 export function activate(context: ExtensionContext) {
   const serverOptions: ServerOptions = {
-    command: "nemo-language-server",
+    command: "nemo",
+    args: ["language-server"],
     transport: TransportKind.stdio,
   };
 
