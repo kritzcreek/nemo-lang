@@ -32,7 +32,10 @@ enum Commands {
         input_file: PathBuf,
     },
     /// Runs the language server
-    LanguageServer,
+    LanguageServer {
+        #[arg(long)]
+        stdio: bool
+    },
     /// Runs the Nemo playground where you can write Nemo programs
     /// that interact with the HTML5 canvas
     Playground,
@@ -63,7 +66,7 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
                 }
             }
         }
-        Commands::LanguageServer => start_language_server(),
+        Commands::LanguageServer { .. } => start_language_server(),
         Commands::Playground => {
             run_playground();
             Ok(())

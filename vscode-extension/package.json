@@ -12,9 +12,9 @@
     "Programming Languages"
   ],
   "engines": {
-    "vscode": "^1.75.0"
+    "vscode": "^1.85.0"
   },
-    "@types/vscode": "^1.75.1",
+  "@types/vscode": "^1.85.0",
   "main": "./out/extension",
   "contributes": {
     "languages": [
@@ -35,14 +35,13 @@
     "compile": "tsc -b",
     "watch": "tsc -b -w"
   },
-  "activationEvents": [ "onLanguage:nemo" ],
   "dependencies": {
-    "@types/vscode": "^1.75.1",
-    "vscode-languageclient": "^8.1.0"
+    "@types/vscode": "^1.85.0",
+    "vscode-languageclient": "^9.0.1"
   },
   "devDependencies": {
-    "@types/node": "^16.18.34",
-    "typescript": "^5.2.2",
-    "vsce": "^2.15.0"
+    "@types/node": "^18.16.0",
+    "typescript": "^5.3.3",
+    "@vscode/vsce": "^2.15.0"
   }
 }
