@@ -8,4 +8,4 @@ license = "MIT"
 
 [dependencies]
 nemo-frontend = { path = "../nemo-frontend" }
-wasm-encoder = "0.37"
+wasm-encoder = "0.38"
