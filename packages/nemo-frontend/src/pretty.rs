@@ -1,8 +1,9 @@
 use pretty::RcDoc;
 
 use crate::syntax::{
-    Declaration, DeclarationData, Expr, ExprData, FuncType, Intrinsic, IntrinsicData, Lit, LitData,
-    Op, OpData, Program, SetTarget, SetTargetData, Toplevel, ToplevelData, Type, TypeData,
+    Alternative, Declaration, DeclarationData, Expr, ExprData, FuncType, Intrinsic, IntrinsicData,
+    Lit, LitData, Op, OpData, Program, SetTarget, SetTargetData, Toplevel, ToplevelData, Type,
+    TypeData,
 };
 use crate::types::{FuncTy, Ty};
 
@@ -334,7 +335,7 @@ impl Printer {
                 .append(Doc::space())
                 .append(Doc::text("="))
                 .append(Doc::softline())
-                .append(self.pretty_expr(init).nest(4)),
+                .append(self.pretty_expr(init).nest(2)),
             ToplevelData::Struct {
                 ref name,
                 ref fields,
@@ -350,6 +351,26 @@ impl Printer {
                                 .append(Doc::text(" : "))
                                 .append(self.pretty_type(ty))
                         }),
+                        Doc::text(",").append(Doc::hardline()),
+                    )
+                    .group(),
+                )
+                .nest(2)
+                .append(Doc::line())
+                .append(Doc::text("}")),
+            ToplevelData::Variant {
+                ref name,
+                ref alternatives,
+            } => Doc::text("variant ")
+                .append(Doc::text(name.it.to_string()))
+                .append(Doc::space())
+                .append(Doc::text("{"))
+                .append(Doc::line())
+                .append(
+                    Doc::intersperse(
+                        alternatives
+                            .iter()
+                            .map(|alternative| self.pretty_alternative(alternative)),
                         Doc::text(",").append(Doc::hardline()),
                     )
                     .group(),
@@ -395,5 +416,25 @@ impl Printer {
         let mut w = Vec::new();
         doc.render(80, &mut w).unwrap();
         String::from_utf8(w).unwrap()
+    }
+
+    fn pretty_alternative(&self, alternative: &Alternative) -> Doc {
+        let fields = Doc::intersperse(
+            alternative.fields.iter().map(|(name, ty)| {
+                Doc::text(name.it.to_string())
+                    .append(Doc::text(" : "))
+                    .append(self.pretty_type(ty))
+            }),
+            Doc::text(",").append(Doc::line()),
+        );
+        Doc::text(alternative.name.it.to_string())
+            .append(Doc::space())
+            .append(Doc::text("{"))
+            .append(Doc::line())
+            .append(fields)
+            .append(Doc::line())
+            .nest(2)
+            .append(Doc::text("}"))
+            .group()
     }
 }
