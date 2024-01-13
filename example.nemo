@@ -1,11 +1,11 @@
-import clear : fn () -> unit from clear_canvas
-import begin_path : fn (f32) -> unit from begin_path
 import move_to : fn (f32, f32) -> unit from move_to
 import line_to : fn (f32, f32) -> unit from line_to
 import arc : fn (f32, f32, f32, f32, f32) -> unit from arc
-import close_path : fn (f32) -> unit from close_path
 import set_stroke_color : fn (f32, f32, f32) -> unit from set_stroke_color
-import stroke : fn (f32) -> unit from stroke
+import begin_path : fn () -> unit from begin_path
+import close_path : fn () -> unit from close_path
+import stroke : fn () -> unit from stroke
+import clear : fn () -> unit from clear_canvas
 
 struct Color {
   r : f32,
@@ -70,23 +70,22 @@ fn draw_cube(cube : Cube) = {
   let x = cube.x;
   let y = cube.y;
   let size = cube.size;
-  begin_path(0.0);
+  begin_path();
   move_to(x, y);
   line_to(x , y + cube.size);
   line_to(x + cube.size, y + cube.size);
   line_to(x + cube.size, y);
   set_stroke_color(cube.color.r, cube.color.g, cube.color.b);
-  close_path(0.0);
-  stroke(0.0)
+  close_path();
+  stroke()
 }
 
 fn draw_particle(particle : Particle) = {
-
   if particle.time > 0.0 {
-    begin_path(0.0);
+    begin_path();
     arc(particle.x, particle.y, (particle_timer - particle.time) / 2.0, 0.0, two_pi);
     set_stroke_color(particle.color.r, particle.color.g, particle.color.b);
-    stroke(0.0)
+    stroke()
   } else {}
 }
 
