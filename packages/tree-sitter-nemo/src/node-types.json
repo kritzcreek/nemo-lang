@@ -1,5 +1,207 @@
 [
   {
+    "type": "_callee",
+    "named": true,
+    "subtypes": [
+      {
+        "type": "_lit",
+        "named": true
+      },
+      {
+        "type": "array_idx_e",
+        "named": true
+      },
+      {
+        "type": "call_e",
+        "named": true
+      },
+      {
+        "type": "intrinsic_e",
+        "named": true
+      },
+      {
+        "type": "parenthesized_e",
+        "named": true
+      },
+      {
+        "type": "struct_idx_e",
+        "named": true
+      },
+      {
+        "type": "var_e",
+        "named": true
+      }
+    ]
+  },
+  {
+    "type": "_decl",
+    "named": true,
+    "subtypes": [
+      {
+        "type": "expr_decl",
+        "named": true
+      },
+      {
+        "type": "let_decl",
+        "named": true
+      },
+      {
+        "type": "set_decl",
+        "named": true
+      },
+      {
+        "type": "while_decl",
+        "named": true
+      }
+    ]
+  },
+  {
+    "type": "_expr",
+    "named": true,
+    "subtypes": [
+      {
+        "type": "_lit",
+        "named": true
+      },
+      {
+        "type": "array_e",
+        "named": true
+      },
+      {
+        "type": "array_idx_e",
+        "named": true
+      },
+      {
+        "type": "binary_e",
+        "named": true
+      },
+      {
+        "type": "block_e",
+        "named": true
+      },
+      {
+        "type": "call_e",
+        "named": true
+      },
+      {
+        "type": "if_e",
+        "named": true
+      },
+      {
+        "type": "intrinsic_e",
+        "named": true
+      },
+      {
+        "type": "parenthesized_e",
+        "named": true
+      },
+      {
+        "type": "struct_e",
+        "named": true
+      },
+      {
+        "type": "struct_idx_e",
+        "named": true
+      },
+      {
+        "type": "var_e",
+        "named": true
+      }
+    ]
+  },
+  {
+    "type": "_lit",
+    "named": true,
+    "subtypes": [
+      {
+        "type": "bool_lit",
+        "named": true
+      },
+      {
+        "type": "float_lit",
+        "named": true
+      },
+      {
+        "type": "int_lit",
+        "named": true
+      }
+    ]
+  },
+  {
+    "type": "_set_target",
+    "named": true,
+    "subtypes": [
+      {
+        "type": "set_array_idx",
+        "named": true
+      },
+      {
+        "type": "set_struct_idx",
+        "named": true
+      },
+      {
+        "type": "set_var",
+        "named": true
+      }
+    ]
+  },
+  {
+    "type": "_toplevel",
+    "named": true,
+    "subtypes": [
+      {
+        "type": "top_func",
+        "named": true
+      },
+      {
+        "type": "top_import",
+        "named": true
+      },
+      {
+        "type": "top_let",
+        "named": true
+      },
+      {
+        "type": "top_struct",
+        "named": true
+      }
+    ]
+  },
+  {
+    "type": "_type",
+    "named": true,
+    "subtypes": [
+      {
+        "type": "ty_array",
+        "named": true
+      },
+      {
+        "type": "ty_bool",
+        "named": true
+      },
+      {
+        "type": "ty_f32",
+        "named": true
+      },
+      {
+        "type": "ty_func",
+        "named": true
+      },
+      {
+        "type": "ty_i32",
+        "named": true
+      },
+      {
+        "type": "ty_struct",
+        "named": true
+      },
+      {
+        "type": "ty_unit",
+        "named": true
+      }
+    ]
+  },
+  {
     "type": "array_e",
     "named": true,
     "fields": {},
@@ -8,59 +210,7 @@
       "required": false,
       "types": [
         {
-          "type": "array_e",
-          "named": true
-        },
-        {
-          "type": "array_idx_e",
-          "named": true
-        },
-        {
-          "type": "binary_e",
-          "named": true
-        },
-        {
-          "type": "block_e",
-          "named": true
-        },
-        {
-          "type": "bool_lit",
-          "named": true
-        },
-        {
-          "type": "call_e",
-          "named": true
-        },
-        {
-          "type": "float_lit",
-          "named": true
-        },
-        {
-          "type": "if_e",
-          "named": true
-        },
-        {
-          "type": "int_lit",
-          "named": true
-        },
-        {
-          "type": "intrinsic_e",
-          "named": true
-        },
-        {
-          "type": "parenthesized_e",
-          "named": true
-        },
-        {
-          "type": "struct_e",
-          "named": true
-        },
-        {
-          "type": "struct_idx_e",
-          "named": true
-        },
-        {
-          "type": "var_e",
+          "type": "_expr",
           "named": true
         }
       ]
@@ -75,59 +225,7 @@
         "required": true,
         "types": [
           {
-            "type": "array_e",
-            "named": true
-          },
-          {
-            "type": "array_idx_e",
-            "named": true
-          },
-          {
-            "type": "binary_e",
-            "named": true
-          },
-          {
-            "type": "block_e",
-            "named": true
-          },
-          {
-            "type": "bool_lit",
-            "named": true
-          },
-          {
-            "type": "call_e",
-            "named": true
-          },
-          {
-            "type": "float_lit",
-            "named": true
-          },
-          {
-            "type": "if_e",
-            "named": true
-          },
-          {
-            "type": "int_lit",
-            "named": true
-          },
-          {
-            "type": "intrinsic_e",
-            "named": true
-          },
-          {
-            "type": "parenthesized_e",
-            "named": true
-          },
-          {
-            "type": "struct_e",
-            "named": true
-          },
-          {
-            "type": "struct_idx_e",
-            "named": true
-          },
-          {
-            "type": "var_e",
+            "type": "_expr",
             "named": true
           }
         ]
@@ -137,59 +235,7 @@
         "required": true,
         "types": [
           {
-            "type": "array_e",
-            "named": true
-          },
-          {
-            "type": "array_idx_e",
-            "named": true
-          },
-          {
-            "type": "binary_e",
-            "named": true
-          },
-          {
-            "type": "block_e",
-            "named": true
-          },
-          {
-            "type": "bool_lit",
-            "named": true
-          },
-          {
-            "type": "call_e",
-            "named": true
-          },
-          {
-            "type": "float_lit",
-            "named": true
-          },
-          {
-            "type": "if_e",
-            "named": true
-          },
-          {
-            "type": "int_lit",
-            "named": true
-          },
-          {
-            "type": "intrinsic_e",
-            "named": true
-          },
-          {
-            "type": "parenthesized_e",
-            "named": true
-          },
-          {
-            "type": "struct_e",
-            "named": true
-          },
-          {
-            "type": "struct_idx_e",
-            "named": true
-          },
-          {
-            "type": "var_e",
+            "type": "_expr",
             "named": true
           }
         ]
@@ -205,59 +251,7 @@
         "required": true,
         "types": [
           {
-            "type": "array_e",
-            "named": true
-          },
-          {
-            "type": "array_idx_e",
-            "named": true
-          },
-          {
-            "type": "binary_e",
-            "named": true
-          },
-          {
-            "type": "block_e",
-            "named": true
-          },
-          {
-            "type": "bool_lit",
-            "named": true
-          },
-          {
-            "type": "call_e",
-            "named": true
-          },
-          {
-            "type": "float_lit",
-            "named": true
-          },
-          {
-            "type": "if_e",
-            "named": true
-          },
-          {
-            "type": "int_lit",
-            "named": true
-          },
-          {
-            "type": "intrinsic_e",
-            "named": true
-          },
-          {
-            "type": "parenthesized_e",
-            "named": true
-          },
-          {
-            "type": "struct_e",
-            "named": true
-          },
-          {
-            "type": "struct_idx_e",
-            "named": true
-          },
-          {
-            "type": "var_e",
+            "type": "_expr",
             "named": true
           }
         ]
@@ -321,59 +315,7 @@
         "required": true,
         "types": [
           {
-            "type": "array_e",
-            "named": true
-          },
-          {
-            "type": "array_idx_e",
-            "named": true
-          },
-          {
-            "type": "binary_e",
-            "named": true
-          },
-          {
-            "type": "block_e",
-            "named": true
-          },
-          {
-            "type": "bool_lit",
-            "named": true
-          },
-          {
-            "type": "call_e",
-            "named": true
-          },
-          {
-            "type": "float_lit",
-            "named": true
-          },
-          {
-            "type": "if_e",
-            "named": true
-          },
-          {
-            "type": "int_lit",
-            "named": true
-          },
-          {
-            "type": "intrinsic_e",
-            "named": true
-          },
-          {
-            "type": "parenthesized_e",
-            "named": true
-          },
-          {
-            "type": "struct_e",
-            "named": true
-          },
-          {
-            "type": "struct_idx_e",
-            "named": true
-          },
-          {
-            "type": "var_e",
+            "type": "_expr",
             "named": true
           }
         ]
@@ -389,19 +331,7 @@
         "required": false,
         "types": [
           {
-            "type": "expr_decl",
-            "named": true
-          },
-          {
-            "type": "let_decl",
-            "named": true
-          },
-          {
-            "type": "set_decl",
-            "named": true
-          },
-          {
-            "type": "while_decl",
+            "type": "_decl",
             "named": true
           }
         ]
@@ -422,59 +352,7 @@
       "required": false,
       "types": [
         {
-          "type": "array_e",
-          "named": true
-        },
-        {
-          "type": "array_idx_e",
-          "named": true
-        },
-        {
-          "type": "binary_e",
-          "named": true
-        },
-        {
-          "type": "block_e",
-          "named": true
-        },
-        {
-          "type": "bool_lit",
-          "named": true
-        },
-        {
-          "type": "call_e",
-          "named": true
-        },
-        {
-          "type": "float_lit",
-          "named": true
-        },
-        {
-          "type": "if_e",
-          "named": true
-        },
-        {
-          "type": "int_lit",
-          "named": true
-        },
-        {
-          "type": "intrinsic_e",
-          "named": true
-        },
-        {
-          "type": "parenthesized_e",
-          "named": true
-        },
-        {
-          "type": "struct_e",
-          "named": true
-        },
-        {
-          "type": "struct_idx_e",
-          "named": true
-        },
-        {
-          "type": "var_e",
+          "type": "_expr",
           "named": true
         }
       ]
@@ -499,51 +377,7 @@
         "required": true,
         "types": [
           {
-            "type": "array_e",
-            "named": true
-          },
-          {
-            "type": "array_idx_e",
-            "named": true
-          },
-          {
-            "type": "bool_lit",
-            "named": true
-          },
-          {
-            "type": "call_e",
-            "named": true
-          },
-          {
-            "type": "float_lit",
-            "named": true
-          },
-          {
-            "type": "if_e",
-            "named": true
-          },
-          {
-            "type": "int_lit",
-            "named": true
-          },
-          {
-            "type": "intrinsic_e",
-            "named": true
-          },
-          {
-            "type": "parenthesized_e",
-            "named": true
-          },
-          {
-            "type": "struct_e",
-            "named": true
-          },
-          {
-            "type": "struct_idx_e",
-            "named": true
-          },
-          {
-            "type": "var_e",
+            "type": "_callee",
             "named": true
           }
         ]
@@ -564,59 +398,7 @@
         "required": true,
         "types": [
           {
-            "type": "array_e",
-            "named": true
-          },
-          {
-            "type": "array_idx_e",
-            "named": true
-          },
-          {
-            "type": "binary_e",
-            "named": true
-          },
-          {
-            "type": "block_e",
-            "named": true
-          },
-          {
-            "type": "bool_lit",
-            "named": true
-          },
-          {
-            "type": "call_e",
-            "named": true
-          },
-          {
-            "type": "float_lit",
-            "named": true
-          },
-          {
-            "type": "if_e",
-            "named": true
-          },
-          {
-            "type": "int_lit",
-            "named": true
-          },
-          {
-            "type": "intrinsic_e",
-            "named": true
-          },
-          {
-            "type": "parenthesized_e",
-            "named": true
-          },
-          {
-            "type": "struct_e",
-            "named": true
-          },
-          {
-            "type": "struct_idx_e",
-            "named": true
-          },
-          {
-            "type": "var_e",
+            "type": "_expr",
             "named": true
           }
         ]
@@ -642,31 +424,7 @@
         "required": true,
         "types": [
           {
-            "type": "ty_array",
-            "named": true
-          },
-          {
-            "type": "ty_bool",
-            "named": true
-          },
-          {
-            "type": "ty_f32",
-            "named": true
-          },
-          {
-            "type": "ty_func",
-            "named": true
-          },
-          {
-            "type": "ty_i32",
-            "named": true
-          },
-          {
-            "type": "ty_struct",
-            "named": true
-          },
-          {
-            "type": "ty_unit",
+            "type": "_type",
             "named": true
           }
         ]
@@ -697,59 +455,7 @@
         "required": true,
         "types": [
           {
-            "type": "array_e",
-            "named": true
-          },
-          {
-            "type": "array_idx_e",
-            "named": true
-          },
-          {
-            "type": "binary_e",
-            "named": true
-          },
-          {
-            "type": "block_e",
-            "named": true
-          },
-          {
-            "type": "bool_lit",
-            "named": true
-          },
-          {
-            "type": "call_e",
-            "named": true
-          },
-          {
-            "type": "float_lit",
-            "named": true
-          },
-          {
-            "type": "if_e",
-            "named": true
-          },
-          {
-            "type": "int_lit",
-            "named": true
-          },
-          {
-            "type": "intrinsic_e",
-            "named": true
-          },
-          {
-            "type": "parenthesized_e",
-            "named": true
-          },
-          {
-            "type": "struct_e",
-            "named": true
-          },
-          {
-            "type": "struct_idx_e",
-            "named": true
-          },
-          {
-            "type": "var_e",
+            "type": "_expr",
             "named": true
           }
         ]
@@ -816,31 +522,7 @@
         "required": false,
         "types": [
           {
-            "type": "ty_array",
-            "named": true
-          },
-          {
-            "type": "ty_bool",
-            "named": true
-          },
-          {
-            "type": "ty_f32",
-            "named": true
-          },
-          {
-            "type": "ty_func",
-            "named": true
-          },
-          {
-            "type": "ty_i32",
-            "named": true
-          },
-          {
-            "type": "ty_struct",
-            "named": true
-          },
-          {
-            "type": "ty_unit",
+            "type": "_type",
             "named": true
           }
         ]
@@ -860,59 +542,7 @@
         "required": true,
         "types": [
           {
-            "type": "array_e",
-            "named": true
-          },
-          {
-            "type": "array_idx_e",
-            "named": true
-          },
-          {
-            "type": "binary_e",
-            "named": true
-          },
-          {
-            "type": "block_e",
-            "named": true
-          },
-          {
-            "type": "bool_lit",
-            "named": true
-          },
-          {
-            "type": "call_e",
-            "named": true
-          },
-          {
-            "type": "float_lit",
-            "named": true
-          },
-          {
-            "type": "if_e",
-            "named": true
-          },
-          {
-            "type": "int_lit",
-            "named": true
-          },
-          {
-            "type": "intrinsic_e",
-            "named": true
-          },
-          {
-            "type": "parenthesized_e",
-            "named": true
-          },
-          {
-            "type": "struct_e",
-            "named": true
-          },
-          {
-            "type": "struct_idx_e",
-            "named": true
-          },
-          {
-            "type": "var_e",
+            "type": "_expr",
             "named": true
           }
         ]
@@ -928,59 +558,7 @@
         "required": true,
         "types": [
           {
-            "type": "array_e",
-            "named": true
-          },
-          {
-            "type": "array_idx_e",
-            "named": true
-          },
-          {
-            "type": "binary_e",
-            "named": true
-          },
-          {
-            "type": "block_e",
-            "named": true
-          },
-          {
-            "type": "bool_lit",
-            "named": true
-          },
-          {
-            "type": "call_e",
-            "named": true
-          },
-          {
-            "type": "float_lit",
-            "named": true
-          },
-          {
-            "type": "if_e",
-            "named": true
-          },
-          {
-            "type": "int_lit",
-            "named": true
-          },
-          {
-            "type": "intrinsic_e",
-            "named": true
-          },
-          {
-            "type": "parenthesized_e",
-            "named": true
-          },
-          {
-            "type": "struct_e",
-            "named": true
-          },
-          {
-            "type": "struct_idx_e",
-            "named": true
-          },
-          {
-            "type": "var_e",
+            "type": "_expr",
             "named": true
           }
         ]
@@ -996,59 +574,7 @@
         "required": true,
         "types": [
           {
-            "type": "array_e",
-            "named": true
-          },
-          {
-            "type": "array_idx_e",
-            "named": true
-          },
-          {
-            "type": "binary_e",
-            "named": true
-          },
-          {
-            "type": "block_e",
-            "named": true
-          },
-          {
-            "type": "bool_lit",
-            "named": true
-          },
-          {
-            "type": "call_e",
-            "named": true
-          },
-          {
-            "type": "float_lit",
-            "named": true
-          },
-          {
-            "type": "if_e",
-            "named": true
-          },
-          {
-            "type": "int_lit",
-            "named": true
-          },
-          {
-            "type": "intrinsic_e",
-            "named": true
-          },
-          {
-            "type": "parenthesized_e",
-            "named": true
-          },
-          {
-            "type": "struct_e",
-            "named": true
-          },
-          {
-            "type": "struct_idx_e",
-            "named": true
-          },
-          {
-            "type": "var_e",
+            "type": "_expr",
             "named": true
           }
         ]
@@ -1058,15 +584,7 @@
         "required": true,
         "types": [
           {
-            "type": "set_array_idx",
-            "named": true
-          },
-          {
-            "type": "set_struct_idx",
-            "named": true
-          },
-          {
-            "type": "set_var",
+            "type": "_set_target",
             "named": true
           }
         ]
@@ -1082,59 +600,7 @@
         "required": true,
         "types": [
           {
-            "type": "array_e",
-            "named": true
-          },
-          {
-            "type": "array_idx_e",
-            "named": true
-          },
-          {
-            "type": "binary_e",
-            "named": true
-          },
-          {
-            "type": "block_e",
-            "named": true
-          },
-          {
-            "type": "bool_lit",
-            "named": true
-          },
-          {
-            "type": "call_e",
-            "named": true
-          },
-          {
-            "type": "float_lit",
-            "named": true
-          },
-          {
-            "type": "if_e",
-            "named": true
-          },
-          {
-            "type": "int_lit",
-            "named": true
-          },
-          {
-            "type": "intrinsic_e",
-            "named": true
-          },
-          {
-            "type": "parenthesized_e",
-            "named": true
-          },
-          {
-            "type": "struct_e",
-            "named": true
-          },
-          {
-            "type": "struct_idx_e",
-            "named": true
-          },
-          {
-            "type": "var_e",
+            "type": "_expr",
             "named": true
           }
         ]
@@ -1144,15 +610,7 @@
         "required": true,
         "types": [
           {
-            "type": "set_array_idx",
-            "named": true
-          },
-          {
-            "type": "set_struct_idx",
-            "named": true
-          },
-          {
-            "type": "set_var",
+            "type": "_set_target",
             "named": true
           }
         ]
@@ -1178,15 +636,7 @@
         "required": true,
         "types": [
           {
-            "type": "set_array_idx",
-            "named": true
-          },
-          {
-            "type": "set_struct_idx",
-            "named": true
-          },
-          {
-            "type": "set_var",
+            "type": "_set_target",
             "named": true
           }
         ]
@@ -1218,19 +668,7 @@
       "required": false,
       "types": [
         {
-          "type": "top_func",
-          "named": true
-        },
-        {
-          "type": "top_import",
-          "named": true
-        },
-        {
-          "type": "top_let",
-          "named": true
-        },
-        {
-          "type": "top_struct",
+          "type": "_toplevel",
           "named": true
         }
       ]
@@ -1271,59 +709,7 @@
         "required": true,
         "types": [
           {
-            "type": "array_e",
-            "named": true
-          },
-          {
-            "type": "array_idx_e",
-            "named": true
-          },
-          {
-            "type": "binary_e",
-            "named": true
-          },
-          {
-            "type": "block_e",
-            "named": true
-          },
-          {
-            "type": "bool_lit",
-            "named": true
-          },
-          {
-            "type": "call_e",
-            "named": true
-          },
-          {
-            "type": "float_lit",
-            "named": true
-          },
-          {
-            "type": "if_e",
-            "named": true
-          },
-          {
-            "type": "int_lit",
-            "named": true
-          },
-          {
-            "type": "intrinsic_e",
-            "named": true
-          },
-          {
-            "type": "parenthesized_e",
-            "named": true
-          },
-          {
-            "type": "struct_e",
-            "named": true
-          },
-          {
-            "type": "struct_idx_e",
-            "named": true
-          },
-          {
-            "type": "var_e",
+            "type": "_expr",
             "named": true
           }
         ]
@@ -1359,31 +745,7 @@
         "required": true,
         "types": [
           {
-            "type": "ty_array",
-            "named": true
-          },
-          {
-            "type": "ty_bool",
-            "named": true
-          },
-          {
-            "type": "ty_f32",
-            "named": true
-          },
-          {
-            "type": "ty_func",
-            "named": true
-          },
-          {
-            "type": "ty_i32",
-            "named": true
-          },
-          {
-            "type": "ty_struct",
-            "named": true
-          },
-          {
-            "type": "ty_unit",
+            "type": "_type",
             "named": true
           }
         ]
@@ -1399,59 +761,7 @@
         "required": true,
         "types": [
           {
-            "type": "array_e",
-            "named": true
-          },
-          {
-            "type": "array_idx_e",
-            "named": true
-          },
-          {
-            "type": "binary_e",
-            "named": true
-          },
-          {
-            "type": "block_e",
-            "named": true
-          },
-          {
-            "type": "bool_lit",
-            "named": true
-          },
-          {
-            "type": "call_e",
-            "named": true
-          },
-          {
-            "type": "float_lit",
-            "named": true
-          },
-          {
-            "type": "if_e",
-            "named": true
-          },
-          {
-            "type": "int_lit",
-            "named": true
-          },
-          {
-            "type": "intrinsic_e",
-            "named": true
-          },
-          {
-            "type": "parenthesized_e",
-            "named": true
-          },
-          {
-            "type": "struct_e",
-            "named": true
-          },
-          {
-            "type": "struct_idx_e",
-            "named": true
-          },
-          {
-            "type": "var_e",
+            "type": "_expr",
             "named": true
           }
         ]
@@ -1507,31 +817,7 @@
         "required": false,
         "types": [
           {
-            "type": "ty_array",
-            "named": true
-          },
-          {
-            "type": "ty_bool",
-            "named": true
-          },
-          {
-            "type": "ty_f32",
-            "named": true
-          },
-          {
-            "type": "ty_func",
-            "named": true
-          },
-          {
-            "type": "ty_i32",
-            "named": true
-          },
-          {
-            "type": "ty_struct",
-            "named": true
-          },
-          {
-            "type": "ty_unit",
+            "type": "_type",
             "named": true
           }
         ]
@@ -1583,31 +869,7 @@
         "required": false,
         "types": [
           {
-            "type": "ty_array",
-            "named": true
-          },
-          {
-            "type": "ty_bool",
-            "named": true
-          },
-          {
-            "type": "ty_f32",
-            "named": true
-          },
-          {
-            "type": "ty_func",
-            "named": true
-          },
-          {
-            "type": "ty_i32",
-            "named": true
-          },
-          {
-            "type": "ty_struct",
-            "named": true
-          },
-          {
-            "type": "ty_unit",
+            "type": "_type",
             "named": true
           }
         ]
@@ -1627,59 +889,7 @@
         "required": true,
         "types": [
           {
-            "type": "array_e",
-            "named": true
-          },
-          {
-            "type": "array_idx_e",
-            "named": true
-          },
-          {
-            "type": "binary_e",
-            "named": true
-          },
-          {
-            "type": "block_e",
-            "named": true
-          },
-          {
-            "type": "bool_lit",
-            "named": true
-          },
-          {
-            "type": "call_e",
-            "named": true
-          },
-          {
-            "type": "float_lit",
-            "named": true
-          },
-          {
-            "type": "if_e",
-            "named": true
-          },
-          {
-            "type": "int_lit",
-            "named": true
-          },
-          {
-            "type": "intrinsic_e",
-            "named": true
-          },
-          {
-            "type": "parenthesized_e",
-            "named": true
-          },
-          {
-            "type": "struct_e",
-            "named": true
-          },
-          {
-            "type": "struct_idx_e",
-            "named": true
-          },
-          {
-            "type": "var_e",
+            "type": "_expr",
             "named": true
           }
         ]
@@ -1721,31 +931,7 @@
         "required": true,
         "types": [
           {
-            "type": "ty_array",
-            "named": true
-          },
-          {
-            "type": "ty_bool",
-            "named": true
-          },
-          {
-            "type": "ty_f32",
-            "named": true
-          },
-          {
-            "type": "ty_func",
-            "named": true
-          },
-          {
-            "type": "ty_i32",
-            "named": true
-          },
-          {
-            "type": "ty_struct",
-            "named": true
-          },
-          {
-            "type": "ty_unit",
+            "type": "_type",
             "named": true
           }
         ]
@@ -1761,31 +947,7 @@
         "required": false,
         "types": [
           {
-            "type": "ty_array",
-            "named": true
-          },
-          {
-            "type": "ty_bool",
-            "named": true
-          },
-          {
-            "type": "ty_f32",
-            "named": true
-          },
-          {
-            "type": "ty_func",
-            "named": true
-          },
-          {
-            "type": "ty_i32",
-            "named": true
-          },
-          {
-            "type": "ty_struct",
-            "named": true
-          },
-          {
-            "type": "ty_unit",
+            "type": "_type",
             "named": true
           }
         ]
@@ -1795,31 +957,7 @@
         "required": true,
         "types": [
           {
-            "type": "ty_array",
-            "named": true
-          },
-          {
-            "type": "ty_bool",
-            "named": true
-          },
-          {
-            "type": "ty_f32",
-            "named": true
-          },
-          {
-            "type": "ty_func",
-            "named": true
-          },
-          {
-            "type": "ty_i32",
-            "named": true
-          },
-          {
-            "type": "ty_struct",
-            "named": true
-          },
-          {
-            "type": "ty_unit",
+            "type": "_type",
             "named": true
           }
         ]
@@ -1875,59 +1013,7 @@
         "required": true,
         "types": [
           {
-            "type": "array_e",
-            "named": true
-          },
-          {
-            "type": "array_idx_e",
-            "named": true
-          },
-          {
-            "type": "binary_e",
-            "named": true
-          },
-          {
-            "type": "block_e",
-            "named": true
-          },
-          {
-            "type": "bool_lit",
-            "named": true
-          },
-          {
-            "type": "call_e",
-            "named": true
-          },
-          {
-            "type": "float_lit",
-            "named": true
-          },
-          {
-            "type": "if_e",
-            "named": true
-          },
-          {
-            "type": "int_lit",
-            "named": true
-          },
-          {
-            "type": "intrinsic_e",
-            "named": true
-          },
-          {
-            "type": "parenthesized_e",
-            "named": true
-          },
-          {
-            "type": "struct_e",
-            "named": true
-          },
-          {
-            "type": "struct_idx_e",
-            "named": true
-          },
-          {
-            "type": "var_e",
+            "type": "_expr",
             "named": true
           }
         ]

@@ -30,6 +30,15 @@ module.exports = grammar({
   name: 'nemo',
   word: $ => $.lower_ident,
   extras: $ => [/\s+/, $.comment],
+  supertypes: $ => [
+    $._lit,
+    $._callee,
+    $._expr,
+    $._decl,
+    $._set_target,
+    $._type,
+    $._toplevel,
+  ],
 
   rules: {
     source_file: $ => repeat($._toplevel),
@@ -77,6 +86,14 @@ module.exports = grammar({
       field('else', $.block_e)
     ),
 
+    _callee: $ => choice(
+      $._lit,
+      $._call_or_var,
+      $.intrinsic_e,
+      $.array_idx_e,
+      $.struct_idx_e,
+      $.parenthesized_e,
+    ),
 
     call_args: $ => seq('(', comma_sep_trailing($._expr), ')'),
     call_e: $ => seq(
@@ -96,18 +113,6 @@ module.exports = grammar({
     binary_e: $ => make_binary_rules($._expr),
 
     parenthesized_e: $ => seq('(', field ('expr', $._expr), ')'),
-
-    _callee: $ => choice(
-      $._lit,
-      $._call_or_var,
-      $.parenthesized_e,
-      $.array_e,
-      $.struct_e,
-      $.if_e,
-      $.intrinsic_e,
-      $.array_idx_e,
-      $.struct_idx_e,
-    ),
 
     // Extracted this rule to make it clear that we want the parser to greedily parse:
     // my_func(args) into `(call_e ident args)` and not `(var_e ERROR)`

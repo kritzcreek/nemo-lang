@@ -4,6 +4,7 @@ pub mod pretty;
 pub mod syntax;
 pub mod type_errors;
 pub mod types;
+mod ast;
 
 use parser::parse_program;
 use types::typecheck;
