@@ -334,6 +334,35 @@
         }
       ]
     },
+    "_callee": {
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "SYMBOL",
+          "name": "_lit"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_call_or_var"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "intrinsic_e"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "array_idx_e"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "struct_idx_e"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "parenthesized_e"
+        }
+      ]
+    },
     "call_args": {
       "type": "SEQ",
       "members": [
@@ -717,47 +746,6 @@
         {
           "type": "STRING",
           "value": ")"
-        }
-      ]
-    },
-    "_callee": {
-      "type": "CHOICE",
-      "members": [
-        {
-          "type": "SYMBOL",
-          "name": "_lit"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "_call_or_var"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "parenthesized_e"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "array_e"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "struct_e"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "if_e"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "intrinsic_e"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "array_idx_e"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "struct_idx_e"
         }
       ]
     },
@@ -1534,6 +1522,14 @@
   "precedences": [],
   "externals": [],
   "inline": [],
-  "supertypes": []
+  "supertypes": [
+    "_lit",
+    "_callee",
+    "_expr",
+    "_decl",
+    "_set_target",
+    "_type",
+    "_toplevel"
+  ]
 }
 
