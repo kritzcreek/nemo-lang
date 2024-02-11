@@ -1,10 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::fmt::Write;
-use std::{
-    collections::{BTreeMap, HashMap},
-    path::Path,
-};
+use std::{collections::BTreeMap, path::Path};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum SymbolType {
@@ -51,14 +48,6 @@ pub enum ChildType {
 pub struct FieldInfo {
     pub quantity: ChildQuantity,
     pub types: Vec<ChildType>,
-}
-
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct VariableInfo {
-    pub fields: HashMap<String, FieldInfo>,
-    pub children: FieldInfo,
-    pub children_without_fields: FieldInfo,
-    pub has_multi_step_production: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Default, PartialOrd, Ord)]
@@ -171,7 +160,7 @@ fn gen_enum_node(node_info: &NodeInfoJSON, subtypes: &Vec<NodeTypeJSON>) -> Stri
         source_buf,
         "
   impl<'a> {}Node<'a> {{
-    pub fn can_cast(node: &Node<'a>) -> bool {{",
+    pub fn can_cast(node: Node<'a>) -> bool {{",
         ty_name
     )
     .unwrap();
@@ -196,7 +185,7 @@ fn gen_enum_node(node_info: &NodeInfoJSON, subtypes: &Vec<NodeTypeJSON>) -> Stri
         "
     }}
 
-    pub fn cast(node: &Node<'a>) -> Option<Self> {{"
+    pub fn cast(node: Node<'a>) -> Option<Self> {{"
     )
     .unwrap();
 
@@ -248,13 +237,13 @@ struct {}Node<'a>(Node<'a>);",
         source_buf,
         "
   impl<'a> {}Node<'a> {{
-    pub fn can_cast(node: &Node<'a>) -> bool {{
+    pub fn can_cast(node: Node<'a>) -> bool {{
         node.kind() == \"{}\"
     }}
 
-    pub fn cast(node: &Node<'a>) -> Option<Self> {{
+    pub fn cast(node: Node<'a>) -> Option<Self> {{
         if Self::can_cast(node) {{
-            Some(Self(*node))
+            Some(Self(node))
         }} else {{
             None
         }}
@@ -264,6 +253,150 @@ struct {}Node<'a>(Node<'a>);",
         ty_name, node_info.kind
     )
     .unwrap();
+
+    writeln!(
+        source_buf,
+        "
+  impl<'a> {ty_name}Node<'a> {{"
+    )
+    .unwrap();
+    // Generate field accessors
+    if let Some(fields) = &node_info.fields {
+        for (field_name, field_info) in fields.iter() {
+            if field_info.types.len() > 1 {
+                // Best thing I can do here for now is to return an accessor for Node<'a>
+                if field_info.multiple {
+                    writeln!(
+                        source_buf,
+                        "
+            pub fn {field_name}s(&self) -> Vec<Node<'a>> {{
+                let mut cursor = self.0.walk();
+                self.0.children_by_field_name(\"{field_name}\", &mut cursor).collect()
+            }}
+            "
+                    )
+                    .unwrap();
+                } else {
+                    let func_name = match field_name.as_ref() {
+                        "type" => "type_",
+                        "struct" => "struct_",
+                        "enum" => "enum_",
+                        "if" => "if_",
+                        "else" => "else_",
+                        "continue" => "continue_",
+                        "break" => "break_",
+                        f => f,
+                    };
+
+                    writeln!(
+                        source_buf,
+                        "
+            pub fn {func_name}(&self) -> Option<Node<'a>> {{
+                self.0.child_by_field_name(\"{field_name}\")
+            }}
+            "
+                    )
+                    .unwrap();
+                }
+                continue;
+            }
+            let field_type = &field_info.types[0];
+
+            if !field_type.named {
+                eprintln!(
+                    "Unnamed field types not supported yet: {} in {}",
+                    field_type.kind, node_info.kind
+                );
+                continue;
+            }
+            let field_type_name = to_camel_case(&field_type.kind);
+
+            if field_info.multiple {
+                writeln!(
+                    source_buf,
+                    "
+            pub fn {field_name}s(&self) -> Vec<{field_type_name}Node<'a>> {{
+                let mut cursor = self.0.walk();
+                self.0
+                  .children_by_field_name(\"{field_name}\", &mut cursor)
+                  .filter_map({field_type_name}Node::cast).collect()
+            }}
+            "
+                )
+                .unwrap();
+                continue;
+            }
+
+            // TODO: Do we care about required?
+
+            let func_name = match field_name.as_ref() {
+                "type" => "type_",
+                "struct" => "struct_",
+                "enum" => "enum_",
+                "if" => "if_",
+                "else" => "else_",
+                "continue" => "continue_",
+                "break" => "break_",
+                f => f,
+            };
+
+            writeln!(
+                source_buf,
+                "
+            pub fn {func_name}(&self) -> Option<{field_type_name}Node<'a>> {{
+                self.0.child_by_field_name(\"{field_name}\").and_then({field_type_name}Node::cast)
+            }}
+            "
+            )
+            .unwrap();
+        }
+    }
+
+    if let Some(children) = &node_info.children {
+        let child_types: Vec<_> = children.types.iter().filter(|t| t.named).collect();
+        if child_types.is_empty() {
+            // Do nothing
+        } else if child_types.len() > 1 {
+            eprintln!(
+                "Multiple children not supported yet: {}, {children:?}",
+                node_info.kind
+            );
+        } else if children.multiple {
+            let type_name = children.types[0].kind.trim_start_matches("_");
+            let field_type_name = to_camel_case(&type_name);
+            writeln!(
+                source_buf,
+                "
+            pub fn {type_name}s(&self) -> Vec<{field_type_name}Node<'a>> {{
+                let mut cursor = self.0.walk();
+                self.0
+                  .children(&mut cursor)
+                  .filter_map({field_type_name}Node::cast).collect()
+            }}
+            "
+            )
+            .unwrap();
+        } else {
+            let type_name = children.types[0].kind.trim_start_matches("_");
+            let field_type_name = to_camel_case(&type_name);
+            writeln!(
+                source_buf,
+                "
+            pub fn {type_name}(&self) -> Option<{field_type_name}Node<'a>> {{
+                let mut cursor = self.0.walk();
+                let child = self.0
+                  .children(&mut cursor)
+                  .find_map({field_type_name}Node::cast);
+                child
+            }}
+            "
+            )
+            .unwrap();
+        }
+    }
+
+    writeln!(source_buf, "}}").unwrap();
+
     source_buf
 }
 
