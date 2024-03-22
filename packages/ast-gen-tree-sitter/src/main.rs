@@ -146,7 +146,7 @@ fn gen_enum_node(node_info: &NodeInfoJSON, subtypes: &Vec<NodeTypeJSON>) -> Stri
     writeln!(
         source_buf,
         "#[derive(Clone, Debug)]
-    enum {}Node<'a> {{",
+    pub enum {}Node<'a> {{",
         ty_name
     )
     .unwrap();
@@ -228,7 +228,7 @@ fn gen_struct_node(node_info: &NodeInfoJSON) -> String {
     writeln!(
         source_buf,
         "#[derive(Clone, Copy, Debug)]
-struct {}Node<'a>(Node<'a>);",
+pub struct {}Node<'a>(pub Node<'a>);",
         ty_name
     )
     .unwrap();

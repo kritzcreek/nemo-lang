@@ -2,272 +2,248 @@
 use tree_sitter::Node;
 
 #[derive(Clone, Debug)]
-enum CalleeNode<'a> {
-    Lit(LitNode<'a>),
-    ArrayIdxE(ArrayIdxENode<'a>),
-    CallE(CallENode<'a>),
-    IntrinsicE(IntrinsicENode<'a>),
-    ParenthesizedE(ParenthesizedENode<'a>),
-    StructIdxE(StructIdxENode<'a>),
-    VarE(VarENode<'a>),
+    pub enum CalleeNode<'a> {
+  Lit(LitNode<'a>),
+  ArrayIdxE(ArrayIdxENode<'a>),
+  CallE(CallENode<'a>),
+  IntrinsicE(IntrinsicENode<'a>),
+  ParenthesizedE(ParenthesizedENode<'a>),
+  StructIdxE(StructIdxENode<'a>),
+  VarE(VarENode<'a>),
 }
 
-impl<'a> CalleeNode<'a> {
+  impl<'a> CalleeNode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
-        LitNode::can_cast(node)
-            || ArrayIdxENode::can_cast(node)
-            || CallENode::can_cast(node)
-            || IntrinsicENode::can_cast(node)
-            || ParenthesizedENode::can_cast(node)
-            || StructIdxENode::can_cast(node)
-            || VarENode::can_cast(node)
+LitNode::can_cast(node)
+ || ArrayIdxENode::can_cast(node) || CallENode::can_cast(node) || IntrinsicENode::can_cast(node) || ParenthesizedENode::can_cast(node) || StructIdxENode::can_cast(node) || VarENode::can_cast(node)
     }
 
     pub fn cast(node: Node<'a>) -> Option<Self> {
-        if let Some(casted_node) = LitNode::cast(node) {
-            Some(Self::Lit(casted_node))
-        } else if let Some(casted_node) = ArrayIdxENode::cast(node) {
-            Some(Self::ArrayIdxE(casted_node))
-        } else if let Some(casted_node) = CallENode::cast(node) {
-            Some(Self::CallE(casted_node))
-        } else if let Some(casted_node) = IntrinsicENode::cast(node) {
-            Some(Self::IntrinsicE(casted_node))
-        } else if let Some(casted_node) = ParenthesizedENode::cast(node) {
-            Some(Self::ParenthesizedE(casted_node))
-        } else if let Some(casted_node) = StructIdxENode::cast(node) {
-            Some(Self::StructIdxE(casted_node))
-        } else if let Some(casted_node) = VarENode::cast(node) {
-            Some(Self::VarE(casted_node))
-        } else {
-            None
-        }
+
+    if let Some(casted_node) = LitNode::cast(node) {
+        Some(Self::Lit(casted_node))
+    } else if let Some(casted_node) = ArrayIdxENode::cast(node) {
+        Some(Self::ArrayIdxE(casted_node))
+    } else if let Some(casted_node) = CallENode::cast(node) {
+        Some(Self::CallE(casted_node))
+    } else if let Some(casted_node) = IntrinsicENode::cast(node) {
+        Some(Self::IntrinsicE(casted_node))
+    } else if let Some(casted_node) = ParenthesizedENode::cast(node) {
+        Some(Self::ParenthesizedE(casted_node))
+    } else if let Some(casted_node) = StructIdxENode::cast(node) {
+        Some(Self::StructIdxE(casted_node))
+    } else if let Some(casted_node) = VarENode::cast(node) {
+        Some(Self::VarE(casted_node))
+    } else { None }
     }
 }
+
 
 #[derive(Clone, Debug)]
-enum DeclNode<'a> {
-    ExprDecl(ExprDeclNode<'a>),
-    LetDecl(LetDeclNode<'a>),
-    SetDecl(SetDeclNode<'a>),
-    WhileDecl(WhileDeclNode<'a>),
+    pub enum DeclNode<'a> {
+  ExprDecl(ExprDeclNode<'a>),
+  LetDecl(LetDeclNode<'a>),
+  SetDecl(SetDeclNode<'a>),
+  WhileDecl(WhileDeclNode<'a>),
 }
 
-impl<'a> DeclNode<'a> {
+  impl<'a> DeclNode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
-        ExprDeclNode::can_cast(node)
-            || LetDeclNode::can_cast(node)
-            || SetDeclNode::can_cast(node)
-            || WhileDeclNode::can_cast(node)
+ExprDeclNode::can_cast(node)
+ || LetDeclNode::can_cast(node) || SetDeclNode::can_cast(node) || WhileDeclNode::can_cast(node)
     }
 
     pub fn cast(node: Node<'a>) -> Option<Self> {
-        if let Some(casted_node) = ExprDeclNode::cast(node) {
-            Some(Self::ExprDecl(casted_node))
-        } else if let Some(casted_node) = LetDeclNode::cast(node) {
-            Some(Self::LetDecl(casted_node))
-        } else if let Some(casted_node) = SetDeclNode::cast(node) {
-            Some(Self::SetDecl(casted_node))
-        } else if let Some(casted_node) = WhileDeclNode::cast(node) {
-            Some(Self::WhileDecl(casted_node))
-        } else {
-            None
-        }
+
+    if let Some(casted_node) = ExprDeclNode::cast(node) {
+        Some(Self::ExprDecl(casted_node))
+    } else if let Some(casted_node) = LetDeclNode::cast(node) {
+        Some(Self::LetDecl(casted_node))
+    } else if let Some(casted_node) = SetDeclNode::cast(node) {
+        Some(Self::SetDecl(casted_node))
+    } else if let Some(casted_node) = WhileDeclNode::cast(node) {
+        Some(Self::WhileDecl(casted_node))
+    } else { None }
     }
 }
+
 
 #[derive(Clone, Debug)]
-enum ExprNode<'a> {
-    Lit(LitNode<'a>),
-    ArrayE(ArrayENode<'a>),
-    ArrayIdxE(ArrayIdxENode<'a>),
-    BinaryE(BinaryENode<'a>),
-    BlockE(BlockENode<'a>),
-    CallE(CallENode<'a>),
-    IfE(IfENode<'a>),
-    IntrinsicE(IntrinsicENode<'a>),
-    ParenthesizedE(ParenthesizedENode<'a>),
-    StructE(StructENode<'a>),
-    StructIdxE(StructIdxENode<'a>),
-    VarE(VarENode<'a>),
+    pub enum ExprNode<'a> {
+  Lit(LitNode<'a>),
+  ArrayE(ArrayENode<'a>),
+  ArrayIdxE(ArrayIdxENode<'a>),
+  BinaryE(BinaryENode<'a>),
+  BlockE(BlockENode<'a>),
+  CallE(CallENode<'a>),
+  IfE(IfENode<'a>),
+  IntrinsicE(IntrinsicENode<'a>),
+  ParenthesizedE(ParenthesizedENode<'a>),
+  StructE(StructENode<'a>),
+  StructIdxE(StructIdxENode<'a>),
+  VarE(VarENode<'a>),
 }
 
-impl<'a> ExprNode<'a> {
+  impl<'a> ExprNode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
-        LitNode::can_cast(node)
-            || ArrayENode::can_cast(node)
-            || ArrayIdxENode::can_cast(node)
-            || BinaryENode::can_cast(node)
-            || BlockENode::can_cast(node)
-            || CallENode::can_cast(node)
-            || IfENode::can_cast(node)
-            || IntrinsicENode::can_cast(node)
-            || ParenthesizedENode::can_cast(node)
-            || StructENode::can_cast(node)
-            || StructIdxENode::can_cast(node)
-            || VarENode::can_cast(node)
+LitNode::can_cast(node)
+ || ArrayENode::can_cast(node) || ArrayIdxENode::can_cast(node) || BinaryENode::can_cast(node) || BlockENode::can_cast(node) || CallENode::can_cast(node) || IfENode::can_cast(node) || IntrinsicENode::can_cast(node) || ParenthesizedENode::can_cast(node) || StructENode::can_cast(node) || StructIdxENode::can_cast(node) || VarENode::can_cast(node)
     }
 
     pub fn cast(node: Node<'a>) -> Option<Self> {
-        if let Some(casted_node) = LitNode::cast(node) {
-            Some(Self::Lit(casted_node))
-        } else if let Some(casted_node) = ArrayENode::cast(node) {
-            Some(Self::ArrayE(casted_node))
-        } else if let Some(casted_node) = ArrayIdxENode::cast(node) {
-            Some(Self::ArrayIdxE(casted_node))
-        } else if let Some(casted_node) = BinaryENode::cast(node) {
-            Some(Self::BinaryE(casted_node))
-        } else if let Some(casted_node) = BlockENode::cast(node) {
-            Some(Self::BlockE(casted_node))
-        } else if let Some(casted_node) = CallENode::cast(node) {
-            Some(Self::CallE(casted_node))
-        } else if let Some(casted_node) = IfENode::cast(node) {
-            Some(Self::IfE(casted_node))
-        } else if let Some(casted_node) = IntrinsicENode::cast(node) {
-            Some(Self::IntrinsicE(casted_node))
-        } else if let Some(casted_node) = ParenthesizedENode::cast(node) {
-            Some(Self::ParenthesizedE(casted_node))
-        } else if let Some(casted_node) = StructENode::cast(node) {
-            Some(Self::StructE(casted_node))
-        } else if let Some(casted_node) = StructIdxENode::cast(node) {
-            Some(Self::StructIdxE(casted_node))
-        } else if let Some(casted_node) = VarENode::cast(node) {
-            Some(Self::VarE(casted_node))
-        } else {
-            None
-        }
+
+    if let Some(casted_node) = LitNode::cast(node) {
+        Some(Self::Lit(casted_node))
+    } else if let Some(casted_node) = ArrayENode::cast(node) {
+        Some(Self::ArrayE(casted_node))
+    } else if let Some(casted_node) = ArrayIdxENode::cast(node) {
+        Some(Self::ArrayIdxE(casted_node))
+    } else if let Some(casted_node) = BinaryENode::cast(node) {
+        Some(Self::BinaryE(casted_node))
+    } else if let Some(casted_node) = BlockENode::cast(node) {
+        Some(Self::BlockE(casted_node))
+    } else if let Some(casted_node) = CallENode::cast(node) {
+        Some(Self::CallE(casted_node))
+    } else if let Some(casted_node) = IfENode::cast(node) {
+        Some(Self::IfE(casted_node))
+    } else if let Some(casted_node) = IntrinsicENode::cast(node) {
+        Some(Self::IntrinsicE(casted_node))
+    } else if let Some(casted_node) = ParenthesizedENode::cast(node) {
+        Some(Self::ParenthesizedE(casted_node))
+    } else if let Some(casted_node) = StructENode::cast(node) {
+        Some(Self::StructE(casted_node))
+    } else if let Some(casted_node) = StructIdxENode::cast(node) {
+        Some(Self::StructIdxE(casted_node))
+    } else if let Some(casted_node) = VarENode::cast(node) {
+        Some(Self::VarE(casted_node))
+    } else { None }
     }
 }
+
 
 #[derive(Clone, Debug)]
-enum LitNode<'a> {
-    BoolLit(BoolLitNode<'a>),
-    FloatLit(FloatLitNode<'a>),
-    IntLit(IntLitNode<'a>),
+    pub enum LitNode<'a> {
+  BoolLit(BoolLitNode<'a>),
+  FloatLit(FloatLitNode<'a>),
+  IntLit(IntLitNode<'a>),
 }
 
-impl<'a> LitNode<'a> {
+  impl<'a> LitNode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
-        BoolLitNode::can_cast(node) || FloatLitNode::can_cast(node) || IntLitNode::can_cast(node)
+BoolLitNode::can_cast(node)
+ || FloatLitNode::can_cast(node) || IntLitNode::can_cast(node)
     }
 
     pub fn cast(node: Node<'a>) -> Option<Self> {
-        if let Some(casted_node) = BoolLitNode::cast(node) {
-            Some(Self::BoolLit(casted_node))
-        } else if let Some(casted_node) = FloatLitNode::cast(node) {
-            Some(Self::FloatLit(casted_node))
-        } else if let Some(casted_node) = IntLitNode::cast(node) {
-            Some(Self::IntLit(casted_node))
-        } else {
-            None
-        }
+
+    if let Some(casted_node) = BoolLitNode::cast(node) {
+        Some(Self::BoolLit(casted_node))
+    } else if let Some(casted_node) = FloatLitNode::cast(node) {
+        Some(Self::FloatLit(casted_node))
+    } else if let Some(casted_node) = IntLitNode::cast(node) {
+        Some(Self::IntLit(casted_node))
+    } else { None }
     }
 }
+
 
 #[derive(Clone, Debug)]
-enum SetTargetNode<'a> {
-    SetArrayIdx(SetArrayIdxNode<'a>),
-    SetStructIdx(SetStructIdxNode<'a>),
-    SetVar(SetVarNode<'a>),
+    pub enum SetTargetNode<'a> {
+  SetArrayIdx(SetArrayIdxNode<'a>),
+  SetStructIdx(SetStructIdxNode<'a>),
+  SetVar(SetVarNode<'a>),
 }
 
-impl<'a> SetTargetNode<'a> {
+  impl<'a> SetTargetNode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
-        SetArrayIdxNode::can_cast(node)
-            || SetStructIdxNode::can_cast(node)
-            || SetVarNode::can_cast(node)
+SetArrayIdxNode::can_cast(node)
+ || SetStructIdxNode::can_cast(node) || SetVarNode::can_cast(node)
     }
 
     pub fn cast(node: Node<'a>) -> Option<Self> {
-        if let Some(casted_node) = SetArrayIdxNode::cast(node) {
-            Some(Self::SetArrayIdx(casted_node))
-        } else if let Some(casted_node) = SetStructIdxNode::cast(node) {
-            Some(Self::SetStructIdx(casted_node))
-        } else if let Some(casted_node) = SetVarNode::cast(node) {
-            Some(Self::SetVar(casted_node))
-        } else {
-            None
-        }
+
+    if let Some(casted_node) = SetArrayIdxNode::cast(node) {
+        Some(Self::SetArrayIdx(casted_node))
+    } else if let Some(casted_node) = SetStructIdxNode::cast(node) {
+        Some(Self::SetStructIdx(casted_node))
+    } else if let Some(casted_node) = SetVarNode::cast(node) {
+        Some(Self::SetVar(casted_node))
+    } else { None }
     }
 }
+
 
 #[derive(Clone, Debug)]
-enum ToplevelNode<'a> {
-    TopFunc(TopFuncNode<'a>),
-    TopImport(TopImportNode<'a>),
-    TopLet(TopLetNode<'a>),
-    TopStruct(TopStructNode<'a>),
+    pub enum ToplevelNode<'a> {
+  TopFunc(TopFuncNode<'a>),
+  TopImport(TopImportNode<'a>),
+  TopLet(TopLetNode<'a>),
+  TopStruct(TopStructNode<'a>),
 }
 
-impl<'a> ToplevelNode<'a> {
+  impl<'a> ToplevelNode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
-        TopFuncNode::can_cast(node)
-            || TopImportNode::can_cast(node)
-            || TopLetNode::can_cast(node)
-            || TopStructNode::can_cast(node)
+TopFuncNode::can_cast(node)
+ || TopImportNode::can_cast(node) || TopLetNode::can_cast(node) || TopStructNode::can_cast(node)
     }
 
     pub fn cast(node: Node<'a>) -> Option<Self> {
-        if let Some(casted_node) = TopFuncNode::cast(node) {
-            Some(Self::TopFunc(casted_node))
-        } else if let Some(casted_node) = TopImportNode::cast(node) {
-            Some(Self::TopImport(casted_node))
-        } else if let Some(casted_node) = TopLetNode::cast(node) {
-            Some(Self::TopLet(casted_node))
-        } else if let Some(casted_node) = TopStructNode::cast(node) {
-            Some(Self::TopStruct(casted_node))
-        } else {
-            None
-        }
+
+    if let Some(casted_node) = TopFuncNode::cast(node) {
+        Some(Self::TopFunc(casted_node))
+    } else if let Some(casted_node) = TopImportNode::cast(node) {
+        Some(Self::TopImport(casted_node))
+    } else if let Some(casted_node) = TopLetNode::cast(node) {
+        Some(Self::TopLet(casted_node))
+    } else if let Some(casted_node) = TopStructNode::cast(node) {
+        Some(Self::TopStruct(casted_node))
+    } else { None }
     }
 }
+
 
 #[derive(Clone, Debug)]
-enum TypeNode<'a> {
-    TyArray(TyArrayNode<'a>),
-    TyBool(TyBoolNode<'a>),
-    TyF32(TyF32Node<'a>),
-    TyFunc(TyFuncNode<'a>),
-    TyI32(TyI32Node<'a>),
-    TyStruct(TyStructNode<'a>),
-    TyUnit(TyUnitNode<'a>),
+    pub enum TypeNode<'a> {
+  TyArray(TyArrayNode<'a>),
+  TyBool(TyBoolNode<'a>),
+  TyF32(TyF32Node<'a>),
+  TyFunc(TyFuncNode<'a>),
+  TyI32(TyI32Node<'a>),
+  TyStruct(TyStructNode<'a>),
+  TyUnit(TyUnitNode<'a>),
 }
 
-impl<'a> TypeNode<'a> {
+  impl<'a> TypeNode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
-        TyArrayNode::can_cast(node)
-            || TyBoolNode::can_cast(node)
-            || TyF32Node::can_cast(node)
-            || TyFuncNode::can_cast(node)
-            || TyI32Node::can_cast(node)
-            || TyStructNode::can_cast(node)
-            || TyUnitNode::can_cast(node)
+TyArrayNode::can_cast(node)
+ || TyBoolNode::can_cast(node) || TyF32Node::can_cast(node) || TyFuncNode::can_cast(node) || TyI32Node::can_cast(node) || TyStructNode::can_cast(node) || TyUnitNode::can_cast(node)
     }
 
     pub fn cast(node: Node<'a>) -> Option<Self> {
-        if let Some(casted_node) = TyArrayNode::cast(node) {
-            Some(Self::TyArray(casted_node))
-        } else if let Some(casted_node) = TyBoolNode::cast(node) {
-            Some(Self::TyBool(casted_node))
-        } else if let Some(casted_node) = TyF32Node::cast(node) {
-            Some(Self::TyF32(casted_node))
-        } else if let Some(casted_node) = TyFuncNode::cast(node) {
-            Some(Self::TyFunc(casted_node))
-        } else if let Some(casted_node) = TyI32Node::cast(node) {
-            Some(Self::TyI32(casted_node))
-        } else if let Some(casted_node) = TyStructNode::cast(node) {
-            Some(Self::TyStruct(casted_node))
-        } else if let Some(casted_node) = TyUnitNode::cast(node) {
-            Some(Self::TyUnit(casted_node))
-        } else {
-            None
-        }
+
+    if let Some(casted_node) = TyArrayNode::cast(node) {
+        Some(Self::TyArray(casted_node))
+    } else if let Some(casted_node) = TyBoolNode::cast(node) {
+        Some(Self::TyBool(casted_node))
+    } else if let Some(casted_node) = TyF32Node::cast(node) {
+        Some(Self::TyF32(casted_node))
+    } else if let Some(casted_node) = TyFuncNode::cast(node) {
+        Some(Self::TyFunc(casted_node))
+    } else if let Some(casted_node) = TyI32Node::cast(node) {
+        Some(Self::TyI32(casted_node))
+    } else if let Some(casted_node) = TyStructNode::cast(node) {
+        Some(Self::TyStruct(casted_node))
+    } else if let Some(casted_node) = TyUnitNode::cast(node) {
+        Some(Self::TyUnit(casted_node))
+    } else { None }
     }
 }
+
 
 #[derive(Clone, Copy, Debug)]
-struct ArrayENode<'a>(Node<'a>);
+pub struct ArrayENode<'a>(pub Node<'a>);
 
-impl<'a> ArrayENode<'a> {
+  impl<'a> ArrayENode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "array_e"
     }
@@ -281,20 +257,22 @@ impl<'a> ArrayENode<'a> {
     }
 }
 
-impl<'a> ArrayENode<'a> {
-    pub fn exprs(&self) -> Vec<ExprNode<'a>> {
-        let mut cursor = self.0.walk();
-        self.0
-            .children(&mut cursor)
-            .filter_map(ExprNode::cast)
-            .collect()
-    }
+
+  impl<'a> ArrayENode<'a> {
+
+            pub fn exprs(&self) -> Vec<ExprNode<'a>> {
+                let mut cursor = self.0.walk();
+                self.0
+                  .children(&mut cursor)
+                  .filter_map(ExprNode::cast).collect()
+            }
+            
 }
 
 #[derive(Clone, Copy, Debug)]
-struct ArrayIdxENode<'a>(Node<'a>);
+pub struct ArrayIdxENode<'a>(pub Node<'a>);
 
-impl<'a> ArrayIdxENode<'a> {
+  impl<'a> ArrayIdxENode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "array_idx_e"
     }
@@ -308,20 +286,24 @@ impl<'a> ArrayIdxENode<'a> {
     }
 }
 
-impl<'a> ArrayIdxENode<'a> {
-    pub fn array(&self) -> Option<ExprNode<'a>> {
-        self.0.child_by_field_name("array").and_then(ExprNode::cast)
-    }
 
-    pub fn index(&self) -> Option<ExprNode<'a>> {
-        self.0.child_by_field_name("index").and_then(ExprNode::cast)
-    }
+  impl<'a> ArrayIdxENode<'a> {
+
+            pub fn array(&self) -> Option<ExprNode<'a>> {
+                self.0.child_by_field_name("array").and_then(ExprNode::cast)
+            }
+            
+
+            pub fn index(&self) -> Option<ExprNode<'a>> {
+                self.0.child_by_field_name("index").and_then(ExprNode::cast)
+            }
+            
 }
 
 #[derive(Clone, Copy, Debug)]
-struct BinaryENode<'a>(Node<'a>);
+pub struct BinaryENode<'a>(pub Node<'a>);
 
-impl<'a> BinaryENode<'a> {
+  impl<'a> BinaryENode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "binary_e"
     }
@@ -335,24 +317,29 @@ impl<'a> BinaryENode<'a> {
     }
 }
 
-impl<'a> BinaryENode<'a> {
-    pub fn left(&self) -> Option<ExprNode<'a>> {
-        self.0.child_by_field_name("left").and_then(ExprNode::cast)
-    }
 
-    pub fn op(&self) -> Option<Node<'a>> {
-        self.0.child_by_field_name("op")
-    }
+  impl<'a> BinaryENode<'a> {
 
-    pub fn right(&self) -> Option<ExprNode<'a>> {
-        self.0.child_by_field_name("right").and_then(ExprNode::cast)
-    }
+            pub fn left(&self) -> Option<ExprNode<'a>> {
+                self.0.child_by_field_name("left").and_then(ExprNode::cast)
+            }
+            
+
+            pub fn op(&self) -> Option<Node<'a>> {
+                self.0.child_by_field_name("op")
+            }
+            
+
+            pub fn right(&self) -> Option<ExprNode<'a>> {
+                self.0.child_by_field_name("right").and_then(ExprNode::cast)
+            }
+            
 }
 
 #[derive(Clone, Copy, Debug)]
-struct BlockENode<'a>(Node<'a>);
+pub struct BlockENode<'a>(pub Node<'a>);
 
-impl<'a> BlockENode<'a> {
+  impl<'a> BlockENode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "block_e"
     }
@@ -366,20 +353,22 @@ impl<'a> BlockENode<'a> {
     }
 }
 
-impl<'a> BlockENode<'a> {
-    pub fn block_decls(&self) -> Vec<DeclNode<'a>> {
-        let mut cursor = self.0.walk();
-        self.0
-            .children_by_field_name("block_decl", &mut cursor)
-            .filter_map(DeclNode::cast)
-            .collect()
-    }
+
+  impl<'a> BlockENode<'a> {
+
+            pub fn block_decls(&self) -> Vec<DeclNode<'a>> {
+                let mut cursor = self.0.walk();
+                self.0
+                  .children_by_field_name("block_decl", &mut cursor)
+                  .filter_map(DeclNode::cast).collect()
+            }
+            
 }
 
 #[derive(Clone, Copy, Debug)]
-struct BoolLitNode<'a>(Node<'a>);
+pub struct BoolLitNode<'a>(pub Node<'a>);
 
-impl<'a> BoolLitNode<'a> {
+  impl<'a> BoolLitNode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "bool_lit"
     }
@@ -393,12 +382,14 @@ impl<'a> BoolLitNode<'a> {
     }
 }
 
-impl<'a> BoolLitNode<'a> {}
+
+  impl<'a> BoolLitNode<'a> {
+}
 
 #[derive(Clone, Copy, Debug)]
-struct CallArgsNode<'a>(Node<'a>);
+pub struct CallArgsNode<'a>(pub Node<'a>);
 
-impl<'a> CallArgsNode<'a> {
+  impl<'a> CallArgsNode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "call_args"
     }
@@ -412,20 +403,22 @@ impl<'a> CallArgsNode<'a> {
     }
 }
 
-impl<'a> CallArgsNode<'a> {
-    pub fn exprs(&self) -> Vec<ExprNode<'a>> {
-        let mut cursor = self.0.walk();
-        self.0
-            .children(&mut cursor)
-            .filter_map(ExprNode::cast)
-            .collect()
-    }
+
+  impl<'a> CallArgsNode<'a> {
+
+            pub fn exprs(&self) -> Vec<ExprNode<'a>> {
+                let mut cursor = self.0.walk();
+                self.0
+                  .children(&mut cursor)
+                  .filter_map(ExprNode::cast).collect()
+            }
+            
 }
 
 #[derive(Clone, Copy, Debug)]
-struct CallENode<'a>(Node<'a>);
+pub struct CallENode<'a>(pub Node<'a>);
 
-impl<'a> CallENode<'a> {
+  impl<'a> CallENode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "call_e"
     }
@@ -439,24 +432,24 @@ impl<'a> CallENode<'a> {
     }
 }
 
-impl<'a> CallENode<'a> {
-    pub fn arguments(&self) -> Option<CallArgsNode<'a>> {
-        self.0
-            .child_by_field_name("arguments")
-            .and_then(CallArgsNode::cast)
-    }
 
-    pub fn function(&self) -> Option<CalleeNode<'a>> {
-        self.0
-            .child_by_field_name("function")
-            .and_then(CalleeNode::cast)
-    }
+  impl<'a> CallENode<'a> {
+
+            pub fn arguments(&self) -> Option<CallArgsNode<'a>> {
+                self.0.child_by_field_name("arguments").and_then(CallArgsNode::cast)
+            }
+            
+
+            pub fn function(&self) -> Option<CalleeNode<'a>> {
+                self.0.child_by_field_name("function").and_then(CalleeNode::cast)
+            }
+            
 }
 
 #[derive(Clone, Copy, Debug)]
-struct CommentNode<'a>(Node<'a>);
+pub struct CommentNode<'a>(pub Node<'a>);
 
-impl<'a> CommentNode<'a> {
+  impl<'a> CommentNode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "comment"
     }
@@ -470,12 +463,14 @@ impl<'a> CommentNode<'a> {
     }
 }
 
-impl<'a> CommentNode<'a> {}
+
+  impl<'a> CommentNode<'a> {
+}
 
 #[derive(Clone, Copy, Debug)]
-struct ExprDeclNode<'a>(Node<'a>);
+pub struct ExprDeclNode<'a>(pub Node<'a>);
 
-impl<'a> ExprDeclNode<'a> {
+  impl<'a> ExprDeclNode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "expr_decl"
     }
@@ -489,16 +484,19 @@ impl<'a> ExprDeclNode<'a> {
     }
 }
 
-impl<'a> ExprDeclNode<'a> {
-    pub fn expr(&self) -> Option<ExprNode<'a>> {
-        self.0.child_by_field_name("expr").and_then(ExprNode::cast)
-    }
+
+  impl<'a> ExprDeclNode<'a> {
+
+            pub fn expr(&self) -> Option<ExprNode<'a>> {
+                self.0.child_by_field_name("expr").and_then(ExprNode::cast)
+            }
+            
 }
 
 #[derive(Clone, Copy, Debug)]
-struct FuncParamNode<'a>(Node<'a>);
+pub struct FuncParamNode<'a>(pub Node<'a>);
 
-impl<'a> FuncParamNode<'a> {
+  impl<'a> FuncParamNode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "func_param"
     }
@@ -512,22 +510,24 @@ impl<'a> FuncParamNode<'a> {
     }
 }
 
-impl<'a> FuncParamNode<'a> {
-    pub fn name(&self) -> Option<LowerIdentNode<'a>> {
-        self.0
-            .child_by_field_name("name")
-            .and_then(LowerIdentNode::cast)
-    }
 
-    pub fn type_(&self) -> Option<TypeNode<'a>> {
-        self.0.child_by_field_name("type").and_then(TypeNode::cast)
-    }
+  impl<'a> FuncParamNode<'a> {
+
+            pub fn name(&self) -> Option<LowerIdentNode<'a>> {
+                self.0.child_by_field_name("name").and_then(LowerIdentNode::cast)
+            }
+            
+
+            pub fn type_(&self) -> Option<TypeNode<'a>> {
+                self.0.child_by_field_name("type").and_then(TypeNode::cast)
+            }
+            
 }
 
 #[derive(Clone, Copy, Debug)]
-struct FuncParamsNode<'a>(Node<'a>);
+pub struct FuncParamsNode<'a>(pub Node<'a>);
 
-impl<'a> FuncParamsNode<'a> {
+  impl<'a> FuncParamsNode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "func_params"
     }
@@ -541,20 +541,22 @@ impl<'a> FuncParamsNode<'a> {
     }
 }
 
-impl<'a> FuncParamsNode<'a> {
-    pub fn func_params(&self) -> Vec<FuncParamNode<'a>> {
-        let mut cursor = self.0.walk();
-        self.0
-            .children(&mut cursor)
-            .filter_map(FuncParamNode::cast)
-            .collect()
-    }
+
+  impl<'a> FuncParamsNode<'a> {
+
+            pub fn func_params(&self) -> Vec<FuncParamNode<'a>> {
+                let mut cursor = self.0.walk();
+                self.0
+                  .children(&mut cursor)
+                  .filter_map(FuncParamNode::cast).collect()
+            }
+            
 }
 
 #[derive(Clone, Copy, Debug)]
-struct IfENode<'a>(Node<'a>);
+pub struct IfENode<'a>(pub Node<'a>);
 
-impl<'a> IfENode<'a> {
+  impl<'a> IfENode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "if_e"
     }
@@ -568,30 +570,29 @@ impl<'a> IfENode<'a> {
     }
 }
 
-impl<'a> IfENode<'a> {
-    pub fn condition(&self) -> Option<ExprNode<'a>> {
-        self.0
-            .child_by_field_name("condition")
-            .and_then(ExprNode::cast)
-    }
 
-    pub fn else_(&self) -> Option<BlockENode<'a>> {
-        self.0
-            .child_by_field_name("else")
-            .and_then(BlockENode::cast)
-    }
+  impl<'a> IfENode<'a> {
 
-    pub fn then(&self) -> Option<BlockENode<'a>> {
-        self.0
-            .child_by_field_name("then")
-            .and_then(BlockENode::cast)
-    }
+            pub fn condition(&self) -> Option<ExprNode<'a>> {
+                self.0.child_by_field_name("condition").and_then(ExprNode::cast)
+            }
+            
+
+            pub fn else_(&self) -> Option<BlockENode<'a>> {
+                self.0.child_by_field_name("else").and_then(BlockENode::cast)
+            }
+            
+
+            pub fn then(&self) -> Option<BlockENode<'a>> {
+                self.0.child_by_field_name("then").and_then(BlockENode::cast)
+            }
+            
 }
 
 #[derive(Clone, Copy, Debug)]
-struct IntLitNode<'a>(Node<'a>);
+pub struct IntLitNode<'a>(pub Node<'a>);
 
-impl<'a> IntLitNode<'a> {
+  impl<'a> IntLitNode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "int_lit"
     }
@@ -605,12 +606,14 @@ impl<'a> IntLitNode<'a> {
     }
 }
 
-impl<'a> IntLitNode<'a> {}
+
+  impl<'a> IntLitNode<'a> {
+}
 
 #[derive(Clone, Copy, Debug)]
-struct IntrinsicENode<'a>(Node<'a>);
+pub struct IntrinsicENode<'a>(pub Node<'a>);
 
-impl<'a> IntrinsicENode<'a> {
+  impl<'a> IntrinsicENode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "intrinsic_e"
     }
@@ -624,24 +627,24 @@ impl<'a> IntrinsicENode<'a> {
     }
 }
 
-impl<'a> IntrinsicENode<'a> {
-    pub fn arguments(&self) -> Option<CallArgsNode<'a>> {
-        self.0
-            .child_by_field_name("arguments")
-            .and_then(CallArgsNode::cast)
-    }
 
-    pub fn function(&self) -> Option<IntrinsicIdentNode<'a>> {
-        self.0
-            .child_by_field_name("function")
-            .and_then(IntrinsicIdentNode::cast)
-    }
+  impl<'a> IntrinsicENode<'a> {
+
+            pub fn arguments(&self) -> Option<CallArgsNode<'a>> {
+                self.0.child_by_field_name("arguments").and_then(CallArgsNode::cast)
+            }
+            
+
+            pub fn function(&self) -> Option<IntrinsicIdentNode<'a>> {
+                self.0.child_by_field_name("function").and_then(IntrinsicIdentNode::cast)
+            }
+            
 }
 
 #[derive(Clone, Copy, Debug)]
-struct LetDeclNode<'a>(Node<'a>);
+pub struct LetDeclNode<'a>(pub Node<'a>);
 
-impl<'a> LetDeclNode<'a> {
+  impl<'a> LetDeclNode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "let_decl"
     }
@@ -655,28 +658,29 @@ impl<'a> LetDeclNode<'a> {
     }
 }
 
-impl<'a> LetDeclNode<'a> {
-    pub fn annotation(&self) -> Option<TypeNode<'a>> {
-        self.0
-            .child_by_field_name("annotation")
-            .and_then(TypeNode::cast)
-    }
 
-    pub fn binder(&self) -> Option<LowerIdentNode<'a>> {
-        self.0
-            .child_by_field_name("binder")
-            .and_then(LowerIdentNode::cast)
-    }
+  impl<'a> LetDeclNode<'a> {
 
-    pub fn expr(&self) -> Option<ExprNode<'a>> {
-        self.0.child_by_field_name("expr").and_then(ExprNode::cast)
-    }
+            pub fn annotation(&self) -> Option<TypeNode<'a>> {
+                self.0.child_by_field_name("annotation").and_then(TypeNode::cast)
+            }
+            
+
+            pub fn binder(&self) -> Option<LowerIdentNode<'a>> {
+                self.0.child_by_field_name("binder").and_then(LowerIdentNode::cast)
+            }
+            
+
+            pub fn expr(&self) -> Option<ExprNode<'a>> {
+                self.0.child_by_field_name("expr").and_then(ExprNode::cast)
+            }
+            
 }
 
 #[derive(Clone, Copy, Debug)]
-struct ParenthesizedENode<'a>(Node<'a>);
+pub struct ParenthesizedENode<'a>(pub Node<'a>);
 
-impl<'a> ParenthesizedENode<'a> {
+  impl<'a> ParenthesizedENode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "parenthesized_e"
     }
@@ -690,16 +694,19 @@ impl<'a> ParenthesizedENode<'a> {
     }
 }
 
-impl<'a> ParenthesizedENode<'a> {
-    pub fn expr(&self) -> Option<ExprNode<'a>> {
-        self.0.child_by_field_name("expr").and_then(ExprNode::cast)
-    }
+
+  impl<'a> ParenthesizedENode<'a> {
+
+            pub fn expr(&self) -> Option<ExprNode<'a>> {
+                self.0.child_by_field_name("expr").and_then(ExprNode::cast)
+            }
+            
 }
 
 #[derive(Clone, Copy, Debug)]
-struct SetArrayIdxNode<'a>(Node<'a>);
+pub struct SetArrayIdxNode<'a>(pub Node<'a>);
 
-impl<'a> SetArrayIdxNode<'a> {
+  impl<'a> SetArrayIdxNode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "set_array_idx"
     }
@@ -713,22 +720,24 @@ impl<'a> SetArrayIdxNode<'a> {
     }
 }
 
-impl<'a> SetArrayIdxNode<'a> {
-    pub fn index(&self) -> Option<ExprNode<'a>> {
-        self.0.child_by_field_name("index").and_then(ExprNode::cast)
-    }
 
-    pub fn target(&self) -> Option<SetTargetNode<'a>> {
-        self.0
-            .child_by_field_name("target")
-            .and_then(SetTargetNode::cast)
-    }
+  impl<'a> SetArrayIdxNode<'a> {
+
+            pub fn index(&self) -> Option<ExprNode<'a>> {
+                self.0.child_by_field_name("index").and_then(ExprNode::cast)
+            }
+            
+
+            pub fn target(&self) -> Option<SetTargetNode<'a>> {
+                self.0.child_by_field_name("target").and_then(SetTargetNode::cast)
+            }
+            
 }
 
 #[derive(Clone, Copy, Debug)]
-struct SetDeclNode<'a>(Node<'a>);
+pub struct SetDeclNode<'a>(pub Node<'a>);
 
-impl<'a> SetDeclNode<'a> {
+  impl<'a> SetDeclNode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "set_decl"
     }
@@ -742,22 +751,24 @@ impl<'a> SetDeclNode<'a> {
     }
 }
 
-impl<'a> SetDeclNode<'a> {
-    pub fn expr(&self) -> Option<ExprNode<'a>> {
-        self.0.child_by_field_name("expr").and_then(ExprNode::cast)
-    }
 
-    pub fn target(&self) -> Option<SetTargetNode<'a>> {
-        self.0
-            .child_by_field_name("target")
-            .and_then(SetTargetNode::cast)
-    }
+  impl<'a> SetDeclNode<'a> {
+
+            pub fn expr(&self) -> Option<ExprNode<'a>> {
+                self.0.child_by_field_name("expr").and_then(ExprNode::cast)
+            }
+            
+
+            pub fn target(&self) -> Option<SetTargetNode<'a>> {
+                self.0.child_by_field_name("target").and_then(SetTargetNode::cast)
+            }
+            
 }
 
 #[derive(Clone, Copy, Debug)]
-struct SetStructIdxNode<'a>(Node<'a>);
+pub struct SetStructIdxNode<'a>(pub Node<'a>);
 
-impl<'a> SetStructIdxNode<'a> {
+  impl<'a> SetStructIdxNode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "set_struct_idx"
     }
@@ -771,24 +782,24 @@ impl<'a> SetStructIdxNode<'a> {
     }
 }
 
-impl<'a> SetStructIdxNode<'a> {
-    pub fn index(&self) -> Option<LowerIdentNode<'a>> {
-        self.0
-            .child_by_field_name("index")
-            .and_then(LowerIdentNode::cast)
-    }
 
-    pub fn target(&self) -> Option<SetTargetNode<'a>> {
-        self.0
-            .child_by_field_name("target")
-            .and_then(SetTargetNode::cast)
-    }
+  impl<'a> SetStructIdxNode<'a> {
+
+            pub fn index(&self) -> Option<LowerIdentNode<'a>> {
+                self.0.child_by_field_name("index").and_then(LowerIdentNode::cast)
+            }
+            
+
+            pub fn target(&self) -> Option<SetTargetNode<'a>> {
+                self.0.child_by_field_name("target").and_then(SetTargetNode::cast)
+            }
+            
 }
 
 #[derive(Clone, Copy, Debug)]
-struct SetVarNode<'a>(Node<'a>);
+pub struct SetVarNode<'a>(pub Node<'a>);
 
-impl<'a> SetVarNode<'a> {
+  impl<'a> SetVarNode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "set_var"
     }
@@ -802,18 +813,19 @@ impl<'a> SetVarNode<'a> {
     }
 }
 
-impl<'a> SetVarNode<'a> {
-    pub fn name(&self) -> Option<LowerIdentNode<'a>> {
-        self.0
-            .child_by_field_name("name")
-            .and_then(LowerIdentNode::cast)
-    }
+
+  impl<'a> SetVarNode<'a> {
+
+            pub fn name(&self) -> Option<LowerIdentNode<'a>> {
+                self.0.child_by_field_name("name").and_then(LowerIdentNode::cast)
+            }
+            
 }
 
 #[derive(Clone, Copy, Debug)]
-struct SourceFileNode<'a>(Node<'a>);
+pub struct SourceFileNode<'a>(pub Node<'a>);
 
-impl<'a> SourceFileNode<'a> {
+  impl<'a> SourceFileNode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "source_file"
     }
@@ -827,20 +839,22 @@ impl<'a> SourceFileNode<'a> {
     }
 }
 
-impl<'a> SourceFileNode<'a> {
-    pub fn toplevels(&self) -> Vec<ToplevelNode<'a>> {
-        let mut cursor = self.0.walk();
-        self.0
-            .children(&mut cursor)
-            .filter_map(ToplevelNode::cast)
-            .collect()
-    }
+
+  impl<'a> SourceFileNode<'a> {
+
+            pub fn toplevels(&self) -> Vec<ToplevelNode<'a>> {
+                let mut cursor = self.0.walk();
+                self.0
+                  .children(&mut cursor)
+                  .filter_map(ToplevelNode::cast).collect()
+            }
+            
 }
 
 #[derive(Clone, Copy, Debug)]
-struct StructENode<'a>(Node<'a>);
+pub struct StructENode<'a>(pub Node<'a>);
 
-impl<'a> StructENode<'a> {
+  impl<'a> StructENode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "struct_e"
     }
@@ -854,26 +868,27 @@ impl<'a> StructENode<'a> {
     }
 }
 
-impl<'a> StructENode<'a> {
-    pub fn struct_(&self) -> Option<UpperIdentNode<'a>> {
-        self.0
-            .child_by_field_name("struct")
-            .and_then(UpperIdentNode::cast)
-    }
 
-    pub fn struct_field_es(&self) -> Vec<StructFieldENode<'a>> {
-        let mut cursor = self.0.walk();
-        self.0
-            .children(&mut cursor)
-            .filter_map(StructFieldENode::cast)
-            .collect()
-    }
+  impl<'a> StructENode<'a> {
+
+            pub fn struct_(&self) -> Option<UpperIdentNode<'a>> {
+                self.0.child_by_field_name("struct").and_then(UpperIdentNode::cast)
+            }
+            
+
+            pub fn struct_field_es(&self) -> Vec<StructFieldENode<'a>> {
+                let mut cursor = self.0.walk();
+                self.0
+                  .children(&mut cursor)
+                  .filter_map(StructFieldENode::cast).collect()
+            }
+            
 }
 
 #[derive(Clone, Copy, Debug)]
-struct StructFieldENode<'a>(Node<'a>);
+pub struct StructFieldENode<'a>(pub Node<'a>);
 
-impl<'a> StructFieldENode<'a> {
+  impl<'a> StructFieldENode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "struct_field_e"
     }
@@ -887,22 +902,24 @@ impl<'a> StructFieldENode<'a> {
     }
 }
 
-impl<'a> StructFieldENode<'a> {
-    pub fn expr(&self) -> Option<ExprNode<'a>> {
-        self.0.child_by_field_name("expr").and_then(ExprNode::cast)
-    }
 
-    pub fn name(&self) -> Option<LowerIdentNode<'a>> {
-        self.0
-            .child_by_field_name("name")
-            .and_then(LowerIdentNode::cast)
-    }
+  impl<'a> StructFieldENode<'a> {
+
+            pub fn expr(&self) -> Option<ExprNode<'a>> {
+                self.0.child_by_field_name("expr").and_then(ExprNode::cast)
+            }
+            
+
+            pub fn name(&self) -> Option<LowerIdentNode<'a>> {
+                self.0.child_by_field_name("name").and_then(LowerIdentNode::cast)
+            }
+            
 }
 
 #[derive(Clone, Copy, Debug)]
-struct StructFieldTopNode<'a>(Node<'a>);
+pub struct StructFieldTopNode<'a>(pub Node<'a>);
 
-impl<'a> StructFieldTopNode<'a> {
+  impl<'a> StructFieldTopNode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "struct_field_top"
     }
@@ -916,22 +933,24 @@ impl<'a> StructFieldTopNode<'a> {
     }
 }
 
-impl<'a> StructFieldTopNode<'a> {
-    pub fn name(&self) -> Option<LowerIdentNode<'a>> {
-        self.0
-            .child_by_field_name("name")
-            .and_then(LowerIdentNode::cast)
-    }
 
-    pub fn type_(&self) -> Option<TypeNode<'a>> {
-        self.0.child_by_field_name("type").and_then(TypeNode::cast)
-    }
+  impl<'a> StructFieldTopNode<'a> {
+
+            pub fn name(&self) -> Option<LowerIdentNode<'a>> {
+                self.0.child_by_field_name("name").and_then(LowerIdentNode::cast)
+            }
+            
+
+            pub fn type_(&self) -> Option<TypeNode<'a>> {
+                self.0.child_by_field_name("type").and_then(TypeNode::cast)
+            }
+            
 }
 
 #[derive(Clone, Copy, Debug)]
-struct StructIdxENode<'a>(Node<'a>);
+pub struct StructIdxENode<'a>(pub Node<'a>);
 
-impl<'a> StructIdxENode<'a> {
+  impl<'a> StructIdxENode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "struct_idx_e"
     }
@@ -945,22 +964,24 @@ impl<'a> StructIdxENode<'a> {
     }
 }
 
-impl<'a> StructIdxENode<'a> {
-    pub fn expr(&self) -> Option<ExprNode<'a>> {
-        self.0.child_by_field_name("expr").and_then(ExprNode::cast)
-    }
 
-    pub fn index(&self) -> Option<LowerIdentNode<'a>> {
-        self.0
-            .child_by_field_name("index")
-            .and_then(LowerIdentNode::cast)
-    }
+  impl<'a> StructIdxENode<'a> {
+
+            pub fn expr(&self) -> Option<ExprNode<'a>> {
+                self.0.child_by_field_name("expr").and_then(ExprNode::cast)
+            }
+            
+
+            pub fn index(&self) -> Option<LowerIdentNode<'a>> {
+                self.0.child_by_field_name("index").and_then(LowerIdentNode::cast)
+            }
+            
 }
 
 #[derive(Clone, Copy, Debug)]
-struct TopFuncNode<'a>(Node<'a>);
+pub struct TopFuncNode<'a>(pub Node<'a>);
 
-impl<'a> TopFuncNode<'a> {
+  impl<'a> TopFuncNode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "top_func"
     }
@@ -974,36 +995,34 @@ impl<'a> TopFuncNode<'a> {
     }
 }
 
-impl<'a> TopFuncNode<'a> {
-    pub fn body(&self) -> Option<BlockENode<'a>> {
-        self.0
-            .child_by_field_name("body")
-            .and_then(BlockENode::cast)
-    }
 
-    pub fn name(&self) -> Option<LowerIdentNode<'a>> {
-        self.0
-            .child_by_field_name("name")
-            .and_then(LowerIdentNode::cast)
-    }
+  impl<'a> TopFuncNode<'a> {
 
-    pub fn params(&self) -> Option<FuncParamsNode<'a>> {
-        self.0
-            .child_by_field_name("params")
-            .and_then(FuncParamsNode::cast)
-    }
+            pub fn body(&self) -> Option<BlockENode<'a>> {
+                self.0.child_by_field_name("body").and_then(BlockENode::cast)
+            }
+            
 
-    pub fn result(&self) -> Option<TypeNode<'a>> {
-        self.0
-            .child_by_field_name("result")
-            .and_then(TypeNode::cast)
-    }
+            pub fn name(&self) -> Option<LowerIdentNode<'a>> {
+                self.0.child_by_field_name("name").and_then(LowerIdentNode::cast)
+            }
+            
+
+            pub fn params(&self) -> Option<FuncParamsNode<'a>> {
+                self.0.child_by_field_name("params").and_then(FuncParamsNode::cast)
+            }
+            
+
+            pub fn result(&self) -> Option<TypeNode<'a>> {
+                self.0.child_by_field_name("result").and_then(TypeNode::cast)
+            }
+            
 }
 
 #[derive(Clone, Copy, Debug)]
-struct TopImportNode<'a>(Node<'a>);
+pub struct TopImportNode<'a>(pub Node<'a>);
 
-impl<'a> TopImportNode<'a> {
+  impl<'a> TopImportNode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "top_import"
     }
@@ -1017,30 +1036,29 @@ impl<'a> TopImportNode<'a> {
     }
 }
 
-impl<'a> TopImportNode<'a> {
-    pub fn external(&self) -> Option<LowerIdentNode<'a>> {
-        self.0
-            .child_by_field_name("external")
-            .and_then(LowerIdentNode::cast)
-    }
 
-    pub fn internal(&self) -> Option<LowerIdentNode<'a>> {
-        self.0
-            .child_by_field_name("internal")
-            .and_then(LowerIdentNode::cast)
-    }
+  impl<'a> TopImportNode<'a> {
 
-    pub fn type_(&self) -> Option<TyFuncNode<'a>> {
-        self.0
-            .child_by_field_name("type")
-            .and_then(TyFuncNode::cast)
-    }
+            pub fn external(&self) -> Option<LowerIdentNode<'a>> {
+                self.0.child_by_field_name("external").and_then(LowerIdentNode::cast)
+            }
+            
+
+            pub fn internal(&self) -> Option<LowerIdentNode<'a>> {
+                self.0.child_by_field_name("internal").and_then(LowerIdentNode::cast)
+            }
+            
+
+            pub fn type_(&self) -> Option<TyFuncNode<'a>> {
+                self.0.child_by_field_name("type").and_then(TyFuncNode::cast)
+            }
+            
 }
 
 #[derive(Clone, Copy, Debug)]
-struct TopLetNode<'a>(Node<'a>);
+pub struct TopLetNode<'a>(pub Node<'a>);
 
-impl<'a> TopLetNode<'a> {
+  impl<'a> TopLetNode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "top_let"
     }
@@ -1054,28 +1072,29 @@ impl<'a> TopLetNode<'a> {
     }
 }
 
-impl<'a> TopLetNode<'a> {
-    pub fn annotation(&self) -> Option<TypeNode<'a>> {
-        self.0
-            .child_by_field_name("annotation")
-            .and_then(TypeNode::cast)
-    }
 
-    pub fn binder(&self) -> Option<LowerIdentNode<'a>> {
-        self.0
-            .child_by_field_name("binder")
-            .and_then(LowerIdentNode::cast)
-    }
+  impl<'a> TopLetNode<'a> {
 
-    pub fn expr(&self) -> Option<ExprNode<'a>> {
-        self.0.child_by_field_name("expr").and_then(ExprNode::cast)
-    }
+            pub fn annotation(&self) -> Option<TypeNode<'a>> {
+                self.0.child_by_field_name("annotation").and_then(TypeNode::cast)
+            }
+            
+
+            pub fn binder(&self) -> Option<LowerIdentNode<'a>> {
+                self.0.child_by_field_name("binder").and_then(LowerIdentNode::cast)
+            }
+            
+
+            pub fn expr(&self) -> Option<ExprNode<'a>> {
+                self.0.child_by_field_name("expr").and_then(ExprNode::cast)
+            }
+            
 }
 
 #[derive(Clone, Copy, Debug)]
-struct TopStructNode<'a>(Node<'a>);
+pub struct TopStructNode<'a>(pub Node<'a>);
 
-impl<'a> TopStructNode<'a> {
+  impl<'a> TopStructNode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "top_struct"
     }
@@ -1089,26 +1108,27 @@ impl<'a> TopStructNode<'a> {
     }
 }
 
-impl<'a> TopStructNode<'a> {
-    pub fn name(&self) -> Option<UpperIdentNode<'a>> {
-        self.0
-            .child_by_field_name("name")
-            .and_then(UpperIdentNode::cast)
-    }
 
-    pub fn struct_field_tops(&self) -> Vec<StructFieldTopNode<'a>> {
-        let mut cursor = self.0.walk();
-        self.0
-            .children(&mut cursor)
-            .filter_map(StructFieldTopNode::cast)
-            .collect()
-    }
+  impl<'a> TopStructNode<'a> {
+
+            pub fn name(&self) -> Option<UpperIdentNode<'a>> {
+                self.0.child_by_field_name("name").and_then(UpperIdentNode::cast)
+            }
+            
+
+            pub fn struct_field_tops(&self) -> Vec<StructFieldTopNode<'a>> {
+                let mut cursor = self.0.walk();
+                self.0
+                  .children(&mut cursor)
+                  .filter_map(StructFieldTopNode::cast).collect()
+            }
+            
 }
 
 #[derive(Clone, Copy, Debug)]
-struct TyArrayNode<'a>(Node<'a>);
+pub struct TyArrayNode<'a>(pub Node<'a>);
 
-impl<'a> TyArrayNode<'a> {
+  impl<'a> TyArrayNode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "ty_array"
     }
@@ -1122,18 +1142,19 @@ impl<'a> TyArrayNode<'a> {
     }
 }
 
-impl<'a> TyArrayNode<'a> {
-    pub fn elem_ty(&self) -> Option<TypeNode<'a>> {
-        self.0
-            .child_by_field_name("elem_ty")
-            .and_then(TypeNode::cast)
-    }
+
+  impl<'a> TyArrayNode<'a> {
+
+            pub fn elem_ty(&self) -> Option<TypeNode<'a>> {
+                self.0.child_by_field_name("elem_ty").and_then(TypeNode::cast)
+            }
+            
 }
 
 #[derive(Clone, Copy, Debug)]
-struct TyFuncNode<'a>(Node<'a>);
+pub struct TyFuncNode<'a>(pub Node<'a>);
 
-impl<'a> TyFuncNode<'a> {
+  impl<'a> TyFuncNode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "ty_func"
     }
@@ -1147,26 +1168,27 @@ impl<'a> TyFuncNode<'a> {
     }
 }
 
-impl<'a> TyFuncNode<'a> {
-    pub fn arguments(&self) -> Vec<TypeNode<'a>> {
-        let mut cursor = self.0.walk();
-        self.0
-            .children_by_field_name("argument", &mut cursor)
-            .filter_map(TypeNode::cast)
-            .collect()
-    }
 
-    pub fn result(&self) -> Option<TypeNode<'a>> {
-        self.0
-            .child_by_field_name("result")
-            .and_then(TypeNode::cast)
-    }
+  impl<'a> TyFuncNode<'a> {
+
+            pub fn arguments(&self) -> Vec<TypeNode<'a>> {
+                let mut cursor = self.0.walk();
+                self.0
+                  .children_by_field_name("argument", &mut cursor)
+                  .filter_map(TypeNode::cast).collect()
+            }
+            
+
+            pub fn result(&self) -> Option<TypeNode<'a>> {
+                self.0.child_by_field_name("result").and_then(TypeNode::cast)
+            }
+            
 }
 
 #[derive(Clone, Copy, Debug)]
-struct TyStructNode<'a>(Node<'a>);
+pub struct TyStructNode<'a>(pub Node<'a>);
 
-impl<'a> TyStructNode<'a> {
+  impl<'a> TyStructNode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "ty_struct"
     }
@@ -1180,18 +1202,23 @@ impl<'a> TyStructNode<'a> {
     }
 }
 
-impl<'a> TyStructNode<'a> {
-    pub fn upper_ident(&self) -> Option<UpperIdentNode<'a>> {
-        let mut cursor = self.0.walk();
-        let child = self.0.children(&mut cursor).find_map(UpperIdentNode::cast);
-        child
-    }
+
+  impl<'a> TyStructNode<'a> {
+
+            pub fn upper_ident(&self) -> Option<UpperIdentNode<'a>> {
+                let mut cursor = self.0.walk();
+                let child = self.0
+                  .children(&mut cursor)
+                  .find_map(UpperIdentNode::cast);
+                child
+            }
+            
 }
 
 #[derive(Clone, Copy, Debug)]
-struct VarENode<'a>(Node<'a>);
+pub struct VarENode<'a>(pub Node<'a>);
 
-impl<'a> VarENode<'a> {
+  impl<'a> VarENode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "var_e"
     }
@@ -1205,18 +1232,23 @@ impl<'a> VarENode<'a> {
     }
 }
 
-impl<'a> VarENode<'a> {
-    pub fn lower_ident(&self) -> Option<LowerIdentNode<'a>> {
-        let mut cursor = self.0.walk();
-        let child = self.0.children(&mut cursor).find_map(LowerIdentNode::cast);
-        child
-    }
+
+  impl<'a> VarENode<'a> {
+
+            pub fn lower_ident(&self) -> Option<LowerIdentNode<'a>> {
+                let mut cursor = self.0.walk();
+                let child = self.0
+                  .children(&mut cursor)
+                  .find_map(LowerIdentNode::cast);
+                child
+            }
+            
 }
 
 #[derive(Clone, Copy, Debug)]
-struct WhileDeclNode<'a>(Node<'a>);
+pub struct WhileDeclNode<'a>(pub Node<'a>);
 
-impl<'a> WhileDeclNode<'a> {
+  impl<'a> WhileDeclNode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "while_decl"
     }
@@ -1230,24 +1262,24 @@ impl<'a> WhileDeclNode<'a> {
     }
 }
 
-impl<'a> WhileDeclNode<'a> {
-    pub fn body(&self) -> Option<BlockENode<'a>> {
-        self.0
-            .child_by_field_name("body")
-            .and_then(BlockENode::cast)
-    }
 
-    pub fn condition(&self) -> Option<ExprNode<'a>> {
-        self.0
-            .child_by_field_name("condition")
-            .and_then(ExprNode::cast)
-    }
+  impl<'a> WhileDeclNode<'a> {
+
+            pub fn body(&self) -> Option<BlockENode<'a>> {
+                self.0.child_by_field_name("body").and_then(BlockENode::cast)
+            }
+            
+
+            pub fn condition(&self) -> Option<ExprNode<'a>> {
+                self.0.child_by_field_name("condition").and_then(ExprNode::cast)
+            }
+            
 }
 
 #[derive(Clone, Copy, Debug)]
-struct FloatLitNode<'a>(Node<'a>);
+pub struct FloatLitNode<'a>(pub Node<'a>);
 
-impl<'a> FloatLitNode<'a> {
+  impl<'a> FloatLitNode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "float_lit"
     }
@@ -1261,12 +1293,14 @@ impl<'a> FloatLitNode<'a> {
     }
 }
 
-impl<'a> FloatLitNode<'a> {}
+
+  impl<'a> FloatLitNode<'a> {
+}
 
 #[derive(Clone, Copy, Debug)]
-struct IntrinsicIdentNode<'a>(Node<'a>);
+pub struct IntrinsicIdentNode<'a>(pub Node<'a>);
 
-impl<'a> IntrinsicIdentNode<'a> {
+  impl<'a> IntrinsicIdentNode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "intrinsic_ident"
     }
@@ -1280,12 +1314,14 @@ impl<'a> IntrinsicIdentNode<'a> {
     }
 }
 
-impl<'a> IntrinsicIdentNode<'a> {}
+
+  impl<'a> IntrinsicIdentNode<'a> {
+}
 
 #[derive(Clone, Copy, Debug)]
-struct LowerIdentNode<'a>(Node<'a>);
+pub struct LowerIdentNode<'a>(pub Node<'a>);
 
-impl<'a> LowerIdentNode<'a> {
+  impl<'a> LowerIdentNode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "lower_ident"
     }
@@ -1299,12 +1335,14 @@ impl<'a> LowerIdentNode<'a> {
     }
 }
 
-impl<'a> LowerIdentNode<'a> {}
+
+  impl<'a> LowerIdentNode<'a> {
+}
 
 #[derive(Clone, Copy, Debug)]
-struct TyBoolNode<'a>(Node<'a>);
+pub struct TyBoolNode<'a>(pub Node<'a>);
 
-impl<'a> TyBoolNode<'a> {
+  impl<'a> TyBoolNode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "ty_bool"
     }
@@ -1318,12 +1356,14 @@ impl<'a> TyBoolNode<'a> {
     }
 }
 
-impl<'a> TyBoolNode<'a> {}
+
+  impl<'a> TyBoolNode<'a> {
+}
 
 #[derive(Clone, Copy, Debug)]
-struct TyF32Node<'a>(Node<'a>);
+pub struct TyF32Node<'a>(pub Node<'a>);
 
-impl<'a> TyF32Node<'a> {
+  impl<'a> TyF32Node<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "ty_f32"
     }
@@ -1337,12 +1377,14 @@ impl<'a> TyF32Node<'a> {
     }
 }
 
-impl<'a> TyF32Node<'a> {}
+
+  impl<'a> TyF32Node<'a> {
+}
 
 #[derive(Clone, Copy, Debug)]
-struct TyI32Node<'a>(Node<'a>);
+pub struct TyI32Node<'a>(pub Node<'a>);
 
-impl<'a> TyI32Node<'a> {
+  impl<'a> TyI32Node<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "ty_i32"
     }
@@ -1356,12 +1398,14 @@ impl<'a> TyI32Node<'a> {
     }
 }
 
-impl<'a> TyI32Node<'a> {}
+
+  impl<'a> TyI32Node<'a> {
+}
 
 #[derive(Clone, Copy, Debug)]
-struct TyUnitNode<'a>(Node<'a>);
+pub struct TyUnitNode<'a>(pub Node<'a>);
 
-impl<'a> TyUnitNode<'a> {
+  impl<'a> TyUnitNode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "ty_unit"
     }
@@ -1375,12 +1419,14 @@ impl<'a> TyUnitNode<'a> {
     }
 }
 
-impl<'a> TyUnitNode<'a> {}
+
+  impl<'a> TyUnitNode<'a> {
+}
 
 #[derive(Clone, Copy, Debug)]
-struct UpperIdentNode<'a>(Node<'a>);
+pub struct UpperIdentNode<'a>(pub Node<'a>);
 
-impl<'a> UpperIdentNode<'a> {
+  impl<'a> UpperIdentNode<'a> {
     pub fn can_cast(node: Node<'a>) -> bool {
         node.kind() == "upper_ident"
     }
@@ -1394,4 +1440,7 @@ impl<'a> UpperIdentNode<'a> {
     }
 }
 
-impl<'a> UpperIdentNode<'a> {}
+
+  impl<'a> UpperIdentNode<'a> {
+}
+
