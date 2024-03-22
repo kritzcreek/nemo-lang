@@ -9,7 +9,7 @@ pub const HIGHLIGHT_NAMES: [&str; 7] = [
 
 pub fn parse_program(program: &str) -> Tree {
     let mut parser = Parser::new();
-    parser.set_language(tree_sitter_nemo::language()).unwrap();
+    parser.set_language(&tree_sitter_nemo::language()).unwrap();
     parser.parse(program, None).unwrap()
 }
 
@@ -17,7 +17,7 @@ pub fn highlight(program: &str) -> Vec<HighlightEvent> {
     let nemo_language = tree_sitter_nemo::language();
 
     let mut nemo_config =
-        HighlightConfiguration::new(nemo_language, tree_sitter_nemo::HIGHLIGHTS_QUERY, "", "")
+        HighlightConfiguration::new(nemo_language, "nemo", tree_sitter_nemo::HIGHLIGHTS_QUERY, "", "")
             .unwrap();
 
     nemo_config.configure(&HIGHLIGHT_NAMES);

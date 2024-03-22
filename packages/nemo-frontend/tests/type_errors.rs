@@ -2,7 +2,7 @@ use insta::{assert_snapshot, glob};
 use nemo_frontend::{check_program, type_errors};
 use std::fs;
 use std::path::Path;
-use yansi::Paint;
+use yansi;
 
 fn check_failing(path: &Path, source: String) {
     match check_program(&source) {
@@ -13,7 +13,7 @@ fn check_failing(path: &Path, source: String) {
 
 #[test]
 fn test_failing() {
-    Paint::disable();
+    yansi::disable();
     glob!("../test_data", "failing/*.nemo", |path| {
         let input = fs::read_to_string(path).unwrap();
         check_failing(path, input)
