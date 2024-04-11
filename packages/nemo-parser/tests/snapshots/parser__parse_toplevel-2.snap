@@ -1,0 +1,13 @@
+---
+source: packages/nemo-parser/tests/parser.rs
+expression: output
+input_file: packages/nemo-parser/tests/passing/toplevel.nemo
+---
+fn dude
+
+---
+Root@0..7
+  TopFn@0..7
+    FN_KW@0..2 "fn"
+    SPACE@2..3 " "
+    IDENT@3..7 "dude"

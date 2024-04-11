@@ -113,7 +113,7 @@ pub enum SyntaxKind {
     LINEFEED,
 
     #[token("fn")]
-    FUNC_KW,
+    FN_KW,
 
     #[token("let")]
     LET_KW,
@@ -198,6 +198,7 @@ pub enum SyntaxKind {
 
     // Top level
     TopLet,
+    TopFn,
 
     // Expressions
 
@@ -237,7 +238,7 @@ macro_rules ! T {
     [->] => { SyntaxKind::ARROW };
     [true] => { SyntaxKind::TRUE_KW };
     [false] => { SyntaxKind::FALSE_KW };
-    [fn] => { SyntaxKind::FUNC_KW };
+    [fn] => { SyntaxKind::FN_KW };
     [if] => { SyntaxKind::IF_KW };
     [else] => { SyntaxKind::ELSE_KW };
     [let] => { SyntaxKind::LET_KW };

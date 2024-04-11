@@ -29,6 +29,15 @@ fn toplevel(p: &mut Parser) -> Progress {
             p.finish_at(c, SyntaxKind::TopLet);
             Progress::Made
         }
+        T![fn] => {
+            let c = p.checkpoint();
+            p.bump(SyntaxKind::FN_KW);
+            if !p.eat(SyntaxKind::IDENT) {
+                p.error("expected a name")
+            }
+            p.finish_at(c, SyntaxKind::TopFn);
+            Progress::Made
+        }
         _ => Progress::None,
     }
 }
