@@ -1,0 +1,13 @@
+---
+source: packages/nemo-parser/tests/parser.rs
+expression: output
+input_file: packages/nemo-parser/tests/passing/toplevel.nemo
+---
+let x
+
+---
+Root@0..5
+  TopLet@0..5
+    LET_KW@0..3 "let"
+    SPACE@3..4 " "
+    IDENT@4..5 "x"
