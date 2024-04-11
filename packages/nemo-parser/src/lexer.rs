@@ -124,11 +124,17 @@ pub enum SyntaxKind {
     #[token("false")]
     FALSE_KW,
 
+    #[token("i32")]
+    I32_BUILTIN,
+
+    #[token("f32")]
+    F32_BUILTIN,
+
     #[regex("[A-Za-z][A-Za-z0-9]*")]
     IDENT,
 
     #[regex("[0-9]+")]
-    NUMBER_LIT,
+    INT_LIT,
 
     #[token(".")]
     DOT,
@@ -193,14 +199,23 @@ pub enum SyntaxKind {
     EOF,
 
     // Composite nodes
+    ParamList,
+    Param,
 
     // Types
+    TyI32,
+    TyF32,
 
     // Top level
     TopLet,
     TopFn,
 
+    // Literals
+    LitBool,
+    LitInt,
+
     // Expressions
+    ELit,
 
     // Declarations
 
@@ -238,12 +253,14 @@ macro_rules ! T {
     [->] => { SyntaxKind::ARROW };
     [true] => { SyntaxKind::TRUE_KW };
     [false] => { SyntaxKind::FALSE_KW };
+    [i32] => { SyntaxKind::I32_BUILTIN };
+    [f32] => { SyntaxKind::F32_BUILTIN };
     [fn] => { SyntaxKind::FN_KW };
     [if] => { SyntaxKind::IF_KW };
     [else] => { SyntaxKind::ELSE_KW };
     [let] => { SyntaxKind::LET_KW };
     [struct] => { SyntaxKind::STRUCT_KW };
     [while] => { SyntaxKind::WHILE_KW };
-    [number_lit] => { SyntaxKind::NUMBER_LIT };
+    [int_lit] => { SyntaxKind::INT_LIT };
     [ident] => { SyntaxKind::IDENT };
 }

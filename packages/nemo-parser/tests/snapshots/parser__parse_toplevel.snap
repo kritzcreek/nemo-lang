@@ -3,11 +3,17 @@ source: packages/nemo-parser/tests/parser.rs
 expression: output
 input_file: packages/nemo-parser/tests/passing/toplevel.nemo
 ---
-let x
+let x = 42
 
 ---
-Root@0..5
-  TopLet@0..5
+Root@0..10
+  TopLet@0..10
     LET_KW@0..3 "let"
     SPACE@3..4 " "
     IDENT@4..5 "x"
+    SPACE@5..6 " "
+    EQUALS@6..7 "="
+    SPACE@7..8 " "
+    ELit@8..10
+      LitInt@8..10
+        INT_LIT@8..10 "42"

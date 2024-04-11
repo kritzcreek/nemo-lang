@@ -77,6 +77,16 @@ impl<'a> Parser<'a> {
         true
     }
 
+    fn expect(&mut self, kind: SyntaxKind) -> bool {
+        if self.eat(kind) {
+            true
+        } else {
+            // TODO: Avoid extra allocation
+            self.error(&format!("expected {:?}", kind));
+            false
+        }
+    }
+
     fn nth(&self, n: usize) -> SyntaxKind {
         let len = self.tokens.len();
         if n >= len {

@@ -3,11 +3,30 @@ source: packages/nemo-parser/tests/parser.rs
 expression: output
 input_file: packages/nemo-parser/tests/passing/toplevel.nemo
 ---
-fn dude
+fn dude(x : i32, y : f32)
 
 ---
-Root@0..7
-  TopFn@0..7
+Root@0..25
+  TopFn@0..25
     FN_KW@0..2 "fn"
     SPACE@2..3 " "
     IDENT@3..7 "dude"
+    ParamList@7..25
+      L_PAREN@7..8 "("
+      Param@8..17
+        IDENT@8..9 "x"
+        SPACE@9..10 " "
+        COLON@10..11 ":"
+        SPACE@11..12 " "
+        TyI32@12..15
+          I32_BUILTIN@12..15 "i32"
+        COMMA@15..16 ","
+        SPACE@16..17 " "
+      Param@17..24
+        IDENT@17..18 "y"
+        SPACE@18..19 " "
+        COLON@19..20 ":"
+        SPACE@20..21 " "
+        TyF32@21..24
+          F32_BUILTIN@21..24 "f32"
+      R_PAREN@24..25 ")"
