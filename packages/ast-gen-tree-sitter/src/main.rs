@@ -328,7 +328,6 @@ pub struct {}Node<'a>(pub Node<'a>);",
             }
 
             // TODO: Do we care about required?
-
             let func_name = match field_name.as_ref() {
                 "type" => "type_",
                 "struct" => "struct_",
@@ -406,7 +405,7 @@ fn main() {
     let node_infos = read_node_infos(input);
     let mut source_buf = String::new();
     writeln!(source_buf, "// THIS FILE IS GENERATED").unwrap();
-    write!(source_buf, "use tree_sitter::Node;\n\n").unwrap();
+    writeln!(source_buf, "use tree_sitter::Node;\n").unwrap();
 
     for node_info in node_infos {
         if node_info.named {

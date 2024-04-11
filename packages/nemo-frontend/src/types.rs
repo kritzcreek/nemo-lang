@@ -1,6 +1,7 @@
 use core::fmt;
 use std::collections::HashMap;
 
+use crate::ast::TypeNode;
 use crate::builtins;
 use crate::syntax::{
     Declaration, DeclarationData, Expr, ExprData, FuncId, FuncType, FuncTypeData, Id, Intrinsic,
@@ -169,6 +170,7 @@ pub struct Typechecker<'a> {
     source: &'a [u8],
     structs: HashMap<String, Vec<(Id, Type)>>,
     functions: HashMap<String, FuncTy>,
+    diagnostics: Vec<TyError>,
 }
 
 impl<'a> Typechecker<'a> {
@@ -177,6 +179,7 @@ impl<'a> Typechecker<'a> {
             source: source.as_bytes(),
             structs: HashMap::new(),
             functions: HashMap::new(),
+            diagnostics: vec![],
         }
     }
 
@@ -209,6 +212,17 @@ impl<'a> Typechecker<'a> {
             at: node.into(),
             it: self.text(node).to_string(),
         }
+    }
+
+    fn error(&mut self, err: TyError) {
+        self.diagnostics.push(err)
+    }
+
+    fn error_at(&mut self, err: TyErrorData, node: Node<'_>) {
+        self.diagnostics.push(TyError {
+            it: err,
+            at: node.into(),
+        })
     }
 
     fn func_id(&self, node: &Node<'_>, ty: FuncTy) -> FuncId {
@@ -393,6 +407,20 @@ impl<'a> Typechecker<'a> {
 
     fn check_func(&self, ctx: &mut Ctx, node: &Node<'_>) -> TyResult<Toplevel> {
         assert!(node.kind() == "top_func");
+        let top_func = crate::ast::TopFuncNode::cast(*node).unwrap();
+        let name = top_func.name().unwrap();
+        let params: Vec<(Id, Type)> = top_func
+            .params()
+            .unwrap()
+            .func_params()
+            .iter()
+            .map(|param| {
+                let name = self.id(&param.name().unwrap().0);
+                let ty = self.convert_ty_new(param.type_().unwrap());
+                (name, ty)
+            })
+            .collect();
+        let return_ty = top_func.result().map(|t| self.convert_ty_new(t));
 
         let name = node.child_by_field("name")?;
         let func_params_node = node.child_by_field("params")?;
@@ -551,6 +579,35 @@ impl<'a> Typechecker<'a> {
             ty: FuncTy::from_syntax_data(&func_type),
             it: func_type,
         })
+    }
+
+    fn convert_ty_new(&self, type_node: TypeNode) -> Type {
+        let (node, ty_data) = match type_node {
+            TypeNode::TyArray(n) => {
+                let elem_ty = self.convert_ty_new(n.elem_ty().unwrap());
+                (n.0, TypeData::Array(elem_ty))
+            }
+            TypeNode::TyFunc(n) => {
+                let x = 0;
+                let arg_tys = n
+                    .arguments()
+                    .into_iter()
+                    .map(|a| self.convert_ty_new(a))
+                    .collect();
+                let return_ty = self.convert_ty_new(n.result().unwrap());
+                (n.0, TypeData::Func(arg_tys, return_ty))
+            }
+            TypeNode::TyStruct(n) => (n.0, TypeData::Struct(self.text(&n.0).to_string())),
+            TypeNode::TyI32(n) => (n.0, TypeData::I32),
+            TypeNode::TyF32(n) => (n.0, TypeData::F32),
+            TypeNode::TyBool(n) => (n.0, TypeData::Bool),
+            TypeNode::TyUnit(n) => (n.0, TypeData::Unit),
+        };
+        Type {
+            at: node.into(),
+            ty: Ty::from_syntax_data(&ty_data),
+            it: Box::new(ty_data),
+        }
     }
 
     fn convert_ty(&self, node: Node<'_>) -> TyResult<Type> {
