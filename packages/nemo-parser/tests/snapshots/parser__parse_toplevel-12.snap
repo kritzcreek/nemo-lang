@@ -3,24 +3,39 @@ source: packages/nemo-parser/tests/parser.rs
 expression: output
 input_file: packages/nemo-parser/tests/passing/toplevel.nemo
 ---
-import internal : fn (i32, f32) -> i32 from external
 
-struct Vec {
-  x : f32,
-  y : f32,
-}
+let _ = {
+    let x = 1;
+    let y : i32 = 10;
+    set x = 1;
+    set x[0] = 1;
+    set x.y = 1;
+    while x {
+      1;
+      2
+    };
+};
 
-let x = 10;
-let y : f32 = 10.0;
-
-fn main() = {
-
-}
-
-fn add(x : i32, y : i32) : i32 = {
-    x + y
-}
 
 ---
-Root@0..0
+Root@0..9
+  TopLet@0..9
+    LINEFEED@0..1 "\n"
+    LET_KW@1..4 "let"
+    SPACE@4..5 " "
+    IDENT@5..6 "_"
+    SPACE@6..7 " "
+    EQUALS@7..8 "="
+    SPACE@8..9 " "
+=== ERRORS ===
 
+[
+    (
+        "expected an expression",
+        9..10,
+    ),
+    (
+        "expected SEMICOLON",
+        9..10,
+    ),
+]

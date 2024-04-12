@@ -170,6 +170,20 @@ fn expr(p: &mut Parser) -> Progress {
 fn postfix_expr(p: &mut Parser, c: Checkpoint) {
     loop {
         match p.current() {
+            T!['('] => {
+                p.bump(T!['(']);
+                while !p.at(SyntaxKind::EOF) && !p.at(T![')']) {
+                    if !expr(p).made_progress() {
+                        break;
+                    }
+
+                    if !p.at(T![')']) && !p.expect(T![,]) {
+                        break;
+                    }
+                }
+                p.expect(T![')']);
+                p.finish_at(c, SyntaxKind::ECall)
+            }
             T!['['] => {
                 p.bump(T!['[']);
                 if !expr(p).made_progress() {
