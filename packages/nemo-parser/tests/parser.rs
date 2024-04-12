@@ -69,7 +69,13 @@ fn parse_toplevel() {
         };
         for inp in input.split("---\n") {
             let parse = parse_prog(inp);
-            let output = format!("{}\n---\n{}", inp, parse.debug_tree());
+            let errors = parse.errors();
+            let error_output = if errors.is_empty() {
+                "".to_string()
+            } else {
+                format!("=== ERRORS ===\n\n{:#?}", errors)
+            };
+            let output = format!("{}\n---\n{}\n{}", inp, parse.debug_tree(), error_output);
             assert_snapshot!(output);
         }
     });

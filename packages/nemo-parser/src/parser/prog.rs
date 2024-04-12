@@ -26,10 +26,12 @@ fn toplevel(p: &mut Parser) -> Progress {
             let c = p.checkpoint();
             p.bump(SyntaxKind::LET_KW);
             p.expect(SyntaxKind::IDENT);
+            typ_annot(p);
             p.expect(SyntaxKind::EQUALS);
             if !expr(p).made_progress() {
                 p.error("expected an expression")
             }
+            p.expect(SyntaxKind::SEMICOLON);
             p.finish_at(c, SyntaxKind::TopLet);
             Progress::Made
         }
@@ -94,6 +96,39 @@ fn typ(p: &mut Parser) -> Progress {
             p.bump(T![f32]);
             p.finish_at(c, SyntaxKind::TyF32)
         }
+        T![bool] => {
+            p.bump(T![bool]);
+            p.finish_at(c, SyntaxKind::TyBool)
+        }
+        T![unit] => {
+            p.bump(T![unit]);
+            p.finish_at(c, SyntaxKind::TyUnit)
+        }
+        T![upper_ident] => {
+            p.bump(T![upper_ident]);
+            p.finish_at(c, SyntaxKind::TyCons)
+        }
+        T!['['] => {
+            p.bump(T!['[']);
+            if !typ(p).made_progress() {
+                p.error("expected a type")
+            }
+            p.expect(T![']']);
+            p.finish_at(c, SyntaxKind::TyArray)
+        }
+        T![fn] => {
+            p.bump(T![fn]);
+            p.expect(T!['(']);
+            while !p.at(T![')']) {
+                typ(p);
+                p.eat(T![,]);
+            }
+            p.expect(T![')']);
+            p.expect(T![->]);
+            if !typ(p).made_progress() {
+                p.error("expected a return type")
+            }
+        }
         _ => return Progress::None,
     }
 
@@ -110,6 +145,10 @@ fn lit(p: &mut Parser) -> Progress {
         T![int_lit] => {
             p.bump_any();
             p.finish_at(c, SyntaxKind::LitInt)
+        }
+        T![float_lit] => {
+            p.bump_any();
+            p.finish_at(c, SyntaxKind::LitFloat)
         }
         _ => return Progress::None,
     }

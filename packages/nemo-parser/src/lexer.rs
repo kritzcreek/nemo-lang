@@ -146,8 +146,20 @@ pub enum SyntaxKind {
     #[token("f32")]
     F32_BUILTIN,
 
-    #[regex("[A-Za-z][A-Za-z0-9]*")]
+    #[token("bool")]
+    BOOL_BUILTIN,
+
+    #[token("unit")]
+    UNIT_BUILTIN,
+
+    #[regex("[a-z_][A-Za-z0-9_]*")]
     IDENT,
+
+    #[regex("[A-Z][A-Za-z0-9_]*")]
+    UPPER_IDENT,
+
+    #[regex(r"[0-9]+\.[0-9]+")]
+    FLOAT_LIT,
 
     #[regex("[0-9]+")]
     INT_LIT,
@@ -160,9 +172,6 @@ pub enum SyntaxKind {
 
     #[token("-")]
     MINUS,
-
-    #[token("_")]
-    UNDERSCORE,
 
     #[token("*")]
     STAR,
@@ -221,6 +230,11 @@ pub enum SyntaxKind {
     // Types
     TyI32,
     TyF32,
+    TyBool,
+    TyUnit,
+    TyArray,
+    TyFn,
+    TyCons,
 
     // Top level
     TopLet,
@@ -229,6 +243,7 @@ pub enum SyntaxKind {
     // Literals
     LitBool,
     LitInt,
+    LitFloat,
 
     // Expressions
     ELit,
@@ -263,7 +278,6 @@ macro_rules ! T {
     [+] => { SyntaxKind::PLUS };
     [*] => { SyntaxKind::STAR };
     [/] => { SyntaxKind::SLASH };
-    [_] => { SyntaxKind::UNDERSCORE };
     [.] => { SyntaxKind::DOT };
     [:] => { SyntaxKind::COLON };
     [=] => { SyntaxKind::EQUALS };
@@ -274,6 +288,8 @@ macro_rules ! T {
     [false] => { SyntaxKind::FALSE_KW };
     [i32] => { SyntaxKind::I32_BUILTIN };
     [f32] => { SyntaxKind::F32_BUILTIN };
+    [bool] => { SyntaxKind::BOOL_BUILTIN };
+    [unit] => { SyntaxKind::UNIT_BUILTIN };
     [fn] => { SyntaxKind::FN_KW };
     [if] => { SyntaxKind::IF_KW };
     [else] => { SyntaxKind::ELSE_KW };
@@ -281,5 +297,7 @@ macro_rules ! T {
     [struct] => { SyntaxKind::STRUCT_KW };
     [while] => { SyntaxKind::WHILE_KW };
     [int_lit] => { SyntaxKind::INT_LIT };
+    [float_lit] => { SyntaxKind::FLOAT_LIT };
     [ident] => { SyntaxKind::IDENT };
+    [upper_ident] => { SyntaxKind::UPPER_IDENT };
 }

@@ -1,0 +1,8 @@
+---
+source: packages/nemo-parser/tests/parser.rs
+expression: output
+input_file: packages/nemo-parser/tests/passing/toplevel.nemo
+---
+
+---
+Root@0..0

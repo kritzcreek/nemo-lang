@@ -149,4 +149,8 @@ impl Parse {
         // We cut off the last byte because formatting the SyntaxNode adds on a newline at the end.
         formatted[0..formatted.len() - 1].to_string()
     }
+
+    pub fn errors(&self) -> &[(String, Range<usize>)] {
+        &self.errors
+    }
 }
