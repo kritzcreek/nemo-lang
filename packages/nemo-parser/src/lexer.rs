@@ -134,6 +134,21 @@ pub enum SyntaxKind {
     #[token("let")]
     LET_KW,
 
+    #[token("if")]
+    IF_KW,
+
+    #[token("else")]
+    ELSE_KW,
+
+    #[token("struct")]
+    STRUCT_KW,
+
+    #[token("while")]
+    WHILE_KW,
+
+    #[token("import")]
+    IMPORT_KW,
+
     #[token("true")]
     TRUE_KW,
 
@@ -255,6 +270,8 @@ pub enum SyntaxKind {
     EBinary,
     EArrayIdx,
     EStructIdx,
+    EIf,
+    EBlock,
 
     // Declarations
 
@@ -304,6 +321,7 @@ macro_rules ! T {
     [let] => { SyntaxKind::LET_KW };
     [struct] => { SyntaxKind::STRUCT_KW };
     [while] => { SyntaxKind::WHILE_KW };
+    [import] => { SyntaxKind::IMPORT_KW };
     [int_lit] => { SyntaxKind::INT_LIT };
     [float_lit] => { SyntaxKind::FLOAT_LIT };
     [ident] => { SyntaxKind::IDENT };

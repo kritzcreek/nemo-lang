@@ -160,11 +160,43 @@ fn lit(p: &mut Parser) -> Progress {
 
 fn expr(p: &mut Parser) -> Progress {
     let c = p.checkpoint();
+    if p.at(T![if]) {
+        if_expr(p);
+        return Progress::Made;
+    }
     if atom(p).made_progress() {
         postfix_expr(p, c);
         return Progress::Made;
     }
     Progress::None
+}
+
+fn if_expr(p: &mut Parser) {
+    let c = p.checkpoint();
+    p.bump(T![if]);
+    if !expr(p).made_progress() {
+        p.error("expected a condition")
+    }
+    block_expr(p);
+    p.expect(T![else]);
+    block_expr(p);
+    p.finish_at(c, SyntaxKind::EIf)
+}
+
+fn block_expr(p: &mut Parser) {
+    let c = p.checkpoint();
+    p.expect(T!['{']);
+    while !p.at(SyntaxKind::EOF) && !p.at(T!['}']) {
+        if !decl(p).made_progress() {
+            break;
+        }
+
+        if !p.at(T!['}']) && !p.expect(T![,]) {
+            break;
+        }
+    }
+    p.expect(T!['}']);
+    p.finish_at(c, SyntaxKind::EBlock)
 }
 
 fn postfix_expr(p: &mut Parser, c: Checkpoint) {
@@ -254,4 +286,8 @@ fn atom(p: &mut Parser) -> Progress {
     }
 
     Progress::Made
+}
+
+fn decl(p: &mut Parser) -> Progress {
+    expr(p)
 }
