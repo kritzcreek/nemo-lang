@@ -164,6 +164,10 @@ fn expr(p: &mut Parser) -> Progress {
         if_expr(p);
         return Progress::Made;
     }
+    if p.at(T!['{']) {
+        block_expr(p);
+        return Progress::Made;
+    }
     if atom(p).made_progress() {
         postfix_expr(p, c);
         return Progress::Made;
@@ -191,7 +195,7 @@ fn block_expr(p: &mut Parser) {
             break;
         }
 
-        if !p.at(T!['}']) && !p.expect(T![,]) {
+        if !p.at(T!['}']) && !p.expect(T![;]) {
             break;
         }
     }
