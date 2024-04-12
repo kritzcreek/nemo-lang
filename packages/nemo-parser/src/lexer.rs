@@ -247,6 +247,14 @@ pub enum SyntaxKind {
 
     // Expressions
     ELit,
+    EVar,
+    EArray,
+    EStruct,
+    ECall,
+    EParen,
+    EBinary,
+    EArrayIdx,
+    EStructIdx,
 
     // Declarations
 

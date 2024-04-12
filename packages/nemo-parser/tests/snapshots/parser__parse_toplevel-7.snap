@@ -4,18 +4,21 @@ expression: output
 input_file: packages/nemo-parser/tests/passing/toplevel.nemo
 ---
 
-let _ = {};
-let _ = {1};
-let _ = {
-    1;
-    x;
-    2
-};
+let _ = f();
+let _ = f(1);
+let _ = f(1, 2,);
+let _ = f(1, f(2));
+let _ = x.f();
+let _ = x[1].f();
+let _ = f(1)(x);
+let _ = f32_abs(delta_x) > f32_abs(delta_y);
+let _ = @array_len([]);
+let _ = @array_new(1, 2);
 
 
 ---
-Root@0..9
-  TopLet@0..9
+Root@0..10
+  TopLet@0..10
     LINEFEED@0..1 "\n"
     LET_KW@1..4 "let"
     SPACE@4..5 " "
@@ -23,15 +26,13 @@ Root@0..9
     SPACE@6..7 " "
     EQUALS@7..8 "="
     SPACE@8..9 " "
+    EVar@9..10
+      IDENT@9..10 "f"
 === ERRORS ===
 
 [
     (
-        "expected an expression",
-        9..10,
-    ),
-    (
         "expected SEMICOLON",
-        9..10,
+        10..11,
     ),
 ]

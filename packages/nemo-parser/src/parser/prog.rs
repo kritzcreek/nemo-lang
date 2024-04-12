@@ -1,3 +1,5 @@
+use rowan::Checkpoint;
+
 use super::Parser;
 use crate::lexer::SyntaxKind;
 use crate::T;
@@ -158,9 +160,59 @@ fn lit(p: &mut Parser) -> Progress {
 
 fn expr(p: &mut Parser) -> Progress {
     let c = p.checkpoint();
+    if atom(p).made_progress() {
+        postfix_expr(p, c);
+        return Progress::Made;
+    }
+    Progress::None
+}
+
+fn postfix_expr(p: &mut Parser, c: Checkpoint) {
+    loop {
+        match p.current() {
+            T!['['] => {
+                p.bump(T!['[']);
+                if !expr(p).made_progress() {
+                    p.error("expected an index")
+                }
+                p.expect(T![']']);
+                p.finish_at(c, SyntaxKind::EArrayIdx)
+            }
+            _ => break,
+        }
+    }
+}
+
+fn atom(p: &mut Parser) -> Progress {
+    let c = p.checkpoint();
+
     if lit(p).made_progress() {
         p.finish_at(c, SyntaxKind::ELit);
         return Progress::Made;
     }
-    Progress::None
+
+    match p.current() {
+        T!['['] => {
+            p.bump(T!['[']);
+            while !p.at(SyntaxKind::EOF) && !p.at(T![']']) {
+                if !expr(p).made_progress() {
+                    break;
+                }
+
+                if !p.at(T![']']) && !p.expect(T![,]) {
+                    break;
+                }
+            }
+
+            p.expect(T![']']);
+            p.finish_at(c, SyntaxKind::EArray)
+        }
+        T![ident] => {
+            p.bump(T![ident]);
+            p.finish_at(c, SyntaxKind::EVar)
+        }
+        _ => return Progress::None,
+    }
+
+    Progress::Made
 }

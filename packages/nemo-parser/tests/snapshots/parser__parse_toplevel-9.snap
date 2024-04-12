@@ -4,16 +4,12 @@ expression: output
 input_file: packages/nemo-parser/tests/passing/toplevel.nemo
 ---
 
+let _ = {};
+let _ = {1};
 let _ = {
-    let x = 1;
-    let y : i32 = 10;
-    set x = 1;
-    set x[0] = 1;
-    set x.y = 1;
-    while x {
-      1;
-      2
-    };
+    1;
+    x;
+    2
 };
 
 

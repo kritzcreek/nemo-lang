@@ -4,16 +4,12 @@ expression: output
 input_file: packages/nemo-parser/tests/passing/toplevel.nemo
 ---
 
-let _ = 1 + 1;
-let _ = 1 + 1 + 1;
-let _ = 1 * 1 + 1;
-let _ = 1 + 1 * 1;
-let _ = 1 <= 2 && 1 < 1 || 1 >= 3 && 3 > 4 || 1 == 1 || 1 != 2;
+let _ = if true { 1 } else { 3 };
 
 
 ---
-Root@0..11
-  TopLet@0..11
+Root@0..12
+  TopLet@0..12
     LINEFEED@0..1 "\n"
     LET_KW@1..4 "let"
     SPACE@4..5 " "
@@ -21,15 +17,14 @@ Root@0..11
     SPACE@6..7 " "
     EQUALS@7..8 "="
     SPACE@8..9 " "
-    ELit@9..11
-      LitInt@9..11
-        INT_LIT@9..10 "1"
-        SPACE@10..11 " "
+    EVar@9..12
+      IDENT@9..11 "if"
+      SPACE@11..12 " "
 === ERRORS ===
 
 [
     (
         "expected SEMICOLON",
-        11..12,
+        12..16,
     ),
 ]

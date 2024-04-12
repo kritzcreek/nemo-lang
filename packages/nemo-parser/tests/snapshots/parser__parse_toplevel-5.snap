@@ -4,16 +4,10 @@ expression: output
 input_file: packages/nemo-parser/tests/passing/toplevel.nemo
 ---
 
-let _ = f();
-let _ = f(1);
-let _ = f(1, 2,);
-let _ = f(1, f(2));
-let _ = x.f();
-let _ = x[1].f();
-let _ = f(1)(x);
-let _ = f32_abs(delta_x) > f32_abs(delta_y);
-let _ = @array_len([]);
-let _ = @array_new(1, 2);
+let _ = Vec { };
+let _ = Vec { x = 10 };
+let _ = Vec { x = 10, y = 1.0 };
+let _ = Vec { x = 10, y = 1.0, };
 
 
 ---
@@ -31,10 +25,10 @@ Root@0..9
 [
     (
         "expected an expression",
-        9..10,
+        9..12,
     ),
     (
         "expected SEMICOLON",
-        9..10,
+        9..12,
     ),
 ]

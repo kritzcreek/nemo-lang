@@ -3,6 +3,24 @@ source: packages/nemo-parser/tests/parser.rs
 expression: output
 input_file: packages/nemo-parser/tests/passing/toplevel.nemo
 ---
+import internal : fn (i32, f32) -> i32 from external
+
+struct Vec {
+  x : f32,
+  y : f32,
+}
+
+let x = 10;
+let y : f32 = 10.0;
+
+fn main() = {
+
+}
+
+fn add(x : i32, y : i32) : i32 = {
+    x + y
+}
 
 ---
 Root@0..0
+
