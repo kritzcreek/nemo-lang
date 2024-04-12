@@ -1,16 +1,24 @@
 use logos::Logos;
 use num_derive::{FromPrimitive, ToPrimitive};
+use std::ops::Range;
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct Token<'a> {
-    pub leading: Vec<(SyntaxKind, &'a str)>,
-    pub token: (SyntaxKind, &'a str),
-    pub trailing: Vec<(SyntaxKind, &'a str)>,
+    pub kind: SyntaxKind,
+    pub text: &'a str,
+    pub span: Range<usize>,
+}
+
+#[derive(Debug, PartialEq, Eq, Hash)]
+pub struct TToken<'a> {
+    pub leading: Vec<Token<'a>>,
+    pub token: Token<'a>,
+    pub trailing: Vec<Token<'a>>,
 }
 
 pub(crate) struct Lexer<'a> {
     inner: logos::Lexer<'a, SyntaxKind>,
-    lookahead: Option<(SyntaxKind, &'a str)>,
+    lookahead: Option<Token<'a>>,
 }
 
 impl<'a> Lexer<'a> {
@@ -21,12 +29,12 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    pub(crate) fn lex(input: &'a str) -> Vec<Token<'a>> {
+    pub(crate) fn lex(input: &'a str) -> Vec<TToken<'a>> {
         let mut lexer = Lexer::new(input);
         let mut tokens = vec![];
         loop {
             let tkn = lexer.next().unwrap();
-            if tkn.token.0 == SyntaxKind::EOF {
+            if tkn.token.kind == SyntaxKind::EOF {
                 tokens.push(tkn);
                 return tokens;
             }
@@ -47,37 +55,45 @@ fn is_whitespace(kind: SyntaxKind) -> bool {
 }
 
 impl<'a> Lexer<'a> {
-    fn inner_peek(&mut self) -> Option<(SyntaxKind, &'a str)> {
-        match self.lookahead {
-            Some(i) => Some(i),
+    fn inner_peek(&mut self) -> Option<Token<'a>> {
+        match &self.lookahead {
+            Some(i) => Some(i.clone()),
             None => {
-                // TODO: Propagate errors
-                self.lookahead = Some((self.inner.next()?.ok()?, self.inner.slice()));
-                self.lookahead
+                let next_token = Some(Token {
+                    kind: self.inner.next()?.ok()?,
+                    text: self.inner.slice(),
+                    span: self.inner.span(),
+                });
+                self.lookahead = next_token.clone();
+                next_token
             }
         }
     }
-    fn inner_next(&mut self) -> Option<(SyntaxKind, &'a str)> {
-        match self.lookahead {
-            Some(i) => {
-                self.lookahead = None;
-                Some(i)
-            }
-            // TODO: Propagate errors
-            None => Some((self.inner.next()?.ok()?, self.inner.slice())),
-        }
+
+    fn inner_next(&mut self) -> Option<Token<'a>> {
+        self.lookahead.take().or_else(|| {
+            Some(Token {
+                kind: self.inner.next()?.ok()?,
+                text: self.inner.slice(),
+                span: self.inner.span(),
+            })
+        })
     }
 }
 
 impl<'a> Iterator for Lexer<'a> {
-    type Item = Token<'a>;
+    type Item = TToken<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let mut leading = vec![];
         let mut trailing = vec![];
-        let mut next_token = (SyntaxKind::EOF, "");
+        let mut next_token = Token {
+            kind: SyntaxKind::EOF,
+            text: "",
+            span: self.inner.span(),
+        };
 
-        while matches!(self.inner_peek(), Some(tkn) if is_whitespace(tkn.0)) {
+        while matches!(self.inner_peek(), Some(tkn) if is_whitespace(tkn.kind)) {
             leading.push(self.inner_next().unwrap())
         }
 
@@ -85,11 +101,11 @@ impl<'a> Iterator for Lexer<'a> {
             next_token = tkn;
         }
 
-        while matches!(self.inner_peek(), Some(tkn) if is_trailing(tkn.0)) {
+        while matches!(self.inner_peek(), Some(tkn) if is_trailing(tkn.kind)) {
             trailing.push(self.inner_next().unwrap())
         }
 
-        Some(Token {
+        Some(TToken {
             leading,
             token: next_token,
             trailing,
@@ -227,6 +243,9 @@ pub enum SyntaxKind {
     // Literals
     LITERAL,
     // Modifiers
+
+    // Recovery node
+    Error,
 }
 
 #[macro_export]

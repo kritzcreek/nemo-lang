@@ -1,14 +1,16 @@
-use crate::lexer::{Lexer, SyntaxKind, Token};
+use std::ops::Range;
+
+use crate::lexer::{Lexer, SyntaxKind, TToken};
 use crate::syntax::{NemoLanguage, SyntaxNode};
 use rowan::{Checkpoint, GreenNode, GreenNodeBuilder, Language};
 
 mod prog;
 
 pub struct Parser<'a> {
-    tokens: Vec<Token<'a>>,
+    tokens: Vec<TToken<'a>>,
     builder: GreenNodeBuilder<'static>,
     // TODO: Be smarter here
-    errors: Vec<String>,
+    errors: Vec<(String, Range<usize>)>,
 }
 
 impl<'a> Parser<'a> {
@@ -45,23 +47,23 @@ impl<'a> Parser<'a> {
     }
 
     fn bump_any(&mut self) {
-        let Token {
+        let TToken {
             leading,
-            token: (kind, text),
+            token,
             trailing,
         } = self.tokens.pop().unwrap();
 
-        for (kind, text) in leading {
+        for tkn in leading {
             self.builder
-                .token(NemoLanguage::kind_to_raw(kind), text.into());
+                .token(NemoLanguage::kind_to_raw(tkn.kind), tkn.text.into());
         }
 
         self.builder
-            .token(NemoLanguage::kind_to_raw(kind), text.into());
+            .token(NemoLanguage::kind_to_raw(token.kind), token.text.into());
 
-        for (kind, text) in trailing {
+        for tkn in trailing {
             self.builder
-                .token(NemoLanguage::kind_to_raw(kind), text.into());
+                .token(NemoLanguage::kind_to_raw(tkn.kind), tkn.text.into());
         }
     }
 
@@ -92,7 +94,7 @@ impl<'a> Parser<'a> {
         if n >= len {
             SyntaxKind::EOF
         } else {
-            self.tokens[len - n - 1].token.0
+            self.tokens[len - n - 1].token.kind
         }
     }
 
@@ -108,8 +110,15 @@ impl<'a> Parser<'a> {
         self.nth_at(0, kind)
     }
 
+    fn span(&self) -> Range<usize> {
+        self.tokens
+            .last()
+            .map(|t| t.token.span.clone())
+            .unwrap_or_default()
+    }
+
     fn error(&mut self, msg: &str) {
-        self.errors.push(msg.to_string())
+        self.errors.push((msg.to_string(), self.span()))
     }
 }
 
@@ -125,7 +134,7 @@ pub fn parse_prog(input: &str) -> Parse {
 
 pub struct Parse {
     green_node: GreenNode,
-    errors: Vec<String>,
+    errors: Vec<(String, Range<usize>)>,
 }
 
 impl Parse {

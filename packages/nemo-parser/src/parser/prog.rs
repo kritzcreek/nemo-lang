@@ -8,13 +8,15 @@ pub enum Progress {
     None,
 }
 
+impl Progress {
+    pub fn made_progress(&self) -> bool {
+        *self == Progress::Made
+    }
+}
+
 pub fn prog(p: &mut Parser) {
     let c = p.checkpoint();
-    loop {
-        if toplevel(p) == Progress::None {
-            break;
-        }
-    }
+    while toplevel(p) == Progress::Made {}
     p.finish_at(c, SyntaxKind::Root)
 }
 
@@ -25,7 +27,7 @@ fn toplevel(p: &mut Parser) -> Progress {
             p.bump(SyntaxKind::LET_KW);
             p.expect(SyntaxKind::IDENT);
             p.expect(SyntaxKind::EQUALS);
-            if expr(p) == Progress::Made {
+            if !expr(p).made_progress() {
                 p.error("expected an expression")
             }
             p.finish_at(c, SyntaxKind::TopLet);
@@ -58,7 +60,7 @@ fn param_list(p: &mut Parser) {
     while p.at(SyntaxKind::IDENT) {
         let c = p.checkpoint();
         p.bump(SyntaxKind::IDENT);
-        if typ_annot(p) == Progress::None {
+        if !typ_annot(p).made_progress() {
             p.error("expected a type annotation")
         }
         p.eat(SyntaxKind::COMMA);
@@ -72,11 +74,12 @@ fn param_list(p: &mut Parser) {
 }
 
 fn typ_annot(p: &mut Parser) -> Progress {
-    let c = p.checkpoint();
     if !p.eat(SyntaxKind::COLON) {
         return Progress::None;
     }
-    typ(p);
+    if !typ(p).made_progress() {
+        p.error("expected a type")
+    };
     Progress::Made
 }
 
@@ -116,7 +119,7 @@ fn lit(p: &mut Parser) -> Progress {
 
 fn expr(p: &mut Parser) -> Progress {
     let c = p.checkpoint();
-    if lit(p) == Progress::Made {
+    if lit(p).made_progress() {
         p.finish_at(c, SyntaxKind::ELit);
         return Progress::Made;
     }
