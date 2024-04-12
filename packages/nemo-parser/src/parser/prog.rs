@@ -207,6 +207,24 @@ fn atom(p: &mut Parser) -> Progress {
             p.expect(T![']']);
             p.finish_at(c, SyntaxKind::EArray)
         }
+        T![upper_ident] => {
+            p.bump(T![upper_ident]);
+            if p.expect(T!['{']) {
+                while !p.at(SyntaxKind::EOF) && !p.at(T!['}']) {
+                    p.expect(T![ident]);
+                    p.expect(T![=]);
+                    if !expr(p).made_progress() {
+                        p.error("expected a field expression")
+                    }
+
+                    if !p.at(T!['}']) && !p.expect(T![,]) {
+                        break;
+                    }
+                }
+                p.expect(T!['}']);
+                p.finish_at(c, SyntaxKind::EStruct)
+            }
+        }
         T![ident] => {
             p.bump(T![ident]);
             p.finish_at(c, SyntaxKind::EVar)
