@@ -10,8 +10,8 @@ let _ = v[0].y;
 
 
 ---
-Root@0..10
-  TopLet@0..10
+Root@0..44
+  TopLet@0..13
     LINEFEED@0..1 "\n"
     LET_KW@1..4 "let"
     SPACE@4..5 " "
@@ -19,13 +19,47 @@ Root@0..10
     SPACE@6..7 " "
     EQUALS@7..8 "="
     SPACE@8..9 " "
-    EVar@9..10
-      IDENT@9..10 "v"
-=== ERRORS ===
+    EStructIdx@9..12
+      EVar@9..10
+        IDENT@9..10 "v"
+      DOT@10..11 "."
+      IDENT@11..12 "x"
+    SEMICOLON@12..13 ";"
+  TopLet@13..28
+    LINEFEED@13..14 "\n"
+    LET_KW@14..17 "let"
+    SPACE@17..18 " "
+    IDENT@18..19 "_"
+    SPACE@19..20 " "
+    EQUALS@20..21 "="
+    SPACE@21..22 " "
+    EStructIdx@22..27
+      EStructIdx@22..25
+        EVar@22..23
+          IDENT@22..23 "v"
+        DOT@23..24 "."
+        IDENT@24..25 "x"
+      DOT@25..26 "."
+      IDENT@26..27 "y"
+    SEMICOLON@27..28 ";"
+  TopLet@28..44
+    LINEFEED@28..29 "\n"
+    LET_KW@29..32 "let"
+    SPACE@32..33 " "
+    IDENT@33..34 "_"
+    SPACE@34..35 " "
+    EQUALS@35..36 "="
+    SPACE@36..37 " "
+    EStructIdx@37..43
+      EArrayIdx@37..41
+        EVar@37..38
+          IDENT@37..38 "v"
+        L_BRACKET@38..39 "["
+        ELit@39..40
+          LitInt@39..40
+            INT_LIT@39..40 "0"
+        R_BRACKET@40..41 "]"
+      DOT@41..42 "."
+      IDENT@42..43 "y"
+    SEMICOLON@43..44 ";"
 
-[
-    (
-        "expected SEMICOLON",
-        10..11,
-    ),
-]

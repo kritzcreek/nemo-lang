@@ -178,6 +178,13 @@ fn postfix_expr(p: &mut Parser, c: Checkpoint) {
                 p.expect(T![']']);
                 p.finish_at(c, SyntaxKind::EArrayIdx)
             }
+            T![.] => {
+                p.bump(T![.]);
+                if !p.eat(T![ident]) {
+                    p.error("expected a field index")
+                }
+                p.finish_at(c, SyntaxKind::EStructIdx)
+            }
             _ => break,
         }
     }
