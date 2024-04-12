@@ -15,6 +15,7 @@ let _ : unit = 0;
 let _ : Struct = 0;
 let _ : [i32] = 0;
 let _ : [[Struct]] = 0;
+let _ : fn() -> unit = 0;
 let _ : fn(i32) -> f32 = 0;
 let _ : fn(i32, f32, fn(i32) -> i32) -> f32 = 0;
 

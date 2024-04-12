@@ -11,12 +11,13 @@ let _ : unit = 0;
 let _ : Struct = 0;
 let _ : [i32] = 0;
 let _ : [[Struct]] = 0;
+let _ : fn() -> unit = 0;
 let _ : fn(i32) -> f32 = 0;
 let _ : fn(i32, f32, fn(i32) -> i32) -> f32 = 0;
 
 
 ---
-Root@0..210
+Root@0..236
   TopLet@0..17
     LINEFEED@0..1 "\n"
     LET_KW@1..4 "let"
@@ -145,7 +146,7 @@ Root@0..210
       LitInt@131..132
         INT_LIT@131..132 "0"
     SEMICOLON@132..133 ";"
-  TopLet@133..161
+  TopLet@133..159
     LINEFEED@133..134 "\n"
     LET_KW@134..137 "let"
     SPACE@137..138 " "
@@ -155,60 +156,83 @@ Root@0..210
     SPACE@141..142 " "
     FN_KW@142..144 "fn"
     L_PAREN@144..145 "("
-    TyI32@145..148
-      I32_BUILTIN@145..148 "i32"
-    R_PAREN@148..149 ")"
+    R_PAREN@145..146 ")"
+    SPACE@146..147 " "
+    ARROW@147..149 "->"
     SPACE@149..150 " "
-    ARROW@150..152 "->"
-    SPACE@152..153 " "
-    TyF32@153..157
-      F32_BUILTIN@153..156 "f32"
-      SPACE@156..157 " "
-    EQUALS@157..158 "="
-    SPACE@158..159 " "
-    ELit@159..160
-      LitInt@159..160
-        INT_LIT@159..160 "0"
-    SEMICOLON@160..161 ";"
-  TopLet@161..210
-    LINEFEED@161..162 "\n"
-    LET_KW@162..165 "let"
+    TyUnit@150..155
+      UNIT_BUILTIN@150..154 "unit"
+      SPACE@154..155 " "
+    EQUALS@155..156 "="
+    SPACE@156..157 " "
+    ELit@157..158
+      LitInt@157..158
+        INT_LIT@157..158 "0"
+    SEMICOLON@158..159 ";"
+  TopLet@159..187
+    LINEFEED@159..160 "\n"
+    LET_KW@160..163 "let"
+    SPACE@163..164 " "
+    IDENT@164..165 "_"
     SPACE@165..166 " "
-    IDENT@166..167 "_"
+    COLON@166..167 ":"
     SPACE@167..168 " "
-    COLON@168..169 ":"
-    SPACE@169..170 " "
-    FN_KW@170..172 "fn"
-    L_PAREN@172..173 "("
-    TyI32@173..176
-      I32_BUILTIN@173..176 "i32"
-    COMMA@176..177 ","
-    SPACE@177..178 " "
-    TyF32@178..181
-      F32_BUILTIN@178..181 "f32"
-    COMMA@181..182 ","
-    SPACE@182..183 " "
-    FN_KW@183..185 "fn"
-    L_PAREN@185..186 "("
-    TyI32@186..189
-      I32_BUILTIN@186..189 "i32"
-    R_PAREN@189..190 ")"
-    SPACE@190..191 " "
-    ARROW@191..193 "->"
+    FN_KW@168..170 "fn"
+    L_PAREN@170..171 "("
+    TyI32@171..174
+      I32_BUILTIN@171..174 "i32"
+    R_PAREN@174..175 ")"
+    SPACE@175..176 " "
+    ARROW@176..178 "->"
+    SPACE@178..179 " "
+    TyF32@179..183
+      F32_BUILTIN@179..182 "f32"
+      SPACE@182..183 " "
+    EQUALS@183..184 "="
+    SPACE@184..185 " "
+    ELit@185..186
+      LitInt@185..186
+        INT_LIT@185..186 "0"
+    SEMICOLON@186..187 ";"
+  TopLet@187..236
+    LINEFEED@187..188 "\n"
+    LET_KW@188..191 "let"
+    SPACE@191..192 " "
+    IDENT@192..193 "_"
     SPACE@193..194 " "
-    TyI32@194..197
-      I32_BUILTIN@194..197 "i32"
-    R_PAREN@197..198 ")"
-    SPACE@198..199 " "
-    ARROW@199..201 "->"
-    SPACE@201..202 " "
-    TyF32@202..206
-      F32_BUILTIN@202..205 "f32"
-      SPACE@205..206 " "
-    EQUALS@206..207 "="
-    SPACE@207..208 " "
-    ELit@208..209
-      LitInt@208..209
-        INT_LIT@208..209 "0"
-    SEMICOLON@209..210 ";"
+    COLON@194..195 ":"
+    SPACE@195..196 " "
+    FN_KW@196..198 "fn"
+    L_PAREN@198..199 "("
+    TyI32@199..202
+      I32_BUILTIN@199..202 "i32"
+    COMMA@202..203 ","
+    SPACE@203..204 " "
+    TyF32@204..207
+      F32_BUILTIN@204..207 "f32"
+    COMMA@207..208 ","
+    SPACE@208..209 " "
+    FN_KW@209..211 "fn"
+    L_PAREN@211..212 "("
+    TyI32@212..215
+      I32_BUILTIN@212..215 "i32"
+    R_PAREN@215..216 ")"
+    SPACE@216..217 " "
+    ARROW@217..219 "->"
+    SPACE@219..220 " "
+    TyI32@220..223
+      I32_BUILTIN@220..223 "i32"
+    R_PAREN@223..224 ")"
+    SPACE@224..225 " "
+    ARROW@225..227 "->"
+    SPACE@227..228 " "
+    TyF32@228..232
+      F32_BUILTIN@228..231 "f32"
+      SPACE@231..232 " "
+    EQUALS@232..233 "="
+    SPACE@233..234 " "
+    ELit@234..235
+      LitInt@234..235
+        INT_LIT@234..235 "0"
+    SEMICOLON@235..236 ";"
 
