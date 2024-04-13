@@ -8,7 +8,7 @@ It's main purpose is to serve as a teaching tool in my compilers course.
 
 - [x] Logos lexer
 - [x] Rowan based parser
-- [ ] Set up AST generation (xtask + ungrammar)
+- [x] Set up AST generation (xtask + ungrammar)
 - [ ] Integrate grammar/parser viewer into playground
 
 - Move name resolution into the type checker?
