@@ -1,0 +1,49 @@
+// TopLevel
+TopLevel
+  = TopImport
+  | TopLet
+  | TopStruct
+//  | TopFn
+
+TopImport = 'import' ImpInternal ':' Type 'from' ImpExternal
+ImpInternal = 'ident'
+ImpExternal = 'ident'
+
+TopLet = 'let' 'ident' ':' Type '=' Expr
+
+TopStruct = 'struct' 'upper_ident' '{' StructField* '}'
+StructField = 'ident' ':' Type
+
+// Types
+Type
+  = TyInt
+  | TyFloat
+  | TyBool
+  | TyUnit
+  | TyArray
+  | TyCons
+  | TyFn
+
+TyInt = 'i32'
+TyFloat = 'f32'
+TyBool = 'bool'
+TyUnit = 'unit'
+TyArray = '[' elem:Type ']'
+TyCons = 'upper_ident'
+TyFn = 'fn' '(' arguments:(Type (',' Type)*)? ')' '->' result:Type
+
+// Literals
+Literal = LitBool | LitFloat | LitInt
+
+LitInt = 'int_lit'
+LitBool = 'true' | 'false'
+LitFloat = 'float_lit'
+
+// Expressions
+
+Expr
+  = ELit
+  | EVar
+
+ELit = Literal
+EVar = 'ident'

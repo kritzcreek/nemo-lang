@@ -56,14 +56,18 @@ fn toplevel(p: &mut Parser) -> Progress {
 fn top_import(p: &mut Parser) {
     let c = p.checkpoint();
     p.bump(T![import]);
+    p.start_node(SyntaxKind::ImpInternal);
     p.expect(T![ident]);
+    p.finish_node();
     p.expect(T![:]);
     // TODO: Check for only function types
     if !typ(p).made_progress() {
         p.error("expected a function type")
     }
     p.expect(T![from]);
+    p.start_node(SyntaxKind::ImpExternal);
     p.expect(T![ident]);
+    p.finish_node();
     p.finish_at(c, SyntaxKind::TopImport)
 }
 
@@ -73,11 +77,13 @@ fn top_struct(p: &mut Parser) {
     p.expect(T![upper_ident]);
     p.expect(T!['{']);
     while !p.at(SyntaxKind::EOF) && !p.at(T!['}']) {
+        let c = p.checkpoint();
         p.expect(T![ident]);
         p.expect(T![:]);
         if !typ(p).made_progress() {
             p.error("expected a type")
         }
+        p.finish_at(c, SyntaxKind::StructField);
 
         if !p.at(T!['}']) && !p.expect(T![,]) {
             break;
@@ -134,11 +140,11 @@ fn typ(p: &mut Parser) -> Progress {
     match p.current() {
         T![i32] => {
             p.bump(T![i32]);
-            p.finish_at(c, SyntaxKind::TyI32)
+            p.finish_at(c, SyntaxKind::TyInt)
         }
         T![f32] => {
             p.bump(T![f32]);
-            p.finish_at(c, SyntaxKind::TyF32)
+            p.finish_at(c, SyntaxKind::TyFloat)
         }
         T![bool] => {
             p.bump(T![bool]);

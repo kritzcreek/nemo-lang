@@ -265,8 +265,8 @@ pub enum SyntaxKind {
     BinOp,
 
     // Types
-    TyI32,
-    TyF32,
+    TyInt,
+    TyFloat,
     TyBool,
     TyUnit,
     TyArray,
@@ -278,6 +278,13 @@ pub enum SyntaxKind {
     TopFn,
     TopImport,
     TopStruct,
+
+    // Imports
+    ImpInternal,
+    ImpExternal,
+
+    // Structs
+    StructField,
 
     // Literals
     LitBool,

@@ -26,7 +26,7 @@ Root@0..236
     SPACE@6..7 " "
     COLON@7..8 ":"
     SPACE@8..9 " "
-    TyI32@9..13
+    TyInt@9..13
       I32_BUILTIN@9..12 "i32"
       SPACE@12..13 " "
     EQUALS@13..14 "="
@@ -43,7 +43,7 @@ Root@0..236
     SPACE@23..24 " "
     COLON@24..25 ":"
     SPACE@25..26 " "
-    TyF32@26..30
+    TyFloat@26..30
       F32_BUILTIN@26..29 "f32"
       SPACE@29..30 " "
     EQUALS@30..31 "="
@@ -113,7 +113,7 @@ Root@0..236
     SPACE@98..99 " "
     TyArray@99..105
       L_BRACKET@99..100 "["
-      TyI32@100..103
+      TyInt@100..103
         I32_BUILTIN@100..103 "i32"
       R_BRACKET@103..104 "]"
       SPACE@104..105 " "
@@ -181,13 +181,13 @@ Root@0..236
     TyFn@168..183
       FN_KW@168..170 "fn"
       L_PAREN@170..171 "("
-      TyI32@171..174
+      TyInt@171..174
         I32_BUILTIN@171..174 "i32"
       R_PAREN@174..175 ")"
       SPACE@175..176 " "
       ARROW@176..178 "->"
       SPACE@178..179 " "
-      TyF32@179..183
+      TyFloat@179..183
         F32_BUILTIN@179..182 "f32"
         SPACE@182..183 " "
     EQUALS@183..184 "="
@@ -207,30 +207,30 @@ Root@0..236
     TyFn@196..232
       FN_KW@196..198 "fn"
       L_PAREN@198..199 "("
-      TyI32@199..202
+      TyInt@199..202
         I32_BUILTIN@199..202 "i32"
       COMMA@202..203 ","
       SPACE@203..204 " "
-      TyF32@204..207
+      TyFloat@204..207
         F32_BUILTIN@204..207 "f32"
       COMMA@207..208 ","
       SPACE@208..209 " "
       TyFn@209..223
         FN_KW@209..211 "fn"
         L_PAREN@211..212 "("
-        TyI32@212..215
+        TyInt@212..215
           I32_BUILTIN@212..215 "i32"
         R_PAREN@215..216 ")"
         SPACE@216..217 " "
         ARROW@217..219 "->"
         SPACE@219..220 " "
-        TyI32@220..223
+        TyInt@220..223
           I32_BUILTIN@220..223 "i32"
       R_PAREN@223..224 ")"
       SPACE@224..225 " "
       ARROW@225..227 "->"
       SPACE@227..228 " "
-      TyF32@228..232
+      TyFloat@228..232
         F32_BUILTIN@228..231 "f32"
         SPACE@231..232 " "
     EQUALS@232..233 "="

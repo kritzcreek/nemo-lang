@@ -28,30 +28,32 @@ Root@0..136
     LINEFEED@0..1 "\n"
     IMPORT_KW@1..7 "import"
     SPACE@7..8 " "
-    IDENT@8..16 "internal"
-    SPACE@16..17 " "
+    ImpInternal@8..17
+      IDENT@8..16 "internal"
+      SPACE@16..17 " "
     COLON@17..18 ":"
     SPACE@18..19 " "
     TyFn@19..40
       FN_KW@19..21 "fn"
       SPACE@21..22 " "
       L_PAREN@22..23 "("
-      TyI32@23..26
+      TyInt@23..26
         I32_BUILTIN@23..26 "i32"
       COMMA@26..27 ","
       SPACE@27..28 " "
-      TyF32@28..31
+      TyFloat@28..31
         F32_BUILTIN@28..31 "f32"
       R_PAREN@31..32 ")"
       SPACE@32..33 " "
       ARROW@33..35 "->"
       SPACE@35..36 " "
-      TyI32@36..40
+      TyInt@36..40
         I32_BUILTIN@36..39 "i32"
         SPACE@39..40 " "
     FROM_KW@40..44 "from"
     SPACE@44..45 " "
-    IDENT@45..53 "external"
+    ImpExternal@45..53
+      IDENT@45..53 "external"
   TopStruct@53..91
     LINEFEED@53..54 "\n"
     LINEFEED@54..55 "\n"
@@ -60,23 +62,25 @@ Root@0..136
     UPPER_IDENT@62..65 "Vec"
     SPACE@65..66 " "
     L_BRACE@66..67 "{"
-    LINEFEED@67..68 "\n"
-    SPACE@68..70 "  "
-    IDENT@70..71 "x"
-    SPACE@71..72 " "
-    COLON@72..73 ":"
-    SPACE@73..74 " "
-    TyF32@74..77
-      F32_BUILTIN@74..77 "f32"
+    StructField@67..77
+      LINEFEED@67..68 "\n"
+      SPACE@68..70 "  "
+      IDENT@70..71 "x"
+      SPACE@71..72 " "
+      COLON@72..73 ":"
+      SPACE@73..74 " "
+      TyFloat@74..77
+        F32_BUILTIN@74..77 "f32"
     COMMA@77..78 ","
-    LINEFEED@78..79 "\n"
-    SPACE@79..81 "  "
-    IDENT@81..82 "y"
-    SPACE@82..83 " "
-    COLON@83..84 ":"
-    SPACE@84..85 " "
-    TyF32@85..88
-      F32_BUILTIN@85..88 "f32"
+    StructField@78..88
+      LINEFEED@78..79 "\n"
+      SPACE@79..81 "  "
+      IDENT@81..82 "y"
+      SPACE@82..83 " "
+      COLON@83..84 ":"
+      SPACE@84..85 " "
+      TyFloat@85..88
+        F32_BUILTIN@85..88 "f32"
     COMMA@88..89 ","
     LINEFEED@89..90 "\n"
     R_BRACE@90..91 "}"
@@ -101,7 +105,7 @@ Root@0..136
     SPACE@110..111 " "
     COLON@111..112 ":"
     SPACE@112..113 " "
-    TyF32@113..117
+    TyFloat@113..117
       F32_BUILTIN@113..116 "f32"
       SPACE@116..117 " "
     EQUALS@117..118 "="

@@ -1,3 +1,6 @@
+mod ast;
+mod nodes;
+
 use crate::lexer::SyntaxKind;
 use num_traits::{FromPrimitive, ToPrimitive};
 

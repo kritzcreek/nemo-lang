@@ -6,19 +6,20 @@ Root@0..1660
   TopImport@0..51
     IMPORT_KW@0..6 "import"
     SPACE@6..7 " "
-    IDENT@7..14 "move_to"
-    SPACE@14..15 " "
+    ImpInternal@7..15
+      IDENT@7..14 "move_to"
+      SPACE@14..15 " "
     COLON@15..16 ":"
     SPACE@16..17 " "
     TyFn@17..39
       FN_KW@17..19 "fn"
       SPACE@19..20 " "
       L_PAREN@20..21 "("
-      TyF32@21..24
+      TyFloat@21..24
         F32_BUILTIN@21..24 "f32"
       COMMA@24..25 ","
       SPACE@25..26 " "
-      TyF32@26..29
+      TyFloat@26..29
         F32_BUILTIN@26..29 "f32"
       R_PAREN@29..30 ")"
       SPACE@30..31 " "
@@ -29,24 +30,26 @@ Root@0..1660
         SPACE@38..39 " "
     FROM_KW@39..43 "from"
     SPACE@43..44 " "
-    IDENT@44..51 "move_to"
+    ImpExternal@44..51
+      IDENT@44..51 "move_to"
   TopImport@51..103
     LINEFEED@51..52 "\n"
     IMPORT_KW@52..58 "import"
     SPACE@58..59 " "
-    IDENT@59..66 "line_to"
-    SPACE@66..67 " "
+    ImpInternal@59..67
+      IDENT@59..66 "line_to"
+      SPACE@66..67 " "
     COLON@67..68 ":"
     SPACE@68..69 " "
     TyFn@69..91
       FN_KW@69..71 "fn"
       SPACE@71..72 " "
       L_PAREN@72..73 "("
-      TyF32@73..76
+      TyFloat@73..76
         F32_BUILTIN@73..76 "f32"
       COMMA@76..77 ","
       SPACE@77..78 " "
-      TyF32@78..81
+      TyFloat@78..81
         F32_BUILTIN@78..81 "f32"
       R_PAREN@81..82 ")"
       SPACE@82..83 " "
@@ -57,36 +60,38 @@ Root@0..1660
         SPACE@90..91 " "
     FROM_KW@91..95 "from"
     SPACE@95..96 " "
-    IDENT@96..103 "line_to"
+    ImpExternal@96..103
+      IDENT@96..103 "line_to"
   TopImport@103..162
     LINEFEED@103..104 "\n"
     IMPORT_KW@104..110 "import"
     SPACE@110..111 " "
-    IDENT@111..114 "arc"
-    SPACE@114..115 " "
+    ImpInternal@111..115
+      IDENT@111..114 "arc"
+      SPACE@114..115 " "
     COLON@115..116 ":"
     SPACE@116..117 " "
     TyFn@117..154
       FN_KW@117..119 "fn"
       SPACE@119..120 " "
       L_PAREN@120..121 "("
-      TyF32@121..124
+      TyFloat@121..124
         F32_BUILTIN@121..124 "f32"
       COMMA@124..125 ","
       SPACE@125..126 " "
-      TyF32@126..129
+      TyFloat@126..129
         F32_BUILTIN@126..129 "f32"
       COMMA@129..130 ","
       SPACE@130..131 " "
-      TyF32@131..134
+      TyFloat@131..134
         F32_BUILTIN@131..134 "f32"
       COMMA@134..135 ","
       SPACE@135..136 " "
-      TyF32@136..139
+      TyFloat@136..139
         F32_BUILTIN@136..139 "f32"
       COMMA@139..140 ","
       SPACE@140..141 " "
-      TyF32@141..144
+      TyFloat@141..144
         F32_BUILTIN@141..144 "f32"
       R_PAREN@144..145 ")"
       SPACE@145..146 " "
@@ -97,28 +102,30 @@ Root@0..1660
         SPACE@153..154 " "
     FROM_KW@154..158 "from"
     SPACE@158..159 " "
-    IDENT@159..162 "arc"
+    ImpExternal@159..162
+      IDENT@159..162 "arc"
   TopImport@162..237
     LINEFEED@162..163 "\n"
     IMPORT_KW@163..169 "import"
     SPACE@169..170 " "
-    IDENT@170..186 "set_stroke_color"
-    SPACE@186..187 " "
+    ImpInternal@170..187
+      IDENT@170..186 "set_stroke_color"
+      SPACE@186..187 " "
     COLON@187..188 ":"
     SPACE@188..189 " "
     TyFn@189..216
       FN_KW@189..191 "fn"
       SPACE@191..192 " "
       L_PAREN@192..193 "("
-      TyF32@193..196
+      TyFloat@193..196
         F32_BUILTIN@193..196 "f32"
       COMMA@196..197 ","
       SPACE@197..198 " "
-      TyF32@198..201
+      TyFloat@198..201
         F32_BUILTIN@198..201 "f32"
       COMMA@201..202 ","
       SPACE@202..203 " "
-      TyF32@203..206
+      TyFloat@203..206
         F32_BUILTIN@203..206 "f32"
       R_PAREN@206..207 ")"
       SPACE@207..208 " "
@@ -129,13 +136,15 @@ Root@0..1660
         SPACE@215..216 " "
     FROM_KW@216..220 "from"
     SPACE@220..221 " "
-    IDENT@221..237 "set_stroke_color"
+    ImpExternal@221..237
+      IDENT@221..237 "set_stroke_color"
   TopImport@237..287
     LINEFEED@237..238 "\n"
     IMPORT_KW@238..244 "import"
     SPACE@244..245 " "
-    IDENT@245..255 "begin_path"
-    SPACE@255..256 " "
+    ImpInternal@245..256
+      IDENT@245..255 "begin_path"
+      SPACE@255..256 " "
     COLON@256..257 ":"
     SPACE@257..258 " "
     TyFn@258..272
@@ -151,13 +160,15 @@ Root@0..1660
         SPACE@271..272 " "
     FROM_KW@272..276 "from"
     SPACE@276..277 " "
-    IDENT@277..287 "begin_path"
+    ImpExternal@277..287
+      IDENT@277..287 "begin_path"
   TopImport@287..337
     LINEFEED@287..288 "\n"
     IMPORT_KW@288..294 "import"
     SPACE@294..295 " "
-    IDENT@295..305 "close_path"
-    SPACE@305..306 " "
+    ImpInternal@295..306
+      IDENT@295..305 "close_path"
+      SPACE@305..306 " "
     COLON@306..307 ":"
     SPACE@307..308 " "
     TyFn@308..322
@@ -173,13 +184,15 @@ Root@0..1660
         SPACE@321..322 " "
     FROM_KW@322..326 "from"
     SPACE@326..327 " "
-    IDENT@327..337 "close_path"
+    ImpExternal@327..337
+      IDENT@327..337 "close_path"
   TopImport@337..379
     LINEFEED@337..338 "\n"
     IMPORT_KW@338..344 "import"
     SPACE@344..345 " "
-    IDENT@345..351 "stroke"
-    SPACE@351..352 " "
+    ImpInternal@345..352
+      IDENT@345..351 "stroke"
+      SPACE@351..352 " "
     COLON@352..353 ":"
     SPACE@353..354 " "
     TyFn@354..368
@@ -195,13 +208,15 @@ Root@0..1660
         SPACE@367..368 " "
     FROM_KW@368..372 "from"
     SPACE@372..373 " "
-    IDENT@373..379 "stroke"
+    ImpExternal@373..379
+      IDENT@373..379 "stroke"
   TopImport@379..426
     LINEFEED@379..380 "\n"
     IMPORT_KW@380..386 "import"
     SPACE@386..387 " "
-    IDENT@387..392 "clear"
-    SPACE@392..393 " "
+    ImpInternal@387..393
+      IDENT@387..392 "clear"
+      SPACE@392..393 " "
     COLON@393..394 ":"
     SPACE@394..395 " "
     TyFn@395..409
@@ -217,7 +232,8 @@ Root@0..1660
         SPACE@408..409 " "
     FROM_KW@409..413 "from"
     SPACE@413..414 " "
-    IDENT@414..426 "clear_canvas"
+    ImpExternal@414..426
+      IDENT@414..426 "clear_canvas"
   TopStruct@426..476
     LINEFEED@426..427 "\n"
     LINEFEED@427..428 "\n"
@@ -226,32 +242,35 @@ Root@0..1660
     UPPER_IDENT@435..440 "Color"
     SPACE@440..441 " "
     L_BRACE@441..442 "{"
-    LINEFEED@442..443 "\n"
-    SPACE@443..445 "  "
-    IDENT@445..446 "r"
-    SPACE@446..447 " "
-    COLON@447..448 ":"
-    SPACE@448..449 " "
-    TyF32@449..452
-      F32_BUILTIN@449..452 "f32"
+    StructField@442..452
+      LINEFEED@442..443 "\n"
+      SPACE@443..445 "  "
+      IDENT@445..446 "r"
+      SPACE@446..447 " "
+      COLON@447..448 ":"
+      SPACE@448..449 " "
+      TyFloat@449..452
+        F32_BUILTIN@449..452 "f32"
     COMMA@452..453 ","
-    LINEFEED@453..454 "\n"
-    SPACE@454..456 "  "
-    IDENT@456..457 "g"
-    SPACE@457..458 " "
-    COLON@458..459 ":"
-    SPACE@459..460 " "
-    TyF32@460..463
-      F32_BUILTIN@460..463 "f32"
+    StructField@453..463
+      LINEFEED@453..454 "\n"
+      SPACE@454..456 "  "
+      IDENT@456..457 "g"
+      SPACE@457..458 " "
+      COLON@458..459 ":"
+      SPACE@459..460 " "
+      TyFloat@460..463
+        F32_BUILTIN@460..463 "f32"
     COMMA@463..464 ","
-    LINEFEED@464..465 "\n"
-    SPACE@465..467 "  "
-    IDENT@467..468 "b"
-    SPACE@468..469 " "
-    COLON@469..470 ":"
-    SPACE@470..471 " "
-    TyF32@471..474
-      F32_BUILTIN@471..474 "f32"
+    StructField@464..474
+      LINEFEED@464..465 "\n"
+      SPACE@465..467 "  "
+      IDENT@467..468 "b"
+      SPACE@468..469 " "
+      COLON@469..470 ":"
+      SPACE@470..471 " "
+      TyFloat@471..474
+        F32_BUILTIN@471..474 "f32"
     LINEFEED@474..475 "\n"
     R_BRACE@475..476 "}"
   TopStruct@476..569
@@ -262,59 +281,65 @@ Root@0..1660
     UPPER_IDENT@485..489 "Cube"
     SPACE@489..490 " "
     L_BRACE@490..491 "{"
-    LINEFEED@491..492 "\n"
-    SPACE@492..494 "  "
-    IDENT@494..495 "x"
-    SPACE@495..496 " "
-    COLON@496..497 ":"
-    SPACE@497..498 " "
-    TyF32@498..501
-      F32_BUILTIN@498..501 "f32"
+    StructField@491..501
+      LINEFEED@491..492 "\n"
+      SPACE@492..494 "  "
+      IDENT@494..495 "x"
+      SPACE@495..496 " "
+      COLON@496..497 ":"
+      SPACE@497..498 " "
+      TyFloat@498..501
+        F32_BUILTIN@498..501 "f32"
     COMMA@501..502 ","
-    LINEFEED@502..503 "\n"
-    SPACE@503..505 "  "
-    IDENT@505..506 "y"
-    SPACE@506..507 " "
-    COLON@507..508 ":"
-    SPACE@508..509 " "
-    TyF32@509..512
-      F32_BUILTIN@509..512 "f32"
+    StructField@502..512
+      LINEFEED@502..503 "\n"
+      SPACE@503..505 "  "
+      IDENT@505..506 "y"
+      SPACE@506..507 " "
+      COLON@507..508 ":"
+      SPACE@508..509 " "
+      TyFloat@509..512
+        F32_BUILTIN@509..512 "f32"
     COMMA@512..513 ","
-    LINEFEED@513..514 "\n"
-    SPACE@514..516 "  "
-    IDENT@516..518 "vx"
-    SPACE@518..519 " "
-    COLON@519..520 ":"
-    SPACE@520..521 " "
-    TyF32@521..524
-      F32_BUILTIN@521..524 "f32"
+    StructField@513..524
+      LINEFEED@513..514 "\n"
+      SPACE@514..516 "  "
+      IDENT@516..518 "vx"
+      SPACE@518..519 " "
+      COLON@519..520 ":"
+      SPACE@520..521 " "
+      TyFloat@521..524
+        F32_BUILTIN@521..524 "f32"
     COMMA@524..525 ","
-    LINEFEED@525..526 "\n"
-    SPACE@526..528 "  "
-    IDENT@528..530 "vy"
-    SPACE@530..531 " "
-    COLON@531..532 ":"
-    SPACE@532..533 " "
-    TyF32@533..536
-      F32_BUILTIN@533..536 "f32"
+    StructField@525..536
+      LINEFEED@525..526 "\n"
+      SPACE@526..528 "  "
+      IDENT@528..530 "vy"
+      SPACE@530..531 " "
+      COLON@531..532 ":"
+      SPACE@532..533 " "
+      TyFloat@533..536
+        F32_BUILTIN@533..536 "f32"
     COMMA@536..537 ","
-    LINEFEED@537..538 "\n"
-    SPACE@538..540 "  "
-    IDENT@540..544 "size"
-    SPACE@544..545 " "
-    COLON@545..546 ":"
-    SPACE@546..547 " "
-    TyF32@547..550
-      F32_BUILTIN@547..550 "f32"
+    StructField@537..550
+      LINEFEED@537..538 "\n"
+      SPACE@538..540 "  "
+      IDENT@540..544 "size"
+      SPACE@544..545 " "
+      COLON@545..546 ":"
+      SPACE@546..547 " "
+      TyFloat@547..550
+        F32_BUILTIN@547..550 "f32"
     COMMA@550..551 ","
-    LINEFEED@551..552 "\n"
-    SPACE@552..554 "  "
-    IDENT@554..559 "color"
-    SPACE@559..560 " "
-    COLON@560..561 ":"
-    SPACE@561..562 " "
-    TyCons@562..567
-      UPPER_IDENT@562..567 "Color"
+    StructField@551..567
+      LINEFEED@551..552 "\n"
+      SPACE@552..554 "  "
+      IDENT@554..559 "color"
+      SPACE@559..560 " "
+      COLON@560..561 ":"
+      SPACE@561..562 " "
+      TyCons@562..567
+        UPPER_IDENT@562..567 "Color"
     LINEFEED@567..568 "\n"
     R_BRACE@568..569 "}"
   TopStruct@569..642
@@ -325,41 +350,45 @@ Root@0..1660
     UPPER_IDENT@578..586 "Particle"
     SPACE@586..587 " "
     L_BRACE@587..588 "{"
-    LINEFEED@588..589 "\n"
-    SPACE@589..591 "  "
-    IDENT@591..592 "x"
-    SPACE@592..593 " "
-    COLON@593..594 ":"
-    SPACE@594..595 " "
-    TyF32@595..598
-      F32_BUILTIN@595..598 "f32"
+    StructField@588..598
+      LINEFEED@588..589 "\n"
+      SPACE@589..591 "  "
+      IDENT@591..592 "x"
+      SPACE@592..593 " "
+      COLON@593..594 ":"
+      SPACE@594..595 " "
+      TyFloat@595..598
+        F32_BUILTIN@595..598 "f32"
     COMMA@598..599 ","
-    LINEFEED@599..600 "\n"
-    SPACE@600..602 "  "
-    IDENT@602..603 "y"
-    SPACE@603..604 " "
-    COLON@604..605 ":"
-    SPACE@605..606 " "
-    TyF32@606..609
-      F32_BUILTIN@606..609 "f32"
+    StructField@599..609
+      LINEFEED@599..600 "\n"
+      SPACE@600..602 "  "
+      IDENT@602..603 "y"
+      SPACE@603..604 " "
+      COLON@604..605 ":"
+      SPACE@605..606 " "
+      TyFloat@606..609
+        F32_BUILTIN@606..609 "f32"
     COMMA@609..610 ","
-    LINEFEED@610..611 "\n"
-    SPACE@611..613 "  "
-    IDENT@613..618 "color"
-    SPACE@618..619 " "
-    COLON@619..620 ":"
-    SPACE@620..621 " "
-    TyCons@621..626
-      UPPER_IDENT@621..626 "Color"
+    StructField@610..626
+      LINEFEED@610..611 "\n"
+      SPACE@611..613 "  "
+      IDENT@613..618 "color"
+      SPACE@618..619 " "
+      COLON@619..620 ":"
+      SPACE@620..621 " "
+      TyCons@621..626
+        UPPER_IDENT@621..626 "Color"
     COMMA@626..627 ","
-    LINEFEED@627..628 "\n"
-    SPACE@628..630 "  "
-    IDENT@630..634 "time"
-    SPACE@634..635 " "
-    COLON@635..636 ":"
-    SPACE@636..637 " "
-    TyF32@637..640
-      F32_BUILTIN@637..640 "f32"
+    StructField@627..640
+      LINEFEED@627..628 "\n"
+      SPACE@628..630 "  "
+      IDENT@630..634 "time"
+      SPACE@634..635 " "
+      COLON@635..636 ":"
+      SPACE@636..637 " "
+      TyFloat@637..640
+        F32_BUILTIN@637..640 "f32"
     LINEFEED@640..641 "\n"
     R_BRACE@641..642 "}"
   TopStruct@642..706
@@ -370,26 +399,28 @@ Root@0..1660
     UPPER_IDENT@651..661 "RingBuffer"
     SPACE@661..662 " "
     L_BRACE@662..663 "{"
-    LINEFEED@663..664 "\n"
-    SPACE@664..666 "  "
-    IDENT@666..672 "buffer"
-    SPACE@672..673 " "
-    COLON@673..674 ":"
-    SPACE@674..675 " "
-    TyArray@675..685
-      L_BRACKET@675..676 "["
-      TyCons@676..684
-        UPPER_IDENT@676..684 "Particle"
-      R_BRACKET@684..685 "]"
+    StructField@663..685
+      LINEFEED@663..664 "\n"
+      SPACE@664..666 "  "
+      IDENT@666..672 "buffer"
+      SPACE@672..673 " "
+      COLON@673..674 ":"
+      SPACE@674..675 " "
+      TyArray@675..685
+        L_BRACKET@675..676 "["
+        TyCons@676..684
+          UPPER_IDENT@676..684 "Particle"
+        R_BRACKET@684..685 "]"
     COMMA@685..686 ","
-    LINEFEED@686..687 "\n"
-    SPACE@687..689 "  "
-    IDENT@689..698 "watermark"
-    SPACE@698..699 " "
-    COLON@699..700 ":"
-    SPACE@700..701 " "
-    TyI32@701..704
-      I32_BUILTIN@701..704 "i32"
+    StructField@686..704
+      LINEFEED@686..687 "\n"
+      SPACE@687..689 "  "
+      IDENT@689..698 "watermark"
+      SPACE@698..699 " "
+      COLON@699..700 ":"
+      SPACE@700..701 " "
+      TyInt@701..704
+        I32_BUILTIN@701..704 "i32"
     LINEFEED@704..705 "\n"
     R_BRACE@705..706 "}"
   TopLet@706..741

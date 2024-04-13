@@ -53,7 +53,7 @@ Root@0..178
         SPACE@35..36 " "
         COLON@36..37 ":"
         SPACE@37..38 " "
-        TyI32@38..42
+        TyInt@38..42
           I32_BUILTIN@38..41 "i32"
           SPACE@41..42 " "
         EQUALS@42..43 "="
