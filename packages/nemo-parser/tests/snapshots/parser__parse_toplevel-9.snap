@@ -27,10 +27,11 @@ Root@0..34
       EBlock@17..23
         L_BRACE@17..18 "{"
         SPACE@18..19 " "
-        ELit@19..21
-          LitInt@19..21
-            INT_LIT@19..20 "1"
-            SPACE@20..21 " "
+        DExpr@19..21
+          ELit@19..21
+            LitInt@19..21
+              INT_LIT@19..20 "1"
+              SPACE@20..21 " "
         R_BRACE@21..22 "}"
         SPACE@22..23 " "
       ELSE_KW@23..27 "else"
@@ -38,10 +39,11 @@ Root@0..34
       EBlock@28..33
         L_BRACE@28..29 "{"
         SPACE@29..30 " "
-        ELit@30..32
-          LitInt@30..32
-            INT_LIT@30..31 "3"
-            SPACE@31..32 " "
+        DExpr@30..32
+          ELit@30..32
+            LitInt@30..32
+              INT_LIT@30..31 "3"
+              SPACE@31..32 " "
         R_BRACE@32..33 "}"
     SEMICOLON@33..34 ";"
 

@@ -134,6 +134,9 @@ pub enum SyntaxKind {
     #[token("let")]
     LET_KW,
 
+    #[token("set")]
+    SET_KW,
+
     #[token("if")]
     IF_KW,
 
@@ -290,6 +293,15 @@ pub enum SyntaxKind {
     EBlock,
 
     // Declarations
+    DLet,
+    DSet,
+    DWhile,
+    DExpr,
+
+    // Set targets
+    SetTarget,
+    SetStruct,
+    SetArray,
 
     // Root
     Root,
@@ -340,6 +352,7 @@ macro_rules ! T {
     [if] => { SyntaxKind::IF_KW };
     [else] => { SyntaxKind::ELSE_KW };
     [let] => { SyntaxKind::LET_KW };
+    [set] => { SyntaxKind::SET_KW };
     [struct] => { SyntaxKind::STRUCT_KW };
     [while] => { SyntaxKind::WHILE_KW };
     [import] => { SyntaxKind::IMPORT_KW };

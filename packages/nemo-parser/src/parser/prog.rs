@@ -166,7 +166,7 @@ fn expr_bp(p: &mut Parser, min_bp: u32) -> Progress {
     postfix_expr(p, c);
 
     loop {
-        let Some((op_bp, op /*associativity*/)) = current_bin_op(p) else {
+        let Some((op_bp, op)) = current_bin_op(p) else {
             break;
         };
 
@@ -328,5 +328,78 @@ fn atom(p: &mut Parser) -> Progress {
 }
 
 fn decl(p: &mut Parser) -> Progress {
-    expr(p)
+    match p.current() {
+        T![let] => let_decl(p),
+        T![set] => set_decl(p),
+        T![while] => while_decl(p),
+        _ => {
+            let c = p.checkpoint();
+            if expr(p).made_progress() {
+                p.finish_at(c, SyntaxKind::DExpr)
+            } else {
+                return Progress::None;
+            }
+        }
+    }
+
+    Progress::Made
+}
+
+fn let_decl(p: &mut Parser) {
+    let c = p.checkpoint();
+    p.bump(T![let]);
+    p.expect(T![ident]);
+    typ_annot(p);
+    p.expect(T![=]);
+    if !expr(p).made_progress() {
+        p.error("expected an expression")
+    }
+    p.finish_at(c, SyntaxKind::DLet)
+}
+
+fn set_decl(p: &mut Parser) {
+    let c = p.checkpoint();
+    p.bump(T![set]);
+    set_target(p);
+    p.expect(T![=]);
+    if !expr(p).made_progress() {
+        p.error("expected an expression")
+    }
+    p.finish_at(c, SyntaxKind::DSet)
+}
+
+fn set_target(p: &mut Parser) {
+    let c = p.checkpoint();
+    p.expect(T![ident]);
+    while !p.at(SyntaxKind::EOF) && !p.at(T![=]) {
+        match p.current() {
+            T![.] => {
+                let c = p.checkpoint();
+                p.bump(T![.]);
+                p.expect(T![ident]);
+                p.finish_at(c, SyntaxKind::SetStruct)
+            }
+            T!['['] => {
+                let c = p.checkpoint();
+                p.bump(T!['[']);
+                if !expr(p).made_progress() {
+                    p.error("expected an expression")
+                }
+                p.expect(T![']']);
+                p.finish_at(c, SyntaxKind::SetArray)
+            }
+            _ => break,
+        }
+    }
+    p.finish_at(c, SyntaxKind::SetTarget)
+}
+
+fn while_decl(p: &mut Parser) {
+    let c = p.checkpoint();
+    p.bump(T![while]);
+    if !expr(p).made_progress() {
+        p.error("expected an expression")
+    }
+    block_expr(p);
+    p.finish_at(c, SyntaxKind::DWhile)
 }

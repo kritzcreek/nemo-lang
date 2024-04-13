@@ -37,9 +37,10 @@ Root@0..58
     SPACE@20..21 " "
     EBlock@21..24
       L_BRACE@21..22 "{"
-      ELit@22..23
-        LitInt@22..23
-          INT_LIT@22..23 "1"
+      DExpr@22..23
+        ELit@22..23
+          LitInt@22..23
+            INT_LIT@22..23 "1"
       R_BRACE@23..24 "}"
     SEMICOLON@24..25 ";"
   TopLet@25..58
@@ -52,22 +53,25 @@ Root@0..58
     SPACE@33..34 " "
     EBlock@34..57
       L_BRACE@34..35 "{"
-      ELit@35..41
-        LitInt@35..41
-          LINEFEED@35..36 "\n"
-          SPACE@36..40 "    "
-          INT_LIT@40..41 "1"
+      DExpr@35..41
+        ELit@35..41
+          LitInt@35..41
+            LINEFEED@35..36 "\n"
+            SPACE@36..40 "    "
+            INT_LIT@40..41 "1"
       SEMICOLON@41..42 ";"
-      EVar@42..48
-        LINEFEED@42..43 "\n"
-        SPACE@43..47 "    "
-        IDENT@47..48 "x"
+      DExpr@42..48
+        EVar@42..48
+          LINEFEED@42..43 "\n"
+          SPACE@43..47 "    "
+          IDENT@47..48 "x"
       SEMICOLON@48..49 ";"
-      ELit@49..55
-        LitInt@49..55
-          LINEFEED@49..50 "\n"
-          SPACE@50..54 "    "
-          INT_LIT@54..55 "2"
+      DExpr@49..55
+        ELit@49..55
+          LitInt@49..55
+            LINEFEED@49..50 "\n"
+            SPACE@50..54 "    "
+            INT_LIT@54..55 "2"
       LINEFEED@55..56 "\n"
       R_BRACE@56..57 "}"
     SEMICOLON@57..58 ";"
