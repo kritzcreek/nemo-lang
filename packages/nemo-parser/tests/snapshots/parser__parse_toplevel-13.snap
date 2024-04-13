@@ -3,6 +3,7 @@ source: packages/nemo-parser/tests/parser.rs
 expression: output
 input_file: packages/nemo-parser/tests/passing/toplevel.nemo
 ---
+
 import internal : fn (i32, f32) -> i32 from external
 
 struct Vec {
@@ -22,100 +23,101 @@ fn add(x : i32, y : i32) : i32 = {
 }
 
 ---
-Root@0..135
-  TopImport@0..52
-    IMPORT_KW@0..6 "import"
-    SPACE@6..7 " "
-    IDENT@7..15 "internal"
-    SPACE@15..16 " "
-    COLON@16..17 ":"
-    SPACE@17..18 " "
-    TyFn@18..39
-      FN_KW@18..20 "fn"
-      SPACE@20..21 " "
-      L_PAREN@21..22 "("
-      TyI32@22..25
-        I32_BUILTIN@22..25 "i32"
-      COMMA@25..26 ","
-      SPACE@26..27 " "
-      TyF32@27..30
-        F32_BUILTIN@27..30 "f32"
-      R_PAREN@30..31 ")"
-      SPACE@31..32 " "
-      ARROW@32..34 "->"
-      SPACE@34..35 " "
-      TyI32@35..39
-        I32_BUILTIN@35..38 "i32"
-        SPACE@38..39 " "
-    FROM_KW@39..43 "from"
-    SPACE@43..44 " "
-    IDENT@44..52 "external"
-  TopStruct@52..90
-    LINEFEED@52..53 "\n"
+Root@0..136
+  TopImport@0..53
+    LINEFEED@0..1 "\n"
+    IMPORT_KW@1..7 "import"
+    SPACE@7..8 " "
+    IDENT@8..16 "internal"
+    SPACE@16..17 " "
+    COLON@17..18 ":"
+    SPACE@18..19 " "
+    TyFn@19..40
+      FN_KW@19..21 "fn"
+      SPACE@21..22 " "
+      L_PAREN@22..23 "("
+      TyI32@23..26
+        I32_BUILTIN@23..26 "i32"
+      COMMA@26..27 ","
+      SPACE@27..28 " "
+      TyF32@28..31
+        F32_BUILTIN@28..31 "f32"
+      R_PAREN@31..32 ")"
+      SPACE@32..33 " "
+      ARROW@33..35 "->"
+      SPACE@35..36 " "
+      TyI32@36..40
+        I32_BUILTIN@36..39 "i32"
+        SPACE@39..40 " "
+    FROM_KW@40..44 "from"
+    SPACE@44..45 " "
+    IDENT@45..53 "external"
+  TopStruct@53..91
     LINEFEED@53..54 "\n"
-    STRUCT_KW@54..60 "struct"
-    SPACE@60..61 " "
-    UPPER_IDENT@61..64 "Vec"
-    SPACE@64..65 " "
-    L_BRACE@65..66 "{"
-    LINEFEED@66..67 "\n"
-    SPACE@67..69 "  "
-    IDENT@69..70 "x"
-    SPACE@70..71 " "
-    COLON@71..72 ":"
-    SPACE@72..73 " "
-    TyF32@73..76
-      F32_BUILTIN@73..76 "f32"
-    COMMA@76..77 ","
-    LINEFEED@77..78 "\n"
-    SPACE@78..80 "  "
-    IDENT@80..81 "y"
-    SPACE@81..82 " "
-    COLON@82..83 ":"
-    SPACE@83..84 " "
-    TyF32@84..87
-      F32_BUILTIN@84..87 "f32"
-    COMMA@87..88 ","
-    LINEFEED@88..89 "\n"
-    R_BRACE@89..90 "}"
-  TopLet@90..103
-    LINEFEED@90..91 "\n"
+    LINEFEED@54..55 "\n"
+    STRUCT_KW@55..61 "struct"
+    SPACE@61..62 " "
+    UPPER_IDENT@62..65 "Vec"
+    SPACE@65..66 " "
+    L_BRACE@66..67 "{"
+    LINEFEED@67..68 "\n"
+    SPACE@68..70 "  "
+    IDENT@70..71 "x"
+    SPACE@71..72 " "
+    COLON@72..73 ":"
+    SPACE@73..74 " "
+    TyF32@74..77
+      F32_BUILTIN@74..77 "f32"
+    COMMA@77..78 ","
+    LINEFEED@78..79 "\n"
+    SPACE@79..81 "  "
+    IDENT@81..82 "y"
+    SPACE@82..83 " "
+    COLON@83..84 ":"
+    SPACE@84..85 " "
+    TyF32@85..88
+      F32_BUILTIN@85..88 "f32"
+    COMMA@88..89 ","
+    LINEFEED@89..90 "\n"
+    R_BRACE@90..91 "}"
+  TopLet@91..104
     LINEFEED@91..92 "\n"
-    LET_KW@92..95 "let"
-    SPACE@95..96 " "
-    IDENT@96..97 "x"
-    SPACE@97..98 " "
-    EQUALS@98..99 "="
-    SPACE@99..100 " "
-    ELit@100..102
-      LitInt@100..102
-        INT_LIT@100..102 "10"
-    SEMICOLON@102..103 ";"
-  TopLet@103..123
-    LINEFEED@103..104 "\n"
-    LET_KW@104..107 "let"
-    SPACE@107..108 " "
-    IDENT@108..109 "y"
-    SPACE@109..110 " "
-    COLON@110..111 ":"
-    SPACE@111..112 " "
-    TyF32@112..116
-      F32_BUILTIN@112..115 "f32"
-      SPACE@115..116 " "
-    EQUALS@116..117 "="
-    SPACE@117..118 " "
-    ELit@118..122
-      LitFloat@118..122
-        FLOAT_LIT@118..122 "10.0"
-    SEMICOLON@122..123 ";"
-  TopFn@123..135
-    LINEFEED@123..124 "\n"
+    LINEFEED@92..93 "\n"
+    LET_KW@93..96 "let"
+    SPACE@96..97 " "
+    IDENT@97..98 "x"
+    SPACE@98..99 " "
+    EQUALS@99..100 "="
+    SPACE@100..101 " "
+    ELit@101..103
+      LitInt@101..103
+        INT_LIT@101..103 "10"
+    SEMICOLON@103..104 ";"
+  TopLet@104..124
+    LINEFEED@104..105 "\n"
+    LET_KW@105..108 "let"
+    SPACE@108..109 " "
+    IDENT@109..110 "y"
+    SPACE@110..111 " "
+    COLON@111..112 ":"
+    SPACE@112..113 " "
+    TyF32@113..117
+      F32_BUILTIN@113..116 "f32"
+      SPACE@116..117 " "
+    EQUALS@117..118 "="
+    SPACE@118..119 " "
+    ELit@119..123
+      LitFloat@119..123
+        FLOAT_LIT@119..123 "10.0"
+    SEMICOLON@123..124 ";"
+  TopFn@124..136
     LINEFEED@124..125 "\n"
-    FN_KW@125..127 "fn"
-    SPACE@127..128 " "
-    IDENT@128..132 "main"
-    ParamList@132..135
-      L_PAREN@132..133 "("
-      R_PAREN@133..134 ")"
-      SPACE@134..135 " "
+    LINEFEED@125..126 "\n"
+    FN_KW@126..128 "fn"
+    SPACE@128..129 " "
+    IDENT@129..133 "main"
+    ParamList@133..136
+      L_PAREN@133..134 "("
+      R_PAREN@134..135 ")"
+      SPACE@135..136 " "
 
