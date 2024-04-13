@@ -22,5 +22,32 @@ fn add(x : i32, y : i32) : i32 = {
 }
 
 ---
-Root@0..0
+Root@0..52
+  TopImport@0..52
+    IMPORT_KW@0..6 "import"
+    SPACE@6..7 " "
+    IDENT@7..15 "internal"
+    SPACE@15..16 " "
+    COLON@16..17 ":"
+    SPACE@17..18 " "
+    TyFn@18..39
+      FN_KW@18..20 "fn"
+      SPACE@20..21 " "
+      L_PAREN@21..22 "("
+      TyI32@22..25
+        I32_BUILTIN@22..25 "i32"
+      COMMA@25..26 ","
+      SPACE@26..27 " "
+      TyF32@27..30
+        F32_BUILTIN@27..30 "f32"
+      R_PAREN@30..31 ")"
+      SPACE@31..32 " "
+      ARROW@32..34 "->"
+      SPACE@34..35 " "
+      TyI32@35..39
+        I32_BUILTIN@35..38 "i32"
+        SPACE@38..39 " "
+    FROM_KW@39..43 "from"
+    SPACE@43..44 " "
+    IDENT@44..52 "external"
 

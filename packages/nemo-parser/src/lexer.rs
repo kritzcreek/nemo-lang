@@ -152,6 +152,9 @@ pub enum SyntaxKind {
     #[token("import")]
     IMPORT_KW,
 
+    #[token("from")]
+    FROM_KW,
+
     #[token("true")]
     TRUE_KW,
 
@@ -273,6 +276,8 @@ pub enum SyntaxKind {
     // Top level
     TopLet,
     TopFn,
+    TopImport,
+    TopStruct,
 
     // Literals
     LitBool,
@@ -349,6 +354,8 @@ macro_rules ! T {
     [bool] => { SyntaxKind::BOOL_BUILTIN };
     [unit] => { SyntaxKind::UNIT_BUILTIN };
     [fn] => { SyntaxKind::FN_KW };
+    [import] => { SyntaxKind::IMPORT_KW };
+    [from] => { SyntaxKind::FROM_KW };
     [if] => { SyntaxKind::IF_KW };
     [else] => { SyntaxKind::ELSE_KW };
     [let] => { SyntaxKind::LET_KW };

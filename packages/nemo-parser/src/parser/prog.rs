@@ -41,8 +41,26 @@ fn toplevel(p: &mut Parser) -> Progress {
             top_fn(p);
             Progress::Made
         }
+        T![import] => {
+            top_import(p);
+            Progress::Made
+        }
         _ => Progress::None,
     }
+}
+
+fn top_import(p: &mut Parser) {
+    let c = p.checkpoint();
+    p.bump(T![import]);
+    p.expect(T![ident]);
+    p.expect(T![:]);
+    // TODO: Check for only function types
+    if !typ(p).made_progress() {
+        p.error("expected a function type")
+    }
+    p.expect(T![from]);
+    p.expect(T![ident]);
+    p.finish_at(c, SyntaxKind::TopImport)
 }
 
 fn top_fn(p: &mut Parser) {
@@ -130,6 +148,7 @@ fn typ(p: &mut Parser) -> Progress {
             if !typ(p).made_progress() {
                 p.error("expected a return type")
             }
+            p.finish_at(c, SyntaxKind::TyFn)
         }
         _ => return Progress::None,
     }
