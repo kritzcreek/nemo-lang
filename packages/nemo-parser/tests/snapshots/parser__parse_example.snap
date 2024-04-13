@@ -1174,15 +1174,14 @@ Root@0..1660
     FN_KW@1630..1632 "fn"
     SPACE@1632..1633 " "
     IDENT@1633..1645 "add_particle"
-    ParamList@1645..1660
-      L_PAREN@1645..1646 "("
-      Param@1646..1658
-        IDENT@1646..1647 "p"
-        SPACE@1647..1648 " "
-        COLON@1648..1649 ":"
-        SPACE@1649..1650 " "
-        TyCons@1650..1658
-          UPPER_IDENT@1650..1658 "Particle"
-      R_PAREN@1658..1659 ")"
-      SPACE@1659..1660 " "
+    L_PAREN@1645..1646 "("
+    Param@1646..1658
+      IDENT@1646..1647 "p"
+      SPACE@1647..1648 " "
+      COLON@1648..1649 ":"
+      SPACE@1649..1650 " "
+      TyCons@1650..1658
+        UPPER_IDENT@1650..1658 "Particle"
+    R_PAREN@1658..1659 ")"
+    SPACE@1659..1660 " "
 

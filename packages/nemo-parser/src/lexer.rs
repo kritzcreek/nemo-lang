@@ -260,7 +260,6 @@ pub enum SyntaxKind {
     EOF,
 
     // Composite nodes
-    ParamList,
     Param,
     BinOp,
     TyArgList,

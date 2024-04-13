@@ -104,7 +104,6 @@ fn top_fn(p: &mut Parser) {
 }
 
 fn param_list(p: &mut Parser) {
-    let c = p.checkpoint();
     if !p.eat(SyntaxKind::L_PAREN) {
         p.error("expected a parameter list");
         return;
@@ -122,7 +121,6 @@ fn param_list(p: &mut Parser) {
         p.error("expected a closing paren");
         // TODO recover
     }
-    p.finish_at(c, SyntaxKind::ParamList);
 }
 
 fn typ_annot(p: &mut Parser) -> Progress {
