@@ -45,6 +45,10 @@ fn toplevel(p: &mut Parser) -> Progress {
             top_import(p);
             Progress::Made
         }
+        T![struct] => {
+            top_struct(p);
+            Progress::Made
+        }
         _ => Progress::None,
     }
 }
@@ -61,6 +65,26 @@ fn top_import(p: &mut Parser) {
     p.expect(T![from]);
     p.expect(T![ident]);
     p.finish_at(c, SyntaxKind::TopImport)
+}
+
+fn top_struct(p: &mut Parser) {
+    let c = p.checkpoint();
+    p.bump(T![struct]);
+    p.expect(T![upper_ident]);
+    p.expect(T!['{']);
+    while !p.at(SyntaxKind::EOF) && !p.at(T!['}']) {
+        p.expect(T![ident]);
+        p.expect(T![:]);
+        if !typ(p).made_progress() {
+            p.error("expected a type")
+        }
+
+        if !p.at(T!['}']) && !p.expect(T![,]) {
+            break;
+        }
+    }
+    p.expect(T!['}']);
+    p.finish_at(c, SyntaxKind::TopStruct)
 }
 
 fn top_fn(p: &mut Parser) {
