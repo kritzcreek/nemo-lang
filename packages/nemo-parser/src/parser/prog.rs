@@ -158,8 +158,47 @@ fn lit(p: &mut Parser) -> Progress {
     Progress::Made
 }
 
-fn expr(p: &mut Parser) -> Progress {
+fn expr_bp(p: &mut Parser, min_bp: u32) -> Progress {
     let c = p.checkpoint();
+    if !atom(p).made_progress() {
+        return Progress::None;
+    }
+    postfix_expr(p, c);
+
+    loop {
+        let Some((op_bp, op /*associativity*/)) = current_bin_op(p) else {
+            break;
+        };
+
+        if op_bp < min_bp {
+            break;
+        }
+
+        p.start_node(SyntaxKind::BinOp);
+        p.bump(op);
+        p.finish_node();
+        if !expr_bp(p, op_bp).made_progress() {
+            p.error("expected an expression");
+        }
+        p.finish_at(c, SyntaxKind::EBinary)
+    }
+
+    Progress::Made
+}
+
+fn current_bin_op(p: &mut Parser) -> Option<(u32, SyntaxKind)> {
+    let c = p.current();
+    match c {
+        T![&&] => Some((1, c)),
+        T![||] => Some((2, c)),
+        T![==] | T![!=] | T![<] | T![>] | T![<=] | T![>=] => Some((3, c)),
+        T![+] | T![-] => Some((4, c)),
+        T![*] | T![/] => Some((5, c)),
+        _ => None,
+    }
+}
+
+fn expr(p: &mut Parser) -> Progress {
     if p.at(T![if]) {
         if_expr(p);
         return Progress::Made;
@@ -168,11 +207,7 @@ fn expr(p: &mut Parser) -> Progress {
         block_expr(p);
         return Progress::Made;
     }
-    if atom(p).made_progress() {
-        postfix_expr(p, c);
-        return Progress::Made;
-    }
-    Progress::None
+    expr_bp(p, 0)
 }
 
 fn if_expr(p: &mut Parser) {

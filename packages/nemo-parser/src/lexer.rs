@@ -197,8 +197,17 @@ pub enum SyntaxKind {
     #[token("=")]
     EQUALS,
 
+    #[token("&&")]
+    ANDAND,
+
+    #[token("||")]
+    OROR,
+
     #[token("==")]
     DOUBLE_EQUALS,
+
+    #[token("!=")]
+    NOT_EQUALS,
 
     #[token("(")]
     L_PAREN,
@@ -224,6 +233,12 @@ pub enum SyntaxKind {
     #[token(">")]
     R_ANGLE,
 
+    #[token(">=")]
+    L_ANGLE_EQ,
+
+    #[token("<=")]
+    R_ANGLE_EQ,
+
     #[token(":")]
     COLON,
 
@@ -241,6 +256,7 @@ pub enum SyntaxKind {
     // Composite nodes
     ParamList,
     Param,
+    BinOp,
 
     // Types
     TyI32,
@@ -300,14 +316,19 @@ macro_rules ! T {
     [']'] => { SyntaxKind::R_BRACKET };
     [<] => { SyntaxKind::L_ANGLE };
     [>] => { SyntaxKind::R_ANGLE };
+    [<=] => { SyntaxKind::L_ANGLE_EQ };
+    [>=] => { SyntaxKind::R_ANGLE_EQ };
     [+] => { SyntaxKind::PLUS };
+    [-] => { SyntaxKind::MINUS };
     [*] => { SyntaxKind::STAR };
     [/] => { SyntaxKind::SLASH };
+    [&&] => { SyntaxKind::ANDAND };
+    [||] => { SyntaxKind::OROR };
+    [==] => { SyntaxKind::DOUBLE_EQUALS };
+    [!=] => { SyntaxKind::NOT_EQUALS };
     [.] => { SyntaxKind::DOT };
     [:] => { SyntaxKind::COLON };
     [=] => { SyntaxKind::EQUALS };
-    [==] => { SyntaxKind::DOUBLE_EQUALS };
-    [-] => { SyntaxKind::MINUS };
     [->] => { SyntaxKind::ARROW };
     [true] => { SyntaxKind::TRUE_KW };
     [false] => { SyntaxKind::FALSE_KW };
