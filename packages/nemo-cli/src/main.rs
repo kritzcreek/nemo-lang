@@ -34,7 +34,7 @@ enum Commands {
     /// Runs the language server
     LanguageServer {
         #[arg(long)]
-        stdio: bool
+        stdio: bool,
     },
     /// Runs the Nemo playground where you can write Nemo programs
     /// that interact with the HTML5 canvas

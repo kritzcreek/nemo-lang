@@ -48,11 +48,17 @@ LitBool = 'true' | 'false'
 LitFloat = 'float_lit'
 
 // Expressions
-
 Expr
   = ELit
   | EVar
   | EArray
+  | EStruct
+  | ECall
+  | EParen
+  | EBinary
+  | EArrayIdx
+  | EStructIdx
+  | EIf
   | EBlock
 
 ELit = Literal

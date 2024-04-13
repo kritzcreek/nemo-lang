@@ -332,77 +332,6 @@ impl EArray {
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct EParen {
-    pub(crate) syntax: SyntaxNode,
-}
-impl EParen {
-    pub fn l_paren_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T!['('])
-    }
-    pub fn expr(&self) -> Option<Expr> {
-        support::child(&self.syntax)
-    }
-    pub fn r_paren_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T![')'])
-    }
-}
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct EArrayIdx {
-    pub(crate) syntax: SyntaxNode,
-}
-impl EArrayIdx {
-    pub fn expr(&self) -> Option<Expr> {
-        support::child(&self.syntax)
-    }
-    pub fn l_brack_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T!['['])
-    }
-    pub fn r_brack_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T![']'])
-    }
-}
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct ECall {
-    pub(crate) syntax: SyntaxNode,
-}
-impl ECall {
-    pub fn expr(&self) -> Option<Expr> {
-        support::child(&self.syntax)
-    }
-    pub fn e_arg_list(&self) -> Option<EArgList> {
-        support::child(&self.syntax)
-    }
-}
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct EArgList {
-    pub(crate) syntax: SyntaxNode,
-}
-impl EArgList {
-    pub fn l_paren_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T!['('])
-    }
-    pub fn exprs(&self) -> AstChildren<Expr> {
-        support::children(&self.syntax)
-    }
-    pub fn r_paren_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T![')'])
-    }
-}
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct EBinary {
-    pub(crate) syntax: SyntaxNode,
-}
-impl EBinary {}
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct BinOp {
-    pub(crate) syntax: SyntaxNode,
-}
-impl BinOp {
-    pub fn eq_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T![=])
-    }
-}
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EStruct {
     pub(crate) syntax: SyntaxNode,
 }
@@ -421,18 +350,50 @@ impl EStruct {
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct EStructField {
+pub struct ECall {
     pub(crate) syntax: SyntaxNode,
 }
-impl EStructField {
-    pub fn upper_ident_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T![upper_ident])
+impl ECall {
+    pub fn expr(&self) -> Option<Expr> {
+        support::child(&self.syntax)
     }
-    pub fn eq_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T![=])
+    pub fn e_arg_list(&self) -> Option<EArgList> {
+        support::child(&self.syntax)
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct EParen {
+    pub(crate) syntax: SyntaxNode,
+}
+impl EParen {
+    pub fn l_paren_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T!['('])
     }
     pub fn expr(&self) -> Option<Expr> {
         support::child(&self.syntax)
+    }
+    pub fn r_paren_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![')'])
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct EBinary {
+    pub(crate) syntax: SyntaxNode,
+}
+impl EBinary {}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct EArrayIdx {
+    pub(crate) syntax: SyntaxNode,
+}
+impl EArrayIdx {
+    pub fn expr(&self) -> Option<Expr> {
+        support::child(&self.syntax)
+    }
+    pub fn l_brack_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T!['['])
+    }
+    pub fn r_brack_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![']'])
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -463,6 +424,45 @@ impl EIf {
     }
     pub fn else_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T![else])
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct EArgList {
+    pub(crate) syntax: SyntaxNode,
+}
+impl EArgList {
+    pub fn l_paren_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T!['('])
+    }
+    pub fn exprs(&self) -> AstChildren<Expr> {
+        support::children(&self.syntax)
+    }
+    pub fn r_paren_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![')'])
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct BinOp {
+    pub(crate) syntax: SyntaxNode,
+}
+impl BinOp {
+    pub fn eq_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![=])
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct EStructField {
+    pub(crate) syntax: SyntaxNode,
+}
+impl EStructField {
+    pub fn upper_ident_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![upper_ident])
+    }
+    pub fn eq_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![=])
+    }
+    pub fn expr(&self) -> Option<Expr> {
+        support::child(&self.syntax)
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -592,6 +592,13 @@ pub enum Expr {
     ELit(ELit),
     EVar(EVar),
     EArray(EArray),
+    EStruct(EStruct),
+    ECall(ECall),
+    EParen(EParen),
+    EBinary(EBinary),
+    EArrayIdx(EArrayIdx),
+    EStructIdx(EStructIdx),
+    EIf(EIf),
     EBlock(EBlock),
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -987,24 +994,9 @@ impl AstNode for EArray {
         &self.syntax
     }
 }
-impl AstNode for EParen {
+impl AstNode for EStruct {
     fn can_cast(kind: SyntaxKind) -> bool {
-        kind == EParen
-    }
-    fn cast(syntax: SyntaxNode) -> Option<Self> {
-        if Self::can_cast(syntax.kind()) {
-            Some(Self { syntax })
-        } else {
-            None
-        }
-    }
-    fn syntax(&self) -> &SyntaxNode {
-        &self.syntax
-    }
-}
-impl AstNode for EArrayIdx {
-    fn can_cast(kind: SyntaxKind) -> bool {
-        kind == EArrayIdx
+        kind == EStruct
     }
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         if Self::can_cast(syntax.kind()) {
@@ -1032,9 +1024,9 @@ impl AstNode for ECall {
         &self.syntax
     }
 }
-impl AstNode for EArgList {
+impl AstNode for EParen {
     fn can_cast(kind: SyntaxKind) -> bool {
-        kind == EArgList
+        kind == EParen
     }
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         if Self::can_cast(syntax.kind()) {
@@ -1062,39 +1054,9 @@ impl AstNode for EBinary {
         &self.syntax
     }
 }
-impl AstNode for BinOp {
+impl AstNode for EArrayIdx {
     fn can_cast(kind: SyntaxKind) -> bool {
-        kind == BinOp
-    }
-    fn cast(syntax: SyntaxNode) -> Option<Self> {
-        if Self::can_cast(syntax.kind()) {
-            Some(Self { syntax })
-        } else {
-            None
-        }
-    }
-    fn syntax(&self) -> &SyntaxNode {
-        &self.syntax
-    }
-}
-impl AstNode for EStruct {
-    fn can_cast(kind: SyntaxKind) -> bool {
-        kind == EStruct
-    }
-    fn cast(syntax: SyntaxNode) -> Option<Self> {
-        if Self::can_cast(syntax.kind()) {
-            Some(Self { syntax })
-        } else {
-            None
-        }
-    }
-    fn syntax(&self) -> &SyntaxNode {
-        &self.syntax
-    }
-}
-impl AstNode for EStructField {
-    fn can_cast(kind: SyntaxKind) -> bool {
-        kind == EStructField
+        kind == EArrayIdx
     }
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         if Self::can_cast(syntax.kind()) {
@@ -1125,6 +1087,51 @@ impl AstNode for EStructIdx {
 impl AstNode for EIf {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == EIf
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+impl AstNode for EArgList {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == EArgList
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+impl AstNode for BinOp {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == BinOp
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+impl AstNode for EStructField {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == EStructField
     }
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         if Self::can_cast(syntax.kind()) {
@@ -1370,6 +1377,41 @@ impl From<EArray> for Expr {
         Expr::EArray(node)
     }
 }
+impl From<EStruct> for Expr {
+    fn from(node: EStruct) -> Expr {
+        Expr::EStruct(node)
+    }
+}
+impl From<ECall> for Expr {
+    fn from(node: ECall) -> Expr {
+        Expr::ECall(node)
+    }
+}
+impl From<EParen> for Expr {
+    fn from(node: EParen) -> Expr {
+        Expr::EParen(node)
+    }
+}
+impl From<EBinary> for Expr {
+    fn from(node: EBinary) -> Expr {
+        Expr::EBinary(node)
+    }
+}
+impl From<EArrayIdx> for Expr {
+    fn from(node: EArrayIdx) -> Expr {
+        Expr::EArrayIdx(node)
+    }
+}
+impl From<EStructIdx> for Expr {
+    fn from(node: EStructIdx) -> Expr {
+        Expr::EStructIdx(node)
+    }
+}
+impl From<EIf> for Expr {
+    fn from(node: EIf) -> Expr {
+        Expr::EIf(node)
+    }
+}
 impl From<EBlock> for Expr {
     fn from(node: EBlock) -> Expr {
         Expr::EBlock(node)
@@ -1378,7 +1420,8 @@ impl From<EBlock> for Expr {
 impl AstNode for Expr {
     fn can_cast(kind: SyntaxKind) -> bool {
         match kind {
-            ELit | EVar | EArray | EBlock => true,
+            ELit | EVar | EArray | EStruct | ECall | EParen | EBinary | EArrayIdx | EStructIdx
+            | EIf | EBlock => true,
             _ => false,
         }
     }
@@ -1387,6 +1430,13 @@ impl AstNode for Expr {
             ELit => Expr::ELit(ELit { syntax }),
             EVar => Expr::EVar(EVar { syntax }),
             EArray => Expr::EArray(EArray { syntax }),
+            EStruct => Expr::EStruct(EStruct { syntax }),
+            ECall => Expr::ECall(ECall { syntax }),
+            EParen => Expr::EParen(EParen { syntax }),
+            EBinary => Expr::EBinary(EBinary { syntax }),
+            EArrayIdx => Expr::EArrayIdx(EArrayIdx { syntax }),
+            EStructIdx => Expr::EStructIdx(EStructIdx { syntax }),
+            EIf => Expr::EIf(EIf { syntax }),
             EBlock => Expr::EBlock(EBlock { syntax }),
             _ => return None,
         };
@@ -1397,6 +1447,13 @@ impl AstNode for Expr {
             Expr::ELit(it) => &it.syntax,
             Expr::EVar(it) => &it.syntax,
             Expr::EArray(it) => &it.syntax,
+            Expr::EStruct(it) => &it.syntax,
+            Expr::ECall(it) => &it.syntax,
+            Expr::EParen(it) => &it.syntax,
+            Expr::EBinary(it) => &it.syntax,
+            Expr::EArrayIdx(it) => &it.syntax,
+            Expr::EStructIdx(it) => &it.syntax,
+            Expr::EIf(it) => &it.syntax,
             Expr::EBlock(it) => &it.syntax,
         }
     }
@@ -1673,12 +1730,7 @@ impl std::fmt::Display for EArray {
         std::fmt::Display::fmt(self.syntax(), f)
     }
 }
-impl std::fmt::Display for EParen {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        std::fmt::Display::fmt(self.syntax(), f)
-    }
-}
-impl std::fmt::Display for EArrayIdx {
+impl std::fmt::Display for EStruct {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
     }
@@ -1688,7 +1740,7 @@ impl std::fmt::Display for ECall {
         std::fmt::Display::fmt(self.syntax(), f)
     }
 }
-impl std::fmt::Display for EArgList {
+impl std::fmt::Display for EParen {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
     }
@@ -1698,17 +1750,7 @@ impl std::fmt::Display for EBinary {
         std::fmt::Display::fmt(self.syntax(), f)
     }
 }
-impl std::fmt::Display for BinOp {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        std::fmt::Display::fmt(self.syntax(), f)
-    }
-}
-impl std::fmt::Display for EStruct {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        std::fmt::Display::fmt(self.syntax(), f)
-    }
-}
-impl std::fmt::Display for EStructField {
+impl std::fmt::Display for EArrayIdx {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
     }
@@ -1719,6 +1761,21 @@ impl std::fmt::Display for EStructIdx {
     }
 }
 impl std::fmt::Display for EIf {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for EArgList {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for BinOp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for EStructField {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
     }
