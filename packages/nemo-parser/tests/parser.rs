@@ -80,3 +80,22 @@ fn parse_toplevel() {
         }
     });
 }
+
+#[test]
+fn parse_example() {
+    use std::fs;
+    let input = {
+        let mut input = fs::read_to_string("../../example.nemo").unwrap();
+        normalize_newlines(&mut input);
+        input
+    };
+    let parse = parse_prog(&input);
+    let errors = parse.errors();
+    let error_output = if errors.is_empty() {
+        "".to_string()
+    } else {
+        format!("=== ERRORS ===\n\n{:#?}", errors)
+    };
+    let output = format!("{}\n{}", parse.debug_tree(), error_output);
+    assert_snapshot!(output);
+}
