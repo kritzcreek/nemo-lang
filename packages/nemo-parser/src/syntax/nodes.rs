@@ -5,6 +5,15 @@ use super::{
 };
 use crate::T;
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Root {
+    pub(crate) syntax: SyntaxNode,
+}
+impl Root {
+    pub fn top_levels(&self) -> AstChildren<TopLevel> {
+        support::children(&self.syntax)
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TopImport {
     pub(crate) syntax: SyntaxNode,
 }
@@ -299,6 +308,146 @@ impl EVar {
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct EArray {
+    pub(crate) syntax: SyntaxNode,
+}
+impl EArray {
+    pub fn l_brack_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T!['['])
+    }
+    pub fn exprs(&self) -> AstChildren<Expr> {
+        support::children(&self.syntax)
+    }
+    pub fn r_brack_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![']'])
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct EParen {
+    pub(crate) syntax: SyntaxNode,
+}
+impl EParen {
+    pub fn l_paren_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T!['('])
+    }
+    pub fn expr(&self) -> Option<Expr> {
+        support::child(&self.syntax)
+    }
+    pub fn r_paren_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![')'])
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct EArrayIdx {
+    pub(crate) syntax: SyntaxNode,
+}
+impl EArrayIdx {
+    pub fn expr(&self) -> Option<Expr> {
+        support::child(&self.syntax)
+    }
+    pub fn l_brack_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T!['['])
+    }
+    pub fn r_brack_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![']'])
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ECall {
+    pub(crate) syntax: SyntaxNode,
+}
+impl ECall {
+    pub fn expr(&self) -> Option<Expr> {
+        support::child(&self.syntax)
+    }
+    pub fn l_paren_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T!['('])
+    }
+    pub fn exprs(&self) -> AstChildren<Expr> {
+        support::children(&self.syntax)
+    }
+    pub fn r_paren_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![')'])
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct EBinary {
+    pub(crate) syntax: SyntaxNode,
+}
+impl EBinary {}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct BinOp {
+    pub(crate) syntax: SyntaxNode,
+}
+impl BinOp {
+    pub fn eq_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![=])
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct EStruct {
+    pub(crate) syntax: SyntaxNode,
+}
+impl EStruct {
+    pub fn ident_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![ident])
+    }
+    pub fn l_brace_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T!['{'])
+    }
+    pub fn e_struct_fields(&self) -> AstChildren<EStructField> {
+        support::children(&self.syntax)
+    }
+    pub fn r_brace_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T!['}'])
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct EStructField {
+    pub(crate) syntax: SyntaxNode,
+}
+impl EStructField {
+    pub fn upper_ident_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![upper_ident])
+    }
+    pub fn eq_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![=])
+    }
+    pub fn expr(&self) -> Option<Expr> {
+        support::child(&self.syntax)
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct EStructIdx {
+    pub(crate) syntax: SyntaxNode,
+}
+impl EStructIdx {
+    pub fn expr(&self) -> Option<Expr> {
+        support::child(&self.syntax)
+    }
+    pub fn dot_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![.])
+    }
+    pub fn ident_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![ident])
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct EIf {
+    pub(crate) syntax: SyntaxNode,
+}
+impl EIf {
+    pub fn if_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![if])
+    }
+    pub fn condition(&self) -> Option<Expr> {
+        support::child(&self.syntax)
+    }
+    pub fn else_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![else])
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DLet {
     pub(crate) syntax: SyntaxNode,
 }
@@ -424,6 +573,7 @@ pub enum Type {
 pub enum Expr {
     ELit(ELit),
     EVar(EVar),
+    EArray(EArray),
     EBlock(EBlock),
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -443,6 +593,21 @@ pub enum Declaration {
 pub enum SetIndirection {
     SetStruct(SetStruct),
     SetArray(SetArray),
+}
+impl AstNode for Root {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == Root
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
 }
 impl AstNode for TopImport {
     fn can_cast(kind: SyntaxKind) -> bool {
@@ -774,6 +939,156 @@ impl AstNode for EVar {
         &self.syntax
     }
 }
+impl AstNode for EArray {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == EArray
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+impl AstNode for EParen {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == EParen
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+impl AstNode for EArrayIdx {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == EArrayIdx
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+impl AstNode for ECall {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == ECall
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+impl AstNode for EBinary {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == EBinary
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+impl AstNode for BinOp {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == BinOp
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+impl AstNode for EStruct {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == EStruct
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+impl AstNode for EStructField {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == EStructField
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+impl AstNode for EStructIdx {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == EStructIdx
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+impl AstNode for EIf {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == EIf
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
 impl AstNode for DLet {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == DLet
@@ -1002,6 +1317,11 @@ impl From<EVar> for Expr {
         Expr::EVar(node)
     }
 }
+impl From<EArray> for Expr {
+    fn from(node: EArray) -> Expr {
+        Expr::EArray(node)
+    }
+}
 impl From<EBlock> for Expr {
     fn from(node: EBlock) -> Expr {
         Expr::EBlock(node)
@@ -1010,7 +1330,7 @@ impl From<EBlock> for Expr {
 impl AstNode for Expr {
     fn can_cast(kind: SyntaxKind) -> bool {
         match kind {
-            ELit | EVar | EBlock => true,
+            ELit | EVar | EArray | EBlock => true,
             _ => false,
         }
     }
@@ -1018,6 +1338,7 @@ impl AstNode for Expr {
         let res = match syntax.kind() {
             ELit => Expr::ELit(ELit { syntax }),
             EVar => Expr::EVar(EVar { syntax }),
+            EArray => Expr::EArray(EArray { syntax }),
             EBlock => Expr::EBlock(EBlock { syntax }),
             _ => return None,
         };
@@ -1027,6 +1348,7 @@ impl AstNode for Expr {
         match self {
             Expr::ELit(it) => &it.syntax,
             Expr::EVar(it) => &it.syntax,
+            Expr::EArray(it) => &it.syntax,
             Expr::EBlock(it) => &it.syntax,
         }
     }
@@ -1178,6 +1500,11 @@ impl std::fmt::Display for SetIndirection {
         std::fmt::Display::fmt(self.syntax(), f)
     }
 }
+impl std::fmt::Display for Root {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
 impl std::fmt::Display for TopImport {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
@@ -1284,6 +1611,56 @@ impl std::fmt::Display for ELit {
     }
 }
 impl std::fmt::Display for EVar {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for EArray {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for EParen {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for EArrayIdx {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for ECall {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for EBinary {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for BinOp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for EStruct {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for EStructField {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for EStructIdx {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for EIf {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
     }

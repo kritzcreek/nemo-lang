@@ -285,6 +285,7 @@ pub enum SyntaxKind {
 
     // Structs
     StructField,
+    EStructField,
 
     // Literals
     LitBool,
@@ -320,8 +321,6 @@ pub enum SyntaxKind {
 
     // Patterns
 
-    // Literals
-    LITERAL,
     // Modifiers
 
     // Recovery node

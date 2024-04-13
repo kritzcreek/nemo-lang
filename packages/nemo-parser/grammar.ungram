@@ -1,3 +1,5 @@
+Root = TopLevel*
+
 // TopLevel
 TopLevel
   = TopImport
@@ -34,7 +36,8 @@ TyBool = 'bool'
 TyUnit = 'unit'
 TyArray = '[' elem:Type ']'
 TyCons = 'upper_ident'
-TyFn = 'fn' '(' arguments:(Type (',' Type)*)? ')' '->' result:Type
+// TODO: Needs wrapper for return type
+TyFn = 'fn' '(' arguments:Type* ')' '->' result:Type
 
 // Literals
 Literal = LitBool | LitFloat | LitInt
@@ -48,14 +51,31 @@ LitFloat = 'float_lit'
 Expr
   = ELit
   | EVar
+  | EArray
   | EBlock
 
 ELit = Literal
 EVar = 'ident'
+EArray = '[' Expr* ']'
+EParen = '(' Expr ')'
+// TODO: Needs custom impl
+EArrayIdx = Expr '[' index:Expr ']'
+// TODO: Needs custom impl
+ECall = Expr '(' Expr* ')'
+// TODO: Needs custom impl
+EBinary = lhs:Expr op:BinOp rhs:Expr
+EStruct = 'ident' '{' EStructField* '}'
+EStructIdx = Expr '.' 'ident'
+// TODO: Needs custom impl
+EIf = 'if' condition:Expr then_branch:EBlock 'else' else_branch:EBlock
 EBlock = '{' Declaration* '}'
 
-// Declarations
+// TODO
+BinOp = '='
 
+EStructField = 'upper_ident' '=' Expr
+
+// Declarations
 Declaration
   = DLet
   | DSet

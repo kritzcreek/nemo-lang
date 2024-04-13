@@ -40,14 +40,15 @@ Root@0..108
       SPACE@29..30 " "
       L_BRACE@30..31 "{"
       SPACE@31..32 " "
-      IDENT@32..33 "x"
-      SPACE@33..34 " "
-      EQUALS@34..35 "="
-      SPACE@35..36 " "
-      ELit@36..39
-        LitInt@36..39
-          INT_LIT@36..38 "10"
-          SPACE@38..39 " "
+      EStructField@32..39
+        IDENT@32..33 "x"
+        SPACE@33..34 " "
+        EQUALS@34..35 "="
+        SPACE@35..36 " "
+        ELit@36..39
+          LitInt@36..39
+            INT_LIT@36..38 "10"
+            SPACE@38..39 " "
       R_BRACE@39..40 "}"
     SEMICOLON@40..41 ";"
   TopLet@41..74
@@ -63,23 +64,25 @@ Root@0..108
       SPACE@53..54 " "
       L_BRACE@54..55 "{"
       SPACE@55..56 " "
-      IDENT@56..57 "x"
-      SPACE@57..58 " "
-      EQUALS@58..59 "="
-      SPACE@59..60 " "
-      ELit@60..62
-        LitInt@60..62
-          INT_LIT@60..62 "10"
+      EStructField@56..62
+        IDENT@56..57 "x"
+        SPACE@57..58 " "
+        EQUALS@58..59 "="
+        SPACE@59..60 " "
+        ELit@60..62
+          LitInt@60..62
+            INT_LIT@60..62 "10"
       COMMA@62..63 ","
       SPACE@63..64 " "
-      IDENT@64..65 "y"
-      SPACE@65..66 " "
-      EQUALS@66..67 "="
-      SPACE@67..68 " "
-      ELit@68..72
-        LitFloat@68..72
-          FLOAT_LIT@68..71 "1.0"
-          SPACE@71..72 " "
+      EStructField@64..72
+        IDENT@64..65 "y"
+        SPACE@65..66 " "
+        EQUALS@66..67 "="
+        SPACE@67..68 " "
+        ELit@68..72
+          LitFloat@68..72
+            FLOAT_LIT@68..71 "1.0"
+            SPACE@71..72 " "
       R_BRACE@72..73 "}"
     SEMICOLON@73..74 ";"
   TopLet@74..108
@@ -95,22 +98,24 @@ Root@0..108
       SPACE@86..87 " "
       L_BRACE@87..88 "{"
       SPACE@88..89 " "
-      IDENT@89..90 "x"
-      SPACE@90..91 " "
-      EQUALS@91..92 "="
-      SPACE@92..93 " "
-      ELit@93..95
-        LitInt@93..95
-          INT_LIT@93..95 "10"
+      EStructField@89..95
+        IDENT@89..90 "x"
+        SPACE@90..91 " "
+        EQUALS@91..92 "="
+        SPACE@92..93 " "
+        ELit@93..95
+          LitInt@93..95
+            INT_LIT@93..95 "10"
       COMMA@95..96 ","
       SPACE@96..97 " "
-      IDENT@97..98 "y"
-      SPACE@98..99 " "
-      EQUALS@99..100 "="
-      SPACE@100..101 " "
-      ELit@101..104
-        LitFloat@101..104
-          FLOAT_LIT@101..104 "1.0"
+      EStructField@97..104
+        IDENT@97..98 "y"
+        SPACE@98..99 " "
+        EQUALS@99..100 "="
+        SPACE@100..101 " "
+        ELit@101..104
+          LitFloat@101..104
+            FLOAT_LIT@101..104 "1.0"
       COMMA@104..105 ","
       SPACE@105..106 " "
       R_BRACE@106..107 "}"

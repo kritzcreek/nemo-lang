@@ -352,11 +352,13 @@ fn atom(p: &mut Parser) -> Progress {
             p.bump(T![upper_ident]);
             if p.expect(T!['{']) {
                 while !p.at(SyntaxKind::EOF) && !p.at(T!['}']) {
+                    let c = p.checkpoint();
                     p.expect(T![ident]);
                     p.expect(T![=]);
                     if !expr(p).made_progress() {
                         p.error("expected a field expression")
                     }
+                    p.finish_at(c, SyntaxKind::EStructField);
 
                     if !p.at(T!['}']) && !p.expect(T![,]) {
                         break;
