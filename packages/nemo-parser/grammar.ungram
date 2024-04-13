@@ -3,7 +3,7 @@ TopLevel
   = TopImport
   | TopLet
   | TopStruct
-//  | TopFn
+  | TopFn
 
 TopImport = 'import' ImpInternal ':' Type 'from' ImpExternal
 ImpInternal = 'ident'
@@ -13,6 +13,10 @@ TopLet = 'let' 'ident' ':' Type '=' Expr
 
 TopStruct = 'struct' 'upper_ident' '{' StructField* '}'
 StructField = 'ident' ':' Type
+
+TopFn = 'fn' 'ident' ParamList '=' body:EBlock
+ParamList = Param*
+Param = 'ident' ':' Type
 
 // Types
 Type
@@ -44,6 +48,26 @@ LitFloat = 'float_lit'
 Expr
   = ELit
   | EVar
+  | EBlock
 
 ELit = Literal
 EVar = 'ident'
+EBlock = '{' Declaration* '}'
+
+// Declarations
+
+Declaration
+  = DLet
+  | DSet
+  | DWhile
+  | DExpr
+
+DLet = 'let' 'ident' (':' Type)? '=' Expr
+DSet = 'set' SetTarget '=' Expr
+DWhile = 'while' Expr EBlock
+DExpr = Expr
+
+SetTarget = 'ident' SetIndirection*
+SetIndirection = SetStruct | SetArray
+SetStruct = '.' 'ident'
+SetArray = '[' Expr ']'
