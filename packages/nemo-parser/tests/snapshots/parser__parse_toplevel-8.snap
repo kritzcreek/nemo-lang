@@ -21,11 +21,12 @@ Root@0..48
     ECall@9..22
       EVar@9..18
         IDENT@9..18 "array_len"
-      L_PAREN@18..19 "("
-      EArray@19..21
-        L_BRACKET@19..20 "["
-        R_BRACKET@20..21 "]"
-      R_PAREN@21..22 ")"
+      EArgList@18..22
+        L_PAREN@18..19 "("
+        EArray@19..21
+          L_BRACKET@19..20 "["
+          R_BRACKET@20..21 "]"
+        R_PAREN@21..22 ")"
     SEMICOLON@22..23 ";"
   TopLet@23..48
     LINEFEED@23..24 "\n"
@@ -38,15 +39,16 @@ Root@0..48
     ECall@32..47
       EVar@32..41
         IDENT@32..41 "array_new"
-      L_PAREN@41..42 "("
-      ELit@42..43
-        LitInt@42..43
-          INT_LIT@42..43 "1"
-      COMMA@43..44 ","
-      SPACE@44..45 " "
-      ELit@45..46
-        LitInt@45..46
-          INT_LIT@45..46 "2"
-      R_PAREN@46..47 ")"
+      EArgList@41..47
+        L_PAREN@41..42 "("
+        ELit@42..43
+          LitInt@42..43
+            INT_LIT@42..43 "1"
+        COMMA@43..44 ","
+        SPACE@44..45 " "
+        ELit@45..46
+          LitInt@45..46
+            INT_LIT@45..46 "2"
+        R_PAREN@46..47 ")"
     SEMICOLON@47..48 ";"
 

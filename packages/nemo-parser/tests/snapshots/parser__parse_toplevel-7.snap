@@ -26,8 +26,9 @@ Root@0..115
     ECall@9..12
       EVar@9..10
         IDENT@9..10 "f"
-      L_PAREN@10..11 "("
-      R_PAREN@11..12 ")"
+      EArgList@10..12
+        L_PAREN@10..11 "("
+        R_PAREN@11..12 ")"
     SEMICOLON@12..13 ";"
   TopLet@13..27
     LINEFEED@13..14 "\n"
@@ -40,11 +41,12 @@ Root@0..115
     ECall@22..26
       EVar@22..23
         IDENT@22..23 "f"
-      L_PAREN@23..24 "("
-      ELit@24..25
-        LitInt@24..25
-          INT_LIT@24..25 "1"
-      R_PAREN@25..26 ")"
+      EArgList@23..26
+        L_PAREN@23..24 "("
+        ELit@24..25
+          LitInt@24..25
+            INT_LIT@24..25 "1"
+        R_PAREN@25..26 ")"
     SEMICOLON@26..27 ";"
   TopLet@27..45
     LINEFEED@27..28 "\n"
@@ -57,17 +59,18 @@ Root@0..115
     ECall@36..44
       EVar@36..37
         IDENT@36..37 "f"
-      L_PAREN@37..38 "("
-      ELit@38..39
-        LitInt@38..39
-          INT_LIT@38..39 "1"
-      COMMA@39..40 ","
-      SPACE@40..41 " "
-      ELit@41..42
-        LitInt@41..42
-          INT_LIT@41..42 "2"
-      COMMA@42..43 ","
-      R_PAREN@43..44 ")"
+      EArgList@37..44
+        L_PAREN@37..38 "("
+        ELit@38..39
+          LitInt@38..39
+            INT_LIT@38..39 "1"
+        COMMA@39..40 ","
+        SPACE@40..41 " "
+        ELit@41..42
+          LitInt@41..42
+            INT_LIT@41..42 "2"
+        COMMA@42..43 ","
+        R_PAREN@43..44 ")"
     SEMICOLON@44..45 ";"
   TopLet@45..65
     LINEFEED@45..46 "\n"
@@ -80,21 +83,23 @@ Root@0..115
     ECall@54..64
       EVar@54..55
         IDENT@54..55 "f"
-      L_PAREN@55..56 "("
-      ELit@56..57
-        LitInt@56..57
-          INT_LIT@56..57 "1"
-      COMMA@57..58 ","
-      SPACE@58..59 " "
-      ECall@59..63
-        EVar@59..60
-          IDENT@59..60 "f"
-        L_PAREN@60..61 "("
-        ELit@61..62
-          LitInt@61..62
-            INT_LIT@61..62 "2"
-        R_PAREN@62..63 ")"
-      R_PAREN@63..64 ")"
+      EArgList@55..64
+        L_PAREN@55..56 "("
+        ELit@56..57
+          LitInt@56..57
+            INT_LIT@56..57 "1"
+        COMMA@57..58 ","
+        SPACE@58..59 " "
+        ECall@59..63
+          EVar@59..60
+            IDENT@59..60 "f"
+          EArgList@60..63
+            L_PAREN@60..61 "("
+            ELit@61..62
+              LitInt@61..62
+                INT_LIT@61..62 "2"
+            R_PAREN@62..63 ")"
+        R_PAREN@63..64 ")"
     SEMICOLON@64..65 ";"
   TopLet@65..80
     LINEFEED@65..66 "\n"
@@ -110,8 +115,9 @@ Root@0..115
           IDENT@74..75 "x"
         DOT@75..76 "."
         IDENT@76..77 "f"
-      L_PAREN@77..78 "("
-      R_PAREN@78..79 ")"
+      EArgList@77..79
+        L_PAREN@77..78 "("
+        R_PAREN@78..79 ")"
     SEMICOLON@79..80 ";"
   TopLet@80..98
     LINEFEED@80..81 "\n"
@@ -133,8 +139,9 @@ Root@0..115
           R_BRACKET@92..93 "]"
         DOT@93..94 "."
         IDENT@94..95 "f"
-      L_PAREN@95..96 "("
-      R_PAREN@96..97 ")"
+      EArgList@95..97
+        L_PAREN@95..96 "("
+        R_PAREN@96..97 ")"
     SEMICOLON@97..98 ";"
   TopLet@98..115
     LINEFEED@98..99 "\n"
@@ -148,14 +155,16 @@ Root@0..115
       ECall@107..111
         EVar@107..108
           IDENT@107..108 "f"
-        L_PAREN@108..109 "("
-        ELit@109..110
-          LitInt@109..110
-            INT_LIT@109..110 "1"
-        R_PAREN@110..111 ")"
-      L_PAREN@111..112 "("
-      EVar@112..113
-        IDENT@112..113 "x"
-      R_PAREN@113..114 ")"
+        EArgList@108..111
+          L_PAREN@108..109 "("
+          ELit@109..110
+            LitInt@109..110
+              INT_LIT@109..110 "1"
+          R_PAREN@110..111 ")"
+      EArgList@111..114
+        L_PAREN@111..112 "("
+        EVar@112..113
+          IDENT@112..113 "x"
+        R_PAREN@113..114 ")"
     SEMICOLON@114..115 ";"
 

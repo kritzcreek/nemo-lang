@@ -243,20 +243,29 @@ impl TyFn {
     pub fn fn_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T![fn])
     }
-    pub fn l_paren_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T!['('])
-    }
-    pub fn arguments(&self) -> AstChildren<Type> {
-        support::children(&self.syntax)
-    }
-    pub fn r_paren_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T![')'])
+    pub fn ty_arg_list(&self) -> Option<TyArgList> {
+        support::child(&self.syntax)
     }
     pub fn arrow_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T![->])
     }
     pub fn result(&self) -> Option<Type> {
         support::child(&self.syntax)
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct TyArgList {
+    pub(crate) syntax: SyntaxNode,
+}
+impl TyArgList {
+    pub fn l_paren_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T!['('])
+    }
+    pub fn types(&self) -> AstChildren<Type> {
+        support::children(&self.syntax)
+    }
+    pub fn r_paren_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![')'])
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -360,6 +369,15 @@ impl ECall {
     pub fn expr(&self) -> Option<Expr> {
         support::child(&self.syntax)
     }
+    pub fn e_arg_list(&self) -> Option<EArgList> {
+        support::child(&self.syntax)
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct EArgList {
+    pub(crate) syntax: SyntaxNode,
+}
+impl EArgList {
     pub fn l_paren_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T!['('])
     }
@@ -864,6 +882,21 @@ impl AstNode for TyFn {
         &self.syntax
     }
 }
+impl AstNode for TyArgList {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == TyArgList
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
 impl AstNode for LitBool {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == LitBool
@@ -987,6 +1020,21 @@ impl AstNode for EArrayIdx {
 impl AstNode for ECall {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == ECall
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+impl AstNode for EArgList {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == EArgList
     }
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         if Self::can_cast(syntax.kind()) {
@@ -1590,6 +1638,11 @@ impl std::fmt::Display for TyFn {
         std::fmt::Display::fmt(self.syntax(), f)
     }
 }
+impl std::fmt::Display for TyArgList {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
 impl std::fmt::Display for LitBool {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
@@ -1631,6 +1684,11 @@ impl std::fmt::Display for EArrayIdx {
     }
 }
 impl std::fmt::Display for ECall {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for EArgList {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
     }

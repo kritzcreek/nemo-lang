@@ -168,12 +168,16 @@ fn typ(p: &mut Parser) -> Progress {
         }
         T![fn] => {
             p.bump(T![fn]);
+            let c_arg = p.checkpoint();
             p.expect(T!['(']);
-            while !p.at(T![')']) {
+            while !p.at(SyntaxKind::EOF) && !p.at(T![')']) {
                 typ(p);
-                p.eat(T![,]);
+                if !p.at(T![')']) && !p.expect(T![,]) {
+                    break;
+                }
             }
             p.expect(T![')']);
+            p.finish_at(c_arg, SyntaxKind::TyArgList);
             p.expect(T![->]);
             if !typ(p).made_progress() {
                 p.error("expected a return type")
@@ -291,6 +295,7 @@ fn postfix_expr(p: &mut Parser, c: Checkpoint) {
     loop {
         match p.current() {
             T!['('] => {
+                let c_arg = p.checkpoint();
                 p.bump(T!['(']);
                 while !p.at(SyntaxKind::EOF) && !p.at(T![')']) {
                     if !expr(p).made_progress() {
@@ -302,6 +307,7 @@ fn postfix_expr(p: &mut Parser, c: Checkpoint) {
                     }
                 }
                 p.expect(T![')']);
+                p.finish_at(c_arg, SyntaxKind::EArgList);
                 p.finish_at(c, SyntaxKind::ECall)
             }
             T!['['] => {

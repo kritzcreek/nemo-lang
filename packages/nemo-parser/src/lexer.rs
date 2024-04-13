@@ -263,6 +263,8 @@ pub enum SyntaxKind {
     ParamList,
     Param,
     BinOp,
+    TyArgList,
+    EArgList,
 
     // Types
     TyInt,

@@ -156,9 +156,10 @@ Root@0..236
     SPACE@141..142 " "
     TyFn@142..155
       FN_KW@142..144 "fn"
-      L_PAREN@144..145 "("
-      R_PAREN@145..146 ")"
-      SPACE@146..147 " "
+      TyArgList@144..147
+        L_PAREN@144..145 "("
+        R_PAREN@145..146 ")"
+        SPACE@146..147 " "
       ARROW@147..149 "->"
       SPACE@149..150 " "
       TyUnit@150..155
@@ -180,11 +181,12 @@ Root@0..236
     SPACE@167..168 " "
     TyFn@168..183
       FN_KW@168..170 "fn"
-      L_PAREN@170..171 "("
-      TyInt@171..174
-        I32_BUILTIN@171..174 "i32"
-      R_PAREN@174..175 ")"
-      SPACE@175..176 " "
+      TyArgList@170..176
+        L_PAREN@170..171 "("
+        TyInt@171..174
+          I32_BUILTIN@171..174 "i32"
+        R_PAREN@174..175 ")"
+        SPACE@175..176 " "
       ARROW@176..178 "->"
       SPACE@178..179 " "
       TyFloat@179..183
@@ -206,28 +208,30 @@ Root@0..236
     SPACE@195..196 " "
     TyFn@196..232
       FN_KW@196..198 "fn"
-      L_PAREN@198..199 "("
-      TyInt@199..202
-        I32_BUILTIN@199..202 "i32"
-      COMMA@202..203 ","
-      SPACE@203..204 " "
-      TyFloat@204..207
-        F32_BUILTIN@204..207 "f32"
-      COMMA@207..208 ","
-      SPACE@208..209 " "
-      TyFn@209..223
-        FN_KW@209..211 "fn"
-        L_PAREN@211..212 "("
-        TyInt@212..215
-          I32_BUILTIN@212..215 "i32"
-        R_PAREN@215..216 ")"
-        SPACE@216..217 " "
-        ARROW@217..219 "->"
-        SPACE@219..220 " "
-        TyInt@220..223
-          I32_BUILTIN@220..223 "i32"
-      R_PAREN@223..224 ")"
-      SPACE@224..225 " "
+      TyArgList@198..225
+        L_PAREN@198..199 "("
+        TyInt@199..202
+          I32_BUILTIN@199..202 "i32"
+        COMMA@202..203 ","
+        SPACE@203..204 " "
+        TyFloat@204..207
+          F32_BUILTIN@204..207 "f32"
+        COMMA@207..208 ","
+        SPACE@208..209 " "
+        TyFn@209..223
+          FN_KW@209..211 "fn"
+          TyArgList@211..217
+            L_PAREN@211..212 "("
+            TyInt@212..215
+              I32_BUILTIN@212..215 "i32"
+            R_PAREN@215..216 ")"
+            SPACE@216..217 " "
+          ARROW@217..219 "->"
+          SPACE@219..220 " "
+          TyInt@220..223
+            I32_BUILTIN@220..223 "i32"
+        R_PAREN@223..224 ")"
+        SPACE@224..225 " "
       ARROW@225..227 "->"
       SPACE@227..228 " "
       TyFloat@228..232

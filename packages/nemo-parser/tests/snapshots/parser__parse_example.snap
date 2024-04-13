@@ -14,15 +14,16 @@ Root@0..1660
     TyFn@17..39
       FN_KW@17..19 "fn"
       SPACE@19..20 " "
-      L_PAREN@20..21 "("
-      TyFloat@21..24
-        F32_BUILTIN@21..24 "f32"
-      COMMA@24..25 ","
-      SPACE@25..26 " "
-      TyFloat@26..29
-        F32_BUILTIN@26..29 "f32"
-      R_PAREN@29..30 ")"
-      SPACE@30..31 " "
+      TyArgList@20..31
+        L_PAREN@20..21 "("
+        TyFloat@21..24
+          F32_BUILTIN@21..24 "f32"
+        COMMA@24..25 ","
+        SPACE@25..26 " "
+        TyFloat@26..29
+          F32_BUILTIN@26..29 "f32"
+        R_PAREN@29..30 ")"
+        SPACE@30..31 " "
       ARROW@31..33 "->"
       SPACE@33..34 " "
       TyUnit@34..39
@@ -44,15 +45,16 @@ Root@0..1660
     TyFn@69..91
       FN_KW@69..71 "fn"
       SPACE@71..72 " "
-      L_PAREN@72..73 "("
-      TyFloat@73..76
-        F32_BUILTIN@73..76 "f32"
-      COMMA@76..77 ","
-      SPACE@77..78 " "
-      TyFloat@78..81
-        F32_BUILTIN@78..81 "f32"
-      R_PAREN@81..82 ")"
-      SPACE@82..83 " "
+      TyArgList@72..83
+        L_PAREN@72..73 "("
+        TyFloat@73..76
+          F32_BUILTIN@73..76 "f32"
+        COMMA@76..77 ","
+        SPACE@77..78 " "
+        TyFloat@78..81
+          F32_BUILTIN@78..81 "f32"
+        R_PAREN@81..82 ")"
+        SPACE@82..83 " "
       ARROW@83..85 "->"
       SPACE@85..86 " "
       TyUnit@86..91
@@ -74,27 +76,28 @@ Root@0..1660
     TyFn@117..154
       FN_KW@117..119 "fn"
       SPACE@119..120 " "
-      L_PAREN@120..121 "("
-      TyFloat@121..124
-        F32_BUILTIN@121..124 "f32"
-      COMMA@124..125 ","
-      SPACE@125..126 " "
-      TyFloat@126..129
-        F32_BUILTIN@126..129 "f32"
-      COMMA@129..130 ","
-      SPACE@130..131 " "
-      TyFloat@131..134
-        F32_BUILTIN@131..134 "f32"
-      COMMA@134..135 ","
-      SPACE@135..136 " "
-      TyFloat@136..139
-        F32_BUILTIN@136..139 "f32"
-      COMMA@139..140 ","
-      SPACE@140..141 " "
-      TyFloat@141..144
-        F32_BUILTIN@141..144 "f32"
-      R_PAREN@144..145 ")"
-      SPACE@145..146 " "
+      TyArgList@120..146
+        L_PAREN@120..121 "("
+        TyFloat@121..124
+          F32_BUILTIN@121..124 "f32"
+        COMMA@124..125 ","
+        SPACE@125..126 " "
+        TyFloat@126..129
+          F32_BUILTIN@126..129 "f32"
+        COMMA@129..130 ","
+        SPACE@130..131 " "
+        TyFloat@131..134
+          F32_BUILTIN@131..134 "f32"
+        COMMA@134..135 ","
+        SPACE@135..136 " "
+        TyFloat@136..139
+          F32_BUILTIN@136..139 "f32"
+        COMMA@139..140 ","
+        SPACE@140..141 " "
+        TyFloat@141..144
+          F32_BUILTIN@141..144 "f32"
+        R_PAREN@144..145 ")"
+        SPACE@145..146 " "
       ARROW@146..148 "->"
       SPACE@148..149 " "
       TyUnit@149..154
@@ -116,19 +119,20 @@ Root@0..1660
     TyFn@189..216
       FN_KW@189..191 "fn"
       SPACE@191..192 " "
-      L_PAREN@192..193 "("
-      TyFloat@193..196
-        F32_BUILTIN@193..196 "f32"
-      COMMA@196..197 ","
-      SPACE@197..198 " "
-      TyFloat@198..201
-        F32_BUILTIN@198..201 "f32"
-      COMMA@201..202 ","
-      SPACE@202..203 " "
-      TyFloat@203..206
-        F32_BUILTIN@203..206 "f32"
-      R_PAREN@206..207 ")"
-      SPACE@207..208 " "
+      TyArgList@192..208
+        L_PAREN@192..193 "("
+        TyFloat@193..196
+          F32_BUILTIN@193..196 "f32"
+        COMMA@196..197 ","
+        SPACE@197..198 " "
+        TyFloat@198..201
+          F32_BUILTIN@198..201 "f32"
+        COMMA@201..202 ","
+        SPACE@202..203 " "
+        TyFloat@203..206
+          F32_BUILTIN@203..206 "f32"
+        R_PAREN@206..207 ")"
+        SPACE@207..208 " "
       ARROW@208..210 "->"
       SPACE@210..211 " "
       TyUnit@211..216
@@ -150,9 +154,10 @@ Root@0..1660
     TyFn@258..272
       FN_KW@258..260 "fn"
       SPACE@260..261 " "
-      L_PAREN@261..262 "("
-      R_PAREN@262..263 ")"
-      SPACE@263..264 " "
+      TyArgList@261..264
+        L_PAREN@261..262 "("
+        R_PAREN@262..263 ")"
+        SPACE@263..264 " "
       ARROW@264..266 "->"
       SPACE@266..267 " "
       TyUnit@267..272
@@ -174,9 +179,10 @@ Root@0..1660
     TyFn@308..322
       FN_KW@308..310 "fn"
       SPACE@310..311 " "
-      L_PAREN@311..312 "("
-      R_PAREN@312..313 ")"
-      SPACE@313..314 " "
+      TyArgList@311..314
+        L_PAREN@311..312 "("
+        R_PAREN@312..313 ")"
+        SPACE@313..314 " "
       ARROW@314..316 "->"
       SPACE@316..317 " "
       TyUnit@317..322
@@ -198,9 +204,10 @@ Root@0..1660
     TyFn@354..368
       FN_KW@354..356 "fn"
       SPACE@356..357 " "
-      L_PAREN@357..358 "("
-      R_PAREN@358..359 ")"
-      SPACE@359..360 " "
+      TyArgList@357..360
+        L_PAREN@357..358 "("
+        R_PAREN@358..359 ")"
+        SPACE@359..360 " "
       ARROW@360..362 "->"
       SPACE@362..363 " "
       TyUnit@363..368
@@ -222,9 +229,10 @@ Root@0..1660
     TyFn@395..409
       FN_KW@395..397 "fn"
       SPACE@397..398 " "
-      L_PAREN@398..399 "("
-      R_PAREN@399..400 ")"
-      SPACE@400..401 " "
+      TyArgList@398..401
+        L_PAREN@398..399 "("
+        R_PAREN@399..400 ")"
+        SPACE@400..401 " "
       ARROW@401..403 "->"
       SPACE@403..404 " "
       TyUnit@404..409
@@ -1094,57 +1102,58 @@ Root@0..1660
         ECall@1539..1608
           EVar@1539..1548
             IDENT@1539..1548 "array_new"
-          L_PAREN@1548..1549 "("
-          EStruct@1549..1603
-            UPPER_IDENT@1549..1557 "Particle"
-            SPACE@1557..1558 " "
-            L_BRACE@1558..1559 "{"
-            SPACE@1559..1560 " "
-            EStructField@1560..1567
-              IDENT@1560..1561 "x"
-              SPACE@1561..1562 " "
-              EQUALS@1562..1563 "="
-              SPACE@1563..1564 " "
-              ELit@1564..1567
-                LitFloat@1564..1567
-                  FLOAT_LIT@1564..1567 "0.0"
-            COMMA@1567..1568 ","
-            SPACE@1568..1569 " "
-            EStructField@1569..1576
-              IDENT@1569..1570 "y"
-              SPACE@1570..1571 " "
-              EQUALS@1571..1572 "="
-              SPACE@1572..1573 " "
-              ELit@1573..1576
-                LitFloat@1573..1576
-                  FLOAT_LIT@1573..1576 "0.0"
-            COMMA@1576..1577 ","
-            SPACE@1577..1578 " "
-            EStructField@1578..1589
-              IDENT@1578..1583 "color"
-              SPACE@1583..1584 " "
-              EQUALS@1584..1585 "="
-              SPACE@1585..1586 " "
-              EVar@1586..1589
-                IDENT@1586..1589 "red"
-            COMMA@1589..1590 ","
-            SPACE@1590..1591 " "
-            EStructField@1591..1602
-              IDENT@1591..1595 "time"
-              SPACE@1595..1596 " "
-              EQUALS@1596..1597 "="
-              SPACE@1597..1598 " "
-              ELit@1598..1602
-                LitFloat@1598..1602
-                  FLOAT_LIT@1598..1601 "0.0"
-                  SPACE@1601..1602 " "
-            R_BRACE@1602..1603 "}"
-          COMMA@1603..1604 ","
-          SPACE@1604..1605 " "
-          ELit@1605..1607
-            LitInt@1605..1607
-              INT_LIT@1605..1607 "25"
-          R_PAREN@1607..1608 ")"
+          EArgList@1548..1608
+            L_PAREN@1548..1549 "("
+            EStruct@1549..1603
+              UPPER_IDENT@1549..1557 "Particle"
+              SPACE@1557..1558 " "
+              L_BRACE@1558..1559 "{"
+              SPACE@1559..1560 " "
+              EStructField@1560..1567
+                IDENT@1560..1561 "x"
+                SPACE@1561..1562 " "
+                EQUALS@1562..1563 "="
+                SPACE@1563..1564 " "
+                ELit@1564..1567
+                  LitFloat@1564..1567
+                    FLOAT_LIT@1564..1567 "0.0"
+              COMMA@1567..1568 ","
+              SPACE@1568..1569 " "
+              EStructField@1569..1576
+                IDENT@1569..1570 "y"
+                SPACE@1570..1571 " "
+                EQUALS@1571..1572 "="
+                SPACE@1572..1573 " "
+                ELit@1573..1576
+                  LitFloat@1573..1576
+                    FLOAT_LIT@1573..1576 "0.0"
+              COMMA@1576..1577 ","
+              SPACE@1577..1578 " "
+              EStructField@1578..1589
+                IDENT@1578..1583 "color"
+                SPACE@1583..1584 " "
+                EQUALS@1584..1585 "="
+                SPACE@1585..1586 " "
+                EVar@1586..1589
+                  IDENT@1586..1589 "red"
+              COMMA@1589..1590 ","
+              SPACE@1590..1591 " "
+              EStructField@1591..1602
+                IDENT@1591..1595 "time"
+                SPACE@1595..1596 " "
+                EQUALS@1596..1597 "="
+                SPACE@1597..1598 " "
+                ELit@1598..1602
+                  LitFloat@1598..1602
+                    FLOAT_LIT@1598..1601 "0.0"
+                    SPACE@1601..1602 " "
+              R_BRACE@1602..1603 "}"
+            COMMA@1603..1604 ","
+            SPACE@1604..1605 " "
+            ELit@1605..1607
+              LitInt@1605..1607
+                INT_LIT@1605..1607 "25"
+            R_PAREN@1607..1608 ")"
       COMMA@1608..1609 ","
       EStructField@1609..1625
         LINEFEED@1609..1610 "\n"

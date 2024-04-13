@@ -253,20 +253,22 @@ Root@0..198
       ECall@162..179
         EVar@162..169
           IDENT@162..169 "f32_abs"
-        L_PAREN@169..170 "("
-        EVar@170..177
-          IDENT@170..177 "delta_x"
-        R_PAREN@177..178 ")"
-        SPACE@178..179 " "
+        EArgList@169..179
+          L_PAREN@169..170 "("
+          EVar@170..177
+            IDENT@170..177 "delta_x"
+          R_PAREN@177..178 ")"
+          SPACE@178..179 " "
       BinOp@179..181
         R_ANGLE@179..180 ">"
         SPACE@180..181 " "
       ECall@181..197
         EVar@181..188
           IDENT@181..188 "f32_abs"
-        L_PAREN@188..189 "("
-        EVar@189..196
-          IDENT@189..196 "delta_y"
-        R_PAREN@196..197 ")"
+        EArgList@188..197
+          L_PAREN@188..189 "("
+          EVar@189..196
+            IDENT@189..196 "delta_y"
+          R_PAREN@196..197 ")"
     SEMICOLON@197..198 ";"
 
