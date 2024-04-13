@@ -1,0 +1,2 @@
+[alias]
+xtask-gen-ast = "run --package xtask-gen-ast"

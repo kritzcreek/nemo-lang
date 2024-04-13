@@ -52,7 +52,7 @@ struct Lower {
     funcs: HashMap<String, Name>,
 
     scope: Scope,
-    // For debugging purposes (lets us map lowerd identifiers back to their original source)
+    // For debugging purposes (lets us map lowered identifiers back to their original source)
     name_map: HashMap<Name, Id>,
 }
 
