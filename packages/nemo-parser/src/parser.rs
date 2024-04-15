@@ -2,7 +2,7 @@ use std::ops::Range;
 
 use crate::lexer::{Lexer, SyntaxKind, TToken};
 use crate::syntax::{NemoLanguage, SyntaxNode};
-use rowan::{Checkpoint, GreenNode, GreenNodeBuilder, Language};
+use rowan::{Checkpoint, GreenNode, GreenNodeBuilder, Language, TextRange, TextSize};
 
 mod prog;
 
@@ -10,7 +10,7 @@ pub struct Parser<'a> {
     tokens: Vec<TToken<'a>>,
     builder: GreenNodeBuilder<'static>,
     // TODO: Be smarter here
-    errors: Vec<(String, Range<usize>)>,
+    errors: Vec<(String, TextRange)>,
 }
 
 impl<'a> Parser<'a> {
@@ -110,11 +110,16 @@ impl<'a> Parser<'a> {
         self.nth_at(0, kind)
     }
 
-    fn span(&self) -> Range<usize> {
-        self.tokens
+    fn span(&self) -> TextRange {
+        let span = self
+            .tokens
             .last()
             .map(|t| t.token.span.clone())
-            .unwrap_or_default()
+            .unwrap_or_default();
+        TextRange::new(
+            TextSize::from(span.start as u32),
+            TextSize::from(span.end as u32),
+        )
     }
 
     fn error(&mut self, msg: &str) {
@@ -134,7 +139,7 @@ pub fn parse_prog(input: &str) -> Parse {
 
 pub struct Parse {
     green_node: GreenNode,
-    errors: Vec<(String, Range<usize>)>,
+    errors: Vec<(String, TextRange)>,
 }
 
 impl Parse {
@@ -150,7 +155,7 @@ impl Parse {
         formatted[0..formatted.len() - 1].to_string()
     }
 
-    pub fn errors(&self) -> &[(String, Range<usize>)] {
+    pub fn errors(&self) -> &[(String, TextRange)] {
         &self.errors
     }
 }

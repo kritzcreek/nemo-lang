@@ -1,3 +1,4 @@
+use line_index::{LineCol, LineIndex};
 use parser::parse_prog;
 use syntax::{ast::AstNode, nodes::Root};
 
@@ -6,13 +7,23 @@ pub mod parser;
 pub mod syntax;
 pub mod types;
 
+fn pretty_line_col(line_col: &LineCol) -> String {
+    format!("{}:{}", line_col.line, line_col.col)
+}
+
 pub fn check_program(source: &str) {
+    let line_index = LineIndex::new(source);
     let parse = parse_prog(source);
     if !parse.errors().is_empty() {
         println!("Parse Errors:\n==========");
         for error in parse.errors() {
             // TODO: Translate into line/col
-            println!("{:?}: {}", error.1, error.0)
+            println!(
+                "{}-{}: {}",
+                pretty_line_col(&line_index.line_col(error.1.start())),
+                pretty_line_col(&line_index.line_col(error.1.end())),
+                error.0
+            )
         }
     }
 
