@@ -92,6 +92,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "ariadne"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dd002a6223f12c7a95cdd4b1cb3a0149d22d37f7a9ecdb2cb691a071fe236c29"
+dependencies = [
+ "unicode-width",
+ "yansi",
+]
+
+[[package]]
 name = "arrayvec"
 version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -823,6 +833,7 @@ dependencies = [
  "nemo-backend",
  "nemo-frontend",
  "nemo-language-server",
+ "nemo-parser",
  "playground",
 ]
 
@@ -830,7 +841,7 @@ dependencies = [
 name = "nemo-frontend"
 version = "0.1.0"
 dependencies = [
- "ariadne",
+ "ariadne 0.3.0",
  "insta",
  "lazy_static",
  "pretty",
@@ -856,6 +867,7 @@ dependencies = [
 name = "nemo-parser"
 version = "0.1.0"
 dependencies = [
+ "ariadne 0.4.0",
  "insta",
  "logos",
  "num-derive",

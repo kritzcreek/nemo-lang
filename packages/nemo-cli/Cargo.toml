@@ -8,8 +8,9 @@ name = "nemo"
 path = "src/main.rs"
 
 [dependencies]
-clap = { version = "4.4.12", features = [ "derive" ] }
+clap = { version = "4.4.12", features = ["derive"] }
 nemo-backend = { path = "../nemo-backend" }
 nemo-frontend = { path = "../nemo-frontend" }
+nemo-parser = { path = "../nemo-parser" }
 playground = { path = "../playground" }
 nemo-language-server = { path = "../nemo-language-server" }

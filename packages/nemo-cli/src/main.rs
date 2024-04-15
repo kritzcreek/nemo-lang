@@ -58,13 +58,8 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
         }
         Commands::Check { input_file } => {
             let source = fs::read_to_string(input_file)?;
-            match check_program(&source) {
-                Ok(_) => Ok(()),
-                Err(err) => {
-                    eprintln!("{}", render_ty_error(&source, &err, true));
-                    std::process::exit(1)
-                }
-            }
+            nemo_parser::check_program(&source);
+            Ok(())
         }
         Commands::LanguageServer { .. } => start_language_server(),
         Commands::Playground => {

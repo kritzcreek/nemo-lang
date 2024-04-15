@@ -16,7 +16,7 @@ TopLet = 'let' 'ident' ':' Type '=' Expr
 TopStruct = 'struct' 'upper_ident' '{' StructField* '}'
 StructField = 'ident' ':' Type
 
-TopFn = 'fn' 'ident' '(' Param* ')' '=' body:EBlock
+TopFn = 'fn' 'ident' '(' Param* ')' (':' Type)? '=' body:EBlock
 Param = 'ident' ':' Type
 
 // Types

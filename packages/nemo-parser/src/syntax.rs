@@ -1,5 +1,6 @@
-mod ast;
-mod nodes;
+pub mod ast;
+pub mod nodes;
+pub mod token_ptr;
 
 use crate::lexer::SyntaxKind;
 use num_traits::{FromPrimitive, ToPrimitive};
@@ -12,6 +13,7 @@ pub type SyntaxToken = rowan::SyntaxToken<NemoLanguage>;
 pub type SyntaxElement = rowan::SyntaxElement<NemoLanguage>;
 pub type SyntaxNodeChildren = rowan::SyntaxNodeChildren<NemoLanguage>;
 pub type SyntaxElementChildren = rowan::SyntaxElementChildren<NemoLanguage>;
+pub type SyntaxNodePtr = rowan::ast::SyntaxNodePtr<NemoLanguage>;
 
 impl rowan::Language for NemoLanguage {
     type Kind = SyntaxKind;

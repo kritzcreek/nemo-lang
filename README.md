@@ -10,6 +10,7 @@ It's main purpose is to serve as a teaching tool in my compilers course.
 - [x] Rowan based parser
 - [x] Set up AST generation (xtask + ungrammar)
 - [ ] Integrate grammar/parser viewer into playground
+- [ ] Implement new type checker
 
 - Move name resolution into the type checker?
 

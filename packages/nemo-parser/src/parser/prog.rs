@@ -2,6 +2,7 @@ use rowan::Checkpoint;
 
 use super::Parser;
 use crate::lexer::SyntaxKind;
+use crate::syntax::nodes::EParen;
 use crate::T;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
@@ -100,6 +101,9 @@ fn top_fn(p: &mut Parser) {
         p.error("expected a function name")
     }
     param_list(p);
+    typ_annot(p);
+    p.expect(T![=]);
+    block_expr(p);
     p.finish_at(c, SyntaxKind::TopFn)
 }
 
@@ -337,6 +341,12 @@ fn atom(p: &mut Parser) -> Progress {
     }
 
     match p.current() {
+        T!['('] => {
+            p.bump(T!['(']);
+            expr(p);
+            p.expect(T![')']);
+            p.finish_at(c, SyntaxKind::EParen);
+        }
         T!['['] => {
             p.bump(T!['[']);
             while !p.at(SyntaxKind::EOF) && !p.at(T![']']) {
