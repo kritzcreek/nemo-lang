@@ -82,7 +82,7 @@ pub struct Typechecker {
     pub errors: Vec<TyError>,
 
     pub name_supply: NameSupply,
-    pub context: Ctx,
+    context: Ctx,
 }
 
 impl Typechecker {
@@ -98,13 +98,17 @@ impl Typechecker {
     }
 
     fn record_def(&mut self, token: &SyntaxToken, name: Name) {
-        self.names
+        let previous = self
+            .names
             .insert(SyntaxTokenPtr::new(&token), Occurence::Def(name));
+        assert!(previous.is_none())
     }
 
     fn record_ref(&mut self, token: &SyntaxToken, name: Name) {
-        self.names
+        let previous = self
+            .names
             .insert(SyntaxTokenPtr::new(&token), Occurence::Ref(name));
+        assert!(previous.is_none())
     }
 
     pub fn infer_program(&mut self, root: Root) {
@@ -114,7 +118,7 @@ impl Typechecker {
         self.check_imports(&root);
         self.check_function_headers(&root);
 
-        // self.check_globals(&root);
+        self.check_globals(&root);
         // self.check_function_bodies(&root);
 
         self.context.leave_block();
@@ -264,5 +268,80 @@ impl Typechecker {
         }
     }
 
-    fn infer_toplevel(&mut self, toplevel: &TopLevel) {}
+    fn check_globals(&mut self, root: &Root) {
+        for top_level in root.top_levels() {
+            match top_level {
+                TopLevel::TopLet(top_let) => {
+                    let binder_tkn = top_let.ident_token();
+                    let ty = match (top_let.ty().map(|t| self.check_ty(&t)), top_let.expr()) {
+                        (None, None) => continue,
+                        (Some(ty), None) => ty,
+                        (None, Some(e)) => {
+                            self.infer_expr(&e);
+                            // No name, so can't add to context
+                            continue;
+                        }
+                        (Some(t), Some(e)) => {
+                            self.check_expr(&e, &t);
+                            t
+                        }
+                    };
+                    // TODO add to context
+                }
+                _ => {}
+            }
+        }
+    }
+
+    fn infer_expr(&mut self, expr: &Expr) -> Ty {
+        match expr {
+            Expr::EArray(arr) => {
+                let mut elems = arr.exprs();
+                if let Some(first_elem) = elems.next() {
+                    let elem_ty = self.infer_expr(&first_elem);
+                    for elem in elems {
+                        self.check_expr(&elem, &elem_ty);
+                    }
+                    Ty::Array(Box::new(elem_ty))
+                } else {
+                    // TODO error
+                    Ty::Array(Box::new(Ty::Any))
+                }
+            }
+            _ => {
+                // TODO error
+                Ty::Any
+            }
+        }
+    }
+
+    fn check_expr(&mut self, expr: &Expr, expected: &Ty) {
+        match (expr, expected) {
+            (Expr::EArray(expr), Ty::Array(elem_ty)) => {
+                for elem in expr.exprs() {
+                    self.check_expr(&elem, &**elem_ty);
+                }
+            }
+            (Expr::EIf(expr), ty) => {
+                if let Some(condition) = expr.condition() {
+                    self.check_expr(&condition, &Ty::Bool)
+                }
+                // TODO after custom impl for branches
+
+                // if let Some(then_branch) = expr.then_branch() {
+                //     self.check_expr(&then_branch, ty)
+                // }
+                // if let Some(else_branch) = expr.else_branch() {
+                //     self.check_expr(&else_branch, ty)
+                // }
+            }
+            _ => {
+                let ty = self.infer_expr(expr);
+                // TODO match types (special logic for Any)
+                if ty != *expected {
+                    // TODO error
+                }
+            }
+        }
+    }
 }
