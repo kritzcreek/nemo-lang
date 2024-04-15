@@ -129,7 +129,17 @@ impl<'a> Parser<'a> {
 
 pub fn parse_prog(input: &str) -> Parse {
     let mut p = Parser::new(input);
+    let c = p.checkpoint();
     prog::prog(&mut p);
+    if !p.at(SyntaxKind::EOF) {
+        p.error("failed to make progress");
+        p.start_node(SyntaxKind::Error);
+        while !p.at(SyntaxKind::EOF) {
+            p.bump_any()
+        }
+        p.finish_node()
+    }
+    p.finish_at(c, SyntaxKind::Root);
     let green_node = p.builder.finish();
     Parse {
         green_node,

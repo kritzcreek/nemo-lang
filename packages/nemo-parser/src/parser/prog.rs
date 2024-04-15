@@ -18,9 +18,7 @@ impl Progress {
 }
 
 pub fn prog(p: &mut Parser) {
-    let c = p.checkpoint();
     while toplevel(p) == Progress::Made {}
-    p.finish_at(c, SyntaxKind::Root)
 }
 
 fn toplevel(p: &mut Parser) -> Progress {
