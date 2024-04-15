@@ -106,6 +106,17 @@ fn collide_cubes(c1 : Cube, c2 : Cube) = {
   } else {}
 }
 
+fn collide_cube(cube : Cube) = {
+  let idx = 0;
+  while idx < @array_len(cubes) {
+    if cubes[idx].x == cube.x && cubes[idx].y == cube.y {
+    } else {
+      collide_cubes(cube, cubes[idx])
+    };
+    set idx = idx + 1
+  }
+}
+
 fn tick_cube(cube : Cube, elapsed_time_ms : f32) = {
   let elapsed_factor = elapsed_time_ms / 48.0;
 
@@ -121,18 +132,6 @@ fn tick_cube(cube : Cube, elapsed_time_ms : f32) = {
     set cube.y = clamp(0.0, cube.y, 500.0);
     set cube.vy = f32_neg(cube.vy)
   } else {}
-}
-
-fn collide_cube(cube : Cube) = {
-  let idx = 0;
-  while idx < @array_len(cubes) {
-    if cubes[idx].x == cube.x && cubes[idx].y == cube.y {
-    } else {
-      collide_cubes(cube, cubes[idx])
-    };
-    set idx = idx + 1
-  }
-
 }
 
 fn tick(elapsed_time_ms : f32) = {

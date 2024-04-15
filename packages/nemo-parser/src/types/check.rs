@@ -109,11 +109,13 @@ impl Typechecker {
 
     pub fn infer_program(&mut self, root: Root) {
         self.context.enter_block();
+
         self.check_type_definitions(&root);
         self.check_imports(&root);
         self.check_function_headers(&root);
 
-        println!("{:?}", self.context.values);
+        // self.check_globals(&root);
+        // self.check_function_bodies(&root);
 
         self.context.leave_block();
     }
@@ -193,17 +195,17 @@ impl Typechecker {
         for top_level in root.top_levels() {
             match top_level {
                 TopLevel::TopFn(top_fn) => {
-                    let fn_name_tkn = top_fn.ident_token().unwrap();
-                    println!("Top Function: {:?}", fn_name_tkn);
+                    let Some(fn_name_tkn) = top_fn.ident_token() else {
+                        continue;
+                    };
                     let mut arguments = vec![];
                     for param in top_fn.params() {
-                        let ty = self.check_ty(&param.ty().unwrap());
+                        let ty = param.ty().map(|t| self.check_ty(&t)).unwrap_or(Ty::Any);
                         arguments.push(ty);
                     }
                     let name = self.name_supply.func_idx(&fn_name_tkn);
                     self.record_def(&fn_name_tkn, name);
                     let result = top_fn.ty().map(|t| self.check_ty(&t)).unwrap_or(Ty::Unit);
-                    // insert into ctx
                     self.context.add_var(
                         fn_name_tkn.text().to_string(),
                         Ty::Func(Box::new(FuncTy { arguments, result })),

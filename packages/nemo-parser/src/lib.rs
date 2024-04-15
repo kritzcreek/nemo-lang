@@ -16,14 +16,14 @@ pub fn check_program(source: &str) {
         }
     }
 
-    println!("{}", parse.debug_tree());
+    // println!("{}", parse.debug_tree());
 
     let check_result = match Root::cast(parse.syntax()) {
         None => panic!("Parse didn't yield a Root node"),
         Some(root) => types::check_prog(root),
     };
 
-    println!("{:?}", check_result.errors);
-    println!("{:?}", check_result.names);
+    // println!("{:?}", check_result.names);
     println!("{:?}", check_result.typed_nodes);
+    println!("{:?}", check_result.errors);
 }
