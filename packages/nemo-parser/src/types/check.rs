@@ -3,7 +3,10 @@ use std::rc::Rc;
 
 use nemo_backend::ir::{self, OpData};
 
-use super::errors::{TyError, TyErrorData};
+use super::errors::{
+    TyError,
+    TyErrorData::{self, *},
+};
 use super::names::{Name, NameSupply};
 use super::{FuncTy, Ty};
 use crate::lexer::SyntaxKind;
@@ -128,6 +131,20 @@ impl Typechecker {
         assert!(previous.is_none())
     }
 
+    fn report_error_token(&mut self, elem: &SyntaxToken, error: TyErrorData) {
+        self.errors.push(TyError {
+            at: elem.text_range(),
+            it: error,
+        })
+    }
+
+    fn report_error<N: AstNode>(&mut self, elem: &N, error: TyErrorData) {
+        self.errors.push(TyError {
+            at: elem.syntax().text_range(),
+            it: error,
+        })
+    }
+
     pub fn infer_program(&mut self, root: Root) {
         self.context.enter_block();
 
@@ -189,15 +206,11 @@ impl Typechecker {
                         };
                         for field in s.struct_fields() {
                             let Some(field_name) = field.ident_token() else {
-                                // TODO error
                                 continue;
                             };
                             let ty = match field.ty() {
                                 Some(field_ty) => self.check_ty(&field_ty),
-                                None => {
-                                    // TODO: report error
-                                    Ty::Any
-                                }
+                                None => Ty::Any,
                             };
                             let name = self.name_supply.field_idx(&field_name);
                             self.record_def(&field_name, name);
@@ -247,15 +260,12 @@ impl Typechecker {
             Type::TyUnit(_) => Ty::Unit,
             Type::TyArray(t) => match t.elem().map(|e| self.check_ty(&e)) {
                 Some(elem_ty) => Ty::Array(Box::new(elem_ty)),
-                None => {
-                    // TODO report error
-                    Ty::Array(Box::new(Ty::Any))
-                }
+                None => Ty::Array(Box::new(Ty::Any)),
             },
             Type::TyCons(t) => {
                 let ty_name = t.upper_ident_token().unwrap();
                 let Some(name) = self.context.lookup_type_name(ty_name.text()) else {
-                    // TODO error
+                    self.report_error_token(&ty_name, UnknownType(ty_name.text().to_string()));
                     return Ty::Any;
                 };
                 self.record_ref(&ty_name, name);
@@ -263,23 +273,12 @@ impl Typechecker {
             }
             Type::TyFn(t) => {
                 let mut arguments = vec![];
-                match t.ty_arg_list() {
-                    Some(arg_list) => {
-                        for arg in arg_list.types() {
-                            arguments.push(self.check_ty(&arg))
-                        }
-                    }
-                    None => {
-                        // TODO error
+                if let Some(arg_list) = t.ty_arg_list() {
+                    for arg in arg_list.types() {
+                        arguments.push(self.check_ty(&arg))
                     }
                 }
-                let result = t.result().map_or_else(
-                    || {
-                        // TODO error
-                        Ty::Any
-                    },
-                    |t| self.check_ty(&t),
-                );
+                let result = t.result().map_or_else(|| Ty::Any, |t| self.check_ty(&t));
                 let func_ty = FuncTy { arguments, result };
                 Ty::Func(Box::new(func_ty))
             }
@@ -552,7 +551,7 @@ impl Typechecker {
                 if *expected != Ty::Any && ty != Ty::Any && ty != *expected {
                     self.errors.push(TyError {
                         at: expr.syntax().text_range(),
-                        it: TyErrorData::TypeMismatch {
+                        it: TypeMismatch {
                             expected: expected.clone(),
                             actual: ty,
                         },
@@ -567,11 +566,8 @@ impl Typechecker {
     fn infer_decl(&mut self, decl: &Declaration) -> Ty {
         match decl {
             Declaration::DLet(let_decl) => {
-                let binder = let_decl.ident_token();
-                let type_annotation = let_decl.ty();
-                let expr = let_decl.expr();
-                let ty = if let Some(expr) = expr {
-                    if let Some(ty) = type_annotation.map(|ta| self.check_ty(&ta)) {
+                let ty = if let Some(expr) = let_decl.expr() {
+                    if let Some(ty) = let_decl.ty().map(|ta| self.check_ty(&ta)) {
                         self.check_expr(&expr, &ty);
                         ty
                     } else {
@@ -581,7 +577,7 @@ impl Typechecker {
                     Ty::Any
                 };
 
-                if let Some(binder_tkn) = binder {
+                if let Some(binder_tkn) = let_decl.ident_token() {
                     let name = self.name_supply.local_idx(&binder_tkn);
                     self.record_def(&binder_tkn, name);
                     self.context
@@ -656,8 +652,7 @@ impl Typechecker {
                 }
             }
         }
-
-        ty.clone()
+        ty
     }
 }
 
