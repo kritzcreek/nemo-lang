@@ -3,12 +3,12 @@ source: packages/nemo-parser/tests/types.rs
 expression: err_buf
 input_file: packages/nemo-parser/tests/type_errors/unknown_intrinsic.nemo
 ---
-[05] Error: Unknown variable unknown
+[08] Error: Unknown intrinsic @unknown with argcount: 0
    ╭─[source:1:13]
    │
  2 │   @unknown()
-   │   ───┬───  
-   │      ╰───── Unknown variable 'unknown'
+   │   ────┬───  
+   │       ╰───── Unknown intrinsic '@unknown' with '0' arguments
 ───╯
 
 

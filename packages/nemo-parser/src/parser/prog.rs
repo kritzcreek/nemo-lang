@@ -2,7 +2,6 @@ use rowan::Checkpoint;
 
 use super::Parser;
 use crate::lexer::SyntaxKind;
-use crate::syntax::nodes::EParen;
 use crate::T;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
@@ -291,23 +290,27 @@ fn block_expr(p: &mut Parser) {
     p.finish_at(c, SyntaxKind::EBlock)
 }
 
+fn call_arg_list(p: &mut Parser) {
+    let c = p.checkpoint();
+    p.bump(T!['(']);
+    while !p.at(SyntaxKind::EOF) && !p.at(T![')']) {
+        if !expr(p).made_progress() {
+            break;
+        }
+
+        if !p.at(T![')']) && !p.expect(T![,]) {
+            break;
+        }
+    }
+    p.expect(T![')']);
+    p.finish_at(c, SyntaxKind::EArgList);
+}
+
 fn postfix_expr(p: &mut Parser, c: Checkpoint) {
     loop {
         match p.current() {
             T!['('] => {
-                let c_arg = p.checkpoint();
-                p.bump(T!['(']);
-                while !p.at(SyntaxKind::EOF) && !p.at(T![')']) {
-                    if !expr(p).made_progress() {
-                        break;
-                    }
-
-                    if !p.at(T![')']) && !p.expect(T![,]) {
-                        break;
-                    }
-                }
-                p.expect(T![')']);
-                p.finish_at(c_arg, SyntaxKind::EArgList);
+                call_arg_list(p);
                 p.finish_at(c, SyntaxKind::ECall)
             }
             T!['['] => {
@@ -383,6 +386,16 @@ fn atom(p: &mut Parser) -> Progress {
         T![ident] => {
             p.bump(T![ident]);
             p.finish_at(c, SyntaxKind::EVar)
+        }
+        T![at_ident] => {
+            p.bump(T![at_ident]);
+            if p.at(T!['(']) {
+                call_arg_list(p);
+                p.finish_at(c, SyntaxKind::EIntrinsic)
+            } else {
+                p.error("expected an open parenthesis");
+                p.finish_at(c, SyntaxKind::Error)
+            }
         }
         _ => return Progress::None,
     }

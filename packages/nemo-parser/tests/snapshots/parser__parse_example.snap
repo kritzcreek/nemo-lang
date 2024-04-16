@@ -2,7 +2,7 @@
 source: packages/nemo-parser/tests/parser.rs
 expression: output
 ---
-Root@0..4185
+Root@0..4190
   TopImport@0..51
     IMPORT_KW@0..6 "import"
     SPACE@6..7 " "
@@ -1079,7 +1079,7 @@ Root@0..4185
       LINEFEED@1494..1495 "\n"
       R_BRACKET@1495..1496 "]"
     SEMICOLON@1496..1497 ";"
-  TopLet@1497..1628
+  TopLet@1497..1629
     LINEFEED@1497..1498 "\n"
     LINEFEED@1498..1499 "\n"
     LET_KW@1499..1502 "let"
@@ -1088,1849 +1088,1844 @@ Root@0..4185
     SPACE@1512..1513 " "
     EQUALS@1513..1514 "="
     SPACE@1514..1515 " "
-    EStruct@1515..1627
+    EStruct@1515..1628
       UPPER_IDENT@1515..1525 "RingBuffer"
       SPACE@1525..1526 " "
       L_BRACE@1526..1527 "{"
-      EStructField@1527..1608
+      EStructField@1527..1609
         LINEFEED@1527..1528 "\n"
         SPACE@1528..1530 "  "
         IDENT@1530..1536 "buffer"
         SPACE@1536..1537 " "
         EQUALS@1537..1538 "="
         SPACE@1538..1539 " "
-        ECall@1539..1608
-          EVar@1539..1548
-            IDENT@1539..1548 "array_new"
-          EArgList@1548..1608
-            L_PAREN@1548..1549 "("
-            EStruct@1549..1603
-              UPPER_IDENT@1549..1557 "Particle"
-              SPACE@1557..1558 " "
-              L_BRACE@1558..1559 "{"
-              SPACE@1559..1560 " "
-              EStructField@1560..1567
-                IDENT@1560..1561 "x"
-                SPACE@1561..1562 " "
-                EQUALS@1562..1563 "="
-                SPACE@1563..1564 " "
-                ELit@1564..1567
-                  LitFloat@1564..1567
-                    FLOAT_LIT@1564..1567 "0.0"
-              COMMA@1567..1568 ","
-              SPACE@1568..1569 " "
-              EStructField@1569..1576
-                IDENT@1569..1570 "y"
-                SPACE@1570..1571 " "
-                EQUALS@1571..1572 "="
-                SPACE@1572..1573 " "
-                ELit@1573..1576
-                  LitFloat@1573..1576
-                    FLOAT_LIT@1573..1576 "0.0"
-              COMMA@1576..1577 ","
-              SPACE@1577..1578 " "
-              EStructField@1578..1589
-                IDENT@1578..1583 "color"
-                SPACE@1583..1584 " "
-                EQUALS@1584..1585 "="
-                SPACE@1585..1586 " "
-                EVar@1586..1589
-                  IDENT@1586..1589 "red"
-              COMMA@1589..1590 ","
-              SPACE@1590..1591 " "
-              EStructField@1591..1602
-                IDENT@1591..1595 "time"
-                SPACE@1595..1596 " "
-                EQUALS@1596..1597 "="
-                SPACE@1597..1598 " "
-                ELit@1598..1602
-                  LitFloat@1598..1602
-                    FLOAT_LIT@1598..1601 "0.0"
-                    SPACE@1601..1602 " "
-              R_BRACE@1602..1603 "}"
-            COMMA@1603..1604 ","
-            SPACE@1604..1605 " "
-            ELit@1605..1607
-              LitInt@1605..1607
-                INT_LIT@1605..1607 "25"
-            R_PAREN@1607..1608 ")"
-      COMMA@1608..1609 ","
-      EStructField@1609..1625
-        LINEFEED@1609..1610 "\n"
-        SPACE@1610..1612 "  "
-        IDENT@1612..1621 "watermark"
-        SPACE@1621..1622 " "
-        EQUALS@1622..1623 "="
-        SPACE@1623..1624 " "
-        ELit@1624..1625
-          LitInt@1624..1625
-            INT_LIT@1624..1625 "0"
-      LINEFEED@1625..1626 "\n"
-      R_BRACE@1626..1627 "}"
-    SEMICOLON@1627..1628 ";"
-  TopFn@1628..1810
-    LINEFEED@1628..1629 "\n"
+        EIntrinsic@1539..1609
+          AT_IDENT@1539..1549 "@array_new"
+          EArgList@1549..1609
+            L_PAREN@1549..1550 "("
+            EStruct@1550..1604
+              UPPER_IDENT@1550..1558 "Particle"
+              SPACE@1558..1559 " "
+              L_BRACE@1559..1560 "{"
+              SPACE@1560..1561 " "
+              EStructField@1561..1568
+                IDENT@1561..1562 "x"
+                SPACE@1562..1563 " "
+                EQUALS@1563..1564 "="
+                SPACE@1564..1565 " "
+                ELit@1565..1568
+                  LitFloat@1565..1568
+                    FLOAT_LIT@1565..1568 "0.0"
+              COMMA@1568..1569 ","
+              SPACE@1569..1570 " "
+              EStructField@1570..1577
+                IDENT@1570..1571 "y"
+                SPACE@1571..1572 " "
+                EQUALS@1572..1573 "="
+                SPACE@1573..1574 " "
+                ELit@1574..1577
+                  LitFloat@1574..1577
+                    FLOAT_LIT@1574..1577 "0.0"
+              COMMA@1577..1578 ","
+              SPACE@1578..1579 " "
+              EStructField@1579..1590
+                IDENT@1579..1584 "color"
+                SPACE@1584..1585 " "
+                EQUALS@1585..1586 "="
+                SPACE@1586..1587 " "
+                EVar@1587..1590
+                  IDENT@1587..1590 "red"
+              COMMA@1590..1591 ","
+              SPACE@1591..1592 " "
+              EStructField@1592..1603
+                IDENT@1592..1596 "time"
+                SPACE@1596..1597 " "
+                EQUALS@1597..1598 "="
+                SPACE@1598..1599 " "
+                ELit@1599..1603
+                  LitFloat@1599..1603
+                    FLOAT_LIT@1599..1602 "0.0"
+                    SPACE@1602..1603 " "
+              R_BRACE@1603..1604 "}"
+            COMMA@1604..1605 ","
+            SPACE@1605..1606 " "
+            ELit@1606..1608
+              LitInt@1606..1608
+                INT_LIT@1606..1608 "25"
+            R_PAREN@1608..1609 ")"
+      COMMA@1609..1610 ","
+      EStructField@1610..1626
+        LINEFEED@1610..1611 "\n"
+        SPACE@1611..1613 "  "
+        IDENT@1613..1622 "watermark"
+        SPACE@1622..1623 " "
+        EQUALS@1623..1624 "="
+        SPACE@1624..1625 " "
+        ELit@1625..1626
+          LitInt@1625..1626
+            INT_LIT@1625..1626 "0"
+      LINEFEED@1626..1627 "\n"
+      R_BRACE@1627..1628 "}"
+    SEMICOLON@1628..1629 ";"
+  TopFn@1629..1812
     LINEFEED@1629..1630 "\n"
-    FN_KW@1630..1632 "fn"
-    SPACE@1632..1633 " "
-    IDENT@1633..1645 "add_particle"
-    L_PAREN@1645..1646 "("
-    Param@1646..1658
-      IDENT@1646..1647 "p"
-      SPACE@1647..1648 " "
-      COLON@1648..1649 ":"
-      SPACE@1649..1650 " "
-      TyCons@1650..1658
-        UPPER_IDENT@1650..1658 "Particle"
-    R_PAREN@1658..1659 ")"
-    SPACE@1659..1660 " "
-    EQUALS@1660..1661 "="
-    SPACE@1661..1662 " "
-    EBlock@1662..1810
-      L_BRACE@1662..1663 "{"
-      DSet@1663..1711
-        LINEFEED@1663..1664 "\n"
-        SPACE@1664..1666 "  "
-        SET_KW@1666..1669 "set"
-        SPACE@1669..1670 " "
-        SetTarget@1670..1708
-          IDENT@1670..1679 "particles"
-          SetStruct@1679..1686
-            DOT@1679..1680 "."
-            IDENT@1680..1686 "buffer"
-          SetArray@1686..1708
-            L_BRACKET@1686..1687 "["
-            EStructIdx@1687..1706
-              EVar@1687..1696
-                IDENT@1687..1696 "particles"
-              DOT@1696..1697 "."
-              IDENT@1697..1706 "watermark"
-            R_BRACKET@1706..1707 "]"
-            SPACE@1707..1708 " "
-        EQUALS@1708..1709 "="
-        SPACE@1709..1710 " "
-        EVar@1710..1711
-          IDENT@1710..1711 "p"
-      SEMICOLON@1711..1712 ";"
-      DSet@1712..1808
-        LINEFEED@1712..1713 "\n"
-        SPACE@1713..1715 "  "
-        SET_KW@1715..1718 "set"
-        SPACE@1718..1719 " "
-        SetTarget@1719..1739
-          IDENT@1719..1728 "particles"
-          SetStruct@1728..1739
-            DOT@1728..1729 "."
-            IDENT@1729..1738 "watermark"
-            SPACE@1738..1739 " "
-        EQUALS@1739..1740 "="
-        ECall@1740..1808
-          EVar@1740..1754
-            LINEFEED@1740..1741 "\n"
-            SPACE@1741..1745 "    "
-            IDENT@1745..1754 "i32_rem_s"
-          EArgList@1754..1808
-            L_PAREN@1754..1755 "("
-            EBinary@1755..1778
-              EStructIdx@1755..1775
-                EVar@1755..1764
-                  IDENT@1755..1764 "particles"
-                DOT@1764..1765 "."
-                IDENT@1765..1774 "watermark"
-                SPACE@1774..1775 " "
-              BinOp@1775..1777
-                PLUS@1775..1776 "+"
-                SPACE@1776..1777 " "
-              ELit@1777..1778
-                LitInt@1777..1778
-                  INT_LIT@1777..1778 "1"
-            COMMA@1778..1779 ","
-            SPACE@1779..1780 " "
-            ECall@1780..1807
-              EVar@1780..1789
-                IDENT@1780..1789 "array_len"
-              EArgList@1789..1807
-                L_PAREN@1789..1790 "("
-                EStructIdx@1790..1806
-                  EVar@1790..1799
-                    IDENT@1790..1799 "particles"
-                  DOT@1799..1800 "."
-                  IDENT@1800..1806 "buffer"
-                R_PAREN@1806..1807 ")"
-            R_PAREN@1807..1808 ")"
-      LINEFEED@1808..1809 "\n"
-      R_BRACE@1809..1810 "}"
-  TopFn@1810..1899
-    LINEFEED@1810..1811 "\n"
-    LINEFEED@1811..1812 "\n"
-    FN_KW@1812..1814 "fn"
-    SPACE@1814..1815 " "
-    IDENT@1815..1820 "clamp"
-    L_PAREN@1820..1821 "("
-    Param@1821..1832
-      IDENT@1821..1824 "min"
-      SPACE@1824..1825 " "
-      COLON@1825..1826 ":"
+    LINEFEED@1630..1631 "\n"
+    FN_KW@1631..1633 "fn"
+    SPACE@1633..1634 " "
+    IDENT@1634..1646 "add_particle"
+    L_PAREN@1646..1647 "("
+    Param@1647..1659
+      IDENT@1647..1648 "p"
+      SPACE@1648..1649 " "
+      COLON@1649..1650 ":"
+      SPACE@1650..1651 " "
+      TyCons@1651..1659
+        UPPER_IDENT@1651..1659 "Particle"
+    R_PAREN@1659..1660 ")"
+    SPACE@1660..1661 " "
+    EQUALS@1661..1662 "="
+    SPACE@1662..1663 " "
+    EBlock@1663..1812
+      L_BRACE@1663..1664 "{"
+      DSet@1664..1712
+        LINEFEED@1664..1665 "\n"
+        SPACE@1665..1667 "  "
+        SET_KW@1667..1670 "set"
+        SPACE@1670..1671 " "
+        SetTarget@1671..1709
+          IDENT@1671..1680 "particles"
+          SetStruct@1680..1687
+            DOT@1680..1681 "."
+            IDENT@1681..1687 "buffer"
+          SetArray@1687..1709
+            L_BRACKET@1687..1688 "["
+            EStructIdx@1688..1707
+              EVar@1688..1697
+                IDENT@1688..1697 "particles"
+              DOT@1697..1698 "."
+              IDENT@1698..1707 "watermark"
+            R_BRACKET@1707..1708 "]"
+            SPACE@1708..1709 " "
+        EQUALS@1709..1710 "="
+        SPACE@1710..1711 " "
+        EVar@1711..1712
+          IDENT@1711..1712 "p"
+      SEMICOLON@1712..1713 ";"
+      DSet@1713..1810
+        LINEFEED@1713..1714 "\n"
+        SPACE@1714..1716 "  "
+        SET_KW@1716..1719 "set"
+        SPACE@1719..1720 " "
+        SetTarget@1720..1740
+          IDENT@1720..1729 "particles"
+          SetStruct@1729..1740
+            DOT@1729..1730 "."
+            IDENT@1730..1739 "watermark"
+            SPACE@1739..1740 " "
+        EQUALS@1740..1741 "="
+        ECall@1741..1810
+          EVar@1741..1755
+            LINEFEED@1741..1742 "\n"
+            SPACE@1742..1746 "    "
+            IDENT@1746..1755 "i32_rem_s"
+          EArgList@1755..1810
+            L_PAREN@1755..1756 "("
+            EBinary@1756..1779
+              EStructIdx@1756..1776
+                EVar@1756..1765
+                  IDENT@1756..1765 "particles"
+                DOT@1765..1766 "."
+                IDENT@1766..1775 "watermark"
+                SPACE@1775..1776 " "
+              BinOp@1776..1778
+                PLUS@1776..1777 "+"
+                SPACE@1777..1778 " "
+              ELit@1778..1779
+                LitInt@1778..1779
+                  INT_LIT@1778..1779 "1"
+            COMMA@1779..1780 ","
+            SPACE@1780..1781 " "
+            EIntrinsic@1781..1809
+              AT_IDENT@1781..1791 "@array_len"
+              EArgList@1791..1809
+                L_PAREN@1791..1792 "("
+                EStructIdx@1792..1808
+                  EVar@1792..1801
+                    IDENT@1792..1801 "particles"
+                  DOT@1801..1802 "."
+                  IDENT@1802..1808 "buffer"
+                R_PAREN@1808..1809 ")"
+            R_PAREN@1809..1810 ")"
+      LINEFEED@1810..1811 "\n"
+      R_BRACE@1811..1812 "}"
+  TopFn@1812..1901
+    LINEFEED@1812..1813 "\n"
+    LINEFEED@1813..1814 "\n"
+    FN_KW@1814..1816 "fn"
+    SPACE@1816..1817 " "
+    IDENT@1817..1822 "clamp"
+    L_PAREN@1822..1823 "("
+    Param@1823..1834
+      IDENT@1823..1826 "min"
       SPACE@1826..1827 " "
-      TyFloat@1827..1830
-        F32_BUILTIN@1827..1830 "f32"
-      COMMA@1830..1831 ","
-      SPACE@1831..1832 " "
-    Param@1832..1843
-      IDENT@1832..1835 "val"
-      SPACE@1835..1836 " "
-      COLON@1836..1837 ":"
+      COLON@1827..1828 ":"
+      SPACE@1828..1829 " "
+      TyFloat@1829..1832
+        F32_BUILTIN@1829..1832 "f32"
+      COMMA@1832..1833 ","
+      SPACE@1833..1834 " "
+    Param@1834..1845
+      IDENT@1834..1837 "val"
       SPACE@1837..1838 " "
-      TyFloat@1838..1841
-        F32_BUILTIN@1838..1841 "f32"
-      COMMA@1841..1842 ","
-      SPACE@1842..1843 " "
-    Param@1843..1852
-      IDENT@1843..1846 "max"
-      SPACE@1846..1847 " "
-      COLON@1847..1848 ":"
+      COLON@1838..1839 ":"
+      SPACE@1839..1840 " "
+      TyFloat@1840..1843
+        F32_BUILTIN@1840..1843 "f32"
+      COMMA@1843..1844 ","
+      SPACE@1844..1845 " "
+    Param@1845..1854
+      IDENT@1845..1848 "max"
       SPACE@1848..1849 " "
-      TyFloat@1849..1852
-        F32_BUILTIN@1849..1852 "f32"
-    R_PAREN@1852..1853 ")"
-    SPACE@1853..1854 " "
-    COLON@1854..1855 ":"
+      COLON@1849..1850 ":"
+      SPACE@1850..1851 " "
+      TyFloat@1851..1854
+        F32_BUILTIN@1851..1854 "f32"
+    R_PAREN@1854..1855 ")"
     SPACE@1855..1856 " "
-    TyFloat@1856..1860
-      F32_BUILTIN@1856..1859 "f32"
-      SPACE@1859..1860 " "
-    EQUALS@1860..1861 "="
-    SPACE@1861..1862 " "
-    EBlock@1862..1899
-      L_BRACE@1862..1863 "{"
-      DExpr@1863..1897
-        ECall@1863..1897
-          EVar@1863..1873
-            LINEFEED@1863..1864 "\n"
-            SPACE@1864..1866 "  "
-            IDENT@1866..1873 "f32_min"
-          EArgList@1873..1897
-            L_PAREN@1873..1874 "("
-            EVar@1874..1877
-              IDENT@1874..1877 "max"
-            COMMA@1877..1878 ","
-            SPACE@1878..1879 " "
-            ECall@1879..1896
-              EVar@1879..1886
-                IDENT@1879..1886 "f32_max"
-              EArgList@1886..1896
-                L_PAREN@1886..1887 "("
-                EVar@1887..1890
-                  IDENT@1887..1890 "min"
-                COMMA@1890..1891 ","
-                SPACE@1891..1892 " "
-                EVar@1892..1895
-                  IDENT@1892..1895 "val"
-                R_PAREN@1895..1896 ")"
-            R_PAREN@1896..1897 ")"
-      LINEFEED@1897..1898 "\n"
-      R_BRACE@1898..1899 "}"
-  TopFn@1899..2214
-    LINEFEED@1899..1900 "\n"
-    LINEFEED@1900..1901 "\n"
-    FN_KW@1901..1903 "fn"
-    SPACE@1903..1904 " "
-    IDENT@1904..1913 "draw_cube"
-    L_PAREN@1913..1914 "("
-    Param@1914..1925
-      IDENT@1914..1918 "cube"
-      SPACE@1918..1919 " "
-      COLON@1919..1920 ":"
+    COLON@1856..1857 ":"
+    SPACE@1857..1858 " "
+    TyFloat@1858..1862
+      F32_BUILTIN@1858..1861 "f32"
+      SPACE@1861..1862 " "
+    EQUALS@1862..1863 "="
+    SPACE@1863..1864 " "
+    EBlock@1864..1901
+      L_BRACE@1864..1865 "{"
+      DExpr@1865..1899
+        ECall@1865..1899
+          EVar@1865..1875
+            LINEFEED@1865..1866 "\n"
+            SPACE@1866..1868 "  "
+            IDENT@1868..1875 "f32_min"
+          EArgList@1875..1899
+            L_PAREN@1875..1876 "("
+            EVar@1876..1879
+              IDENT@1876..1879 "max"
+            COMMA@1879..1880 ","
+            SPACE@1880..1881 " "
+            ECall@1881..1898
+              EVar@1881..1888
+                IDENT@1881..1888 "f32_max"
+              EArgList@1888..1898
+                L_PAREN@1888..1889 "("
+                EVar@1889..1892
+                  IDENT@1889..1892 "min"
+                COMMA@1892..1893 ","
+                SPACE@1893..1894 " "
+                EVar@1894..1897
+                  IDENT@1894..1897 "val"
+                R_PAREN@1897..1898 ")"
+            R_PAREN@1898..1899 ")"
+      LINEFEED@1899..1900 "\n"
+      R_BRACE@1900..1901 "}"
+  TopFn@1901..2216
+    LINEFEED@1901..1902 "\n"
+    LINEFEED@1902..1903 "\n"
+    FN_KW@1903..1905 "fn"
+    SPACE@1905..1906 " "
+    IDENT@1906..1915 "draw_cube"
+    L_PAREN@1915..1916 "("
+    Param@1916..1927
+      IDENT@1916..1920 "cube"
       SPACE@1920..1921 " "
-      TyCons@1921..1925
-        UPPER_IDENT@1921..1925 "Cube"
-    R_PAREN@1925..1926 ")"
-    SPACE@1926..1927 " "
-    EQUALS@1927..1928 "="
+      COLON@1921..1922 ":"
+      SPACE@1922..1923 " "
+      TyCons@1923..1927
+        UPPER_IDENT@1923..1927 "Cube"
+    R_PAREN@1927..1928 ")"
     SPACE@1928..1929 " "
-    EBlock@1929..2214
-      L_BRACE@1929..1930 "{"
-      DLet@1930..1947
-        LINEFEED@1930..1931 "\n"
-        SPACE@1931..1933 "  "
-        LET_KW@1933..1936 "let"
-        SPACE@1936..1937 " "
-        IDENT@1937..1938 "x"
+    EQUALS@1929..1930 "="
+    SPACE@1930..1931 " "
+    EBlock@1931..2216
+      L_BRACE@1931..1932 "{"
+      DLet@1932..1949
+        LINEFEED@1932..1933 "\n"
+        SPACE@1933..1935 "  "
+        LET_KW@1935..1938 "let"
         SPACE@1938..1939 " "
-        EQUALS@1939..1940 "="
+        IDENT@1939..1940 "x"
         SPACE@1940..1941 " "
-        EStructIdx@1941..1947
-          EVar@1941..1945
-            IDENT@1941..1945 "cube"
-          DOT@1945..1946 "."
-          IDENT@1946..1947 "x"
-      SEMICOLON@1947..1948 ";"
-      DLet@1948..1965
-        LINEFEED@1948..1949 "\n"
-        SPACE@1949..1951 "  "
-        LET_KW@1951..1954 "let"
-        SPACE@1954..1955 " "
-        IDENT@1955..1956 "y"
+        EQUALS@1941..1942 "="
+        SPACE@1942..1943 " "
+        EStructIdx@1943..1949
+          EVar@1943..1947
+            IDENT@1943..1947 "cube"
+          DOT@1947..1948 "."
+          IDENT@1948..1949 "x"
+      SEMICOLON@1949..1950 ";"
+      DLet@1950..1967
+        LINEFEED@1950..1951 "\n"
+        SPACE@1951..1953 "  "
+        LET_KW@1953..1956 "let"
         SPACE@1956..1957 " "
-        EQUALS@1957..1958 "="
+        IDENT@1957..1958 "y"
         SPACE@1958..1959 " "
-        EStructIdx@1959..1965
-          EVar@1959..1963
-            IDENT@1959..1963 "cube"
-          DOT@1963..1964 "."
-          IDENT@1964..1965 "y"
-      SEMICOLON@1965..1966 ";"
-      DLet@1966..1989
-        LINEFEED@1966..1967 "\n"
-        SPACE@1967..1969 "  "
-        LET_KW@1969..1972 "let"
-        SPACE@1972..1973 " "
-        IDENT@1973..1977 "size"
-        SPACE@1977..1978 " "
-        EQUALS@1978..1979 "="
+        EQUALS@1959..1960 "="
+        SPACE@1960..1961 " "
+        EStructIdx@1961..1967
+          EVar@1961..1965
+            IDENT@1961..1965 "cube"
+          DOT@1965..1966 "."
+          IDENT@1966..1967 "y"
+      SEMICOLON@1967..1968 ";"
+      DLet@1968..1991
+        LINEFEED@1968..1969 "\n"
+        SPACE@1969..1971 "  "
+        LET_KW@1971..1974 "let"
+        SPACE@1974..1975 " "
+        IDENT@1975..1979 "size"
         SPACE@1979..1980 " "
-        EStructIdx@1980..1989
-          EVar@1980..1984
-            IDENT@1980..1984 "cube"
-          DOT@1984..1985 "."
-          IDENT@1985..1989 "size"
-      SEMICOLON@1989..1990 ";"
-      DExpr@1990..2005
-        ECall@1990..2005
-          EVar@1990..2003
-            LINEFEED@1990..1991 "\n"
-            SPACE@1991..1993 "  "
-            IDENT@1993..2003 "begin_path"
-          EArgList@2003..2005
-            L_PAREN@2003..2004 "("
-            R_PAREN@2004..2005 ")"
-      SEMICOLON@2005..2006 ";"
-      DExpr@2006..2022
-        ECall@2006..2022
-          EVar@2006..2016
-            LINEFEED@2006..2007 "\n"
-            SPACE@2007..2009 "  "
-            IDENT@2009..2016 "move_to"
-          EArgList@2016..2022
-            L_PAREN@2016..2017 "("
-            EVar@2017..2018
-              IDENT@2017..2018 "x"
-            COMMA@2018..2019 ","
-            SPACE@2019..2020 " "
-            EVar@2020..2021
-              IDENT@2020..2021 "y"
-            R_PAREN@2021..2022 ")"
-      SEMICOLON@2022..2023 ";"
-      DExpr@2023..2052
-        ECall@2023..2052
-          EVar@2023..2033
-            LINEFEED@2023..2024 "\n"
-            SPACE@2024..2026 "  "
-            IDENT@2026..2033 "line_to"
-          EArgList@2033..2052
-            L_PAREN@2033..2034 "("
-            EVar@2034..2036
-              IDENT@2034..2035 "x"
-              SPACE@2035..2036 " "
-            COMMA@2036..2037 ","
-            SPACE@2037..2038 " "
-            EBinary@2038..2051
-              EVar@2038..2040
-                IDENT@2038..2039 "y"
-                SPACE@2039..2040 " "
-              BinOp@2040..2042
-                PLUS@2040..2041 "+"
+        EQUALS@1980..1981 "="
+        SPACE@1981..1982 " "
+        EStructIdx@1982..1991
+          EVar@1982..1986
+            IDENT@1982..1986 "cube"
+          DOT@1986..1987 "."
+          IDENT@1987..1991 "size"
+      SEMICOLON@1991..1992 ";"
+      DExpr@1992..2007
+        ECall@1992..2007
+          EVar@1992..2005
+            LINEFEED@1992..1993 "\n"
+            SPACE@1993..1995 "  "
+            IDENT@1995..2005 "begin_path"
+          EArgList@2005..2007
+            L_PAREN@2005..2006 "("
+            R_PAREN@2006..2007 ")"
+      SEMICOLON@2007..2008 ";"
+      DExpr@2008..2024
+        ECall@2008..2024
+          EVar@2008..2018
+            LINEFEED@2008..2009 "\n"
+            SPACE@2009..2011 "  "
+            IDENT@2011..2018 "move_to"
+          EArgList@2018..2024
+            L_PAREN@2018..2019 "("
+            EVar@2019..2020
+              IDENT@2019..2020 "x"
+            COMMA@2020..2021 ","
+            SPACE@2021..2022 " "
+            EVar@2022..2023
+              IDENT@2022..2023 "y"
+            R_PAREN@2023..2024 ")"
+      SEMICOLON@2024..2025 ";"
+      DExpr@2025..2054
+        ECall@2025..2054
+          EVar@2025..2035
+            LINEFEED@2025..2026 "\n"
+            SPACE@2026..2028 "  "
+            IDENT@2028..2035 "line_to"
+          EArgList@2035..2054
+            L_PAREN@2035..2036 "("
+            EVar@2036..2038
+              IDENT@2036..2037 "x"
+              SPACE@2037..2038 " "
+            COMMA@2038..2039 ","
+            SPACE@2039..2040 " "
+            EBinary@2040..2053
+              EVar@2040..2042
+                IDENT@2040..2041 "y"
                 SPACE@2041..2042 " "
-              EStructIdx@2042..2051
-                EVar@2042..2046
-                  IDENT@2042..2046 "cube"
-                DOT@2046..2047 "."
-                IDENT@2047..2051 "size"
-            R_PAREN@2051..2052 ")"
-      SEMICOLON@2052..2053 ";"
-      DExpr@2053..2093
-        ECall@2053..2093
-          EVar@2053..2063
-            LINEFEED@2053..2054 "\n"
-            SPACE@2054..2056 "  "
-            IDENT@2056..2063 "line_to"
-          EArgList@2063..2093
-            L_PAREN@2063..2064 "("
-            EBinary@2064..2077
-              EVar@2064..2066
-                IDENT@2064..2065 "x"
-                SPACE@2065..2066 " "
-              BinOp@2066..2068
-                PLUS@2066..2067 "+"
+              BinOp@2042..2044
+                PLUS@2042..2043 "+"
+                SPACE@2043..2044 " "
+              EStructIdx@2044..2053
+                EVar@2044..2048
+                  IDENT@2044..2048 "cube"
+                DOT@2048..2049 "."
+                IDENT@2049..2053 "size"
+            R_PAREN@2053..2054 ")"
+      SEMICOLON@2054..2055 ";"
+      DExpr@2055..2095
+        ECall@2055..2095
+          EVar@2055..2065
+            LINEFEED@2055..2056 "\n"
+            SPACE@2056..2058 "  "
+            IDENT@2058..2065 "line_to"
+          EArgList@2065..2095
+            L_PAREN@2065..2066 "("
+            EBinary@2066..2079
+              EVar@2066..2068
+                IDENT@2066..2067 "x"
                 SPACE@2067..2068 " "
-              EStructIdx@2068..2077
-                EVar@2068..2072
-                  IDENT@2068..2072 "cube"
-                DOT@2072..2073 "."
-                IDENT@2073..2077 "size"
-            COMMA@2077..2078 ","
-            SPACE@2078..2079 " "
-            EBinary@2079..2092
-              EVar@2079..2081
-                IDENT@2079..2080 "y"
-                SPACE@2080..2081 " "
-              BinOp@2081..2083
-                PLUS@2081..2082 "+"
+              BinOp@2068..2070
+                PLUS@2068..2069 "+"
+                SPACE@2069..2070 " "
+              EStructIdx@2070..2079
+                EVar@2070..2074
+                  IDENT@2070..2074 "cube"
+                DOT@2074..2075 "."
+                IDENT@2075..2079 "size"
+            COMMA@2079..2080 ","
+            SPACE@2080..2081 " "
+            EBinary@2081..2094
+              EVar@2081..2083
+                IDENT@2081..2082 "y"
                 SPACE@2082..2083 " "
-              EStructIdx@2083..2092
-                EVar@2083..2087
-                  IDENT@2083..2087 "cube"
-                DOT@2087..2088 "."
-                IDENT@2088..2092 "size"
-            R_PAREN@2092..2093 ")"
-      SEMICOLON@2093..2094 ";"
-      DExpr@2094..2122
-        ECall@2094..2122
-          EVar@2094..2104
-            LINEFEED@2094..2095 "\n"
-            SPACE@2095..2097 "  "
-            IDENT@2097..2104 "line_to"
-          EArgList@2104..2122
-            L_PAREN@2104..2105 "("
-            EBinary@2105..2118
-              EVar@2105..2107
-                IDENT@2105..2106 "x"
-                SPACE@2106..2107 " "
-              BinOp@2107..2109
-                PLUS@2107..2108 "+"
+              BinOp@2083..2085
+                PLUS@2083..2084 "+"
+                SPACE@2084..2085 " "
+              EStructIdx@2085..2094
+                EVar@2085..2089
+                  IDENT@2085..2089 "cube"
+                DOT@2089..2090 "."
+                IDENT@2090..2094 "size"
+            R_PAREN@2094..2095 ")"
+      SEMICOLON@2095..2096 ";"
+      DExpr@2096..2124
+        ECall@2096..2124
+          EVar@2096..2106
+            LINEFEED@2096..2097 "\n"
+            SPACE@2097..2099 "  "
+            IDENT@2099..2106 "line_to"
+          EArgList@2106..2124
+            L_PAREN@2106..2107 "("
+            EBinary@2107..2120
+              EVar@2107..2109
+                IDENT@2107..2108 "x"
                 SPACE@2108..2109 " "
-              EStructIdx@2109..2118
-                EVar@2109..2113
-                  IDENT@2109..2113 "cube"
-                DOT@2113..2114 "."
-                IDENT@2114..2118 "size"
-            COMMA@2118..2119 ","
-            SPACE@2119..2120 " "
-            EVar@2120..2121
-              IDENT@2120..2121 "y"
-            R_PAREN@2121..2122 ")"
-      SEMICOLON@2122..2123 ";"
-      DExpr@2123..2184
-        ECall@2123..2184
-          EVar@2123..2142
-            LINEFEED@2123..2124 "\n"
-            SPACE@2124..2126 "  "
-            IDENT@2126..2142 "set_stroke_color"
-          EArgList@2142..2184
-            L_PAREN@2142..2143 "("
-            EStructIdx@2143..2155
-              EStructIdx@2143..2153
-                EVar@2143..2147
-                  IDENT@2143..2147 "cube"
-                DOT@2147..2148 "."
-                IDENT@2148..2153 "color"
-              DOT@2153..2154 "."
-              IDENT@2154..2155 "r"
-            COMMA@2155..2156 ","
-            SPACE@2156..2157 " "
-            EStructIdx@2157..2169
-              EStructIdx@2157..2167
-                EVar@2157..2161
-                  IDENT@2157..2161 "cube"
-                DOT@2161..2162 "."
-                IDENT@2162..2167 "color"
-              DOT@2167..2168 "."
-              IDENT@2168..2169 "g"
-            COMMA@2169..2170 ","
-            SPACE@2170..2171 " "
-            EStructIdx@2171..2183
-              EStructIdx@2171..2181
-                EVar@2171..2175
-                  IDENT@2171..2175 "cube"
-                DOT@2175..2176 "."
-                IDENT@2176..2181 "color"
-              DOT@2181..2182 "."
-              IDENT@2182..2183 "b"
-            R_PAREN@2183..2184 ")"
-      SEMICOLON@2184..2185 ";"
-      DExpr@2185..2200
-        ECall@2185..2200
-          EVar@2185..2198
-            LINEFEED@2185..2186 "\n"
-            SPACE@2186..2188 "  "
-            IDENT@2188..2198 "close_path"
-          EArgList@2198..2200
-            L_PAREN@2198..2199 "("
-            R_PAREN@2199..2200 ")"
-      SEMICOLON@2200..2201 ";"
-      DExpr@2201..2212
-        ECall@2201..2212
-          EVar@2201..2210
-            LINEFEED@2201..2202 "\n"
-            SPACE@2202..2204 "  "
-            IDENT@2204..2210 "stroke"
-          EArgList@2210..2212
-            L_PAREN@2210..2211 "("
-            R_PAREN@2211..2212 ")"
-      LINEFEED@2212..2213 "\n"
-      R_BRACE@2213..2214 "}"
-  TopFn@2214..2491
-    LINEFEED@2214..2215 "\n"
-    LINEFEED@2215..2216 "\n"
-    FN_KW@2216..2218 "fn"
-    SPACE@2218..2219 " "
-    IDENT@2219..2232 "draw_particle"
-    L_PAREN@2232..2233 "("
-    Param@2233..2252
-      IDENT@2233..2241 "particle"
-      SPACE@2241..2242 " "
-      COLON@2242..2243 ":"
+              BinOp@2109..2111
+                PLUS@2109..2110 "+"
+                SPACE@2110..2111 " "
+              EStructIdx@2111..2120
+                EVar@2111..2115
+                  IDENT@2111..2115 "cube"
+                DOT@2115..2116 "."
+                IDENT@2116..2120 "size"
+            COMMA@2120..2121 ","
+            SPACE@2121..2122 " "
+            EVar@2122..2123
+              IDENT@2122..2123 "y"
+            R_PAREN@2123..2124 ")"
+      SEMICOLON@2124..2125 ";"
+      DExpr@2125..2186
+        ECall@2125..2186
+          EVar@2125..2144
+            LINEFEED@2125..2126 "\n"
+            SPACE@2126..2128 "  "
+            IDENT@2128..2144 "set_stroke_color"
+          EArgList@2144..2186
+            L_PAREN@2144..2145 "("
+            EStructIdx@2145..2157
+              EStructIdx@2145..2155
+                EVar@2145..2149
+                  IDENT@2145..2149 "cube"
+                DOT@2149..2150 "."
+                IDENT@2150..2155 "color"
+              DOT@2155..2156 "."
+              IDENT@2156..2157 "r"
+            COMMA@2157..2158 ","
+            SPACE@2158..2159 " "
+            EStructIdx@2159..2171
+              EStructIdx@2159..2169
+                EVar@2159..2163
+                  IDENT@2159..2163 "cube"
+                DOT@2163..2164 "."
+                IDENT@2164..2169 "color"
+              DOT@2169..2170 "."
+              IDENT@2170..2171 "g"
+            COMMA@2171..2172 ","
+            SPACE@2172..2173 " "
+            EStructIdx@2173..2185
+              EStructIdx@2173..2183
+                EVar@2173..2177
+                  IDENT@2173..2177 "cube"
+                DOT@2177..2178 "."
+                IDENT@2178..2183 "color"
+              DOT@2183..2184 "."
+              IDENT@2184..2185 "b"
+            R_PAREN@2185..2186 ")"
+      SEMICOLON@2186..2187 ";"
+      DExpr@2187..2202
+        ECall@2187..2202
+          EVar@2187..2200
+            LINEFEED@2187..2188 "\n"
+            SPACE@2188..2190 "  "
+            IDENT@2190..2200 "close_path"
+          EArgList@2200..2202
+            L_PAREN@2200..2201 "("
+            R_PAREN@2201..2202 ")"
+      SEMICOLON@2202..2203 ";"
+      DExpr@2203..2214
+        ECall@2203..2214
+          EVar@2203..2212
+            LINEFEED@2203..2204 "\n"
+            SPACE@2204..2206 "  "
+            IDENT@2206..2212 "stroke"
+          EArgList@2212..2214
+            L_PAREN@2212..2213 "("
+            R_PAREN@2213..2214 ")"
+      LINEFEED@2214..2215 "\n"
+      R_BRACE@2215..2216 "}"
+  TopFn@2216..2493
+    LINEFEED@2216..2217 "\n"
+    LINEFEED@2217..2218 "\n"
+    FN_KW@2218..2220 "fn"
+    SPACE@2220..2221 " "
+    IDENT@2221..2234 "draw_particle"
+    L_PAREN@2234..2235 "("
+    Param@2235..2254
+      IDENT@2235..2243 "particle"
       SPACE@2243..2244 " "
-      TyCons@2244..2252
-        UPPER_IDENT@2244..2252 "Particle"
-    R_PAREN@2252..2253 ")"
-    SPACE@2253..2254 " "
-    EQUALS@2254..2255 "="
+      COLON@2244..2245 ":"
+      SPACE@2245..2246 " "
+      TyCons@2246..2254
+        UPPER_IDENT@2246..2254 "Particle"
+    R_PAREN@2254..2255 ")"
     SPACE@2255..2256 " "
-    EBlock@2256..2491
-      L_BRACE@2256..2257 "{"
-      DExpr@2257..2489
-        EIf@2257..2489
-          LINEFEED@2257..2258 "\n"
-          SPACE@2258..2260 "  "
-          IF_KW@2260..2262 "if"
-          SPACE@2262..2263 " "
-          EBinary@2263..2283
-            EStructIdx@2263..2277
-              EVar@2263..2271
-                IDENT@2263..2271 "particle"
-              DOT@2271..2272 "."
-              IDENT@2272..2276 "time"
-              SPACE@2276..2277 " "
-            BinOp@2277..2279
-              R_ANGLE@2277..2278 ">"
+    EQUALS@2256..2257 "="
+    SPACE@2257..2258 " "
+    EBlock@2258..2493
+      L_BRACE@2258..2259 "{"
+      DExpr@2259..2491
+        EIf@2259..2491
+          LINEFEED@2259..2260 "\n"
+          SPACE@2260..2262 "  "
+          IF_KW@2262..2264 "if"
+          SPACE@2264..2265 " "
+          EBinary@2265..2285
+            EStructIdx@2265..2279
+              EVar@2265..2273
+                IDENT@2265..2273 "particle"
+              DOT@2273..2274 "."
+              IDENT@2274..2278 "time"
               SPACE@2278..2279 " "
-            ELit@2279..2283
-              LitFloat@2279..2283
-                FLOAT_LIT@2279..2282 "0.0"
-                SPACE@2282..2283 " "
-          EBlock@2283..2482
-            L_BRACE@2283..2284 "{"
-            DExpr@2284..2301
-              ECall@2284..2301
-                EVar@2284..2299
-                  LINEFEED@2284..2285 "\n"
-                  SPACE@2285..2289 "    "
-                  IDENT@2289..2299 "begin_path"
-                EArgList@2299..2301
-                  L_PAREN@2299..2300 "("
-                  R_PAREN@2300..2301 ")"
-            SEMICOLON@2301..2302 ";"
-            DExpr@2302..2387
-              ECall@2302..2387
-                EVar@2302..2310
-                  LINEFEED@2302..2303 "\n"
-                  SPACE@2303..2307 "    "
-                  IDENT@2307..2310 "arc"
-                EArgList@2310..2387
-                  L_PAREN@2310..2311 "("
-                  EStructIdx@2311..2321
-                    EVar@2311..2319
-                      IDENT@2311..2319 "particle"
-                    DOT@2319..2320 "."
-                    IDENT@2320..2321 "x"
-                  COMMA@2321..2322 ","
-                  SPACE@2322..2323 " "
-                  EStructIdx@2323..2333
-                    EVar@2323..2331
-                      IDENT@2323..2331 "particle"
-                    DOT@2331..2332 "."
-                    IDENT@2332..2333 "y"
-                  COMMA@2333..2334 ","
-                  SPACE@2334..2335 " "
-                  EBinary@2335..2373
-                    EParen@2335..2368
-                      L_PAREN@2335..2336 "("
-                      EBinary@2336..2366
-                        EVar@2336..2351
-                          IDENT@2336..2350 "particle_timer"
-                          SPACE@2350..2351 " "
-                        BinOp@2351..2353
-                          MINUS@2351..2352 "-"
+            BinOp@2279..2281
+              R_ANGLE@2279..2280 ">"
+              SPACE@2280..2281 " "
+            ELit@2281..2285
+              LitFloat@2281..2285
+                FLOAT_LIT@2281..2284 "0.0"
+                SPACE@2284..2285 " "
+          EBlock@2285..2484
+            L_BRACE@2285..2286 "{"
+            DExpr@2286..2303
+              ECall@2286..2303
+                EVar@2286..2301
+                  LINEFEED@2286..2287 "\n"
+                  SPACE@2287..2291 "    "
+                  IDENT@2291..2301 "begin_path"
+                EArgList@2301..2303
+                  L_PAREN@2301..2302 "("
+                  R_PAREN@2302..2303 ")"
+            SEMICOLON@2303..2304 ";"
+            DExpr@2304..2389
+              ECall@2304..2389
+                EVar@2304..2312
+                  LINEFEED@2304..2305 "\n"
+                  SPACE@2305..2309 "    "
+                  IDENT@2309..2312 "arc"
+                EArgList@2312..2389
+                  L_PAREN@2312..2313 "("
+                  EStructIdx@2313..2323
+                    EVar@2313..2321
+                      IDENT@2313..2321 "particle"
+                    DOT@2321..2322 "."
+                    IDENT@2322..2323 "x"
+                  COMMA@2323..2324 ","
+                  SPACE@2324..2325 " "
+                  EStructIdx@2325..2335
+                    EVar@2325..2333
+                      IDENT@2325..2333 "particle"
+                    DOT@2333..2334 "."
+                    IDENT@2334..2335 "y"
+                  COMMA@2335..2336 ","
+                  SPACE@2336..2337 " "
+                  EBinary@2337..2375
+                    EParen@2337..2370
+                      L_PAREN@2337..2338 "("
+                      EBinary@2338..2368
+                        EVar@2338..2353
+                          IDENT@2338..2352 "particle_timer"
                           SPACE@2352..2353 " "
-                        EStructIdx@2353..2366
-                          EVar@2353..2361
-                            IDENT@2353..2361 "particle"
-                          DOT@2361..2362 "."
-                          IDENT@2362..2366 "time"
-                      R_PAREN@2366..2367 ")"
-                      SPACE@2367..2368 " "
-                    BinOp@2368..2370
-                      SLASH@2368..2369 "/"
+                        BinOp@2353..2355
+                          MINUS@2353..2354 "-"
+                          SPACE@2354..2355 " "
+                        EStructIdx@2355..2368
+                          EVar@2355..2363
+                            IDENT@2355..2363 "particle"
+                          DOT@2363..2364 "."
+                          IDENT@2364..2368 "time"
+                      R_PAREN@2368..2369 ")"
                       SPACE@2369..2370 " "
-                    ELit@2370..2373
-                      LitFloat@2370..2373
-                        FLOAT_LIT@2370..2373 "2.0"
-                  COMMA@2373..2374 ","
-                  SPACE@2374..2375 " "
-                  ELit@2375..2378
-                    LitFloat@2375..2378
-                      FLOAT_LIT@2375..2378 "0.0"
-                  COMMA@2378..2379 ","
-                  SPACE@2379..2380 " "
-                  EVar@2380..2386
-                    IDENT@2380..2386 "two_pi"
-                  R_PAREN@2386..2387 ")"
-            SEMICOLON@2387..2388 ";"
-            DExpr@2388..2463
-              ECall@2388..2463
-                EVar@2388..2409
-                  LINEFEED@2388..2389 "\n"
-                  SPACE@2389..2393 "    "
-                  IDENT@2393..2409 "set_stroke_color"
-                EArgList@2409..2463
-                  L_PAREN@2409..2410 "("
-                  EStructIdx@2410..2426
-                    EStructIdx@2410..2424
-                      EVar@2410..2418
-                        IDENT@2410..2418 "particle"
-                      DOT@2418..2419 "."
-                      IDENT@2419..2424 "color"
-                    DOT@2424..2425 "."
-                    IDENT@2425..2426 "r"
-                  COMMA@2426..2427 ","
-                  SPACE@2427..2428 " "
-                  EStructIdx@2428..2444
-                    EStructIdx@2428..2442
-                      EVar@2428..2436
-                        IDENT@2428..2436 "particle"
-                      DOT@2436..2437 "."
-                      IDENT@2437..2442 "color"
-                    DOT@2442..2443 "."
-                    IDENT@2443..2444 "g"
-                  COMMA@2444..2445 ","
-                  SPACE@2445..2446 " "
-                  EStructIdx@2446..2462
-                    EStructIdx@2446..2460
-                      EVar@2446..2454
-                        IDENT@2446..2454 "particle"
-                      DOT@2454..2455 "."
-                      IDENT@2455..2460 "color"
-                    DOT@2460..2461 "."
-                    IDENT@2461..2462 "b"
-                  R_PAREN@2462..2463 ")"
-            SEMICOLON@2463..2464 ";"
-            DExpr@2464..2477
-              ECall@2464..2477
-                EVar@2464..2475
-                  LINEFEED@2464..2465 "\n"
-                  SPACE@2465..2469 "    "
-                  IDENT@2469..2475 "stroke"
-                EArgList@2475..2477
-                  L_PAREN@2475..2476 "("
-                  R_PAREN@2476..2477 ")"
-            LINEFEED@2477..2478 "\n"
-            SPACE@2478..2480 "  "
-            R_BRACE@2480..2481 "}"
-            SPACE@2481..2482 " "
-          ELSE_KW@2482..2486 "else"
-          SPACE@2486..2487 " "
-          EBlock@2487..2489
-            L_BRACE@2487..2488 "{"
-            R_BRACE@2488..2489 "}"
-      LINEFEED@2489..2490 "\n"
-      R_BRACE@2490..2491 "}"
-  TopFn@2491..3025
-    LINEFEED@2491..2492 "\n"
-    LINEFEED@2492..2493 "\n"
-    FN_KW@2493..2495 "fn"
-    SPACE@2495..2496 " "
-    IDENT@2496..2509 "collide_cubes"
-    L_PAREN@2509..2510 "("
-    Param@2510..2521
-      IDENT@2510..2512 "c1"
-      SPACE@2512..2513 " "
-      COLON@2513..2514 ":"
+                    BinOp@2370..2372
+                      SLASH@2370..2371 "/"
+                      SPACE@2371..2372 " "
+                    ELit@2372..2375
+                      LitFloat@2372..2375
+                        FLOAT_LIT@2372..2375 "2.0"
+                  COMMA@2375..2376 ","
+                  SPACE@2376..2377 " "
+                  ELit@2377..2380
+                    LitFloat@2377..2380
+                      FLOAT_LIT@2377..2380 "0.0"
+                  COMMA@2380..2381 ","
+                  SPACE@2381..2382 " "
+                  EVar@2382..2388
+                    IDENT@2382..2388 "two_pi"
+                  R_PAREN@2388..2389 ")"
+            SEMICOLON@2389..2390 ";"
+            DExpr@2390..2465
+              ECall@2390..2465
+                EVar@2390..2411
+                  LINEFEED@2390..2391 "\n"
+                  SPACE@2391..2395 "    "
+                  IDENT@2395..2411 "set_stroke_color"
+                EArgList@2411..2465
+                  L_PAREN@2411..2412 "("
+                  EStructIdx@2412..2428
+                    EStructIdx@2412..2426
+                      EVar@2412..2420
+                        IDENT@2412..2420 "particle"
+                      DOT@2420..2421 "."
+                      IDENT@2421..2426 "color"
+                    DOT@2426..2427 "."
+                    IDENT@2427..2428 "r"
+                  COMMA@2428..2429 ","
+                  SPACE@2429..2430 " "
+                  EStructIdx@2430..2446
+                    EStructIdx@2430..2444
+                      EVar@2430..2438
+                        IDENT@2430..2438 "particle"
+                      DOT@2438..2439 "."
+                      IDENT@2439..2444 "color"
+                    DOT@2444..2445 "."
+                    IDENT@2445..2446 "g"
+                  COMMA@2446..2447 ","
+                  SPACE@2447..2448 " "
+                  EStructIdx@2448..2464
+                    EStructIdx@2448..2462
+                      EVar@2448..2456
+                        IDENT@2448..2456 "particle"
+                      DOT@2456..2457 "."
+                      IDENT@2457..2462 "color"
+                    DOT@2462..2463 "."
+                    IDENT@2463..2464 "b"
+                  R_PAREN@2464..2465 ")"
+            SEMICOLON@2465..2466 ";"
+            DExpr@2466..2479
+              ECall@2466..2479
+                EVar@2466..2477
+                  LINEFEED@2466..2467 "\n"
+                  SPACE@2467..2471 "    "
+                  IDENT@2471..2477 "stroke"
+                EArgList@2477..2479
+                  L_PAREN@2477..2478 "("
+                  R_PAREN@2478..2479 ")"
+            LINEFEED@2479..2480 "\n"
+            SPACE@2480..2482 "  "
+            R_BRACE@2482..2483 "}"
+            SPACE@2483..2484 " "
+          ELSE_KW@2484..2488 "else"
+          SPACE@2488..2489 " "
+          EBlock@2489..2491
+            L_BRACE@2489..2490 "{"
+            R_BRACE@2490..2491 "}"
+      LINEFEED@2491..2492 "\n"
+      R_BRACE@2492..2493 "}"
+  TopFn@2493..3027
+    LINEFEED@2493..2494 "\n"
+    LINEFEED@2494..2495 "\n"
+    FN_KW@2495..2497 "fn"
+    SPACE@2497..2498 " "
+    IDENT@2498..2511 "collide_cubes"
+    L_PAREN@2511..2512 "("
+    Param@2512..2523
+      IDENT@2512..2514 "c1"
       SPACE@2514..2515 " "
-      TyCons@2515..2519
-        UPPER_IDENT@2515..2519 "Cube"
-      COMMA@2519..2520 ","
-      SPACE@2520..2521 " "
-    Param@2521..2530
-      IDENT@2521..2523 "c2"
-      SPACE@2523..2524 " "
-      COLON@2524..2525 ":"
+      COLON@2515..2516 ":"
+      SPACE@2516..2517 " "
+      TyCons@2517..2521
+        UPPER_IDENT@2517..2521 "Cube"
+      COMMA@2521..2522 ","
+      SPACE@2522..2523 " "
+    Param@2523..2532
+      IDENT@2523..2525 "c2"
       SPACE@2525..2526 " "
-      TyCons@2526..2530
-        UPPER_IDENT@2526..2530 "Cube"
-    R_PAREN@2530..2531 ")"
-    SPACE@2531..2532 " "
-    EQUALS@2532..2533 "="
+      COLON@2526..2527 ":"
+      SPACE@2527..2528 " "
+      TyCons@2528..2532
+        UPPER_IDENT@2528..2532 "Cube"
+    R_PAREN@2532..2533 ")"
     SPACE@2533..2534 " "
-    EBlock@2534..3025
-      L_BRACE@2534..2535 "{"
-      DLet@2535..2600
-        LINEFEED@2535..2536 "\n"
-        SPACE@2536..2538 "  "
-        LET_KW@2538..2541 "let"
-        SPACE@2541..2542 " "
-        IDENT@2542..2551 "overlap_x"
-        SPACE@2551..2552 " "
-        EQUALS@2552..2553 "="
+    EQUALS@2534..2535 "="
+    SPACE@2535..2536 " "
+    EBlock@2536..3027
+      L_BRACE@2536..2537 "{"
+      DLet@2537..2602
+        LINEFEED@2537..2538 "\n"
+        SPACE@2538..2540 "  "
+        LET_KW@2540..2543 "let"
+        SPACE@2543..2544 " "
+        IDENT@2544..2553 "overlap_x"
         SPACE@2553..2554 " "
-        EBinary@2554..2600
-          EBinary@2554..2576
-            EStructIdx@2554..2559
-              EVar@2554..2556
-                IDENT@2554..2556 "c1"
-              DOT@2556..2557 "."
-              IDENT@2557..2558 "x"
-              SPACE@2558..2559 " "
-            BinOp@2559..2561
-              L_ANGLE@2559..2560 "<"
+        EQUALS@2554..2555 "="
+        SPACE@2555..2556 " "
+        EBinary@2556..2602
+          EBinary@2556..2578
+            EStructIdx@2556..2561
+              EVar@2556..2558
+                IDENT@2556..2558 "c1"
+              DOT@2558..2559 "."
+              IDENT@2559..2560 "x"
               SPACE@2560..2561 " "
-            EBinary@2561..2576
-              EStructIdx@2561..2566
-                EVar@2561..2563
-                  IDENT@2561..2563 "c2"
-                DOT@2563..2564 "."
-                IDENT@2564..2565 "x"
-                SPACE@2565..2566 " "
-              BinOp@2566..2568
-                PLUS@2566..2567 "+"
+            BinOp@2561..2563
+              L_ANGLE@2561..2562 "<"
+              SPACE@2562..2563 " "
+            EBinary@2563..2578
+              EStructIdx@2563..2568
+                EVar@2563..2565
+                  IDENT@2563..2565 "c2"
+                DOT@2565..2566 "."
+                IDENT@2566..2567 "x"
                 SPACE@2567..2568 " "
-              EStructIdx@2568..2576
-                EVar@2568..2570
-                  IDENT@2568..2570 "c2"
-                DOT@2570..2571 "."
-                IDENT@2571..2575 "size"
-                SPACE@2575..2576 " "
-          BinOp@2576..2579
-            ANDAND@2576..2578 "&&"
-            SPACE@2578..2579 " "
-          EBinary@2579..2600
-            EBinary@2579..2594
-              EStructIdx@2579..2584
-                EVar@2579..2581
-                  IDENT@2579..2581 "c1"
-                DOT@2581..2582 "."
-                IDENT@2582..2583 "x"
-                SPACE@2583..2584 " "
-              BinOp@2584..2586
-                PLUS@2584..2585 "+"
+              BinOp@2568..2570
+                PLUS@2568..2569 "+"
+                SPACE@2569..2570 " "
+              EStructIdx@2570..2578
+                EVar@2570..2572
+                  IDENT@2570..2572 "c2"
+                DOT@2572..2573 "."
+                IDENT@2573..2577 "size"
+                SPACE@2577..2578 " "
+          BinOp@2578..2581
+            ANDAND@2578..2580 "&&"
+            SPACE@2580..2581 " "
+          EBinary@2581..2602
+            EBinary@2581..2596
+              EStructIdx@2581..2586
+                EVar@2581..2583
+                  IDENT@2581..2583 "c1"
+                DOT@2583..2584 "."
+                IDENT@2584..2585 "x"
                 SPACE@2585..2586 " "
-              EStructIdx@2586..2594
-                EVar@2586..2588
-                  IDENT@2586..2588 "c1"
-                DOT@2588..2589 "."
-                IDENT@2589..2593 "size"
-                SPACE@2593..2594 " "
-            BinOp@2594..2596
-              R_ANGLE@2594..2595 ">"
-              SPACE@2595..2596 " "
-            EStructIdx@2596..2600
-              EVar@2596..2598
-                IDENT@2596..2598 "c2"
-              DOT@2598..2599 "."
-              IDENT@2599..2600 "x"
-      SEMICOLON@2600..2601 ";"
-      DLet@2601..2666
-        LINEFEED@2601..2602 "\n"
-        SPACE@2602..2604 "  "
-        LET_KW@2604..2607 "let"
-        SPACE@2607..2608 " "
-        IDENT@2608..2617 "overlap_y"
-        SPACE@2617..2618 " "
-        EQUALS@2618..2619 "="
+              BinOp@2586..2588
+                PLUS@2586..2587 "+"
+                SPACE@2587..2588 " "
+              EStructIdx@2588..2596
+                EVar@2588..2590
+                  IDENT@2588..2590 "c1"
+                DOT@2590..2591 "."
+                IDENT@2591..2595 "size"
+                SPACE@2595..2596 " "
+            BinOp@2596..2598
+              R_ANGLE@2596..2597 ">"
+              SPACE@2597..2598 " "
+            EStructIdx@2598..2602
+              EVar@2598..2600
+                IDENT@2598..2600 "c2"
+              DOT@2600..2601 "."
+              IDENT@2601..2602 "x"
+      SEMICOLON@2602..2603 ";"
+      DLet@2603..2668
+        LINEFEED@2603..2604 "\n"
+        SPACE@2604..2606 "  "
+        LET_KW@2606..2609 "let"
+        SPACE@2609..2610 " "
+        IDENT@2610..2619 "overlap_y"
         SPACE@2619..2620 " "
-        EBinary@2620..2666
-          EBinary@2620..2642
-            EStructIdx@2620..2625
-              EVar@2620..2622
-                IDENT@2620..2622 "c1"
-              DOT@2622..2623 "."
-              IDENT@2623..2624 "y"
-              SPACE@2624..2625 " "
-            BinOp@2625..2627
-              L_ANGLE@2625..2626 "<"
+        EQUALS@2620..2621 "="
+        SPACE@2621..2622 " "
+        EBinary@2622..2668
+          EBinary@2622..2644
+            EStructIdx@2622..2627
+              EVar@2622..2624
+                IDENT@2622..2624 "c1"
+              DOT@2624..2625 "."
+              IDENT@2625..2626 "y"
               SPACE@2626..2627 " "
-            EBinary@2627..2642
-              EStructIdx@2627..2632
-                EVar@2627..2629
-                  IDENT@2627..2629 "c2"
-                DOT@2629..2630 "."
-                IDENT@2630..2631 "y"
-                SPACE@2631..2632 " "
-              BinOp@2632..2634
-                PLUS@2632..2633 "+"
+            BinOp@2627..2629
+              L_ANGLE@2627..2628 "<"
+              SPACE@2628..2629 " "
+            EBinary@2629..2644
+              EStructIdx@2629..2634
+                EVar@2629..2631
+                  IDENT@2629..2631 "c2"
+                DOT@2631..2632 "."
+                IDENT@2632..2633 "y"
                 SPACE@2633..2634 " "
-              EStructIdx@2634..2642
-                EVar@2634..2636
-                  IDENT@2634..2636 "c2"
-                DOT@2636..2637 "."
-                IDENT@2637..2641 "size"
-                SPACE@2641..2642 " "
-          BinOp@2642..2645
-            ANDAND@2642..2644 "&&"
-            SPACE@2644..2645 " "
-          EBinary@2645..2666
-            EBinary@2645..2660
-              EStructIdx@2645..2650
-                EVar@2645..2647
-                  IDENT@2645..2647 "c1"
-                DOT@2647..2648 "."
-                IDENT@2648..2649 "y"
-                SPACE@2649..2650 " "
-              BinOp@2650..2652
-                PLUS@2650..2651 "+"
+              BinOp@2634..2636
+                PLUS@2634..2635 "+"
+                SPACE@2635..2636 " "
+              EStructIdx@2636..2644
+                EVar@2636..2638
+                  IDENT@2636..2638 "c2"
+                DOT@2638..2639 "."
+                IDENT@2639..2643 "size"
+                SPACE@2643..2644 " "
+          BinOp@2644..2647
+            ANDAND@2644..2646 "&&"
+            SPACE@2646..2647 " "
+          EBinary@2647..2668
+            EBinary@2647..2662
+              EStructIdx@2647..2652
+                EVar@2647..2649
+                  IDENT@2647..2649 "c1"
+                DOT@2649..2650 "."
+                IDENT@2650..2651 "y"
                 SPACE@2651..2652 " "
-              EStructIdx@2652..2660
-                EVar@2652..2654
-                  IDENT@2652..2654 "c1"
-                DOT@2654..2655 "."
-                IDENT@2655..2659 "size"
-                SPACE@2659..2660 " "
-            BinOp@2660..2662
-              R_ANGLE@2660..2661 ">"
-              SPACE@2661..2662 " "
-            EStructIdx@2662..2666
-              EVar@2662..2664
-                IDENT@2662..2664 "c2"
-              DOT@2664..2665 "."
-              IDENT@2665..2666 "y"
-      SEMICOLON@2666..2667 ";"
-      DExpr@2667..3023
-        EIf@2667..3023
-          LINEFEED@2667..2668 "\n"
-          LINEFEED@2668..2669 "\n"
-          SPACE@2669..2671 "  "
-          IF_KW@2671..2673 "if"
-          SPACE@2673..2674 " "
-          EBinary@2674..2697
-            EVar@2674..2684
-              IDENT@2674..2683 "overlap_y"
-              SPACE@2683..2684 " "
-            BinOp@2684..2687
-              ANDAND@2684..2686 "&&"
-              SPACE@2686..2687 " "
-            EVar@2687..2697
-              IDENT@2687..2696 "overlap_x"
-              SPACE@2696..2697 " "
-          EBlock@2697..3016
-            L_BRACE@2697..2698 "{"
-            DExpr@2698..2789
-              ECall@2698..2789
-                EVar@2698..2715
-                  LINEFEED@2698..2699 "\n"
-                  SPACE@2699..2703 "    "
-                  IDENT@2703..2715 "add_particle"
-                EArgList@2715..2789
-                  L_PAREN@2715..2716 "("
-                  EStruct@2716..2788
-                    UPPER_IDENT@2716..2724 "Particle"
-                    SPACE@2724..2725 " "
-                    L_BRACE@2725..2726 "{"
+              BinOp@2652..2654
+                PLUS@2652..2653 "+"
+                SPACE@2653..2654 " "
+              EStructIdx@2654..2662
+                EVar@2654..2656
+                  IDENT@2654..2656 "c1"
+                DOT@2656..2657 "."
+                IDENT@2657..2661 "size"
+                SPACE@2661..2662 " "
+            BinOp@2662..2664
+              R_ANGLE@2662..2663 ">"
+              SPACE@2663..2664 " "
+            EStructIdx@2664..2668
+              EVar@2664..2666
+                IDENT@2664..2666 "c2"
+              DOT@2666..2667 "."
+              IDENT@2667..2668 "y"
+      SEMICOLON@2668..2669 ";"
+      DExpr@2669..3025
+        EIf@2669..3025
+          LINEFEED@2669..2670 "\n"
+          LINEFEED@2670..2671 "\n"
+          SPACE@2671..2673 "  "
+          IF_KW@2673..2675 "if"
+          SPACE@2675..2676 " "
+          EBinary@2676..2699
+            EVar@2676..2686
+              IDENT@2676..2685 "overlap_y"
+              SPACE@2685..2686 " "
+            BinOp@2686..2689
+              ANDAND@2686..2688 "&&"
+              SPACE@2688..2689 " "
+            EVar@2689..2699
+              IDENT@2689..2698 "overlap_x"
+              SPACE@2698..2699 " "
+          EBlock@2699..3018
+            L_BRACE@2699..2700 "{"
+            DExpr@2700..2791
+              ECall@2700..2791
+                EVar@2700..2717
+                  LINEFEED@2700..2701 "\n"
+                  SPACE@2701..2705 "    "
+                  IDENT@2705..2717 "add_particle"
+                EArgList@2717..2791
+                  L_PAREN@2717..2718 "("
+                  EStruct@2718..2790
+                    UPPER_IDENT@2718..2726 "Particle"
                     SPACE@2726..2727 " "
-                    EStructField@2727..2735
-                      IDENT@2727..2728 "x"
-                      SPACE@2728..2729 " "
-                      EQUALS@2729..2730 "="
+                    L_BRACE@2727..2728 "{"
+                    SPACE@2728..2729 " "
+                    EStructField@2729..2737
+                      IDENT@2729..2730 "x"
                       SPACE@2730..2731 " "
-                      EStructIdx@2731..2735
-                        EVar@2731..2733
-                          IDENT@2731..2733 "c1"
-                        DOT@2733..2734 "."
-                        IDENT@2734..2735 "x"
-                    COMMA@2735..2736 ","
-                    SPACE@2736..2737 " "
-                    EStructField@2737..2745
-                      IDENT@2737..2738 "y"
-                      SPACE@2738..2739 " "
-                      EQUALS@2739..2740 "="
+                      EQUALS@2731..2732 "="
+                      SPACE@2732..2733 " "
+                      EStructIdx@2733..2737
+                        EVar@2733..2735
+                          IDENT@2733..2735 "c1"
+                        DOT@2735..2736 "."
+                        IDENT@2736..2737 "x"
+                    COMMA@2737..2738 ","
+                    SPACE@2738..2739 " "
+                    EStructField@2739..2747
+                      IDENT@2739..2740 "y"
                       SPACE@2740..2741 " "
-                      EStructIdx@2741..2745
-                        EVar@2741..2743
-                          IDENT@2741..2743 "c1"
-                        DOT@2743..2744 "."
-                        IDENT@2744..2745 "y"
-                    COMMA@2745..2746 ","
-                    SPACE@2746..2747 " "
-                    EStructField@2747..2763
-                      IDENT@2747..2752 "color"
-                      SPACE@2752..2753 " "
-                      EQUALS@2753..2754 "="
+                      EQUALS@2741..2742 "="
+                      SPACE@2742..2743 " "
+                      EStructIdx@2743..2747
+                        EVar@2743..2745
+                          IDENT@2743..2745 "c1"
+                        DOT@2745..2746 "."
+                        IDENT@2746..2747 "y"
+                    COMMA@2747..2748 ","
+                    SPACE@2748..2749 " "
+                    EStructField@2749..2765
+                      IDENT@2749..2754 "color"
                       SPACE@2754..2755 " "
-                      EStructIdx@2755..2763
-                        EVar@2755..2757
-                          IDENT@2755..2757 "c1"
-                        DOT@2757..2758 "."
-                        IDENT@2758..2763 "color"
-                    COMMA@2763..2764 ","
-                    SPACE@2764..2765 " "
-                    EStructField@2765..2787
-                      IDENT@2765..2769 "time"
-                      SPACE@2769..2770 " "
-                      EQUALS@2770..2771 "="
+                      EQUALS@2755..2756 "="
+                      SPACE@2756..2757 " "
+                      EStructIdx@2757..2765
+                        EVar@2757..2759
+                          IDENT@2757..2759 "c1"
+                        DOT@2759..2760 "."
+                        IDENT@2760..2765 "color"
+                    COMMA@2765..2766 ","
+                    SPACE@2766..2767 " "
+                    EStructField@2767..2789
+                      IDENT@2767..2771 "time"
                       SPACE@2771..2772 " "
-                      EVar@2772..2787
-                        IDENT@2772..2786 "particle_timer"
-                        SPACE@2786..2787 " "
-                    R_BRACE@2787..2788 "}"
-                  R_PAREN@2788..2789 ")"
-            SEMICOLON@2789..2790 ";"
-            DLet@2790..2821
-              LINEFEED@2790..2791 "\n"
-              LINEFEED@2791..2792 "\n"
-              SPACE@2792..2796 "    "
-              LET_KW@2796..2799 "let"
-              SPACE@2799..2800 " "
-              IDENT@2800..2807 "delta_x"
-              SPACE@2807..2808 " "
-              EQUALS@2808..2809 "="
+                      EQUALS@2772..2773 "="
+                      SPACE@2773..2774 " "
+                      EVar@2774..2789
+                        IDENT@2774..2788 "particle_timer"
+                        SPACE@2788..2789 " "
+                    R_BRACE@2789..2790 "}"
+                  R_PAREN@2790..2791 ")"
+            SEMICOLON@2791..2792 ";"
+            DLet@2792..2823
+              LINEFEED@2792..2793 "\n"
+              LINEFEED@2793..2794 "\n"
+              SPACE@2794..2798 "    "
+              LET_KW@2798..2801 "let"
+              SPACE@2801..2802 " "
+              IDENT@2802..2809 "delta_x"
               SPACE@2809..2810 " "
-              EBinary@2810..2821
-                EStructIdx@2810..2815
-                  EVar@2810..2812
-                    IDENT@2810..2812 "c1"
-                  DOT@2812..2813 "."
-                  IDENT@2813..2814 "x"
-                  SPACE@2814..2815 " "
-                BinOp@2815..2817
-                  MINUS@2815..2816 "-"
+              EQUALS@2810..2811 "="
+              SPACE@2811..2812 " "
+              EBinary@2812..2823
+                EStructIdx@2812..2817
+                  EVar@2812..2814
+                    IDENT@2812..2814 "c1"
+                  DOT@2814..2815 "."
+                  IDENT@2815..2816 "x"
                   SPACE@2816..2817 " "
-                EStructIdx@2817..2821
-                  EVar@2817..2819
-                    IDENT@2817..2819 "c2"
-                  DOT@2819..2820 "."
-                  IDENT@2820..2821 "x"
-            SEMICOLON@2821..2822 ";"
-            DLet@2822..2852
-              LINEFEED@2822..2823 "\n"
-              SPACE@2823..2827 "    "
-              LET_KW@2827..2830 "let"
-              SPACE@2830..2831 " "
-              IDENT@2831..2838 "delta_y"
-              SPACE@2838..2839 " "
-              EQUALS@2839..2840 "="
+                BinOp@2817..2819
+                  MINUS@2817..2818 "-"
+                  SPACE@2818..2819 " "
+                EStructIdx@2819..2823
+                  EVar@2819..2821
+                    IDENT@2819..2821 "c2"
+                  DOT@2821..2822 "."
+                  IDENT@2822..2823 "x"
+            SEMICOLON@2823..2824 ";"
+            DLet@2824..2854
+              LINEFEED@2824..2825 "\n"
+              SPACE@2825..2829 "    "
+              LET_KW@2829..2832 "let"
+              SPACE@2832..2833 " "
+              IDENT@2833..2840 "delta_y"
               SPACE@2840..2841 " "
-              EBinary@2841..2852
-                EStructIdx@2841..2846
-                  EVar@2841..2843
-                    IDENT@2841..2843 "c1"
-                  DOT@2843..2844 "."
-                  IDENT@2844..2845 "y"
-                  SPACE@2845..2846 " "
-                BinOp@2846..2848
-                  MINUS@2846..2847 "-"
+              EQUALS@2841..2842 "="
+              SPACE@2842..2843 " "
+              EBinary@2843..2854
+                EStructIdx@2843..2848
+                  EVar@2843..2845
+                    IDENT@2843..2845 "c1"
+                  DOT@2845..2846 "."
+                  IDENT@2846..2847 "y"
                   SPACE@2847..2848 " "
-                EStructIdx@2848..2852
-                  EVar@2848..2850
-                    IDENT@2848..2850 "c2"
-                  DOT@2850..2851 "."
-                  IDENT@2851..2852 "y"
-            SEMICOLON@2852..2853 ";"
-            DExpr@2853..3011
-              EIf@2853..3011
-                LINEFEED@2853..2854 "\n"
-                SPACE@2854..2858 "    "
-                IF_KW@2858..2860 "if"
-                SPACE@2860..2861 " "
-                EBinary@2861..2897
-                  ECall@2861..2878
-                    EVar@2861..2868
-                      IDENT@2861..2868 "f32_abs"
-                    EArgList@2868..2878
-                      L_PAREN@2868..2869 "("
-                      EVar@2869..2876
-                        IDENT@2869..2876 "delta_x"
-                      R_PAREN@2876..2877 ")"
-                      SPACE@2877..2878 " "
-                  BinOp@2878..2880
-                    R_ANGLE@2878..2879 ">"
-                    SPACE@2879..2880 " "
-                  ECall@2880..2897
-                    EVar@2880..2887
-                      IDENT@2880..2887 "f32_abs"
-                    EArgList@2887..2897
-                      L_PAREN@2887..2888 "("
-                      EVar@2888..2895
-                        IDENT@2888..2895 "delta_y"
-                      R_PAREN@2895..2896 ")"
-                      SPACE@2896..2897 " "
-                EBlock@2897..2952
-                  L_BRACE@2897..2898 "{"
-                  DSet@2898..2945
-                    LINEFEED@2898..2899 "\n"
-                    SPACE@2899..2905 "      "
-                    SET_KW@2905..2908 "set"
-                    SPACE@2908..2909 " "
-                    SetTarget@2909..2915
-                      IDENT@2909..2911 "c1"
-                      SetStruct@2911..2915
-                        DOT@2911..2912 "."
-                        IDENT@2912..2914 "vx"
-                        SPACE@2914..2915 " "
-                    EQUALS@2915..2916 "="
-                    SPACE@2916..2917 " "
-                    ECall@2917..2945
-                      EVar@2917..2929
-                        IDENT@2917..2929 "f32_copysign"
-                      EArgList@2929..2945
-                        L_PAREN@2929..2930 "("
-                        EStructIdx@2930..2935
-                          EVar@2930..2932
-                            IDENT@2930..2932 "c1"
-                          DOT@2932..2933 "."
-                          IDENT@2933..2935 "vx"
-                        COMMA@2935..2936 ","
-                        SPACE@2936..2937 " "
-                        EVar@2937..2944
-                          IDENT@2937..2944 "delta_x"
-                        R_PAREN@2944..2945 ")"
-                  LINEFEED@2945..2946 "\n"
-                  SPACE@2946..2950 "    "
-                  R_BRACE@2950..2951 "}"
-                  SPACE@2951..2952 " "
-                ELSE_KW@2952..2956 "else"
-                SPACE@2956..2957 " "
-                EBlock@2957..3011
-                  L_BRACE@2957..2958 "{"
-                  DSet@2958..3005
-                    LINEFEED@2958..2959 "\n"
-                    SPACE@2959..2965 "      "
-                    SET_KW@2965..2968 "set"
-                    SPACE@2968..2969 " "
-                    SetTarget@2969..2975
-                      IDENT@2969..2971 "c1"
-                      SetStruct@2971..2975
-                        DOT@2971..2972 "."
-                        IDENT@2972..2974 "vy"
-                        SPACE@2974..2975 " "
-                    EQUALS@2975..2976 "="
-                    SPACE@2976..2977 " "
-                    ECall@2977..3005
-                      EVar@2977..2989
-                        IDENT@2977..2989 "f32_copysign"
-                      EArgList@2989..3005
-                        L_PAREN@2989..2990 "("
-                        EStructIdx@2990..2995
-                          EVar@2990..2992
-                            IDENT@2990..2992 "c1"
-                          DOT@2992..2993 "."
-                          IDENT@2993..2995 "vy"
-                        COMMA@2995..2996 ","
-                        SPACE@2996..2997 " "
-                        EVar@2997..3004
-                          IDENT@2997..3004 "delta_y"
-                        R_PAREN@3004..3005 ")"
-                  LINEFEED@3005..3006 "\n"
-                  SPACE@3006..3010 "    "
-                  R_BRACE@3010..3011 "}"
-            LINEFEED@3011..3012 "\n"
-            SPACE@3012..3014 "  "
-            R_BRACE@3014..3015 "}"
-            SPACE@3015..3016 " "
-          ELSE_KW@3016..3020 "else"
-          SPACE@3020..3021 " "
-          EBlock@3021..3023
-            L_BRACE@3021..3022 "{"
-            R_BRACE@3022..3023 "}"
-      LINEFEED@3023..3024 "\n"
-      R_BRACE@3024..3025 "}"
-  TopFn@3025..3251
-    LINEFEED@3025..3026 "\n"
-    LINEFEED@3026..3027 "\n"
-    FN_KW@3027..3029 "fn"
-    SPACE@3029..3030 " "
-    IDENT@3030..3042 "collide_cube"
-    L_PAREN@3042..3043 "("
-    Param@3043..3054
-      IDENT@3043..3047 "cube"
-      SPACE@3047..3048 " "
-      COLON@3048..3049 ":"
+                BinOp@2848..2850
+                  MINUS@2848..2849 "-"
+                  SPACE@2849..2850 " "
+                EStructIdx@2850..2854
+                  EVar@2850..2852
+                    IDENT@2850..2852 "c2"
+                  DOT@2852..2853 "."
+                  IDENT@2853..2854 "y"
+            SEMICOLON@2854..2855 ";"
+            DExpr@2855..3013
+              EIf@2855..3013
+                LINEFEED@2855..2856 "\n"
+                SPACE@2856..2860 "    "
+                IF_KW@2860..2862 "if"
+                SPACE@2862..2863 " "
+                EBinary@2863..2899
+                  ECall@2863..2880
+                    EVar@2863..2870
+                      IDENT@2863..2870 "f32_abs"
+                    EArgList@2870..2880
+                      L_PAREN@2870..2871 "("
+                      EVar@2871..2878
+                        IDENT@2871..2878 "delta_x"
+                      R_PAREN@2878..2879 ")"
+                      SPACE@2879..2880 " "
+                  BinOp@2880..2882
+                    R_ANGLE@2880..2881 ">"
+                    SPACE@2881..2882 " "
+                  ECall@2882..2899
+                    EVar@2882..2889
+                      IDENT@2882..2889 "f32_abs"
+                    EArgList@2889..2899
+                      L_PAREN@2889..2890 "("
+                      EVar@2890..2897
+                        IDENT@2890..2897 "delta_y"
+                      R_PAREN@2897..2898 ")"
+                      SPACE@2898..2899 " "
+                EBlock@2899..2954
+                  L_BRACE@2899..2900 "{"
+                  DSet@2900..2947
+                    LINEFEED@2900..2901 "\n"
+                    SPACE@2901..2907 "      "
+                    SET_KW@2907..2910 "set"
+                    SPACE@2910..2911 " "
+                    SetTarget@2911..2917
+                      IDENT@2911..2913 "c1"
+                      SetStruct@2913..2917
+                        DOT@2913..2914 "."
+                        IDENT@2914..2916 "vx"
+                        SPACE@2916..2917 " "
+                    EQUALS@2917..2918 "="
+                    SPACE@2918..2919 " "
+                    ECall@2919..2947
+                      EVar@2919..2931
+                        IDENT@2919..2931 "f32_copysign"
+                      EArgList@2931..2947
+                        L_PAREN@2931..2932 "("
+                        EStructIdx@2932..2937
+                          EVar@2932..2934
+                            IDENT@2932..2934 "c1"
+                          DOT@2934..2935 "."
+                          IDENT@2935..2937 "vx"
+                        COMMA@2937..2938 ","
+                        SPACE@2938..2939 " "
+                        EVar@2939..2946
+                          IDENT@2939..2946 "delta_x"
+                        R_PAREN@2946..2947 ")"
+                  LINEFEED@2947..2948 "\n"
+                  SPACE@2948..2952 "    "
+                  R_BRACE@2952..2953 "}"
+                  SPACE@2953..2954 " "
+                ELSE_KW@2954..2958 "else"
+                SPACE@2958..2959 " "
+                EBlock@2959..3013
+                  L_BRACE@2959..2960 "{"
+                  DSet@2960..3007
+                    LINEFEED@2960..2961 "\n"
+                    SPACE@2961..2967 "      "
+                    SET_KW@2967..2970 "set"
+                    SPACE@2970..2971 " "
+                    SetTarget@2971..2977
+                      IDENT@2971..2973 "c1"
+                      SetStruct@2973..2977
+                        DOT@2973..2974 "."
+                        IDENT@2974..2976 "vy"
+                        SPACE@2976..2977 " "
+                    EQUALS@2977..2978 "="
+                    SPACE@2978..2979 " "
+                    ECall@2979..3007
+                      EVar@2979..2991
+                        IDENT@2979..2991 "f32_copysign"
+                      EArgList@2991..3007
+                        L_PAREN@2991..2992 "("
+                        EStructIdx@2992..2997
+                          EVar@2992..2994
+                            IDENT@2992..2994 "c1"
+                          DOT@2994..2995 "."
+                          IDENT@2995..2997 "vy"
+                        COMMA@2997..2998 ","
+                        SPACE@2998..2999 " "
+                        EVar@2999..3006
+                          IDENT@2999..3006 "delta_y"
+                        R_PAREN@3006..3007 ")"
+                  LINEFEED@3007..3008 "\n"
+                  SPACE@3008..3012 "    "
+                  R_BRACE@3012..3013 "}"
+            LINEFEED@3013..3014 "\n"
+            SPACE@3014..3016 "  "
+            R_BRACE@3016..3017 "}"
+            SPACE@3017..3018 " "
+          ELSE_KW@3018..3022 "else"
+          SPACE@3022..3023 " "
+          EBlock@3023..3025
+            L_BRACE@3023..3024 "{"
+            R_BRACE@3024..3025 "}"
+      LINEFEED@3025..3026 "\n"
+      R_BRACE@3026..3027 "}"
+  TopFn@3027..3254
+    LINEFEED@3027..3028 "\n"
+    LINEFEED@3028..3029 "\n"
+    FN_KW@3029..3031 "fn"
+    SPACE@3031..3032 " "
+    IDENT@3032..3044 "collide_cube"
+    L_PAREN@3044..3045 "("
+    Param@3045..3056
+      IDENT@3045..3049 "cube"
       SPACE@3049..3050 " "
-      TyCons@3050..3054
-        UPPER_IDENT@3050..3054 "Cube"
-    R_PAREN@3054..3055 ")"
-    SPACE@3055..3056 " "
-    EQUALS@3056..3057 "="
+      COLON@3050..3051 ":"
+      SPACE@3051..3052 " "
+      TyCons@3052..3056
+        UPPER_IDENT@3052..3056 "Cube"
+    R_PAREN@3056..3057 ")"
     SPACE@3057..3058 " "
-    EBlock@3058..3251
-      L_BRACE@3058..3059 "{"
-      DLet@3059..3073
-        LINEFEED@3059..3060 "\n"
-        SPACE@3060..3062 "  "
-        LET_KW@3062..3065 "let"
-        SPACE@3065..3066 " "
-        IDENT@3066..3069 "idx"
-        SPACE@3069..3070 " "
-        EQUALS@3070..3071 "="
+    EQUALS@3058..3059 "="
+    SPACE@3059..3060 " "
+    EBlock@3060..3254
+      L_BRACE@3060..3061 "{"
+      DLet@3061..3075
+        LINEFEED@3061..3062 "\n"
+        SPACE@3062..3064 "  "
+        LET_KW@3064..3067 "let"
+        SPACE@3067..3068 " "
+        IDENT@3068..3071 "idx"
         SPACE@3071..3072 " "
-        ELit@3072..3073
-          LitInt@3072..3073
-            INT_LIT@3072..3073 "0"
-      SEMICOLON@3073..3074 ";"
-      DWhile@3074..3249
-        LINEFEED@3074..3075 "\n"
-        SPACE@3075..3077 "  "
-        WHILE_KW@3077..3082 "while"
-        SPACE@3082..3083 " "
-        EBinary@3083..3106
-          EVar@3083..3087
-            IDENT@3083..3086 "idx"
-            SPACE@3086..3087 " "
-          BinOp@3087..3089
-            L_ANGLE@3087..3088 "<"
+        EQUALS@3072..3073 "="
+        SPACE@3073..3074 " "
+        ELit@3074..3075
+          LitInt@3074..3075
+            INT_LIT@3074..3075 "0"
+      SEMICOLON@3075..3076 ";"
+      DWhile@3076..3252
+        LINEFEED@3076..3077 "\n"
+        SPACE@3077..3079 "  "
+        WHILE_KW@3079..3084 "while"
+        SPACE@3084..3085 " "
+        EBinary@3085..3109
+          EVar@3085..3089
+            IDENT@3085..3088 "idx"
             SPACE@3088..3089 " "
-          ECall@3089..3106
-            EVar@3089..3098
-              IDENT@3089..3098 "array_len"
-            EArgList@3098..3106
-              L_PAREN@3098..3099 "("
-              EVar@3099..3104
-                IDENT@3099..3104 "cubes"
-              R_PAREN@3104..3105 ")"
-              SPACE@3105..3106 " "
-        EBlock@3106..3249
-          L_BRACE@3106..3107 "{"
-          DExpr@3107..3222
-            EIf@3107..3222
-              LINEFEED@3107..3108 "\n"
-              SPACE@3108..3112 "    "
-              IF_KW@3112..3114 "if"
-              SPACE@3114..3115 " "
-              EBinary@3115..3164
-                EBinary@3115..3138
-                  EStructIdx@3115..3128
-                    EArrayIdx@3115..3125
-                      EVar@3115..3120
-                        IDENT@3115..3120 "cubes"
-                      L_BRACKET@3120..3121 "["
-                      EVar@3121..3124
-                        IDENT@3121..3124 "idx"
-                      R_BRACKET@3124..3125 "]"
-                    DOT@3125..3126 "."
-                    IDENT@3126..3127 "x"
-                    SPACE@3127..3128 " "
-                  BinOp@3128..3131
-                    DOUBLE_EQUALS@3128..3130 "=="
+          BinOp@3089..3091
+            L_ANGLE@3089..3090 "<"
+            SPACE@3090..3091 " "
+          EIntrinsic@3091..3109
+            AT_IDENT@3091..3101 "@array_len"
+            EArgList@3101..3109
+              L_PAREN@3101..3102 "("
+              EVar@3102..3107
+                IDENT@3102..3107 "cubes"
+              R_PAREN@3107..3108 ")"
+              SPACE@3108..3109 " "
+        EBlock@3109..3252
+          L_BRACE@3109..3110 "{"
+          DExpr@3110..3225
+            EIf@3110..3225
+              LINEFEED@3110..3111 "\n"
+              SPACE@3111..3115 "    "
+              IF_KW@3115..3117 "if"
+              SPACE@3117..3118 " "
+              EBinary@3118..3167
+                EBinary@3118..3141
+                  EStructIdx@3118..3131
+                    EArrayIdx@3118..3128
+                      EVar@3118..3123
+                        IDENT@3118..3123 "cubes"
+                      L_BRACKET@3123..3124 "["
+                      EVar@3124..3127
+                        IDENT@3124..3127 "idx"
+                      R_BRACKET@3127..3128 "]"
+                    DOT@3128..3129 "."
+                    IDENT@3129..3130 "x"
                     SPACE@3130..3131 " "
-                  EStructIdx@3131..3138
-                    EVar@3131..3135
-                      IDENT@3131..3135 "cube"
-                    DOT@3135..3136 "."
-                    IDENT@3136..3137 "x"
-                    SPACE@3137..3138 " "
-                BinOp@3138..3141
-                  ANDAND@3138..3140 "&&"
-                  SPACE@3140..3141 " "
-                EBinary@3141..3164
-                  EStructIdx@3141..3154
-                    EArrayIdx@3141..3151
-                      EVar@3141..3146
-                        IDENT@3141..3146 "cubes"
-                      L_BRACKET@3146..3147 "["
-                      EVar@3147..3150
-                        IDENT@3147..3150 "idx"
-                      R_BRACKET@3150..3151 "]"
-                    DOT@3151..3152 "."
-                    IDENT@3152..3153 "y"
-                    SPACE@3153..3154 " "
-                  BinOp@3154..3157
-                    DOUBLE_EQUALS@3154..3156 "=="
+                  BinOp@3131..3134
+                    DOUBLE_EQUALS@3131..3133 "=="
+                    SPACE@3133..3134 " "
+                  EStructIdx@3134..3141
+                    EVar@3134..3138
+                      IDENT@3134..3138 "cube"
+                    DOT@3138..3139 "."
+                    IDENT@3139..3140 "x"
+                    SPACE@3140..3141 " "
+                BinOp@3141..3144
+                  ANDAND@3141..3143 "&&"
+                  SPACE@3143..3144 " "
+                EBinary@3144..3167
+                  EStructIdx@3144..3157
+                    EArrayIdx@3144..3154
+                      EVar@3144..3149
+                        IDENT@3144..3149 "cubes"
+                      L_BRACKET@3149..3150 "["
+                      EVar@3150..3153
+                        IDENT@3150..3153 "idx"
+                      R_BRACKET@3153..3154 "]"
+                    DOT@3154..3155 "."
+                    IDENT@3155..3156 "y"
                     SPACE@3156..3157 " "
-                  EStructIdx@3157..3164
-                    EVar@3157..3161
-                      IDENT@3157..3161 "cube"
-                    DOT@3161..3162 "."
-                    IDENT@3162..3163 "y"
-                    SPACE@3163..3164 " "
-              EBlock@3164..3172
-                L_BRACE@3164..3165 "{"
-                LINEFEED@3165..3166 "\n"
-                SPACE@3166..3170 "    "
-                R_BRACE@3170..3171 "}"
-                SPACE@3171..3172 " "
-              ELSE_KW@3172..3176 "else"
-              SPACE@3176..3177 " "
-              EBlock@3177..3222
-                L_BRACE@3177..3178 "{"
-                DExpr@3178..3216
-                  ECall@3178..3216
-                    EVar@3178..3198
-                      LINEFEED@3178..3179 "\n"
-                      SPACE@3179..3185 "      "
-                      IDENT@3185..3198 "collide_cubes"
-                    EArgList@3198..3216
-                      L_PAREN@3198..3199 "("
-                      EVar@3199..3203
-                        IDENT@3199..3203 "cube"
-                      COMMA@3203..3204 ","
-                      SPACE@3204..3205 " "
-                      EArrayIdx@3205..3215
-                        EVar@3205..3210
-                          IDENT@3205..3210 "cubes"
-                        L_BRACKET@3210..3211 "["
-                        EVar@3211..3214
-                          IDENT@3211..3214 "idx"
-                        R_BRACKET@3214..3215 "]"
-                      R_PAREN@3215..3216 ")"
-                LINEFEED@3216..3217 "\n"
-                SPACE@3217..3221 "    "
-                R_BRACE@3221..3222 "}"
-          SEMICOLON@3222..3223 ";"
-          DSet@3223..3245
-            LINEFEED@3223..3224 "\n"
-            SPACE@3224..3228 "    "
-            SET_KW@3228..3231 "set"
-            SPACE@3231..3232 " "
-            SetTarget@3232..3236
-              IDENT@3232..3235 "idx"
-              SPACE@3235..3236 " "
-            EQUALS@3236..3237 "="
-            SPACE@3237..3238 " "
-            EBinary@3238..3245
-              EVar@3238..3242
-                IDENT@3238..3241 "idx"
-                SPACE@3241..3242 " "
-              BinOp@3242..3244
-                PLUS@3242..3243 "+"
-                SPACE@3243..3244 " "
-              ELit@3244..3245
-                LitInt@3244..3245
-                  INT_LIT@3244..3245 "1"
-          LINEFEED@3245..3246 "\n"
-          SPACE@3246..3248 "  "
-          R_BRACE@3248..3249 "}"
-      LINEFEED@3249..3250 "\n"
-      R_BRACE@3250..3251 "}"
-  TopFn@3251..3716
-    LINEFEED@3251..3252 "\n"
-    LINEFEED@3252..3253 "\n"
-    FN_KW@3253..3255 "fn"
-    SPACE@3255..3256 " "
-    IDENT@3256..3265 "tick_cube"
-    L_PAREN@3265..3266 "("
-    Param@3266..3279
-      IDENT@3266..3270 "cube"
-      SPACE@3270..3271 " "
-      COLON@3271..3272 ":"
-      SPACE@3272..3273 " "
-      TyCons@3273..3277
-        UPPER_IDENT@3273..3277 "Cube"
-      COMMA@3277..3278 ","
-      SPACE@3278..3279 " "
-    Param@3279..3300
-      IDENT@3279..3294 "elapsed_time_ms"
-      SPACE@3294..3295 " "
-      COLON@3295..3296 ":"
-      SPACE@3296..3297 " "
-      TyFloat@3297..3300
-        F32_BUILTIN@3297..3300 "f32"
-    R_PAREN@3300..3301 ")"
-    SPACE@3301..3302 " "
-    EQUALS@3302..3303 "="
-    SPACE@3303..3304 " "
-    EBlock@3304..3716
-      L_BRACE@3304..3305 "{"
-      DLet@3305..3351
-        LINEFEED@3305..3306 "\n"
-        SPACE@3306..3308 "  "
-        LET_KW@3308..3311 "let"
-        SPACE@3311..3312 " "
-        IDENT@3312..3326 "elapsed_factor"
-        SPACE@3326..3327 " "
-        EQUALS@3327..3328 "="
-        SPACE@3328..3329 " "
-        EBinary@3329..3351
-          EVar@3329..3345
-            IDENT@3329..3344 "elapsed_time_ms"
-            SPACE@3344..3345 " "
-          BinOp@3345..3347
-            SLASH@3345..3346 "/"
-            SPACE@3346..3347 " "
-          ELit@3347..3351
-            LitFloat@3347..3351
-              FLOAT_LIT@3347..3351 "48.0"
-      SEMICOLON@3351..3352 ";"
-      DSet@3352..3402
-        LINEFEED@3352..3353 "\n"
-        LINEFEED@3353..3354 "\n"
-        SPACE@3354..3356 "  "
-        SET_KW@3356..3359 "set"
-        SPACE@3359..3360 " "
-        SetTarget@3360..3367
-          IDENT@3360..3364 "cube"
-          SetStruct@3364..3367
-            DOT@3364..3365 "."
-            IDENT@3365..3366 "x"
-            SPACE@3366..3367 " "
-        EQUALS@3367..3368 "="
-        SPACE@3368..3369 " "
-        EBinary@3369..3402
-          EStructIdx@3369..3376
-            EVar@3369..3373
-              IDENT@3369..3373 "cube"
-            DOT@3373..3374 "."
-            IDENT@3374..3375 "x"
-            SPACE@3375..3376 " "
-          BinOp@3376..3378
-            PLUS@3376..3377 "+"
-            SPACE@3377..3378 " "
-          EBinary@3378..3402
-            EStructIdx@3378..3386
-              EVar@3378..3382
-                IDENT@3378..3382 "cube"
-              DOT@3382..3383 "."
-              IDENT@3383..3385 "vx"
-              SPACE@3385..3386 " "
-            BinOp@3386..3388
-              STAR@3386..3387 "*"
-              SPACE@3387..3388 " "
-            EVar@3388..3402
-              IDENT@3388..3402 "elapsed_factor"
-      SEMICOLON@3402..3403 ";"
-      DSet@3403..3452
-        LINEFEED@3403..3404 "\n"
-        SPACE@3404..3406 "  "
-        SET_KW@3406..3409 "set"
-        SPACE@3409..3410 " "
-        SetTarget@3410..3417
-          IDENT@3410..3414 "cube"
-          SetStruct@3414..3417
-            DOT@3414..3415 "."
-            IDENT@3415..3416 "y"
-            SPACE@3416..3417 " "
-        EQUALS@3417..3418 "="
-        SPACE@3418..3419 " "
-        EBinary@3419..3452
-          EStructIdx@3419..3426
-            EVar@3419..3423
-              IDENT@3419..3423 "cube"
-            DOT@3423..3424 "."
-            IDENT@3424..3425 "y"
-            SPACE@3425..3426 " "
-          BinOp@3426..3428
-            PLUS@3426..3427 "+"
-            SPACE@3427..3428 " "
-          EBinary@3428..3452
-            EStructIdx@3428..3436
-              EVar@3428..3432
-                IDENT@3428..3432 "cube"
-              DOT@3432..3433 "."
-              IDENT@3433..3435 "vy"
-              SPACE@3435..3436 " "
-            BinOp@3436..3438
-              STAR@3436..3437 "*"
-              SPACE@3437..3438 " "
-            EVar@3438..3452
-              IDENT@3438..3452 "elapsed_factor"
-      SEMICOLON@3452..3453 ";"
-      DExpr@3453..3583
-        EIf@3453..3583
-          LINEFEED@3453..3454 "\n"
-          LINEFEED@3454..3455 "\n"
-          SPACE@3455..3457 "  "
-          IF_KW@3457..3459 "if"
-          SPACE@3459..3460 " "
-          EBinary@3460..3491
-            EBinary@3460..3473
-              EStructIdx@3460..3467
-                EVar@3460..3464
-                  IDENT@3460..3464 "cube"
-                DOT@3464..3465 "."
-                IDENT@3465..3466 "x"
-                SPACE@3466..3467 " "
-              BinOp@3467..3469
-                L_ANGLE@3467..3468 "<"
-                SPACE@3468..3469 " "
-              ELit@3469..3473
-                LitFloat@3469..3473
-                  FLOAT_LIT@3469..3472 "0.0"
-                  SPACE@3472..3473 " "
-            BinOp@3473..3476
-              OROR@3473..3475 "||"
-              SPACE@3475..3476 " "
-            EBinary@3476..3491
-              EStructIdx@3476..3483
-                EVar@3476..3480
-                  IDENT@3476..3480 "cube"
-                DOT@3480..3481 "."
-                IDENT@3481..3482 "x"
-                SPACE@3482..3483 " "
-              BinOp@3483..3485
-                R_ANGLE@3483..3484 ">"
-                SPACE@3484..3485 " "
-              ELit@3485..3491
-                LitFloat@3485..3491
-                  FLOAT_LIT@3485..3490 "500.0"
-                  SPACE@3490..3491 " "
-          EBlock@3491..3576
-            L_BRACE@3491..3492 "{"
-            DSet@3492..3535
-              LINEFEED@3492..3493 "\n"
-              SPACE@3493..3497 "    "
-              SET_KW@3497..3500 "set"
-              SPACE@3500..3501 " "
-              SetTarget@3501..3508
-                IDENT@3501..3505 "cube"
-                SetStruct@3505..3508
-                  DOT@3505..3506 "."
-                  IDENT@3506..3507 "x"
-                  SPACE@3507..3508 " "
-              EQUALS@3508..3509 "="
-              SPACE@3509..3510 " "
-              ECall@3510..3535
-                EVar@3510..3515
-                  IDENT@3510..3515 "clamp"
-                EArgList@3515..3535
-                  L_PAREN@3515..3516 "("
-                  ELit@3516..3519
-                    LitFloat@3516..3519
-                      FLOAT_LIT@3516..3519 "0.0"
-                  COMMA@3519..3520 ","
-                  SPACE@3520..3521 " "
-                  EStructIdx@3521..3527
-                    EVar@3521..3525
-                      IDENT@3521..3525 "cube"
-                    DOT@3525..3526 "."
-                    IDENT@3526..3527 "x"
-                  COMMA@3527..3528 ","
-                  SPACE@3528..3529 " "
-                  ELit@3529..3534
-                    LitFloat@3529..3534
-                      FLOAT_LIT@3529..3534 "500.0"
-                  R_PAREN@3534..3535 ")"
-            SEMICOLON@3535..3536 ";"
-            DSet@3536..3571
-              LINEFEED@3536..3537 "\n"
-              SPACE@3537..3541 "    "
-              SET_KW@3541..3544 "set"
-              SPACE@3544..3545 " "
-              SetTarget@3545..3553
-                IDENT@3545..3549 "cube"
-                SetStruct@3549..3553
-                  DOT@3549..3550 "."
-                  IDENT@3550..3552 "vx"
-                  SPACE@3552..3553 " "
-              EQUALS@3553..3554 "="
-              SPACE@3554..3555 " "
-              ECall@3555..3571
-                EVar@3555..3562
-                  IDENT@3555..3562 "f32_neg"
-                EArgList@3562..3571
-                  L_PAREN@3562..3563 "("
-                  EStructIdx@3563..3570
-                    EVar@3563..3567
-                      IDENT@3563..3567 "cube"
-                    DOT@3567..3568 "."
-                    IDENT@3568..3570 "vx"
-                  R_PAREN@3570..3571 ")"
-            LINEFEED@3571..3572 "\n"
-            SPACE@3572..3574 "  "
-            R_BRACE@3574..3575 "}"
-            SPACE@3575..3576 " "
-          ELSE_KW@3576..3580 "else"
-          SPACE@3580..3581 " "
-          EBlock@3581..3583
-            L_BRACE@3581..3582 "{"
-            R_BRACE@3582..3583 "}"
-      SEMICOLON@3583..3584 ";"
-      DExpr@3584..3714
-        EIf@3584..3714
-          LINEFEED@3584..3585 "\n"
-          LINEFEED@3585..3586 "\n"
-          SPACE@3586..3588 "  "
-          IF_KW@3588..3590 "if"
-          SPACE@3590..3591 " "
-          EBinary@3591..3622
-            EBinary@3591..3604
-              EStructIdx@3591..3598
-                EVar@3591..3595
-                  IDENT@3591..3595 "cube"
-                DOT@3595..3596 "."
-                IDENT@3596..3597 "y"
-                SPACE@3597..3598 " "
-              BinOp@3598..3600
-                L_ANGLE@3598..3599 "<"
-                SPACE@3599..3600 " "
-              ELit@3600..3604
-                LitFloat@3600..3604
-                  FLOAT_LIT@3600..3603 "0.0"
-                  SPACE@3603..3604 " "
-            BinOp@3604..3607
-              OROR@3604..3606 "||"
-              SPACE@3606..3607 " "
-            EBinary@3607..3622
-              EStructIdx@3607..3614
-                EVar@3607..3611
-                  IDENT@3607..3611 "cube"
-                DOT@3611..3612 "."
-                IDENT@3612..3613 "y"
-                SPACE@3613..3614 " "
-              BinOp@3614..3616
-                R_ANGLE@3614..3615 ">"
-                SPACE@3615..3616 " "
-              ELit@3616..3622
-                LitFloat@3616..3622
-                  FLOAT_LIT@3616..3621 "500.0"
-                  SPACE@3621..3622 " "
-          EBlock@3622..3707
-            L_BRACE@3622..3623 "{"
-            DSet@3623..3666
-              LINEFEED@3623..3624 "\n"
-              SPACE@3624..3628 "    "
-              SET_KW@3628..3631 "set"
-              SPACE@3631..3632 " "
-              SetTarget@3632..3639
-                IDENT@3632..3636 "cube"
-                SetStruct@3636..3639
-                  DOT@3636..3637 "."
-                  IDENT@3637..3638 "y"
-                  SPACE@3638..3639 " "
-              EQUALS@3639..3640 "="
-              SPACE@3640..3641 " "
-              ECall@3641..3666
-                EVar@3641..3646
-                  IDENT@3641..3646 "clamp"
-                EArgList@3646..3666
-                  L_PAREN@3646..3647 "("
-                  ELit@3647..3650
-                    LitFloat@3647..3650
-                      FLOAT_LIT@3647..3650 "0.0"
-                  COMMA@3650..3651 ","
-                  SPACE@3651..3652 " "
-                  EStructIdx@3652..3658
-                    EVar@3652..3656
-                      IDENT@3652..3656 "cube"
-                    DOT@3656..3657 "."
-                    IDENT@3657..3658 "y"
-                  COMMA@3658..3659 ","
-                  SPACE@3659..3660 " "
-                  ELit@3660..3665
-                    LitFloat@3660..3665
-                      FLOAT_LIT@3660..3665 "500.0"
-                  R_PAREN@3665..3666 ")"
-            SEMICOLON@3666..3667 ";"
-            DSet@3667..3702
-              LINEFEED@3667..3668 "\n"
-              SPACE@3668..3672 "    "
-              SET_KW@3672..3675 "set"
-              SPACE@3675..3676 " "
-              SetTarget@3676..3684
-                IDENT@3676..3680 "cube"
-                SetStruct@3680..3684
-                  DOT@3680..3681 "."
-                  IDENT@3681..3683 "vy"
-                  SPACE@3683..3684 " "
-              EQUALS@3684..3685 "="
-              SPACE@3685..3686 " "
-              ECall@3686..3702
-                EVar@3686..3693
-                  IDENT@3686..3693 "f32_neg"
-                EArgList@3693..3702
-                  L_PAREN@3693..3694 "("
-                  EStructIdx@3694..3701
-                    EVar@3694..3698
-                      IDENT@3694..3698 "cube"
-                    DOT@3698..3699 "."
-                    IDENT@3699..3701 "vy"
-                  R_PAREN@3701..3702 ")"
-            LINEFEED@3702..3703 "\n"
-            SPACE@3703..3705 "  "
-            R_BRACE@3705..3706 "}"
-            SPACE@3706..3707 " "
-          ELSE_KW@3707..3711 "else"
-          SPACE@3711..3712 " "
-          EBlock@3712..3714
-            L_BRACE@3712..3713 "{"
-            R_BRACE@3713..3714 "}"
-      LINEFEED@3714..3715 "\n"
-      R_BRACE@3715..3716 "}"
-  TopFn@3716..4185
-    LINEFEED@3716..3717 "\n"
-    LINEFEED@3717..3718 "\n"
-    FN_KW@3718..3720 "fn"
-    SPACE@3720..3721 " "
-    IDENT@3721..3725 "tick"
-    L_PAREN@3725..3726 "("
-    Param@3726..3747
-      IDENT@3726..3741 "elapsed_time_ms"
-      SPACE@3741..3742 " "
-      COLON@3742..3743 ":"
-      SPACE@3743..3744 " "
-      TyFloat@3744..3747
-        F32_BUILTIN@3744..3747 "f32"
-    R_PAREN@3747..3748 ")"
-    SPACE@3748..3749 " "
-    EQUALS@3749..3750 "="
-    SPACE@3750..3751 " "
-    EBlock@3751..4185
-      L_BRACE@3751..3752 "{"
-      DExpr@3752..3762
-        ECall@3752..3762
-          EVar@3752..3760
-            LINEFEED@3752..3753 "\n"
-            SPACE@3753..3755 "  "
-            IDENT@3755..3760 "clear"
-          EArgList@3760..3762
-            L_PAREN@3760..3761 "("
-            R_PAREN@3761..3762 ")"
-      SEMICOLON@3762..3763 ";"
-      DLet@3763..3778
-        LINEFEED@3763..3764 "\n"
-        LINEFEED@3764..3765 "\n"
-        SPACE@3765..3767 "  "
-        LET_KW@3767..3770 "let"
-        SPACE@3770..3771 " "
-        IDENT@3771..3774 "idx"
-        SPACE@3774..3775 " "
-        EQUALS@3775..3776 "="
-        SPACE@3776..3777 " "
-        ELit@3777..3778
-          LitInt@3777..3778
-            INT_LIT@3777..3778 "0"
-      SEMICOLON@3778..3779 ";"
-      DWhile@3779..3940
-        LINEFEED@3779..3780 "\n"
-        SPACE@3780..3782 "  "
-        WHILE_KW@3782..3787 "while"
-        SPACE@3787..3788 " "
-        EBinary@3788..3811
-          EVar@3788..3792
-            IDENT@3788..3791 "idx"
-            SPACE@3791..3792 " "
-          BinOp@3792..3794
-            L_ANGLE@3792..3793 "<"
-            SPACE@3793..3794 " "
-          ECall@3794..3811
-            EVar@3794..3803
-              IDENT@3794..3803 "array_len"
-            EArgList@3803..3811
-              L_PAREN@3803..3804 "("
-              EVar@3804..3809
-                IDENT@3804..3809 "cubes"
-              R_PAREN@3809..3810 ")"
-              SPACE@3810..3811 " "
-        EBlock@3811..3940
-          L_BRACE@3811..3812 "{"
-          DExpr@3812..3841
-            ECall@3812..3841
-              EVar@3812..3829
-                LINEFEED@3812..3813 "\n"
-                SPACE@3813..3817 "    "
-                IDENT@3817..3829 "collide_cube"
-              EArgList@3829..3841
-                L_PAREN@3829..3830 "("
-                EArrayIdx@3830..3840
-                  EVar@3830..3835
-                    IDENT@3830..3835 "cubes"
-                  L_BRACKET@3835..3836 "["
-                  EVar@3836..3839
-                    IDENT@3836..3839 "idx"
-                  R_BRACKET@3839..3840 "]"
-                R_PAREN@3840..3841 ")"
-          SEMICOLON@3841..3842 ";"
-          DExpr@3842..3885
-            ECall@3842..3885
-              EVar@3842..3856
-                LINEFEED@3842..3843 "\n"
-                SPACE@3843..3847 "    "
-                IDENT@3847..3856 "tick_cube"
-              EArgList@3856..3885
-                L_PAREN@3856..3857 "("
-                EArrayIdx@3857..3867
-                  EVar@3857..3862
-                    IDENT@3857..3862 "cubes"
-                  L_BRACKET@3862..3863 "["
-                  EVar@3863..3866
-                    IDENT@3863..3866 "idx"
-                  R_BRACKET@3866..3867 "]"
-                COMMA@3867..3868 ","
-                SPACE@3868..3869 " "
-                EVar@3869..3884
-                  IDENT@3869..3884 "elapsed_time_ms"
-                R_PAREN@3884..3885 ")"
-          SEMICOLON@3885..3886 ";"
-          DExpr@3886..3912
-            ECall@3886..3912
-              EVar@3886..3900
-                LINEFEED@3886..3887 "\n"
-                SPACE@3887..3891 "    "
-                IDENT@3891..3900 "draw_cube"
-              EArgList@3900..3912
-                L_PAREN@3900..3901 "("
-                EArrayIdx@3901..3911
-                  EVar@3901..3906
-                    IDENT@3901..3906 "cubes"
-                  L_BRACKET@3906..3907 "["
-                  EVar@3907..3910
-                    IDENT@3907..3910 "idx"
-                  R_BRACKET@3910..3911 "]"
-                R_PAREN@3911..3912 ")"
-          SEMICOLON@3912..3913 ";"
-          DSet@3913..3936
-            LINEFEED@3913..3914 "\n"
-            LINEFEED@3914..3915 "\n"
-            SPACE@3915..3919 "    "
-            SET_KW@3919..3922 "set"
-            SPACE@3922..3923 " "
-            SetTarget@3923..3927
-              IDENT@3923..3926 "idx"
-              SPACE@3926..3927 " "
-            EQUALS@3927..3928 "="
-            SPACE@3928..3929 " "
-            EBinary@3929..3936
-              EVar@3929..3933
-                IDENT@3929..3932 "idx"
-                SPACE@3932..3933 " "
-              BinOp@3933..3935
-                PLUS@3933..3934 "+"
-                SPACE@3934..3935 " "
-              ELit@3935..3936
-                LitInt@3935..3936
-                  INT_LIT@3935..3936 "1"
-          LINEFEED@3936..3937 "\n"
-          SPACE@3937..3939 "  "
-          R_BRACE@3939..3940 "}"
-      SEMICOLON@3940..3941 ";"
-      DSet@3941..3956
-        LINEFEED@3941..3942 "\n"
-        LINEFEED@3942..3943 "\n"
-        SPACE@3943..3945 "  "
-        SET_KW@3945..3948 "set"
-        SPACE@3948..3949 " "
-        SetTarget@3949..3953
-          IDENT@3949..3952 "idx"
-          SPACE@3952..3953 " "
-        EQUALS@3953..3954 "="
-        SPACE@3954..3955 " "
-        ELit@3955..3956
-          LitInt@3955..3956
-            INT_LIT@3955..3956 "0"
-      SEMICOLON@3956..3957 ";"
-      DWhile@3957..4183
-        LINEFEED@3957..3958 "\n"
-        SPACE@3958..3960 "  "
-        WHILE_KW@3960..3965 "while"
-        SPACE@3965..3966 " "
-        EBinary@3966..4000
-          EVar@3966..3970
-            IDENT@3966..3969 "idx"
-            SPACE@3969..3970 " "
-          BinOp@3970..3972
-            L_ANGLE@3970..3971 "<"
-            SPACE@3971..3972 " "
-          ECall@3972..4000
-            EVar@3972..3981
-              IDENT@3972..3981 "array_len"
-            EArgList@3981..4000
-              L_PAREN@3981..3982 "("
-              EStructIdx@3982..3998
-                EVar@3982..3991
-                  IDENT@3982..3991 "particles"
-                DOT@3991..3992 "."
-                IDENT@3992..3998 "buffer"
-              R_PAREN@3998..3999 ")"
-              SPACE@3999..4000 " "
-        EBlock@4000..4183
-          L_BRACE@4000..4001 "{"
-          DExpr@4001..4042
-            ECall@4001..4042
-              EVar@4001..4019
-                LINEFEED@4001..4002 "\n"
-                SPACE@4002..4006 "    "
-                IDENT@4006..4019 "draw_particle"
-              EArgList@4019..4042
-                L_PAREN@4019..4020 "("
-                EArrayIdx@4020..4041
-                  EStructIdx@4020..4036
-                    EVar@4020..4029
-                      IDENT@4020..4029 "particles"
-                    DOT@4029..4030 "."
-                    IDENT@4030..4036 "buffer"
-                  L_BRACKET@4036..4037 "["
-                  EVar@4037..4040
-                    IDENT@4037..4040 "idx"
-                  R_BRACKET@4040..4041 "]"
-                R_PAREN@4041..4042 ")"
-          SEMICOLON@4042..4043 ";"
-          DLet@4043..4084
-            LINEFEED@4043..4044 "\n"
-            SPACE@4044..4048 "    "
-            LET_KW@4048..4051 "let"
-            SPACE@4051..4052 " "
-            IDENT@4052..4060 "particle"
-            SPACE@4060..4061 " "
-            EQUALS@4061..4062 "="
-            SPACE@4062..4063 " "
-            EArrayIdx@4063..4084
-              EStructIdx@4063..4079
-                EVar@4063..4072
-                  IDENT@4063..4072 "particles"
-                DOT@4072..4073 "."
-                IDENT@4073..4079 "buffer"
-              L_BRACKET@4079..4080 "["
-              EVar@4080..4083
-                IDENT@4080..4083 "idx"
-              R_BRACKET@4083..4084 "]"
-          SEMICOLON@4084..4085 ";"
-          DSet@4085..4155
-            LINEFEED@4085..4086 "\n"
-            SPACE@4086..4090 "    "
-            SET_KW@4090..4093 "set"
-            SPACE@4093..4094 " "
-            SetTarget@4094..4108
-              IDENT@4094..4102 "particle"
-              SetStruct@4102..4108
-                DOT@4102..4103 "."
-                IDENT@4103..4107 "time"
-                SPACE@4107..4108 " "
-            EQUALS@4108..4109 "="
-            SPACE@4109..4110 " "
-            ECall@4110..4155
-              EVar@4110..4117
-                IDENT@4110..4117 "f32_max"
-              EArgList@4117..4155
-                L_PAREN@4117..4118 "("
-                ELit@4118..4121
-                  LitFloat@4118..4121
-                    FLOAT_LIT@4118..4121 "0.0"
-                COMMA@4121..4122 ","
-                SPACE@4122..4123 " "
-                EBinary@4123..4154
-                  EStructIdx@4123..4137
-                    EVar@4123..4131
-                      IDENT@4123..4131 "particle"
-                    DOT@4131..4132 "."
-                    IDENT@4132..4136 "time"
-                    SPACE@4136..4137 " "
-                  BinOp@4137..4139
-                    MINUS@4137..4138 "-"
-                    SPACE@4138..4139 " "
-                  EVar@4139..4154
-                    IDENT@4139..4154 "elapsed_time_ms"
-                R_PAREN@4154..4155 ")"
-          SEMICOLON@4155..4156 ";"
-          DSet@4156..4179
-            LINEFEED@4156..4157 "\n"
-            LINEFEED@4157..4158 "\n"
-            SPACE@4158..4162 "    "
-            SET_KW@4162..4165 "set"
-            SPACE@4165..4166 " "
-            SetTarget@4166..4170
-              IDENT@4166..4169 "idx"
-              SPACE@4169..4170 " "
-            EQUALS@4170..4171 "="
-            SPACE@4171..4172 " "
-            EBinary@4172..4179
-              EVar@4172..4176
-                IDENT@4172..4175 "idx"
-                SPACE@4175..4176 " "
-              BinOp@4176..4178
-                PLUS@4176..4177 "+"
-                SPACE@4177..4178 " "
-              ELit@4178..4179
-                LitInt@4178..4179
-                  INT_LIT@4178..4179 "1"
-          LINEFEED@4179..4180 "\n"
-          SPACE@4180..4182 "  "
-          R_BRACE@4182..4183 "}"
-      LINEFEED@4183..4184 "\n"
-      R_BRACE@4184..4185 "}"
+                  BinOp@3157..3160
+                    DOUBLE_EQUALS@3157..3159 "=="
+                    SPACE@3159..3160 " "
+                  EStructIdx@3160..3167
+                    EVar@3160..3164
+                      IDENT@3160..3164 "cube"
+                    DOT@3164..3165 "."
+                    IDENT@3165..3166 "y"
+                    SPACE@3166..3167 " "
+              EBlock@3167..3175
+                L_BRACE@3167..3168 "{"
+                LINEFEED@3168..3169 "\n"
+                SPACE@3169..3173 "    "
+                R_BRACE@3173..3174 "}"
+                SPACE@3174..3175 " "
+              ELSE_KW@3175..3179 "else"
+              SPACE@3179..3180 " "
+              EBlock@3180..3225
+                L_BRACE@3180..3181 "{"
+                DExpr@3181..3219
+                  ECall@3181..3219
+                    EVar@3181..3201
+                      LINEFEED@3181..3182 "\n"
+                      SPACE@3182..3188 "      "
+                      IDENT@3188..3201 "collide_cubes"
+                    EArgList@3201..3219
+                      L_PAREN@3201..3202 "("
+                      EVar@3202..3206
+                        IDENT@3202..3206 "cube"
+                      COMMA@3206..3207 ","
+                      SPACE@3207..3208 " "
+                      EArrayIdx@3208..3218
+                        EVar@3208..3213
+                          IDENT@3208..3213 "cubes"
+                        L_BRACKET@3213..3214 "["
+                        EVar@3214..3217
+                          IDENT@3214..3217 "idx"
+                        R_BRACKET@3217..3218 "]"
+                      R_PAREN@3218..3219 ")"
+                LINEFEED@3219..3220 "\n"
+                SPACE@3220..3224 "    "
+                R_BRACE@3224..3225 "}"
+          SEMICOLON@3225..3226 ";"
+          DSet@3226..3248
+            LINEFEED@3226..3227 "\n"
+            SPACE@3227..3231 "    "
+            SET_KW@3231..3234 "set"
+            SPACE@3234..3235 " "
+            SetTarget@3235..3239
+              IDENT@3235..3238 "idx"
+              SPACE@3238..3239 " "
+            EQUALS@3239..3240 "="
+            SPACE@3240..3241 " "
+            EBinary@3241..3248
+              EVar@3241..3245
+                IDENT@3241..3244 "idx"
+                SPACE@3244..3245 " "
+              BinOp@3245..3247
+                PLUS@3245..3246 "+"
+                SPACE@3246..3247 " "
+              ELit@3247..3248
+                LitInt@3247..3248
+                  INT_LIT@3247..3248 "1"
+          LINEFEED@3248..3249 "\n"
+          SPACE@3249..3251 "  "
+          R_BRACE@3251..3252 "}"
+      LINEFEED@3252..3253 "\n"
+      R_BRACE@3253..3254 "}"
+  TopFn@3254..3719
+    LINEFEED@3254..3255 "\n"
+    LINEFEED@3255..3256 "\n"
+    FN_KW@3256..3258 "fn"
+    SPACE@3258..3259 " "
+    IDENT@3259..3268 "tick_cube"
+    L_PAREN@3268..3269 "("
+    Param@3269..3282
+      IDENT@3269..3273 "cube"
+      SPACE@3273..3274 " "
+      COLON@3274..3275 ":"
+      SPACE@3275..3276 " "
+      TyCons@3276..3280
+        UPPER_IDENT@3276..3280 "Cube"
+      COMMA@3280..3281 ","
+      SPACE@3281..3282 " "
+    Param@3282..3303
+      IDENT@3282..3297 "elapsed_time_ms"
+      SPACE@3297..3298 " "
+      COLON@3298..3299 ":"
+      SPACE@3299..3300 " "
+      TyFloat@3300..3303
+        F32_BUILTIN@3300..3303 "f32"
+    R_PAREN@3303..3304 ")"
+    SPACE@3304..3305 " "
+    EQUALS@3305..3306 "="
+    SPACE@3306..3307 " "
+    EBlock@3307..3719
+      L_BRACE@3307..3308 "{"
+      DLet@3308..3354
+        LINEFEED@3308..3309 "\n"
+        SPACE@3309..3311 "  "
+        LET_KW@3311..3314 "let"
+        SPACE@3314..3315 " "
+        IDENT@3315..3329 "elapsed_factor"
+        SPACE@3329..3330 " "
+        EQUALS@3330..3331 "="
+        SPACE@3331..3332 " "
+        EBinary@3332..3354
+          EVar@3332..3348
+            IDENT@3332..3347 "elapsed_time_ms"
+            SPACE@3347..3348 " "
+          BinOp@3348..3350
+            SLASH@3348..3349 "/"
+            SPACE@3349..3350 " "
+          ELit@3350..3354
+            LitFloat@3350..3354
+              FLOAT_LIT@3350..3354 "48.0"
+      SEMICOLON@3354..3355 ";"
+      DSet@3355..3405
+        LINEFEED@3355..3356 "\n"
+        LINEFEED@3356..3357 "\n"
+        SPACE@3357..3359 "  "
+        SET_KW@3359..3362 "set"
+        SPACE@3362..3363 " "
+        SetTarget@3363..3370
+          IDENT@3363..3367 "cube"
+          SetStruct@3367..3370
+            DOT@3367..3368 "."
+            IDENT@3368..3369 "x"
+            SPACE@3369..3370 " "
+        EQUALS@3370..3371 "="
+        SPACE@3371..3372 " "
+        EBinary@3372..3405
+          EStructIdx@3372..3379
+            EVar@3372..3376
+              IDENT@3372..3376 "cube"
+            DOT@3376..3377 "."
+            IDENT@3377..3378 "x"
+            SPACE@3378..3379 " "
+          BinOp@3379..3381
+            PLUS@3379..3380 "+"
+            SPACE@3380..3381 " "
+          EBinary@3381..3405
+            EStructIdx@3381..3389
+              EVar@3381..3385
+                IDENT@3381..3385 "cube"
+              DOT@3385..3386 "."
+              IDENT@3386..3388 "vx"
+              SPACE@3388..3389 " "
+            BinOp@3389..3391
+              STAR@3389..3390 "*"
+              SPACE@3390..3391 " "
+            EVar@3391..3405
+              IDENT@3391..3405 "elapsed_factor"
+      SEMICOLON@3405..3406 ";"
+      DSet@3406..3455
+        LINEFEED@3406..3407 "\n"
+        SPACE@3407..3409 "  "
+        SET_KW@3409..3412 "set"
+        SPACE@3412..3413 " "
+        SetTarget@3413..3420
+          IDENT@3413..3417 "cube"
+          SetStruct@3417..3420
+            DOT@3417..3418 "."
+            IDENT@3418..3419 "y"
+            SPACE@3419..3420 " "
+        EQUALS@3420..3421 "="
+        SPACE@3421..3422 " "
+        EBinary@3422..3455
+          EStructIdx@3422..3429
+            EVar@3422..3426
+              IDENT@3422..3426 "cube"
+            DOT@3426..3427 "."
+            IDENT@3427..3428 "y"
+            SPACE@3428..3429 " "
+          BinOp@3429..3431
+            PLUS@3429..3430 "+"
+            SPACE@3430..3431 " "
+          EBinary@3431..3455
+            EStructIdx@3431..3439
+              EVar@3431..3435
+                IDENT@3431..3435 "cube"
+              DOT@3435..3436 "."
+              IDENT@3436..3438 "vy"
+              SPACE@3438..3439 " "
+            BinOp@3439..3441
+              STAR@3439..3440 "*"
+              SPACE@3440..3441 " "
+            EVar@3441..3455
+              IDENT@3441..3455 "elapsed_factor"
+      SEMICOLON@3455..3456 ";"
+      DExpr@3456..3586
+        EIf@3456..3586
+          LINEFEED@3456..3457 "\n"
+          LINEFEED@3457..3458 "\n"
+          SPACE@3458..3460 "  "
+          IF_KW@3460..3462 "if"
+          SPACE@3462..3463 " "
+          EBinary@3463..3494
+            EBinary@3463..3476
+              EStructIdx@3463..3470
+                EVar@3463..3467
+                  IDENT@3463..3467 "cube"
+                DOT@3467..3468 "."
+                IDENT@3468..3469 "x"
+                SPACE@3469..3470 " "
+              BinOp@3470..3472
+                L_ANGLE@3470..3471 "<"
+                SPACE@3471..3472 " "
+              ELit@3472..3476
+                LitFloat@3472..3476
+                  FLOAT_LIT@3472..3475 "0.0"
+                  SPACE@3475..3476 " "
+            BinOp@3476..3479
+              OROR@3476..3478 "||"
+              SPACE@3478..3479 " "
+            EBinary@3479..3494
+              EStructIdx@3479..3486
+                EVar@3479..3483
+                  IDENT@3479..3483 "cube"
+                DOT@3483..3484 "."
+                IDENT@3484..3485 "x"
+                SPACE@3485..3486 " "
+              BinOp@3486..3488
+                R_ANGLE@3486..3487 ">"
+                SPACE@3487..3488 " "
+              ELit@3488..3494
+                LitFloat@3488..3494
+                  FLOAT_LIT@3488..3493 "500.0"
+                  SPACE@3493..3494 " "
+          EBlock@3494..3579
+            L_BRACE@3494..3495 "{"
+            DSet@3495..3538
+              LINEFEED@3495..3496 "\n"
+              SPACE@3496..3500 "    "
+              SET_KW@3500..3503 "set"
+              SPACE@3503..3504 " "
+              SetTarget@3504..3511
+                IDENT@3504..3508 "cube"
+                SetStruct@3508..3511
+                  DOT@3508..3509 "."
+                  IDENT@3509..3510 "x"
+                  SPACE@3510..3511 " "
+              EQUALS@3511..3512 "="
+              SPACE@3512..3513 " "
+              ECall@3513..3538
+                EVar@3513..3518
+                  IDENT@3513..3518 "clamp"
+                EArgList@3518..3538
+                  L_PAREN@3518..3519 "("
+                  ELit@3519..3522
+                    LitFloat@3519..3522
+                      FLOAT_LIT@3519..3522 "0.0"
+                  COMMA@3522..3523 ","
+                  SPACE@3523..3524 " "
+                  EStructIdx@3524..3530
+                    EVar@3524..3528
+                      IDENT@3524..3528 "cube"
+                    DOT@3528..3529 "."
+                    IDENT@3529..3530 "x"
+                  COMMA@3530..3531 ","
+                  SPACE@3531..3532 " "
+                  ELit@3532..3537
+                    LitFloat@3532..3537
+                      FLOAT_LIT@3532..3537 "500.0"
+                  R_PAREN@3537..3538 ")"
+            SEMICOLON@3538..3539 ";"
+            DSet@3539..3574
+              LINEFEED@3539..3540 "\n"
+              SPACE@3540..3544 "    "
+              SET_KW@3544..3547 "set"
+              SPACE@3547..3548 " "
+              SetTarget@3548..3556
+                IDENT@3548..3552 "cube"
+                SetStruct@3552..3556
+                  DOT@3552..3553 "."
+                  IDENT@3553..3555 "vx"
+                  SPACE@3555..3556 " "
+              EQUALS@3556..3557 "="
+              SPACE@3557..3558 " "
+              ECall@3558..3574
+                EVar@3558..3565
+                  IDENT@3558..3565 "f32_neg"
+                EArgList@3565..3574
+                  L_PAREN@3565..3566 "("
+                  EStructIdx@3566..3573
+                    EVar@3566..3570
+                      IDENT@3566..3570 "cube"
+                    DOT@3570..3571 "."
+                    IDENT@3571..3573 "vx"
+                  R_PAREN@3573..3574 ")"
+            LINEFEED@3574..3575 "\n"
+            SPACE@3575..3577 "  "
+            R_BRACE@3577..3578 "}"
+            SPACE@3578..3579 " "
+          ELSE_KW@3579..3583 "else"
+          SPACE@3583..3584 " "
+          EBlock@3584..3586
+            L_BRACE@3584..3585 "{"
+            R_BRACE@3585..3586 "}"
+      SEMICOLON@3586..3587 ";"
+      DExpr@3587..3717
+        EIf@3587..3717
+          LINEFEED@3587..3588 "\n"
+          LINEFEED@3588..3589 "\n"
+          SPACE@3589..3591 "  "
+          IF_KW@3591..3593 "if"
+          SPACE@3593..3594 " "
+          EBinary@3594..3625
+            EBinary@3594..3607
+              EStructIdx@3594..3601
+                EVar@3594..3598
+                  IDENT@3594..3598 "cube"
+                DOT@3598..3599 "."
+                IDENT@3599..3600 "y"
+                SPACE@3600..3601 " "
+              BinOp@3601..3603
+                L_ANGLE@3601..3602 "<"
+                SPACE@3602..3603 " "
+              ELit@3603..3607
+                LitFloat@3603..3607
+                  FLOAT_LIT@3603..3606 "0.0"
+                  SPACE@3606..3607 " "
+            BinOp@3607..3610
+              OROR@3607..3609 "||"
+              SPACE@3609..3610 " "
+            EBinary@3610..3625
+              EStructIdx@3610..3617
+                EVar@3610..3614
+                  IDENT@3610..3614 "cube"
+                DOT@3614..3615 "."
+                IDENT@3615..3616 "y"
+                SPACE@3616..3617 " "
+              BinOp@3617..3619
+                R_ANGLE@3617..3618 ">"
+                SPACE@3618..3619 " "
+              ELit@3619..3625
+                LitFloat@3619..3625
+                  FLOAT_LIT@3619..3624 "500.0"
+                  SPACE@3624..3625 " "
+          EBlock@3625..3710
+            L_BRACE@3625..3626 "{"
+            DSet@3626..3669
+              LINEFEED@3626..3627 "\n"
+              SPACE@3627..3631 "    "
+              SET_KW@3631..3634 "set"
+              SPACE@3634..3635 " "
+              SetTarget@3635..3642
+                IDENT@3635..3639 "cube"
+                SetStruct@3639..3642
+                  DOT@3639..3640 "."
+                  IDENT@3640..3641 "y"
+                  SPACE@3641..3642 " "
+              EQUALS@3642..3643 "="
+              SPACE@3643..3644 " "
+              ECall@3644..3669
+                EVar@3644..3649
+                  IDENT@3644..3649 "clamp"
+                EArgList@3649..3669
+                  L_PAREN@3649..3650 "("
+                  ELit@3650..3653
+                    LitFloat@3650..3653
+                      FLOAT_LIT@3650..3653 "0.0"
+                  COMMA@3653..3654 ","
+                  SPACE@3654..3655 " "
+                  EStructIdx@3655..3661
+                    EVar@3655..3659
+                      IDENT@3655..3659 "cube"
+                    DOT@3659..3660 "."
+                    IDENT@3660..3661 "y"
+                  COMMA@3661..3662 ","
+                  SPACE@3662..3663 " "
+                  ELit@3663..3668
+                    LitFloat@3663..3668
+                      FLOAT_LIT@3663..3668 "500.0"
+                  R_PAREN@3668..3669 ")"
+            SEMICOLON@3669..3670 ";"
+            DSet@3670..3705
+              LINEFEED@3670..3671 "\n"
+              SPACE@3671..3675 "    "
+              SET_KW@3675..3678 "set"
+              SPACE@3678..3679 " "
+              SetTarget@3679..3687
+                IDENT@3679..3683 "cube"
+                SetStruct@3683..3687
+                  DOT@3683..3684 "."
+                  IDENT@3684..3686 "vy"
+                  SPACE@3686..3687 " "
+              EQUALS@3687..3688 "="
+              SPACE@3688..3689 " "
+              ECall@3689..3705
+                EVar@3689..3696
+                  IDENT@3689..3696 "f32_neg"
+                EArgList@3696..3705
+                  L_PAREN@3696..3697 "("
+                  EStructIdx@3697..3704
+                    EVar@3697..3701
+                      IDENT@3697..3701 "cube"
+                    DOT@3701..3702 "."
+                    IDENT@3702..3704 "vy"
+                  R_PAREN@3704..3705 ")"
+            LINEFEED@3705..3706 "\n"
+            SPACE@3706..3708 "  "
+            R_BRACE@3708..3709 "}"
+            SPACE@3709..3710 " "
+          ELSE_KW@3710..3714 "else"
+          SPACE@3714..3715 " "
+          EBlock@3715..3717
+            L_BRACE@3715..3716 "{"
+            R_BRACE@3716..3717 "}"
+      LINEFEED@3717..3718 "\n"
+      R_BRACE@3718..3719 "}"
+  TopFn@3719..4190
+    LINEFEED@3719..3720 "\n"
+    LINEFEED@3720..3721 "\n"
+    FN_KW@3721..3723 "fn"
+    SPACE@3723..3724 " "
+    IDENT@3724..3728 "tick"
+    L_PAREN@3728..3729 "("
+    Param@3729..3750
+      IDENT@3729..3744 "elapsed_time_ms"
+      SPACE@3744..3745 " "
+      COLON@3745..3746 ":"
+      SPACE@3746..3747 " "
+      TyFloat@3747..3750
+        F32_BUILTIN@3747..3750 "f32"
+    R_PAREN@3750..3751 ")"
+    SPACE@3751..3752 " "
+    EQUALS@3752..3753 "="
+    SPACE@3753..3754 " "
+    EBlock@3754..4190
+      L_BRACE@3754..3755 "{"
+      DExpr@3755..3765
+        ECall@3755..3765
+          EVar@3755..3763
+            LINEFEED@3755..3756 "\n"
+            SPACE@3756..3758 "  "
+            IDENT@3758..3763 "clear"
+          EArgList@3763..3765
+            L_PAREN@3763..3764 "("
+            R_PAREN@3764..3765 ")"
+      SEMICOLON@3765..3766 ";"
+      DLet@3766..3781
+        LINEFEED@3766..3767 "\n"
+        LINEFEED@3767..3768 "\n"
+        SPACE@3768..3770 "  "
+        LET_KW@3770..3773 "let"
+        SPACE@3773..3774 " "
+        IDENT@3774..3777 "idx"
+        SPACE@3777..3778 " "
+        EQUALS@3778..3779 "="
+        SPACE@3779..3780 " "
+        ELit@3780..3781
+          LitInt@3780..3781
+            INT_LIT@3780..3781 "0"
+      SEMICOLON@3781..3782 ";"
+      DWhile@3782..3944
+        LINEFEED@3782..3783 "\n"
+        SPACE@3783..3785 "  "
+        WHILE_KW@3785..3790 "while"
+        SPACE@3790..3791 " "
+        EBinary@3791..3815
+          EVar@3791..3795
+            IDENT@3791..3794 "idx"
+            SPACE@3794..3795 " "
+          BinOp@3795..3797
+            L_ANGLE@3795..3796 "<"
+            SPACE@3796..3797 " "
+          EIntrinsic@3797..3815
+            AT_IDENT@3797..3807 "@array_len"
+            EArgList@3807..3815
+              L_PAREN@3807..3808 "("
+              EVar@3808..3813
+                IDENT@3808..3813 "cubes"
+              R_PAREN@3813..3814 ")"
+              SPACE@3814..3815 " "
+        EBlock@3815..3944
+          L_BRACE@3815..3816 "{"
+          DExpr@3816..3845
+            ECall@3816..3845
+              EVar@3816..3833
+                LINEFEED@3816..3817 "\n"
+                SPACE@3817..3821 "    "
+                IDENT@3821..3833 "collide_cube"
+              EArgList@3833..3845
+                L_PAREN@3833..3834 "("
+                EArrayIdx@3834..3844
+                  EVar@3834..3839
+                    IDENT@3834..3839 "cubes"
+                  L_BRACKET@3839..3840 "["
+                  EVar@3840..3843
+                    IDENT@3840..3843 "idx"
+                  R_BRACKET@3843..3844 "]"
+                R_PAREN@3844..3845 ")"
+          SEMICOLON@3845..3846 ";"
+          DExpr@3846..3889
+            ECall@3846..3889
+              EVar@3846..3860
+                LINEFEED@3846..3847 "\n"
+                SPACE@3847..3851 "    "
+                IDENT@3851..3860 "tick_cube"
+              EArgList@3860..3889
+                L_PAREN@3860..3861 "("
+                EArrayIdx@3861..3871
+                  EVar@3861..3866
+                    IDENT@3861..3866 "cubes"
+                  L_BRACKET@3866..3867 "["
+                  EVar@3867..3870
+                    IDENT@3867..3870 "idx"
+                  R_BRACKET@3870..3871 "]"
+                COMMA@3871..3872 ","
+                SPACE@3872..3873 " "
+                EVar@3873..3888
+                  IDENT@3873..3888 "elapsed_time_ms"
+                R_PAREN@3888..3889 ")"
+          SEMICOLON@3889..3890 ";"
+          DExpr@3890..3916
+            ECall@3890..3916
+              EVar@3890..3904
+                LINEFEED@3890..3891 "\n"
+                SPACE@3891..3895 "    "
+                IDENT@3895..3904 "draw_cube"
+              EArgList@3904..3916
+                L_PAREN@3904..3905 "("
+                EArrayIdx@3905..3915
+                  EVar@3905..3910
+                    IDENT@3905..3910 "cubes"
+                  L_BRACKET@3910..3911 "["
+                  EVar@3911..3914
+                    IDENT@3911..3914 "idx"
+                  R_BRACKET@3914..3915 "]"
+                R_PAREN@3915..3916 ")"
+          SEMICOLON@3916..3917 ";"
+          DSet@3917..3940
+            LINEFEED@3917..3918 "\n"
+            LINEFEED@3918..3919 "\n"
+            SPACE@3919..3923 "    "
+            SET_KW@3923..3926 "set"
+            SPACE@3926..3927 " "
+            SetTarget@3927..3931
+              IDENT@3927..3930 "idx"
+              SPACE@3930..3931 " "
+            EQUALS@3931..3932 "="
+            SPACE@3932..3933 " "
+            EBinary@3933..3940
+              EVar@3933..3937
+                IDENT@3933..3936 "idx"
+                SPACE@3936..3937 " "
+              BinOp@3937..3939
+                PLUS@3937..3938 "+"
+                SPACE@3938..3939 " "
+              ELit@3939..3940
+                LitInt@3939..3940
+                  INT_LIT@3939..3940 "1"
+          LINEFEED@3940..3941 "\n"
+          SPACE@3941..3943 "  "
+          R_BRACE@3943..3944 "}"
+      SEMICOLON@3944..3945 ";"
+      DSet@3945..3960
+        LINEFEED@3945..3946 "\n"
+        LINEFEED@3946..3947 "\n"
+        SPACE@3947..3949 "  "
+        SET_KW@3949..3952 "set"
+        SPACE@3952..3953 " "
+        SetTarget@3953..3957
+          IDENT@3953..3956 "idx"
+          SPACE@3956..3957 " "
+        EQUALS@3957..3958 "="
+        SPACE@3958..3959 " "
+        ELit@3959..3960
+          LitInt@3959..3960
+            INT_LIT@3959..3960 "0"
+      SEMICOLON@3960..3961 ";"
+      DWhile@3961..4188
+        LINEFEED@3961..3962 "\n"
+        SPACE@3962..3964 "  "
+        WHILE_KW@3964..3969 "while"
+        SPACE@3969..3970 " "
+        EBinary@3970..4005
+          EVar@3970..3974
+            IDENT@3970..3973 "idx"
+            SPACE@3973..3974 " "
+          BinOp@3974..3976
+            L_ANGLE@3974..3975 "<"
+            SPACE@3975..3976 " "
+          EIntrinsic@3976..4005
+            AT_IDENT@3976..3986 "@array_len"
+            EArgList@3986..4005
+              L_PAREN@3986..3987 "("
+              EStructIdx@3987..4003
+                EVar@3987..3996
+                  IDENT@3987..3996 "particles"
+                DOT@3996..3997 "."
+                IDENT@3997..4003 "buffer"
+              R_PAREN@4003..4004 ")"
+              SPACE@4004..4005 " "
+        EBlock@4005..4188
+          L_BRACE@4005..4006 "{"
+          DExpr@4006..4047
+            ECall@4006..4047
+              EVar@4006..4024
+                LINEFEED@4006..4007 "\n"
+                SPACE@4007..4011 "    "
+                IDENT@4011..4024 "draw_particle"
+              EArgList@4024..4047
+                L_PAREN@4024..4025 "("
+                EArrayIdx@4025..4046
+                  EStructIdx@4025..4041
+                    EVar@4025..4034
+                      IDENT@4025..4034 "particles"
+                    DOT@4034..4035 "."
+                    IDENT@4035..4041 "buffer"
+                  L_BRACKET@4041..4042 "["
+                  EVar@4042..4045
+                    IDENT@4042..4045 "idx"
+                  R_BRACKET@4045..4046 "]"
+                R_PAREN@4046..4047 ")"
+          SEMICOLON@4047..4048 ";"
+          DLet@4048..4089
+            LINEFEED@4048..4049 "\n"
+            SPACE@4049..4053 "    "
+            LET_KW@4053..4056 "let"
+            SPACE@4056..4057 " "
+            IDENT@4057..4065 "particle"
+            SPACE@4065..4066 " "
+            EQUALS@4066..4067 "="
+            SPACE@4067..4068 " "
+            EArrayIdx@4068..4089
+              EStructIdx@4068..4084
+                EVar@4068..4077
+                  IDENT@4068..4077 "particles"
+                DOT@4077..4078 "."
+                IDENT@4078..4084 "buffer"
+              L_BRACKET@4084..4085 "["
+              EVar@4085..4088
+                IDENT@4085..4088 "idx"
+              R_BRACKET@4088..4089 "]"
+          SEMICOLON@4089..4090 ";"
+          DSet@4090..4160
+            LINEFEED@4090..4091 "\n"
+            SPACE@4091..4095 "    "
+            SET_KW@4095..4098 "set"
+            SPACE@4098..4099 " "
+            SetTarget@4099..4113
+              IDENT@4099..4107 "particle"
+              SetStruct@4107..4113
+                DOT@4107..4108 "."
+                IDENT@4108..4112 "time"
+                SPACE@4112..4113 " "
+            EQUALS@4113..4114 "="
+            SPACE@4114..4115 " "
+            ECall@4115..4160
+              EVar@4115..4122
+                IDENT@4115..4122 "f32_max"
+              EArgList@4122..4160
+                L_PAREN@4122..4123 "("
+                ELit@4123..4126
+                  LitFloat@4123..4126
+                    FLOAT_LIT@4123..4126 "0.0"
+                COMMA@4126..4127 ","
+                SPACE@4127..4128 " "
+                EBinary@4128..4159
+                  EStructIdx@4128..4142
+                    EVar@4128..4136
+                      IDENT@4128..4136 "particle"
+                    DOT@4136..4137 "."
+                    IDENT@4137..4141 "time"
+                    SPACE@4141..4142 " "
+                  BinOp@4142..4144
+                    MINUS@4142..4143 "-"
+                    SPACE@4143..4144 " "
+                  EVar@4144..4159
+                    IDENT@4144..4159 "elapsed_time_ms"
+                R_PAREN@4159..4160 ")"
+          SEMICOLON@4160..4161 ";"
+          DSet@4161..4184
+            LINEFEED@4161..4162 "\n"
+            LINEFEED@4162..4163 "\n"
+            SPACE@4163..4167 "    "
+            SET_KW@4167..4170 "set"
+            SPACE@4170..4171 " "
+            SetTarget@4171..4175
+              IDENT@4171..4174 "idx"
+              SPACE@4174..4175 " "
+            EQUALS@4175..4176 "="
+            SPACE@4176..4177 " "
+            EBinary@4177..4184
+              EVar@4177..4181
+                IDENT@4177..4180 "idx"
+                SPACE@4180..4181 " "
+              BinOp@4181..4183
+                PLUS@4181..4182 "+"
+                SPACE@4182..4183 " "
+              ELit@4183..4184
+                LitInt@4183..4184
+                  INT_LIT@4183..4184 "1"
+          LINEFEED@4184..4185 "\n"
+          SPACE@4185..4187 "  "
+          R_BRACE@4187..4188 "}"
+      LINEFEED@4188..4189 "\n"
+      R_BRACE@4189..4190 "}"
 

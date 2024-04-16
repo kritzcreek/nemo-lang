@@ -59,6 +59,7 @@ Expr
   | EStructIdx
   | EIf
   | EBlock
+  | EIntrinsic
 
 ELit = Literal
 EVar = 'ident'
@@ -80,6 +81,8 @@ EStructIdx = Expr '.' 'ident'
 // TODO: Needs custom impl
 EIf = 'if' condition:Expr then_branch:EBlock 'else' else_branch:EBlock
 EBlock = '{' Declaration* '}'
+
+EIntrinsic = 'at_ident' EArgList
 
 // Declarations
 Declaration

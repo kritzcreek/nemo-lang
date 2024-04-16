@@ -430,6 +430,18 @@ impl EIf {
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct EIntrinsic {
+    pub(crate) syntax: SyntaxNode,
+}
+impl EIntrinsic {
+    pub fn at_ident_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![at_ident])
+    }
+    pub fn e_arg_list(&self) -> Option<EArgList> {
+        support::child(&self.syntax)
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EArgList {
     pub(crate) syntax: SyntaxNode,
 }
@@ -594,6 +606,7 @@ pub enum Expr {
     EStructIdx(EStructIdx),
     EIf(EIf),
     EBlock(EBlock),
+    EIntrinsic(EIntrinsic),
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Literal {
@@ -1078,6 +1091,21 @@ impl AstNode for EIf {
         &self.syntax
     }
 }
+impl AstNode for EIntrinsic {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == EIntrinsic
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
 impl AstNode for EArgList {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == EArgList
@@ -1381,11 +1409,16 @@ impl From<EBlock> for Expr {
         Expr::EBlock(node)
     }
 }
+impl From<EIntrinsic> for Expr {
+    fn from(node: EIntrinsic) -> Expr {
+        Expr::EIntrinsic(node)
+    }
+}
 impl AstNode for Expr {
     fn can_cast(kind: SyntaxKind) -> bool {
         match kind {
             ELit | EVar | EArray | EStruct | ECall | EParen | EBinary | EArrayIdx | EStructIdx
-            | EIf | EBlock => true,
+            | EIf | EBlock | EIntrinsic => true,
             _ => false,
         }
     }
@@ -1402,6 +1435,7 @@ impl AstNode for Expr {
             EStructIdx => Expr::EStructIdx(EStructIdx { syntax }),
             EIf => Expr::EIf(EIf { syntax }),
             EBlock => Expr::EBlock(EBlock { syntax }),
+            EIntrinsic => Expr::EIntrinsic(EIntrinsic { syntax }),
             _ => return None,
         };
         Some(res)
@@ -1419,6 +1453,7 @@ impl AstNode for Expr {
             Expr::EStructIdx(it) => &it.syntax,
             Expr::EIf(it) => &it.syntax,
             Expr::EBlock(it) => &it.syntax,
+            Expr::EIntrinsic(it) => &it.syntax,
         }
     }
 }
@@ -1720,6 +1755,11 @@ impl std::fmt::Display for EStructIdx {
     }
 }
 impl std::fmt::Display for EIf {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for EIntrinsic {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
     }

@@ -100,7 +100,7 @@ pub struct Typechecker {
     context: Ctx,
 }
 
-// TODO: Intrinsics, Builtins, Errors for operators
+// TODO: Intrinsics, Errors for operators
 impl Typechecker {
     pub fn new() -> Typechecker {
         Typechecker {
@@ -494,6 +494,34 @@ impl Typechecker {
                             self.report_error(&func_expr, NotAFunction(ty));
                         }
                         return None;
+                    }
+                }
+            }
+            Expr::EIntrinsic(intrinsic_expr) => {
+                let intrinsic_tkn = intrinsic_expr.at_ident_token().unwrap();
+                let args: Vec<Expr> = intrinsic_expr.e_arg_list().unwrap().exprs().collect();
+                match (intrinsic_tkn.text(), args.len()) {
+                    ("@array_len", 1) => {
+                        let ty = self.infer_expr(&args[0]);
+                        if !matches!(ty, Ty::Array(_)) {
+                            self.report_error(
+                                &args[0],
+                                Message(format!("expected an array type, but got {:?}", ty)),
+                            )
+                        }
+                        Ty::I32
+                    }
+                    ("@array_new", 2) => {
+                        let elem_ty = self.infer_expr(&args[0]);
+                        self.check_expr(&args[1], &Ty::I32);
+                        Ty::Array(Box::new(elem_ty))
+                    }
+                    (f, arg_count) => {
+                        self.report_error_token(
+                            &intrinsic_tkn,
+                            UnknownIntrinsic(f.to_string(), arg_count),
+                        );
+                        Ty::Any
                     }
                 }
             }
