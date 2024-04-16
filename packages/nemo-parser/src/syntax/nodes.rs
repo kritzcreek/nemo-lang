@@ -339,8 +339,8 @@ pub struct EStruct {
     pub(crate) syntax: SyntaxNode,
 }
 impl EStruct {
-    pub fn ident_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T![ident])
+    pub fn upper_ident_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![upper_ident])
     }
     pub fn l_brace_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T!['{'])
@@ -445,21 +445,12 @@ impl EArgList {
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct BinOp {
-    pub(crate) syntax: SyntaxNode,
-}
-impl BinOp {
-    pub fn eq_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T![=])
-    }
-}
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EStructField {
     pub(crate) syntax: SyntaxNode,
 }
 impl EStructField {
-    pub fn upper_ident_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T![upper_ident])
+    pub fn ident_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![ident])
     }
     pub fn eq_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T![=])
@@ -1090,21 +1081,6 @@ impl AstNode for EIf {
 impl AstNode for EArgList {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == EArgList
-    }
-    fn cast(syntax: SyntaxNode) -> Option<Self> {
-        if Self::can_cast(syntax.kind()) {
-            Some(Self { syntax })
-        } else {
-            None
-        }
-    }
-    fn syntax(&self) -> &SyntaxNode {
-        &self.syntax
-    }
-}
-impl AstNode for BinOp {
-    fn can_cast(kind: SyntaxKind) -> bool {
-        kind == BinOp
     }
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         if Self::can_cast(syntax.kind()) {
@@ -1749,11 +1725,6 @@ impl std::fmt::Display for EIf {
     }
 }
 impl std::fmt::Display for EArgList {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        std::fmt::Display::fmt(self.syntax(), f)
-    }
-}
-impl std::fmt::Display for BinOp {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
     }

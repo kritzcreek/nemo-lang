@@ -47,7 +47,7 @@ fn is_trailing(kind: SyntaxKind) -> bool {
     kind == SyntaxKind::SPACE
 }
 
-fn is_whitespace(kind: SyntaxKind) -> bool {
+pub fn is_whitespace(kind: SyntaxKind) -> bool {
     matches!(
         kind,
         SyntaxKind::SPACE | SyntaxKind::LINEFEED | SyntaxKind::LINE_COMMENT

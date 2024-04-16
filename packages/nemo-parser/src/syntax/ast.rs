@@ -1,5 +1,10 @@
-use crate::syntax::{SyntaxKind, SyntaxNode, SyntaxNodeChildren, SyntaxToken};
+use crate::{
+    lexer::is_whitespace,
+    syntax::{SyntaxKind, SyntaxNode, SyntaxNodeChildren, SyntaxToken},
+};
 use std::marker::PhantomData;
+
+use super::nodes::{self, EBinary, Expr};
 
 /// The main trait to go from untyped `SyntaxNode`  to a typed ast. The
 /// conversion itself has zero runtime cost: ast and syntax nodes have exactly
@@ -73,5 +78,28 @@ pub(crate) mod support {
             .children_with_tokens()
             .filter_map(|it| it.into_token())
             .find(|it| it.kind() == kind)
+    }
+}
+
+impl EBinary {
+    pub(crate) fn lhs(&self) -> Option<Expr> {
+        support::children(self.syntax()).nth(0)
+    }
+    pub(crate) fn rhs(&self) -> Option<Expr> {
+        support::children(self.syntax()).nth(1)
+    }
+    pub(crate) fn op(&self) -> Option<SyntaxToken> {
+        self.syntax()
+            .children()
+            .find(|n| n.kind() == SyntaxKind::BinOp)?
+            .children_with_tokens()
+            .find_map(|t| {
+                let tkn = t.as_token()?;
+                if is_whitespace(tkn.kind()) {
+                    None
+                } else {
+                    Some(tkn.clone())
+                }
+            })
     }
 }

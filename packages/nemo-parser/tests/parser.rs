@@ -1,4 +1,4 @@
-use nemo_parser::parser::{parse_prog, Parser};
+use nemo_parser::parser::parse_prog;
 
 use insta::{assert_snapshot, glob};
 

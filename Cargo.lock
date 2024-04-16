@@ -881,9 +881,11 @@ dependencies = [
  "insta",
  "line-index",
  "logos",
+ "nemo-backend",
  "num-derive",
  "num-traits",
  "rowan",
+ "yansi",
 ]
 
 [[package]]

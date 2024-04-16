@@ -1,12 +1,18 @@
 use std::collections::HashMap;
+use std::rc::Rc;
 
-use super::errors::TyError;
+use nemo_backend::ir::{self, OpData};
+
+use super::errors::{TyError, TyErrorData};
 use super::names::{Name, NameSupply};
 use super::{FuncTy, Ty};
+use crate::lexer::SyntaxKind;
+use crate::syntax::ast::AstNode;
 use crate::syntax::token_ptr::SyntaxTokenPtr;
-use crate::syntax::{nodes::*, SyntaxNodePtr, SyntaxToken};
+use crate::syntax::{nodes::*, SyntaxNode, SyntaxNodePtr, SyntaxToken};
+use crate::T;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct StructDef {
     fields: HashMap<String, (Ty, Name)>,
 }
@@ -16,14 +22,16 @@ struct StructDef {
 #[derive(Debug)]
 struct Ctx {
     values: Vec<HashMap<String, (Ty, Name)>>,
-    types: HashMap<String, (Option<StructDef>, Name)>,
+    types_names: HashMap<String, Name>,
+    types_defs: HashMap<Name, Rc<StructDef>>,
 }
 
 impl Ctx {
     fn new() -> Ctx {
         Ctx {
             values: vec![],
-            types: HashMap::new(),
+            types_names: HashMap::new(),
+            types_defs: HashMap::new(),
         }
     }
 
@@ -36,29 +44,31 @@ impl Ctx {
     }
 
     fn declare_type(&mut self, v: &str, name: Name) {
-        self.types.insert(v.to_string(), (None, name));
+        self.types_names.insert(v.to_string(), name);
     }
 
-    fn add_struct_fields(&mut self, v: &str, def: StructDef) {
-        let declared = &mut self
-            .types
-            .get_mut(v)
-            .expect("expected type to be forward-declared")
-            .0;
-        *declared = Some(def)
+    fn declare_struct_fields(&mut self, v: &str, def: StructDef) {
+        let name = self
+            .types_names
+            .get(v)
+            .expect("expected type to be forward-declared");
+        self.types_defs.insert(*name, Rc::new(def));
     }
 
-    fn lookup_type_declared(&self, v: &str) -> Option<&(Option<StructDef>, Name)> {
-        self.types.get(v)
+    fn lookup_type_name(&self, v: &str) -> Option<Name> {
+        self.types_names.get(v).copied()
     }
 
-    fn lookup_type(&self, v: &str) -> Option<(&StructDef, Name)> {
-        self.types.get(v).map(|(def, name)| {
-            (
-                def.as_ref().expect("can't lookup forward-declared type"),
-                *name,
-            )
-        })
+    fn lookup_type_def(&self, name: Name) -> Option<Rc<StructDef>> {
+        self.types_defs.get(&name).cloned()
+    }
+
+    fn lookup_type(&self, v: &str) -> Option<(Rc<StructDef>, Name)> {
+        let n = self.lookup_type_name(v)?;
+        let def = self
+            .lookup_type_def(n)
+            .expect("type declared but not defined");
+        Some((def, n))
     }
 
     fn enter_block(&mut self) {
@@ -111,6 +121,13 @@ impl Typechecker {
         assert!(previous.is_none())
     }
 
+    fn record_typed(&mut self, node: &SyntaxNode, ty: &Ty) {
+        let previous = self
+            .typed_nodes
+            .insert(SyntaxNodePtr::new(node), ty.clone());
+        assert!(previous.is_none())
+    }
+
     pub fn infer_program(&mut self, root: Root) {
         self.context.enter_block();
 
@@ -119,7 +136,7 @@ impl Typechecker {
         self.check_function_headers(&root);
 
         self.check_globals(&root);
-        // self.check_function_bodies(&root);
+        self.check_function_bodies(&root);
 
         self.context.leave_block();
     }
@@ -187,7 +204,8 @@ impl Typechecker {
 
                             def.fields.insert(field_name.text().to_string(), (ty, name));
                         }
-                        self.context.add_struct_fields(struct_name_tkn.text(), def)
+                        self.context
+                            .declare_struct_fields(struct_name_tkn.text(), def)
                     }
                 }
                 _ => {}
@@ -236,9 +254,9 @@ impl Typechecker {
             },
             Type::TyCons(t) => {
                 let ty_name = t.upper_ident_token().unwrap();
-                let name = match self.context.lookup_type_declared(ty_name.text()) {
-                    Some((_, name)) => *name,
-                    None => return Ty::Any,
+                let Some(name) = self.context.lookup_type_name(ty_name.text()) else {
+                    // TODO error
+                    return Ty::Any;
                 };
                 self.record_ref(&ty_name, name);
                 Ty::Struct(name)
@@ -272,21 +290,57 @@ impl Typechecker {
         for top_level in root.top_levels() {
             match top_level {
                 TopLevel::TopLet(top_let) => {
-                    let binder_tkn = top_let.ident_token();
                     let ty = match (top_let.ty().map(|t| self.check_ty(&t)), top_let.expr()) {
                         (None, None) => continue,
                         (Some(ty), None) => ty,
-                        (None, Some(e)) => {
-                            self.infer_expr(&e);
-                            // No name, so can't add to context
-                            continue;
-                        }
-                        (Some(t), Some(e)) => {
-                            self.check_expr(&e, &t);
-                            t
+                        (None, Some(e)) => self.infer_expr(&e),
+                        (Some(ty), Some(e)) => {
+                            self.check_expr(&e, &ty);
+                            ty
                         }
                     };
-                    // TODO add to context
+                    if let Some(binder_tkn) = top_let.ident_token() {
+                        let name = self.name_supply.global_idx(&binder_tkn);
+                        self.record_def(&binder_tkn, name);
+                        self.context
+                            .add_var(binder_tkn.text().to_string(), ty, name)
+                    };
+                }
+                _ => {}
+            }
+        }
+    }
+
+    fn check_function_bodies(&mut self, root: &Root) {
+        for top_level in root.top_levels() {
+            match top_level {
+                TopLevel::TopFn(top_fn) => {
+                    let Some(func_name) = top_fn.ident_token() else {
+                        continue;
+                    };
+                    let Some((Ty::Func(func_ty), _)) = self.context.lookup_var(func_name.text())
+                    else {
+                        panic!("didn't pre-declare function, {}", func_name.text())
+                    };
+
+                    // Use Rc for Tys in the context?
+                    let func_ty = func_ty.clone();
+
+                    self.context.enter_block();
+                    for (param, ty) in top_fn.params().zip(func_ty.arguments.into_iter()) {
+                        let Some(ident_tkn) = param.ident_token() else {
+                            continue;
+                        };
+                        let name = self.name_supply.local_idx(&ident_tkn);
+                        self.record_def(&ident_tkn, name);
+                        self.context.add_var(ident_tkn.text().to_string(), ty, name);
+                    }
+
+                    if let Some(body) = top_fn.body() {
+                        self.check_expr(&body.into(), &func_ty.result)
+                    }
+
+                    self.context.leave_block();
                 }
                 _ => {}
             }
@@ -294,7 +348,17 @@ impl Typechecker {
     }
 
     fn infer_expr(&mut self, expr: &Expr) -> Ty {
-        match expr {
+        match self.infer_expr_inner(expr) {
+            Some(ty) => {
+                self.record_typed(expr.syntax(), &ty);
+                ty
+            }
+            None => Ty::Any,
+        }
+    }
+
+    fn infer_expr_inner(&mut self, expr: &Expr) -> Option<Ty> {
+        let ty = match expr {
             Expr::EArray(arr) => {
                 let mut elems = arr.exprs();
                 if let Some(first_elem) = elems.next() {
@@ -304,15 +368,157 @@ impl Typechecker {
                     }
                     Ty::Array(Box::new(elem_ty))
                 } else {
-                    // TODO error
+                    // TODO error (can't infer type of empty array literal)
                     Ty::Array(Box::new(Ty::Any))
                 }
             }
-            _ => {
-                // TODO error
+            Expr::ELit(l) => match l.literal().unwrap() {
+                Literal::LitBool(_) => Ty::Bool,
+                Literal::LitFloat(_) => Ty::F32,
+                Literal::LitInt(_) => Ty::I32,
+            },
+            Expr::EVar(v) => {
+                let var_tkn = v.ident_token().unwrap();
+                match self.context.lookup_var(var_tkn.text()) {
+                    None => {
+                        // todo error
+                        return None;
+                    }
+                    Some((ty, name)) => {
+                        let return_ty = ty.clone();
+                        self.record_ref(&var_tkn, *name);
+                        return_ty
+                    }
+                }
+            }
+            Expr::EStruct(struct_expr) => {
+                let struct_name_tkn = struct_expr.upper_ident_token().unwrap();
+                match self.context.lookup_type(struct_name_tkn.text()) {
+                    None => {
+                        // TODO error
+                        return None;
+                    }
+                    Some((def, name)) => {
+                        for field in struct_expr.e_struct_fields() {
+                            let Some(field_tkn) = field.ident_token() else {
+                                continue;
+                            };
+                            let Some(field_expr) = field.expr() else {
+                                continue;
+                            };
+                            let Some((ty, name)) = def.fields.get(field_tkn.text()) else {
+                                // TODO report error
+                                continue;
+                            };
+                            self.record_ref(&field_tkn, *name);
+                            self.check_expr(&field_expr, ty)
+                        }
+                        Ty::Struct(name)
+                    }
+                }
+            }
+            Expr::ECall(call_expr) => {
+                let func_expr = call_expr.expr()?;
+                match self.infer_expr(&func_expr) {
+                    Ty::Func(func_ty) => {
+                        if let Some(arg_list) = call_expr.e_arg_list() {
+                            let arg_exprs: Vec<Expr> = arg_list.exprs().collect();
+                            let arg_tys = func_ty.arguments;
+                            if arg_exprs.len() != arg_tys.len() {
+                                // TODO error
+                            }
+                            for (param, expected_ty) in arg_exprs.iter().zip(arg_tys.iter()) {
+                                self.check_expr(param, expected_ty)
+                            }
+                        }
+                        func_ty.result
+                    }
+                    _ => {
+                        // TODO error
+                        return None;
+                    }
+                }
+            }
+            Expr::EParen(e) => self.infer_expr(&e.expr()?),
+            Expr::EIf(if_expr) => {
+                if let Some(condition) = if_expr.condition() {
+                    self.check_expr(&condition, &Ty::Bool)
+                }
+                // TODO after custom impl for branches
+
+                // if let Some(then_branch) = expr.then_branch() {
+                //     let ty = self.infer_expr(&then_branch);
+                //     if let Some(else_branch) = expr.else_branch() {
+                //       self.check_expr(&else_branch, &ty)
+                //     }
+                //     ty
+                // } else {
+                //   Ty::Any
+                // }
                 Ty::Any
             }
-        }
+            Expr::EArrayIdx(idx_expr) => {
+                let arr_expr = idx_expr.expr().unwrap();
+                let elem_ty = match self.infer_expr(&arr_expr) {
+                    Ty::Array(elem_ty) => *elem_ty,
+                    _ => {
+                        // TODO error
+                        return None;
+                    }
+                };
+                // TODO once custom impl is there
+                // self.check_expr(idx_expr.index, &Ty::I32);
+                elem_ty
+            }
+            Expr::EStructIdx(idx_expr) => {
+                let struct_expr = idx_expr.expr().unwrap();
+                let def = match self.infer_expr(&struct_expr) {
+                    Ty::Struct(name) => self
+                        .context
+                        .lookup_type_def(name)
+                        .expect("inferred a type that wasn't defined"),
+                    _ => {
+                        // TODO error
+                        return None;
+                    }
+                };
+                let field_name_tkn = idx_expr.ident_token()?;
+                match def.fields.get(field_name_tkn.text()) {
+                    None => {
+                        // TODO err
+                        return None;
+                    }
+                    Some((t, n)) => {
+                        self.record_ref(&field_name_tkn, *n);
+                        t.clone()
+                    }
+                }
+            }
+            Expr::EBinary(bin_expr) => {
+                let lhs_ty = self.infer_expr(&bin_expr.lhs()?);
+                // TODO could maybe check the rhs based on operator and lhs?
+                let rhs_ty = self.infer_expr(&bin_expr.rhs()?);
+                let op_tkn = bin_expr.op()?;
+                match check_op(op_tkn, &lhs_ty, &rhs_ty) {
+                    None => {
+                        // TODO error
+                        return None;
+                    }
+                    Some((_, ty)) => ty,
+                }
+            }
+            Expr::EBlock(block_expr) => {
+                self.context.enter_block();
+                let mut ty = Ty::Unit;
+                for decl in block_expr.declarations() {
+                    ty = self.infer_decl(&decl);
+                }
+                self.context.leave_block();
+                ty
+            }
+        };
+
+        Some(ty)
     }
 
     fn check_expr(&mut self, expr: &Expr, expected: &Ty) {
@@ -335,13 +541,155 @@ impl Typechecker {
                 //     self.check_expr(&else_branch, ty)
                 // }
             }
+            (Expr::EParen(expr), _) => {
+                if let Some(expr) = expr.expr() {
+                    self.check_expr(&expr, expected)
+                }
+            }
             _ => {
                 let ty = self.infer_expr(expr);
                 // TODO match types (special logic for Any)
-                if ty != *expected {
+                if *expected != Ty::Any && ty != Ty::Any && ty != *expected {
+                    self.errors.push(TyError {
+                        at: expr.syntax().text_range(),
+                        it: TyErrorData::TypeMismatch {
+                            expected: expected.clone(),
+                            actual: ty,
+                        },
+                    })
+                }
+                return;
+            }
+        }
+        self.record_typed(expr.syntax(), expected)
+    }
+
+    fn infer_decl(&mut self, decl: &Declaration) -> Ty {
+        match decl {
+            Declaration::DLet(let_decl) => {
+                let binder = let_decl.ident_token();
+                let type_annotation = let_decl.ty();
+                let expr = let_decl.expr();
+                let ty = if let Some(expr) = expr {
+                    if let Some(ty) = type_annotation.map(|ta| self.check_ty(&ta)) {
+                        self.check_expr(&expr, &ty);
+                        ty
+                    } else {
+                        self.infer_expr(&expr)
+                    }
+                } else {
+                    Ty::Any
+                };
+
+                if let Some(binder_tkn) = binder {
+                    let name = self.name_supply.local_idx(&binder_tkn);
+                    self.record_def(&binder_tkn, name);
+                    self.context
+                        .add_var(binder_tkn.text().to_string(), ty, name)
+                }
+                Ty::Unit
+            }
+            Declaration::DSet(set_decl) => {
+                let set_ty = if let Some(set_target) = set_decl.set_target() {
+                    self.infer_set_target(&set_target)
+                } else {
+                    Ty::Any
+                };
+                if let Some(expr) = set_decl.expr() {
+                    self.check_expr(&expr, &set_ty);
+                }
+                Ty::Unit
+            }
+            Declaration::DWhile(while_decl) => {
+                let condition = while_decl.expr();
+                if let Some(condition) = condition {
+                    self.check_expr(&condition, &Ty::Bool)
+                }
+                let body = while_decl.e_block();
+                if let Some(body) = body {
+                    self.check_expr(&body.into(), &Ty::Unit)
+                }
+                Ty::Unit
+            }
+            Declaration::DExpr(expr_decl) => self.infer_expr(&expr_decl.expr().unwrap()),
+        }
+    }
+
+    fn infer_set_target(&mut self, set_target: &SetTarget) -> Ty {
+        let Some(ident_tkn) = set_target.ident_token() else {
+            return Ty::Any;
+        };
+        let Some((ty, name)) = self.context.lookup_var(ident_tkn.text()) else {
+            // TODO error
+            return Ty::Any;
+        };
+        let mut ty = ty.clone();
+        self.record_ref(&ident_tkn, *name);
+
+        for indirection in set_target.set_indirections() {
+            match (indirection, &ty) {
+                (SetIndirection::SetStruct(set_struct), Ty::Struct(name)) => {
+                    let def = self
+                        .context
+                        .lookup_type_def(*name)
+                        .expect("inferred unknown struct type");
+                    let Some(ident_tkn) = set_struct.ident_token() else {
+                        return Ty::Any;
+                    };
+                    if let Some((field, name)) = def.fields.get(ident_tkn.text()) {
+                        self.record_ref(&ident_tkn, *name);
+                        ty = field.clone()
+                    } else {
+                        // TODO error
+                        return Ty::Any;
+                    }
+                }
+                (SetIndirection::SetArray(set_array), Ty::Array(elem_ty)) => {
+                    if let Some(index) = set_array.expr() {
+                        self.check_expr(&index, &Ty::I32)
+                    }
+                    ty = (**elem_ty).clone();
+                }
+                _ => {
                     // TODO error
+                    return Ty::Any;
                 }
             }
         }
+
+        ty.clone()
     }
+}
+
+fn check_op(op: SyntaxToken, ty_left: &Ty, ty_right: &Ty) -> Option<(ir::OpData, Ty)> {
+    let op_data = match (op.kind(), ty_left, ty_right) {
+        (T![+], Ty::I32, Ty::I32) => (OpData::I32Add, Ty::I32),
+        (T![-], Ty::I32, Ty::I32) => (OpData::I32Sub, Ty::I32),
+        (T![*], Ty::I32, Ty::I32) => (OpData::I32Mul, Ty::I32),
+        (T![/], Ty::I32, Ty::I32) => (OpData::I32Div, Ty::I32),
+        (T![<], Ty::I32, Ty::I32) => (OpData::I32Lt, Ty::Bool),
+        (T![<=], Ty::I32, Ty::I32) => (OpData::I32Le, Ty::Bool),
+        (T![>], Ty::I32, Ty::I32) => (OpData::I32Gt, Ty::Bool),
+        (T![>=], Ty::I32, Ty::I32) => (OpData::I32Ge, Ty::Bool),
+        (T![==], Ty::I32, Ty::I32) => (OpData::I32Eq, Ty::Bool),
+        (T![!=], Ty::I32, Ty::I32) => (OpData::I32Ne, Ty::Bool),
+
+        (T![+], Ty::F32, Ty::F32) => (OpData::F32Add, Ty::F32),
+        (T![-], Ty::F32, Ty::F32) => (OpData::F32Sub, Ty::F32),
+        (T![*], Ty::F32, Ty::F32) => (OpData::F32Mul, Ty::F32),
+        (T![/], Ty::F32, Ty::F32) => (OpData::F32Div, Ty::F32),
+        (T![<], Ty::F32, Ty::F32) => (OpData::F32Lt, Ty::Bool),
+        (T![<=], Ty::F32, Ty::F32) => (OpData::F32Le, Ty::Bool),
+        (T![>], Ty::F32, Ty::F32) => (OpData::F32Gt, Ty::Bool),
+        (T![>=], Ty::F32, Ty::F32) => (OpData::F32Ge, Ty::Bool),
+        (T![==], Ty::F32, Ty::F32) => (OpData::F32Eq, Ty::Bool),
+        (T![!=], Ty::F32, Ty::F32) => (OpData::F32Ne, Ty::Bool),
+
+        (T![==], Ty::Bool, Ty::Bool) => (OpData::BoolEq, Ty::Bool),
+        (T![!=], Ty::Bool, Ty::Bool) => (OpData::BoolNe, Ty::Bool),
+        (T![&&], Ty::Bool, Ty::Bool) => (OpData::BoolAnd, Ty::Bool),
+        (T![||], Ty::Bool, Ty::Bool) => (OpData::BoolOr, Ty::Bool),
+        (_, _, _) => return None,
+    };
+    Some(op_data)
 }

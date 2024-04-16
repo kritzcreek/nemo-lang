@@ -71,11 +71,10 @@ ECall = Expr EArgList
 EArgList = '(' Expr* ')'
 
 // TODO: Needs custom impl
-EBinary = lhs:Expr op:BinOp rhs:Expr
-BinOp = '='
+EBinary = lhs:Expr op:('+' | '-') rhs:Expr
 
-EStruct = 'ident' '{' EStructField* '}'
-EStructField = 'upper_ident' '=' Expr
+EStruct = 'upper_ident' '{' EStructField* '}'
+EStructField = 'ident' '=' Expr
 
 EStructIdx = Expr '.' 'ident'
 // TODO: Needs custom impl

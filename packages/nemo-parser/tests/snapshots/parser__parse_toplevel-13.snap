@@ -23,7 +23,7 @@ fn add(x : i32, y : i32) : i32 = {
 }
 
 ---
-Root@0..136
+Root@0..190
   TopImport@0..53
     LINEFEED@0..1 "\n"
     IMPORT_KW@1..7 "import"
@@ -115,7 +115,7 @@ Root@0..136
       LitFloat@119..123
         FLOAT_LIT@119..123 "10.0"
     SEMICOLON@123..124 ";"
-  TopFn@124..136
+  TopFn@124..142
     LINEFEED@124..125 "\n"
     LINEFEED@125..126 "\n"
     FN_KW@126..128 "fn"
@@ -124,4 +124,59 @@ Root@0..136
     L_PAREN@133..134 "("
     R_PAREN@134..135 ")"
     SPACE@135..136 " "
+    EQUALS@136..137 "="
+    SPACE@137..138 " "
+    EBlock@138..142
+      L_BRACE@138..139 "{"
+      LINEFEED@139..140 "\n"
+      LINEFEED@140..141 "\n"
+      R_BRACE@141..142 "}"
+  TopFn@142..190
+    LINEFEED@142..143 "\n"
+    LINEFEED@143..144 "\n"
+    FN_KW@144..146 "fn"
+    SPACE@146..147 " "
+    IDENT@147..150 "add"
+    L_PAREN@150..151 "("
+    Param@151..160
+      IDENT@151..152 "x"
+      SPACE@152..153 " "
+      COLON@153..154 ":"
+      SPACE@154..155 " "
+      TyInt@155..158
+        I32_BUILTIN@155..158 "i32"
+      COMMA@158..159 ","
+      SPACE@159..160 " "
+    Param@160..167
+      IDENT@160..161 "y"
+      SPACE@161..162 " "
+      COLON@162..163 ":"
+      SPACE@163..164 " "
+      TyInt@164..167
+        I32_BUILTIN@164..167 "i32"
+    R_PAREN@167..168 ")"
+    SPACE@168..169 " "
+    COLON@169..170 ":"
+    SPACE@170..171 " "
+    TyInt@171..175
+      I32_BUILTIN@171..174 "i32"
+      SPACE@174..175 " "
+    EQUALS@175..176 "="
+    SPACE@176..177 " "
+    EBlock@177..190
+      L_BRACE@177..178 "{"
+      DExpr@178..188
+        EBinary@178..188
+          EVar@178..185
+            LINEFEED@178..179 "\n"
+            SPACE@179..183 "    "
+            IDENT@183..184 "x"
+            SPACE@184..185 " "
+          BinOp@185..187
+            PLUS@185..186 "+"
+            SPACE@186..187 " "
+          EVar@187..188
+            IDENT@187..188 "y"
+      LINEFEED@188..189 "\n"
+      R_BRACE@189..190 "}"
 
