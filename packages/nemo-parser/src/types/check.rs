@@ -1,19 +1,18 @@
-use std::collections::HashMap;
-use std::rc::Rc;
-
-use nemo_backend::ir::{self, OpData};
-
 use super::errors::{
     TyError,
     TyErrorData::{self, *},
 };
 use super::names::{Name, NameSupply};
 use super::{FuncTy, Ty};
-use crate::lexer::SyntaxKind;
+use crate::lexer::{is_whitespace, SyntaxKind};
 use crate::syntax::ast::AstNode;
 use crate::syntax::token_ptr::SyntaxTokenPtr;
 use crate::syntax::{nodes::*, SyntaxNode, SyntaxNodePtr, SyntaxToken};
 use crate::T;
+use nemo_backend::ir::{self, OpData};
+use rowan::TextRange;
+use std::collections::HashMap;
+use std::rc::Rc;
 
 #[derive(Debug, Clone)]
 struct StructDef {
@@ -98,6 +97,7 @@ pub struct Typechecker {
     context: Ctx,
 }
 
+// TODO: Intrinsics, Builtins, Errors for operators
 impl Typechecker {
     pub fn new() -> Typechecker {
         Typechecker {
@@ -139,8 +139,25 @@ impl Typechecker {
     }
 
     fn report_error<N: AstNode>(&mut self, elem: &N, error: TyErrorData) {
+        let at = elem.syntax().text_range();
+        let mut start = at.start();
+        let mut end = at.end();
+        let mut children = elem.syntax().descendants_with_tokens();
+        while let Some(elem) = children.next() {
+            if elem.as_token().is_some() && !is_whitespace(elem.kind()) {
+                start = elem.text_range().start();
+                break;
+            }
+        }
+
+        while let Some(elem) = children.next() {
+            if elem.as_token().is_some() && !is_whitespace(elem.kind()) {
+                end = elem.text_range().end();
+            }
+        }
+
         self.errors.push(TyError {
-            at: elem.syntax().text_range(),
+            at: TextRange::new(start, end),
             it: error,
         })
     }
@@ -373,8 +390,26 @@ impl Typechecker {
             }
             Expr::ELit(l) => match l.literal().unwrap() {
                 Literal::LitBool(_) => Ty::Bool,
-                Literal::LitFloat(_) => Ty::F32,
-                Literal::LitInt(_) => Ty::I32,
+                Literal::LitFloat(l) => {
+                    let float_tkn = l.float_lit_token().unwrap();
+                    match float_tkn.text().parse::<f32>() {
+                        Err(_) => {
+                            self.report_error_token(&float_tkn, InvalidLiteral);
+                        }
+                        _ => {}
+                    }
+                    Ty::F32
+                }
+                Literal::LitInt(l) => {
+                    let int_tkn = l.int_lit_token().unwrap();
+                    match int_tkn.text().parse::<i32>() {
+                        Err(_) => {
+                            self.report_error_token(&int_tkn, InvalidLiteral);
+                        }
+                        _ => {}
+                    }
+                    Ty::I32
+                }
             },
             Expr::EVar(v) => {
                 let var_tkn = v.ident_token().unwrap();
@@ -488,11 +523,13 @@ impl Typechecker {
             }
             Expr::EStructIdx(idx_expr) => {
                 let struct_expr = idx_expr.expr().unwrap();
-                let def = match self.infer_expr(&struct_expr) {
-                    Ty::Struct(name) => self
-                        .context
-                        .lookup_type_def(name)
-                        .expect("inferred a type that wasn't defined"),
+                let (def, name) = match self.infer_expr(&struct_expr) {
+                    Ty::Struct(name) => (
+                        self.context
+                            .lookup_type_def(name)
+                            .expect("inferred a type that wasn't defined"),
+                        name,
+                    ),
                     ty => {
                         if ty != Ty::Any {
                             self.report_error(&struct_expr, NonStructIdx(ty))
@@ -503,7 +540,16 @@ impl Typechecker {
                 let field_name_tkn = idx_expr.ident_token()?;
                 match def.fields.get(field_name_tkn.text()) {
                     None => {
-                        // TODO err
+                        // TODO this isn't ideal, maybe we should require a
+                        // NameSupply when rendering the errors
+                        let struct_name = self.name_supply.lookup(name).unwrap().it.clone();
+                        self.report_error_token(
+                            &field_name_tkn,
+                            UnknownField {
+                                struct_name,
+                                field_name: field_name_tkn.text().to_string(),
+                            },
+                        );
                         return None;
                     }
                     Some((t, n)) => {
@@ -636,7 +682,7 @@ impl Typechecker {
             return Ty::Any;
         };
         let Some((ty, name)) = self.context.lookup_var(ident_tkn.text()) else {
-            // TODO error
+            self.report_error_token(&ident_tkn, UnknownVar(ident_tkn.text().to_string()));
             return Ty::Any;
         };
         let mut ty = ty.clone();
@@ -656,9 +702,20 @@ impl Typechecker {
                         self.record_ref(&ident_tkn, *name);
                         ty = field.clone()
                     } else {
-                        // TODO error
+                        let struct_name = self.name_supply.lookup(*name).unwrap().it.clone();
+                        self.report_error_token(
+                            &ident_tkn,
+                            UnknownField {
+                                struct_name,
+                                field_name: ident_tkn.text().to_string(),
+                            },
+                        );
                         return Ty::Any;
                     }
+                }
+                (SetIndirection::SetStruct(set_struct), ty) => {
+                    self.report_error(&set_struct, NonStructIdx(ty.clone()));
+                    return Ty::Any;
                 }
                 (SetIndirection::SetArray(set_array), Ty::Array(elem_ty)) => {
                     if let Some(index) = set_array.expr() {
@@ -666,8 +723,8 @@ impl Typechecker {
                     }
                     ty = (**elem_ty).clone();
                 }
-                _ => {
-                    // TODO error
+                (SetIndirection::SetArray(set_array), ty) => {
+                    self.report_error(&set_array, NonArrayIdx(ty.clone()));
                     return Ty::Any;
                 }
             }

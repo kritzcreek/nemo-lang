@@ -1,3 +1,6 @@
 fn main() = {
-  unknown
+  unknown;
+
+  set unknown = 3;
+  set unknown.x = 3
 }
