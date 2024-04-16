@@ -4,11 +4,14 @@ use super::errors::{
 };
 use super::names::{Name, NameSupply};
 use super::{FuncTy, Ty};
-use crate::lexer::{is_whitespace, SyntaxKind};
 use crate::syntax::ast::AstNode;
 use crate::syntax::token_ptr::SyntaxTokenPtr;
 use crate::syntax::{nodes::*, SyntaxNode, SyntaxNodePtr, SyntaxToken};
 use crate::T;
+use crate::{
+    builtins::{self, lookup_builtin},
+    lexer::{is_whitespace, SyntaxKind},
+};
 use nemo_backend::ir::{self, OpData};
 use rowan::TextRange;
 use std::collections::HashMap;
@@ -414,10 +417,16 @@ impl Typechecker {
             Expr::EVar(v) => {
                 let var_tkn = v.ident_token().unwrap();
                 match self.context.lookup_var(var_tkn.text()) {
-                    None => {
-                        self.report_error_token(&var_tkn, UnknownVar(var_tkn.text().to_string()));
-                        return None;
-                    }
+                    None => match lookup_builtin(var_tkn.text()) {
+                        Some(builtin) => Ty::Func(Box::new(builtin.ty.clone())),
+                        None => {
+                            self.report_error_token(
+                                &var_tkn,
+                                UnknownVar(var_tkn.text().to_string()),
+                            );
+                            return None;
+                        }
+                    },
                     Some((ty, name)) => {
                         let return_ty = ty.clone();
                         self.record_ref(&var_tkn, *name);

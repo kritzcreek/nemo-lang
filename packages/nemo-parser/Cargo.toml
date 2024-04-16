@@ -9,11 +9,11 @@ license = "MIT"
 [dependencies]
 ariadne = "0.4.0"
 yansi = "0.5.1"
-line-index = "0.1.1"
 logos = "0.14.0"
 num-derive = "0.4.2"
 num-traits = "0.2.18"
 rowan = "0.15.15"
+lazy_static = "1.4.0"
 nemo-backend = { path = "../nemo-backend" }
 
 [dev-dependencies]

@@ -1,8 +1,8 @@
-
 fn func(x : i32) : i32 = {
   x
 }
 
 fn main() : i32 = {
-  func(1, 2, 3)
+  func(1, 2, 3);
+  i32_rem_s(1, 2, 3);
 }

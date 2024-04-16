@@ -65,7 +65,7 @@ impl fmt::Display for TyErrorData {
             TyErrorData::UnknownIntrinsic(i, arg_count) =>
               write!(f, "Unknown intrinsic '{i}' with '{arg_count}' arguments"),
             TyErrorData::ArgCountMismatch(expected, actual) =>
-                write!(f, "Expected {expected} {}, but got {actual} instead", if *expected == 1 { "argument" } else { "arguments "}),
+                write!(f, "Expected {expected} {}, but got {actual} instead", if *expected == 1 { "argument" } else { "arguments"}),
             TyErrorData::NonArrayIdx(t) => write!(
                 f,
                 "Tried to access a value of type '{t}', as if it was an array"
@@ -136,7 +136,7 @@ fn error_label(err_data: &TyErrorData) -> String {
         TyErrorData::NotAFunction(t) =>
             format!("Can't a call a value of type '{t}' as a function"),
         TyErrorData::ArgCountMismatch(expected, actual) =>
-            format!("Mismatched arg count. Expected {expected} {}, but got {actual}", if *expected == 1 { "argument" } else { "arguments "}),
+            format!("Mismatched arg count. Expected {expected} {}, but got {actual}", if *expected == 1 { "argument" } else { "arguments"}),
         TyErrorData::FieldTypeMismatch { struct_name, field_name, expected, actual } =>
             format!("Mismatched field type. {struct_name}.{field_name} expects {expected}, but got {actual}"),
         TyErrorData::UnknownField { struct_name, field_name } =>

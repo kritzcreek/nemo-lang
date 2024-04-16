@@ -2,6 +2,7 @@ use parser::parse_prog;
 use syntax::{ast::AstNode, nodes::Root};
 use types::errors::TyError;
 
+pub mod builtins;
 pub mod lexer;
 pub mod parser;
 pub mod syntax;
