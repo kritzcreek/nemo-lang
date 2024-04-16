@@ -4,7 +4,7 @@ use crate::{
 };
 use std::marker::PhantomData;
 
-use super::nodes::{self, EBinary, Expr};
+use super::nodes::{EBinary, Expr};
 
 /// The main trait to go from untyped `SyntaxNode`  to a typed ast. The
 /// conversion itself has zero runtime cost: ast and syntax nodes have exactly

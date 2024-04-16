@@ -367,7 +367,7 @@ impl Typechecker {
                     }
                     Ty::Array(Box::new(elem_ty))
                 } else {
-                    // TODO error (can't infer type of empty array literal)
+                    self.report_error(arr, CantInferEmptyArray);
                     Ty::Array(Box::new(Ty::Any))
                 }
             }
@@ -380,7 +380,7 @@ impl Typechecker {
                 let var_tkn = v.ident_token().unwrap();
                 match self.context.lookup_var(var_tkn.text()) {
                     None => {
-                        // todo error
+                        self.report_error_token(&var_tkn, UnknownVar(var_tkn.text().to_string()));
                         return None;
                     }
                     Some((ty, name)) => {
@@ -394,10 +394,14 @@ impl Typechecker {
                 let struct_name_tkn = struct_expr.upper_ident_token().unwrap();
                 match self.context.lookup_type(struct_name_tkn.text()) {
                     None => {
-                        // TODO error
+                        self.report_error_token(
+                            &struct_name_tkn,
+                            UnknownType(struct_name_tkn.text().to_string()),
+                        );
                         return None;
                     }
                     Some((def, name)) => {
+                        // TODO compute missing fields
                         for field in struct_expr.e_struct_fields() {
                             let Some(field_tkn) = field.ident_token() else {
                                 continue;
@@ -406,7 +410,13 @@ impl Typechecker {
                                 continue;
                             };
                             let Some((ty, name)) = def.fields.get(field_tkn.text()) else {
-                                // TODO report error
+                                self.report_error_token(
+                                    &field_tkn,
+                                    UnknownField {
+                                        struct_name: struct_name_tkn.text().to_string(),
+                                        field_name: field_tkn.text().to_string(),
+                                    },
+                                );
                                 continue;
                             };
                             self.record_ref(&field_tkn, *name);
@@ -424,7 +434,10 @@ impl Typechecker {
                             let arg_exprs: Vec<Expr> = arg_list.exprs().collect();
                             let arg_tys = func_ty.arguments;
                             if arg_exprs.len() != arg_tys.len() {
-                                // TODO error
+                                self.report_error(
+                                    &arg_list,
+                                    ArgCountMismatch(arg_tys.len(), arg_exprs.len()),
+                                )
                             }
                             for (param, expected_ty) in arg_exprs.iter().zip(arg_tys.iter()) {
                                 self.check_expr(param, expected_ty)
@@ -432,8 +445,10 @@ impl Typechecker {
                         }
                         func_ty.result
                     }
-                    _ => {
-                        // TODO error
+                    ty => {
+                        if ty != Ty::Any {
+                            self.report_error(&func_expr, NotAFunction(ty));
+                        }
                         return None;
                     }
                 }
@@ -460,8 +475,10 @@ impl Typechecker {
                 let arr_expr = idx_expr.expr().unwrap();
                 let elem_ty = match self.infer_expr(&arr_expr) {
                     Ty::Array(elem_ty) => *elem_ty,
-                    _ => {
-                        // TODO error
+                    ty => {
+                        if ty != Ty::Any {
+                            self.report_error(&arr_expr, NonArrayIdx(ty))
+                        }
                         return None;
                     }
                 };
@@ -476,8 +493,10 @@ impl Typechecker {
                         .context
                         .lookup_type_def(name)
                         .expect("inferred a type that wasn't defined"),
-                    _ => {
-                        // TODO error
+                    ty => {
+                        if ty != Ty::Any {
+                            self.report_error(&struct_expr, NonStructIdx(ty))
+                        }
                         return None;
                     }
                 };
@@ -500,7 +519,8 @@ impl Typechecker {
                 let op_tkn = bin_expr.op()?;
                 match check_op(op_tkn, &lhs_ty, &rhs_ty) {
                     None => {
-                        // TODO error
+                        // TODO new error code
+                        // self.report_error_token(&op_tkn, )
                         return None;
                     }
                     Some((_, ty)) => ty,

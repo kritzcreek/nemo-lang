@@ -3,4 +3,13 @@ source: packages/nemo-parser/tests/types.rs
 expression: err_buf
 input_file: packages/nemo-parser/tests/type_errors/non_struct_idx.nemo
 ---
+[10] Error: Tried to index into a non-struct type i32
+   ╭─[source:1:13]
+   │
+ 1 │ ╭─▶ fn main() = {
+ 2 │ ├─▶   10.x
+   │ │            
+   │ ╰──────────── Tried to access a value of type 'i32', as if it was a struct
+───╯
+
 

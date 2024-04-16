@@ -3,5 +3,5 @@ struct F {
 }
 
 fn main() = {
-  F { x = 10 }.y
+  F { x = 10, y = 20 }.y
 }

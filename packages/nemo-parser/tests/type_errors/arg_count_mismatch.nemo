@@ -1,3 +1,8 @@
+
+fn func(x : i32) : i32 = {
+  x
+}
+
 fn main() : i32 = {
-  i32_shl(1, 2, 3)
+  func(1, 2, 3)
 }

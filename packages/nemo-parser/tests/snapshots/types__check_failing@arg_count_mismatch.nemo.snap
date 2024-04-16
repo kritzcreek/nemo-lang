@@ -3,4 +3,12 @@ source: packages/nemo-parser/tests/types.rs
 expression: err_buf
 input_file: packages/nemo-parser/tests/type_errors/arg_count_mismatch.nemo
 ---
+[11] Error: Mismatched arg count. Expected 1 argument, but got 3
+   ╭─[source:2:12]
+   │
+ 7 │   func(1, 2, 3)
+   │       ────┬────  
+   │           ╰────── Expected 1 argument, but got 3 instead
+───╯
+
 

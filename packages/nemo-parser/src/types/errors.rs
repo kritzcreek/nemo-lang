@@ -14,6 +14,7 @@ pub enum TyErrorData {
     MissingNode(String),
     InvalidLiteral,
     InvalidOperator,
+    CantInferEmptyArray,
     Message(String),
     UnknownVar(String),
     UnknownFunction(String),
@@ -55,6 +56,8 @@ impl fmt::Display for TyErrorData {
             TyErrorData::MissingNode(s) => write!(f, "Missing node: '{s}'"),
             TyErrorData::InvalidLiteral => write!(f, "Invalid literal"),
             TyErrorData::InvalidOperator => write!(f, "Invalid operator"),
+            TyErrorData::CantInferEmptyArray =>
+              write!(f, "Can't infer the element type of an empty array. Try adding a type annotation"),
             TyErrorData::Message(m) => write!(f, "{m}"),
             TyErrorData::UnknownVar(v) => write!(f, "Unknown variable '{v}'"),
             TyErrorData::UnknownFunction(fun) => write!(f, "Unknown function '{fun}'"),
@@ -62,7 +65,7 @@ impl fmt::Display for TyErrorData {
             TyErrorData::UnknownIntrinsic(i, arg_count) =>
               write!(f, "Unknown intrinsic '{i}' with '{arg_count}' arguments"),
             TyErrorData::ArgCountMismatch(expected, actual) =>
-                write!(f, "Expected {expected} arguments, but got {actual} instead"),
+                write!(f, "Expected {expected} {}, but got {actual} instead", if *expected == 1 { "argument" } else { "arguments "}),
             TyErrorData::NonArrayIdx(t) => write!(
                 f,
                 "Tried to access a value of type '{t}', as if it was an array"
@@ -102,6 +105,7 @@ fn code_for_error(err_data: &TyErrorData) -> i32 {
         TyErrorData::MissingField { .. } => 14,
         TyErrorData::TypeMismatch { .. } => 15,
         TyErrorData::NotAFunction(_) => 16,
+        TyErrorData::CantInferEmptyArray => 17,
     }
 }
 
@@ -113,6 +117,8 @@ fn error_label(err_data: &TyErrorData) -> String {
             "Invalid literal couldn't be parsed".to_string(),
         TyErrorData::InvalidOperator =>
             "The impossible happened! An invalid operator".to_string(),
+        TyErrorData::CantInferEmptyArray =>
+            "Can't infer type of an empty array".to_string(),
         TyErrorData::Message(m) =>
             m.clone(),
         TyErrorData::UnknownVar(v) =>
@@ -130,7 +136,7 @@ fn error_label(err_data: &TyErrorData) -> String {
         TyErrorData::NotAFunction(t) =>
             format!("Can't a call a value of type '{t}' as a function"),
         TyErrorData::ArgCountMismatch(expected, actual) =>
-            format!("Mismatched arg count. Expected {expected} arguments, but got {actual}"),
+            format!("Mismatched arg count. Expected {expected} {}, but got {actual}", if *expected == 1 { "argument" } else { "arguments "}),
         TyErrorData::FieldTypeMismatch { struct_name, field_name, expected, actual } =>
             format!("Mismatched field type. {struct_name}.{field_name} expects {expected}, but got {actual}"),
         TyErrorData::UnknownField { struct_name, field_name } =>
