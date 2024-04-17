@@ -1,0 +1,14 @@
+---
+source: packages/nemo-parser/tests/types.rs
+expression: err_buf
+input_file: packages/nemo-parser/tests/type_errors/operator_type_mismatch.nemo
+---
+[04] Error: Invalid operator + for lhs of type i32 and rhs of type f32
+   ╭─[source:1:13]
+   │
+ 2 │    1 + 2.0
+   │      ┬  
+   │      ╰── Invalid operator + for lhs of type i32 and rhs of type f32
+───╯
+
+

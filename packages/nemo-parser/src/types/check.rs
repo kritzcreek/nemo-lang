@@ -100,7 +100,6 @@ pub struct Typechecker {
     context: Ctx,
 }
 
-// TODO: Intrinsics, Errors for operators
 impl Typechecker {
     pub fn new() -> Typechecker {
         Typechecker {
@@ -453,6 +452,7 @@ impl Typechecker {
                             let Some(field_expr) = field.expr() else {
                                 continue;
                             };
+
                             let Some((ty, name)) = def.fields.get(field_tkn.text()) else {
                                 self.report_error_token(
                                     &field_tkn,
@@ -530,18 +530,15 @@ impl Typechecker {
                 if let Some(condition) = if_expr.condition() {
                     self.check_expr(&condition, &Ty::Bool)
                 }
-                // TODO after custom impl for branches
-
-                // if let Some(then_branch) = expr.then_branch() {
-                //     let ty = self.infer_expr(&then_branch);
-                //     if let Some(else_branch) = expr.else_branch() {
-                //       self.check_expr(&else_branch, &ty)
-                //     }
-                //     ty
-                // } else {
-                //   Ty::Any
-                // }
-                Ty::Any
+                if let Some(then_branch) = if_expr.then_branch() {
+                    let ty = self.infer_expr(&then_branch);
+                    if let Some(else_branch) = if_expr.else_branch() {
+                        self.check_expr(&else_branch, &ty)
+                    }
+                    ty
+                } else {
+                    Ty::Any
+                }
             }
             Expr::EArrayIdx(idx_expr) => {
                 let arr_expr = idx_expr.expr().unwrap();
@@ -554,8 +551,9 @@ impl Typechecker {
                         return None;
                     }
                 };
-                // TODO once custom impl is there
-                // self.check_expr(idx_expr.index, &Ty::I32);
+                if let Some(index) = idx_expr.index() {
+                    self.check_expr(&index, &Ty::I32);
+                }
                 elem_ty
             }
             Expr::EStructIdx(idx_expr) => {
@@ -600,10 +598,14 @@ impl Typechecker {
                 // TODO could maybe check the rhs based on operator and lhs?
                 let rhs_ty = self.infer_expr(&bin_expr.rhs()?);
                 let op_tkn = bin_expr.op()?;
-                match check_op(op_tkn, &lhs_ty, &rhs_ty) {
+                match check_op(&op_tkn, &lhs_ty, &rhs_ty) {
                     None => {
-                        // TODO new error code
-                        // self.report_error_token(&op_tkn, )
+                        self.report_error_token(
+                            &op_tkn,
+                            Message(format!(
+                                "Invalid operator {} for lhs of type {lhs_ty} and rhs of type {rhs_ty}", op_tkn.text()
+                            )),
+                        );
                         return None;
                     }
                     Some((_, ty)) => ty,
@@ -630,18 +632,24 @@ impl Typechecker {
                     self.check_expr(&elem, &**elem_ty);
                 }
             }
+            (Expr::EArrayIdx(idx_expr), elem_ty) => {
+                let arr_expr = idx_expr.expr().unwrap();
+                let elem_ty = self.check_expr(&arr_expr, &Ty::Array(Box::new(elem_ty.clone())));
+                if let Some(index) = idx_expr.index() {
+                    self.check_expr(&index, &Ty::I32);
+                }
+                elem_ty
+            }
             (Expr::EIf(expr), ty) => {
                 if let Some(condition) = expr.condition() {
                     self.check_expr(&condition, &Ty::Bool)
                 }
-                // TODO after custom impl for branches
-
-                // if let Some(then_branch) = expr.then_branch() {
-                //     self.check_expr(&then_branch, ty)
-                // }
-                // if let Some(else_branch) = expr.else_branch() {
-                //     self.check_expr(&else_branch, ty)
-                // }
+                if let Some(then_branch) = expr.then_branch() {
+                    self.check_expr(&then_branch, ty)
+                }
+                if let Some(else_branch) = expr.else_branch() {
+                    self.check_expr(&else_branch, ty)
+                }
             }
             (Expr::EParen(expr), _) => {
                 if let Some(expr) = expr.expr() {
@@ -770,7 +778,7 @@ impl Typechecker {
     }
 }
 
-fn check_op(op: SyntaxToken, ty_left: &Ty, ty_right: &Ty) -> Option<(ir::OpData, Ty)> {
+fn check_op(op: &SyntaxToken, ty_left: &Ty, ty_right: &Ty) -> Option<(ir::OpData, Ty)> {
     let op_data = match (op.kind(), ty_left, ty_right) {
         (T![+], Ty::I32, Ty::I32) => (OpData::I32Add, Ty::I32),
         (T![-], Ty::I32, Ty::I32) => (OpData::I32Sub, Ty::I32),

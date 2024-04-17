@@ -4,7 +4,7 @@ use crate::{
 };
 use std::marker::PhantomData;
 
-use super::nodes::{EBinary, Expr};
+use super::nodes::{EArrayIdx, EBinary, EIf, Expr};
 
 /// The main trait to go from untyped `SyntaxNode`  to a typed ast. The
 /// conversion itself has zero runtime cost: ast and syntax nodes have exactly
@@ -78,6 +78,21 @@ pub(crate) mod support {
             .children_with_tokens()
             .filter_map(|it| it.into_token())
             .find(|it| it.kind() == kind)
+    }
+}
+
+impl EIf {
+    pub(crate) fn then_branch(&self) -> Option<Expr> {
+        support::children(self.syntax()).nth(1)
+    }
+    // TODO: This isn't right if the then branch is missing
+    pub(crate) fn else_branch(&self) -> Option<Expr> {
+        support::children(self.syntax()).nth(2)
+    }
+}
+impl EArrayIdx {
+    pub(crate) fn index(&self) -> Option<Expr> {
+        support::children(self.syntax()).nth(1)
     }
 }
 
