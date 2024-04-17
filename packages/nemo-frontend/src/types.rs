@@ -915,7 +915,7 @@ impl<'a> Typechecker<'a> {
                     .filter(is_expr_kind)
                     .map(|n| self.infer_expr(ctx, &n))
                     .collect::<TyResult<Vec<_>>>()?;
-                let ty_elem = match elems.get(0) {
+                let ty_elem = match elems.first() {
                     Some(head) => {
                         for elem in elems.iter() {
                             self.expect_ty(&head.ty, &elem.ty, &elem.at)?

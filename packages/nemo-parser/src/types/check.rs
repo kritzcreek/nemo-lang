@@ -9,7 +9,7 @@ use crate::syntax::token_ptr::SyntaxTokenPtr;
 use crate::syntax::{nodes::*, SyntaxNode, SyntaxNodePtr, SyntaxToken};
 use crate::T;
 use crate::{
-    builtins::{self, lookup_builtin},
+    builtins::lookup_builtin,
     lexer::{is_whitespace, SyntaxKind},
 };
 use nemo_backend::ir::{self, OpData};
@@ -100,6 +100,12 @@ pub struct Typechecker {
     context: Ctx,
 }
 
+impl Default for Typechecker {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Typechecker {
     pub fn new() -> Typechecker {
         Typechecker {
@@ -115,14 +121,14 @@ impl Typechecker {
     fn record_def(&mut self, token: &SyntaxToken, name: Name) {
         let previous = self
             .names
-            .insert(SyntaxTokenPtr::new(&token), Occurence::Def(name));
+            .insert(SyntaxTokenPtr::new(token), Occurence::Def(name));
         assert!(previous.is_none())
     }
 
     fn record_ref(&mut self, token: &SyntaxToken, name: Name) {
         let previous = self
             .names
-            .insert(SyntaxTokenPtr::new(&token), Occurence::Ref(name));
+            .insert(SyntaxTokenPtr::new(token), Occurence::Ref(name));
         assert!(previous.is_none())
     }
 
@@ -145,14 +151,14 @@ impl Typechecker {
         let mut start = at.start();
         let mut end = at.end();
         let mut children = elem.syntax().descendants_with_tokens();
-        while let Some(elem) = children.next() {
+        for elem in children.by_ref() {
             if elem.as_token().is_some() && !is_whitespace(elem.kind()) {
                 start = elem.text_range().start();
                 break;
             }
         }
 
-        while let Some(elem) = children.next() {
+        for elem in children {
             if elem.as_token().is_some() && !is_whitespace(elem.kind()) {
                 end = elem.text_range().end();
             }
@@ -179,20 +185,16 @@ impl Typechecker {
 
     fn check_imports(&mut self, root: &Root) {
         for top_level in root.top_levels() {
-            match top_level {
-                TopLevel::TopImport(i) => {
-                    let Some(internal_name_tkn) = i.imp_internal().and_then(|x| x.ident_token())
-                    else {
-                        continue;
-                    };
-                    let func_ty = i.ty().map(|t| self.check_ty(&t)).unwrap_or(Ty::Any);
-                    let name = self.name_supply.func_idx(&internal_name_tkn);
-                    self.record_def(&internal_name_tkn, name);
+            if let TopLevel::TopImport(i) = top_level {
+                let Some(internal_name_tkn) = i.imp_internal().and_then(|x| x.ident_token()) else {
+                    continue;
+                };
+                let func_ty = i.ty().map(|t| self.check_ty(&t)).unwrap_or(Ty::Any);
+                let name = self.name_supply.func_idx(&internal_name_tkn);
+                self.record_def(&internal_name_tkn, name);
 
-                    self.context
-                        .add_var(internal_name_tkn.text().to_string(), func_ty, name)
-                }
-                _ => {}
+                self.context
+                    .add_var(internal_name_tkn.text().to_string(), func_ty, name)
             }
         }
     }
@@ -202,71 +204,62 @@ impl Typechecker {
         // Because types can be mutually recursive we need two passes:
         // - 1. Forward declare all types
         for top_level in top_levels.iter() {
-            match top_level {
-                TopLevel::TopStruct(s) => {
-                    if let Some(tkn) = s.upper_ident_token() {
-                        let name = self.name_supply.type_idx(&tkn);
-                        self.record_def(&tkn, name);
+            if let TopLevel::TopStruct(s) = top_level {
+                if let Some(tkn) = s.upper_ident_token() {
+                    let name = self.name_supply.type_idx(&tkn);
+                    self.record_def(&tkn, name);
 
-                        self.context.declare_type(tkn.text(), name)
-                    }
+                    self.context.declare_type(tkn.text(), name)
                 }
-                _ => {}
             }
         }
 
         // - 2. Actually check their definitions
         for top_level in top_levels.iter() {
-            match top_level {
-                TopLevel::TopStruct(s) => {
-                    if let Some(struct_name_tkn) = s.upper_ident_token() {
-                        let mut def = StructDef {
-                            fields: HashMap::new(),
+            if let TopLevel::TopStruct(s) = top_level {
+                if let Some(struct_name_tkn) = s.upper_ident_token() {
+                    let mut def = StructDef {
+                        fields: HashMap::new(),
+                    };
+                    for field in s.struct_fields() {
+                        let Some(field_name) = field.ident_token() else {
+                            continue;
                         };
-                        for field in s.struct_fields() {
-                            let Some(field_name) = field.ident_token() else {
-                                continue;
-                            };
-                            let ty = match field.ty() {
-                                Some(field_ty) => self.check_ty(&field_ty),
-                                None => Ty::Any,
-                            };
-                            let name = self.name_supply.field_idx(&field_name);
-                            self.record_def(&field_name, name);
+                        let ty = match field.ty() {
+                            Some(field_ty) => self.check_ty(&field_ty),
+                            None => Ty::Any,
+                        };
+                        let name = self.name_supply.field_idx(&field_name);
+                        self.record_def(&field_name, name);
 
-                            def.fields.insert(field_name.text().to_string(), (ty, name));
-                        }
-                        self.context
-                            .declare_struct_fields(struct_name_tkn.text(), def)
+                        def.fields.insert(field_name.text().to_string(), (ty, name));
                     }
+                    self.context
+                        .declare_struct_fields(struct_name_tkn.text(), def)
                 }
-                _ => {}
             }
         }
     }
 
     fn check_function_headers(&mut self, root: &Root) {
         for top_level in root.top_levels() {
-            match top_level {
-                TopLevel::TopFn(top_fn) => {
-                    let Some(fn_name_tkn) = top_fn.ident_token() else {
-                        continue;
-                    };
-                    let mut arguments = vec![];
-                    for param in top_fn.params() {
-                        let ty = param.ty().map(|t| self.check_ty(&t)).unwrap_or(Ty::Any);
-                        arguments.push(ty);
-                    }
-                    let name = self.name_supply.func_idx(&fn_name_tkn);
-                    self.record_def(&fn_name_tkn, name);
-                    let result = top_fn.ty().map(|t| self.check_ty(&t)).unwrap_or(Ty::Unit);
-                    self.context.add_var(
-                        fn_name_tkn.text().to_string(),
-                        Ty::Func(Box::new(FuncTy { arguments, result })),
-                        name,
-                    )
+            if let TopLevel::TopFn(top_fn) = top_level {
+                let Some(fn_name_tkn) = top_fn.ident_token() else {
+                    continue;
+                };
+                let mut arguments = vec![];
+                for param in top_fn.params() {
+                    let ty = param.ty().map(|t| self.check_ty(&t)).unwrap_or(Ty::Any);
+                    arguments.push(ty);
                 }
-                _ => {}
+                let name = self.name_supply.func_idx(&fn_name_tkn);
+                self.record_def(&fn_name_tkn, name);
+                let result = top_fn.ty().map(|t| self.check_ty(&t)).unwrap_or(Ty::Unit);
+                self.context.add_var(
+                    fn_name_tkn.text().to_string(),
+                    Ty::Func(Box::new(FuncTy { arguments, result })),
+                    name,
+                )
             }
         }
     }
@@ -306,61 +299,54 @@ impl Typechecker {
 
     fn check_globals(&mut self, root: &Root) {
         for top_level in root.top_levels() {
-            match top_level {
-                TopLevel::TopLet(top_let) => {
-                    let ty = match (top_let.ty().map(|t| self.check_ty(&t)), top_let.expr()) {
-                        (None, None) => continue,
-                        (Some(ty), None) => ty,
-                        (None, Some(e)) => self.infer_expr(&e),
-                        (Some(ty), Some(e)) => {
-                            self.check_expr(&e, &ty);
-                            ty
-                        }
-                    };
-                    if let Some(binder_tkn) = top_let.ident_token() {
-                        let name = self.name_supply.global_idx(&binder_tkn);
-                        self.record_def(&binder_tkn, name);
-                        self.context
-                            .add_var(binder_tkn.text().to_string(), ty, name)
-                    };
-                }
-                _ => {}
+            if let TopLevel::TopLet(top_let) = top_level {
+                let ty = match (top_let.ty().map(|t| self.check_ty(&t)), top_let.expr()) {
+                    (None, None) => continue,
+                    (Some(ty), None) => ty,
+                    (None, Some(e)) => self.infer_expr(&e),
+                    (Some(ty), Some(e)) => {
+                        self.check_expr(&e, &ty);
+                        ty
+                    }
+                };
+                if let Some(binder_tkn) = top_let.ident_token() {
+                    let name = self.name_supply.global_idx(&binder_tkn);
+                    self.record_def(&binder_tkn, name);
+                    self.context
+                        .add_var(binder_tkn.text().to_string(), ty, name)
+                };
             }
         }
     }
 
     fn check_function_bodies(&mut self, root: &Root) {
         for top_level in root.top_levels() {
-            match top_level {
-                TopLevel::TopFn(top_fn) => {
-                    let Some(func_name) = top_fn.ident_token() else {
+            if let TopLevel::TopFn(top_fn) = top_level {
+                let Some(func_name) = top_fn.ident_token() else {
+                    continue;
+                };
+                let Some((Ty::Func(func_ty), _)) = self.context.lookup_var(func_name.text()) else {
+                    panic!("didn't pre-declare function, {}", func_name.text())
+                };
+
+                // Use Rc for Tys in the context?
+                let func_ty = func_ty.clone();
+
+                self.context.enter_block();
+                for (param, ty) in top_fn.params().zip(func_ty.arguments.into_iter()) {
+                    let Some(ident_tkn) = param.ident_token() else {
                         continue;
                     };
-                    let Some((Ty::Func(func_ty), _)) = self.context.lookup_var(func_name.text())
-                    else {
-                        panic!("didn't pre-declare function, {}", func_name.text())
-                    };
-
-                    // Use Rc for Tys in the context?
-                    let func_ty = func_ty.clone();
-
-                    self.context.enter_block();
-                    for (param, ty) in top_fn.params().zip(func_ty.arguments.into_iter()) {
-                        let Some(ident_tkn) = param.ident_token() else {
-                            continue;
-                        };
-                        let name = self.name_supply.local_idx(&ident_tkn);
-                        self.record_def(&ident_tkn, name);
-                        self.context.add_var(ident_tkn.text().to_string(), ty, name);
-                    }
-
-                    if let Some(body) = top_fn.body() {
-                        self.check_expr(&body.into(), &func_ty.result)
-                    }
-
-                    self.context.leave_block();
+                    let name = self.name_supply.local_idx(&ident_tkn);
+                    self.record_def(&ident_tkn, name);
+                    self.context.add_var(ident_tkn.text().to_string(), ty, name);
                 }
-                _ => {}
+
+                if let Some(body) = top_fn.body() {
+                    self.check_expr(&body.into(), &func_ty.result)
+                }
+
+                self.context.leave_block();
             }
         }
     }
@@ -394,21 +380,15 @@ impl Typechecker {
                 Literal::LitBool(_) => Ty::Bool,
                 Literal::LitFloat(l) => {
                     let float_tkn = l.float_lit_token().unwrap();
-                    match float_tkn.text().parse::<f32>() {
-                        Err(_) => {
-                            self.report_error_token(&float_tkn, InvalidLiteral);
-                        }
-                        _ => {}
+                    if float_tkn.text().parse::<f32>().is_err() {
+                        self.report_error_token(&float_tkn, InvalidLiteral);
                     }
                     Ty::F32
                 }
                 Literal::LitInt(l) => {
                     let int_tkn = l.int_lit_token().unwrap();
-                    match int_tkn.text().parse::<i32>() {
-                        Err(_) => {
-                            self.report_error_token(&int_tkn, InvalidLiteral);
-                        }
-                        _ => {}
+                    if int_tkn.text().parse::<i32>().is_err() {
+                        self.report_error_token(&int_tkn, InvalidLiteral);
                     }
                     Ty::I32
                 }
@@ -629,16 +609,15 @@ impl Typechecker {
         match (expr, expected) {
             (Expr::EArray(expr), Ty::Array(elem_ty)) => {
                 for elem in expr.exprs() {
-                    self.check_expr(&elem, &**elem_ty);
+                    self.check_expr(&elem, elem_ty);
                 }
             }
             (Expr::EArrayIdx(idx_expr), elem_ty) => {
                 let arr_expr = idx_expr.expr().unwrap();
-                let elem_ty = self.check_expr(&arr_expr, &Ty::Array(Box::new(elem_ty.clone())));
+                self.check_expr(&arr_expr, &Ty::Array(Box::new(elem_ty.clone())));
                 if let Some(index) = idx_expr.index() {
                     self.check_expr(&index, &Ty::I32);
                 }
-                elem_ty
             }
             (Expr::EIf(expr), ty) => {
                 if let Some(condition) = expr.condition() {

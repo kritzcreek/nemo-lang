@@ -1,5 +1,3 @@
-use std::ops::Range;
-
 use crate::lexer::{Lexer, SyntaxKind, TToken};
 use crate::syntax::{NemoLanguage, SyntaxNode};
 use rowan::{Checkpoint, GreenNode, GreenNodeBuilder, Language, TextRange, TextSize};
@@ -55,15 +53,15 @@ impl<'a> Parser<'a> {
 
         for tkn in leading {
             self.builder
-                .token(NemoLanguage::kind_to_raw(tkn.kind), tkn.text.into());
+                .token(NemoLanguage::kind_to_raw(tkn.kind), tkn.text);
         }
 
         self.builder
-            .token(NemoLanguage::kind_to_raw(token.kind), token.text.into());
+            .token(NemoLanguage::kind_to_raw(token.kind), token.text);
 
         for tkn in trailing {
             self.builder
-                .token(NemoLanguage::kind_to_raw(tkn.kind), tkn.text.into());
+                .token(NemoLanguage::kind_to_raw(tkn.kind), tkn.text);
         }
     }
 

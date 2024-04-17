@@ -1,10 +1,8 @@
 mod ast_src;
 
 use anyhow::Result;
-use proc_macro2::{Punct, Spacing};
 use quote::{format_ident, quote};
 use std::{
-    collections::{BTreeSet, HashSet},
     env,
     fs::File,
     io::Write,
@@ -42,7 +40,7 @@ fn normalize_newlines(src: &mut String) {
     // directly, let's rather steal the contents of `src`. This makes the code
     // safe even if a panic occurs.
 
-    let mut buf = std::mem::replace(src, String::new()).into_bytes();
+    let mut buf = std::mem::take(src).into_bytes();
     let mut gap_len = 0;
     let mut tail = buf.as_mut_slice();
     loop {
@@ -245,9 +243,10 @@ fn generate_nodes(grammar: &AstSrc) -> Result<String> {
         });
 
     let ast = quote! {
+        #![allow(clippy)]
         use super::{
             SyntaxNode, SyntaxToken, SyntaxKind::{self, *},
-            ast::{self, AstNode, AstChildren, support},
+            ast::{AstNode, AstChildren, support},
         };
         use crate::T;
 
@@ -296,7 +295,6 @@ fn lower(grammar: &Grammar) -> AstSrc {
         match lower_enum(grammar, rule) {
             Some(variants) => {
                 let enum_src = AstEnumSrc {
-                    doc: Vec::new(),
                     name,
                     traits: Vec::new(),
                     variants,
@@ -307,7 +305,6 @@ fn lower(grammar: &Grammar) -> AstSrc {
                 let mut fields = Vec::new();
                 lower_rule(&mut fields, grammar, None, rule);
                 res.nodes.push(AstNodeSrc {
-                    doc: Vec::new(),
                     name,
                     traits: Vec::new(),
                     fields,
@@ -433,10 +430,7 @@ fn lower_comma_list(
     };
     match repeat.as_slice() {
         [Rule::Token(comma), Rule::Node(n)]
-            if n == node && (grammar[*comma].name == "," || grammar[*comma].name == ";") =>
-        {
-            ()
-        }
+            if n == node && (grammar[*comma].name == "," || grammar[*comma].name == ";") => {}
         _ => return false,
     }
     let ty = grammar[*node].name.clone();
@@ -450,20 +444,6 @@ fn lower_comma_list(
     };
     acc.push(field);
     true
-}
-
-fn to_upper_snake_case(s: &str) -> String {
-    let mut buf = String::with_capacity(s.len());
-    let mut prev = false;
-    for c in s.chars() {
-        if c.is_ascii_uppercase() && prev {
-            buf.push('_')
-        }
-        prev = true;
-
-        buf.push(c.to_ascii_uppercase());
-    }
-    buf
 }
 
 fn to_lower_snake_case(s: &str) -> String {

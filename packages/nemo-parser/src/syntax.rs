@@ -1,4 +1,5 @@
 pub mod ast;
+#[allow(clippy::all)]
 pub mod nodes;
 pub mod token_ptr;
 

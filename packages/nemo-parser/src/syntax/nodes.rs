@@ -1,5 +1,5 @@
 use super::{
-    ast::{self, support, AstChildren, AstNode},
+    ast::{support, AstChildren, AstNode},
     SyntaxKind::{self, *},
     SyntaxNode, SyntaxToken,
 };

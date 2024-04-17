@@ -2,7 +2,6 @@ use std::{error::Error, fs, path::PathBuf};
 
 use clap::{Parser, Subcommand};
 use nemo_backend::compile_program;
-use nemo_frontend::{check_program, type_errors::render_ty_error};
 use nemo_language_server::start_language_server;
 use playground::run_playground;
 

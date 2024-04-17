@@ -9,8 +9,9 @@ It's main purpose is to serve as a teaching tool in my compilers course.
 - [x] Logos lexer
 - [x] Rowan based parser
 - [x] Set up AST generation (xtask + ungrammar)
+- [x] Implement new type checker
 - [ ] Integrate grammar/parser viewer into playground
-- [ ] Implement new type checker
+- [ ] Elaborate directly into backend IR
 
 - Move name resolution into the type checker?
 

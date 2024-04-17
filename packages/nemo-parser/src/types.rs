@@ -78,9 +78,9 @@ pub fn check_prog(prog: Root) -> CheckResult {
         };
         names.insert(k, occ);
     }
-    return CheckResult {
+    CheckResult {
         errors: checker.errors,
         names,
         typed_nodes: checker.typed_nodes,
-    };
+    }
 }
