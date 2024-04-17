@@ -578,6 +578,9 @@ impl Typechecker {
                 // TODO could maybe check the rhs based on operator and lhs?
                 let rhs_ty = self.infer_expr(&bin_expr.rhs()?);
                 let op_tkn = bin_expr.op()?;
+                if lhs_ty == Ty::Any || rhs_ty == Ty::Any {
+                    return None;
+                }
                 match check_op(&op_tkn, &lhs_ty, &rhs_ty) {
                     None => {
                         self.report_error_token(
@@ -637,7 +640,6 @@ impl Typechecker {
             }
             _ => {
                 let ty = self.infer_expr(expr);
-                // TODO match types (special logic for Any)
                 if *expected != Ty::Any && ty != Ty::Any && ty != *expected {
                     self.errors.push(TyError {
                         at: expr.syntax().text_range(),

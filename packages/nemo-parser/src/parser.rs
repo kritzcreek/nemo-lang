@@ -1,14 +1,17 @@
 use crate::lexer::{Lexer, SyntaxKind, TToken};
 use crate::syntax::{NemoLanguage, SyntaxNode};
-use rowan::{Checkpoint, GreenNode, GreenNodeBuilder, Language, TextRange, TextSize};
+use rowan::{Checkpoint, GreenNode, GreenNodeBuilder, Language};
+use text_size::{TextRange, TextSize};
 
 mod prog;
+
+pub type ParseError = (String, TextRange);
 
 pub struct Parser<'a> {
     tokens: Vec<TToken<'a>>,
     builder: GreenNodeBuilder<'static>,
     // TODO: Be smarter here
-    errors: Vec<(String, TextRange)>,
+    errors: Vec<ParseError>,
 }
 
 impl<'a> Parser<'a> {
@@ -163,7 +166,7 @@ impl Parse {
         formatted[0..formatted.len() - 1].to_string()
     }
 
-    pub fn errors(&self) -> &[(String, TextRange)] {
+    pub fn errors(&self) -> &[ParseError] {
         &self.errors
     }
 }

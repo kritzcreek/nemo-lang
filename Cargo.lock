@@ -875,6 +875,7 @@ dependencies = [
  "num-derive",
  "num-traits",
  "rowan",
+ "text-size",
  "yansi",
 ]
 

@@ -7,7 +7,7 @@ use std::path::Path;
 use yansi::Paint;
 
 fn check_failing(path: &Path, source: String) {
-    let errors = check_program(&source);
+    let errors = check_program(&source).1;
     if errors.is_empty() {
         eprintln!("{} was expected to fail, but didn't", path.display())
     }

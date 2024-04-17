@@ -1,4 +1,4 @@
-use parser::parse_prog;
+use parser::{parse_prog, ParseError};
 use syntax::{ast::AstNode, nodes::Root};
 use types::errors::TyError;
 
@@ -8,8 +8,9 @@ pub mod parser;
 pub mod syntax;
 pub mod types;
 
-pub fn check_program(source: &str) -> Vec<TyError> {
+pub fn check_program(source: &str) -> (Vec<ParseError>, Vec<TyError>) {
     let parse = parse_prog(source);
+    let parse_errors = parse.errors().to_vec();
     // println!("{}", parse.debug_tree());
 
     let check_result = match Root::cast(parse.syntax()) {
@@ -17,8 +18,5 @@ pub fn check_program(source: &str) -> Vec<TyError> {
         Some(root) => types::check_prog(root),
     };
 
-    // println!("{:?}", check_result.names);
-    // println!("{:?}", check_result.typed_nodes);
-    // println!("{:?}", check_result.errors);
-    check_result.errors
+    (parse_errors, check_result.errors)
 }

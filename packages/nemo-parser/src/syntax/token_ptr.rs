@@ -1,5 +1,5 @@
 /// Like rowan::ast::SyntaxNodePtr, but for tokens
-use rowan::TextRange;
+use text_size::TextRange;
 
 use super::{SyntaxNode, SyntaxToken};
 

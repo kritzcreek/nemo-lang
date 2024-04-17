@@ -57,7 +57,15 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
         }
         Commands::Check { input_file } => {
             let source = fs::read_to_string(input_file)?;
-            nemo_parser::check_program(&source);
+            let (parse_errors, type_errors) = nemo_parser::check_program(&source);
+            if !parse_errors.is_empty() {
+                println!("Parse errors");
+                println!("{parse_errors:?}");
+            }
+            if !type_errors.is_empty() {
+                println!("Type errors");
+                println!("{type_errors:?}");
+            }
             Ok(())
         }
         Commands::LanguageServer { .. } => start_language_server(),
