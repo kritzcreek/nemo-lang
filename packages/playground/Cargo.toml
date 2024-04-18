@@ -12,5 +12,5 @@ serde = { version = "1.0.192", features = ["derive"] }
 serde_derive = "1.0.192"
 tokio = { version = "1.35.1", features = ["macros", "rt-multi-thread"] }
 warp = "0.3.6"
-nemo-frontend = { path = "../nemo-frontend" }
+nemo-parser = { path = "../nemo-parser" }
 nemo-backend = { path = "../nemo-backend" }

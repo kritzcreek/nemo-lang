@@ -1,5 +1,7 @@
+mod highlight;
 pub mod vfs;
 
+use highlight::{highlight, HIGHLIGHT_NAMES};
 use lsp_server::{Connection, ExtractError, Message, Notification, Request, RequestId, Response};
 use lsp_types::notification::{DidChangeTextDocument, DidCloseTextDocument, DidOpenTextDocument};
 use lsp_types::request::SemanticTokensFullRequest;
@@ -8,7 +10,6 @@ use lsp_types::{
     SemanticTokensLegend, SemanticTokensOptions, SemanticTokensServerCapabilities,
     ServerCapabilities, TextDocumentSyncCapability, TextDocumentSyncKind, WorkDoneProgressOptions,
 };
-use nemo_frontend::parser::HIGHLIGHT_NAMES;
 use std::error::Error;
 use tree_sitter_highlight::{Highlight, HighlightEvent};
 
@@ -84,7 +85,7 @@ fn main_loop(
                             }
                         };
 
-                        let events = nemo_frontend::parser::highlight(program);
+                        let events = highlight(program);
                         let result = SemanticTokens {
                             result_id: None,
                             data: semantic_tokens(program, events),
