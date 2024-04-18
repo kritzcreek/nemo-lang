@@ -1,6 +1,7 @@
 use super::ir::{
-    array_len, array_new, var, ArrayBuilder, ArrayIdxBuilder, BinaryBuilder, BlockBuilder,
-    CallBuilder, IfBuilder, IntrinsicBuilder, StructBuilder, StructIdxBuilder,
+    array_len, array_new, expr_decl, var, ArrayBuilder, ArrayIdxBuilder, BinaryBuilder,
+    BlockBuilder, CallBuilder, IfBuilder, IntrinsicBuilder, LetBuilder, SetBuilder, StructBuilder,
+    StructIdxBuilder, WhileBuilder,
 };
 use super::names::{Name, NameSupply};
 use super::{
@@ -456,8 +457,9 @@ impl Typechecker {
                     }
                     Some((ty, name)) => {
                         let return_ty = ty.clone();
+                        let ir = var(*name);
                         self.record_ref(&var_tkn, *name);
-                        (return_ty, var(*name))
+                        (return_ty, ir)
                     }
                 }
             }
@@ -687,8 +689,9 @@ impl Typechecker {
                 self.context.enter_block();
                 let mut ty = Ty::Unit;
                 for decl in block_expr.declarations() {
-                    // TODO (return ir::Declaration from infer_decl)
-                    ty = self.infer_decl(&decl);
+                    let (new_ty, ir) = self.infer_decl(&decl);
+                    builder.declaration(ir);
+                    ty = new_ty;
                 }
                 self.context.leave_block();
                 (ty, builder.build())
@@ -762,61 +765,80 @@ impl Typechecker {
         })
     }
 
-    fn infer_decl(&mut self, decl: &Declaration) -> Ty {
-        match decl {
+    fn infer_decl(&mut self, decl: &Declaration) -> (Ty, Option<ir::Declaration>) {
+        let (ty, ir) = match decl {
             Declaration::DLet(let_decl) => {
-                let ty = if let Some(expr) = let_decl.expr() {
+                let mut builder = LetBuilder::new();
+                let (ty, ir) = if let Some(expr) = let_decl.expr() {
                     if let Some(ty) = let_decl.ty().map(|ta| self.check_ty(&ta)) {
-                        self.check_expr(&expr, &ty);
-                        ty
+                        let ir = self.check_expr(&expr, &ty);
+                        (ty, ir)
                     } else {
                         self.infer_expr(&expr)
                     }
                 } else {
-                    Ty::Any
+                    (Ty::Any, None)
                 };
+                builder.expr(ir);
 
                 if let Some(binder_tkn) = let_decl.ident_token() {
                     let name = self.name_supply.local_idx(&binder_tkn);
+                    builder.binder(name);
                     self.record_def(&binder_tkn, name);
                     self.context
                         .add_var(binder_tkn.text().to_string(), ty, name)
                 }
-                Ty::Unit
+                (Ty::Unit, builder.build())
             }
             Declaration::DSet(set_decl) => {
+                let mut builder = SetBuilder::new();
                 let set_ty = if let Some(set_target) = set_decl.set_target() {
-                    self.infer_set_target(&set_target)
+                    let (ty, ir) = self.infer_set_target(&set_target);
+                    builder.set_target(ir);
+                    ty
                 } else {
                     Ty::Any
                 };
                 if let Some(expr) = set_decl.expr() {
-                    self.check_expr(&expr, &set_ty);
+                    builder.expr(self.check_expr(&expr, &set_ty));
                 }
-                Ty::Unit
+                (Ty::Unit, builder.build())
             }
             Declaration::DWhile(while_decl) => {
+                let mut builder = WhileBuilder::new();
                 let condition = while_decl.expr();
                 if let Some(condition) = condition {
-                    self.check_expr(&condition, &Ty::Bool);
+                    builder.condition(self.check_expr(&condition, &Ty::Bool));
                 }
                 let body = while_decl.e_block();
                 if let Some(body) = body {
-                    self.check_expr(&body.into(), &Ty::Unit);
+                    builder.body(self.check_expr(&body.into(), &Ty::Unit));
                 }
-                Ty::Unit
+                (Ty::Unit, builder.build())
             }
-            Declaration::DExpr(expr_decl) => self.infer_expr(&expr_decl.expr().unwrap()),
-        }
+            Declaration::DExpr(decl) => {
+                let (ty, ir) = self.infer_expr(&decl.expr().unwrap());
+                (ty, expr_decl(ir))
+            }
+        };
+        (
+            ty.clone(),
+            ir.map(|ir| ir::Declaration {
+                ty,
+                it: ir,
+                at: decl.syntax().text_range(),
+            }),
+        )
     }
 
-    fn infer_set_target(&mut self, set_target: &SetTarget) -> Ty {
+    // TODO desugar into expr + set target
+    fn infer_set_target(&mut self, set_target: &SetTarget) -> (Ty, Option<ir::SetTarget>) {
         let Some(ident_tkn) = set_target.ident_token() else {
-            return Ty::Any;
+            return (Ty::Any, None);
         };
         let Some((ty, name)) = self.context.lookup_var(ident_tkn.text()) else {
             self.report_error_token(&ident_tkn, UnknownVar(ident_tkn.text().to_string()));
-            return Ty::Any;
+            return (Ty::Any, None);
         };
         let mut ty = ty.clone();
         self.record_ref(&ident_tkn, *name);
@@ -829,7 +851,7 @@ impl Typechecker {
                         .lookup_type_def(*name)
                         .expect("inferred unknown struct type");
                     let Some(ident_tkn) = set_struct.ident_token() else {
-                        return Ty::Any;
+                        return (Ty::Any, None);
                     };
                     if let Some((field, name)) = def.fields.get(ident_tkn.text()) {
                         self.record_ref(&ident_tkn, *name);
@@ -843,12 +865,12 @@ impl Typechecker {
                                 field_name: ident_tkn.text().to_string(),
                             },
                         );
-                        return Ty::Any;
+                        return (Ty::Any, None);
                     }
                 }
                 (SetIndirection::SetStruct(set_struct), ty) => {
                     self.report_error(&set_struct, NonStructIdx(ty.clone()));
-                    return Ty::Any;
+                    return (Ty::Any, None);
                 }
                 (SetIndirection::SetArray(set_array), Ty::Array(elem_ty)) => {
                     if let Some(index) = set_array.expr() {
@@ -858,11 +880,11 @@ impl Typechecker {
                 }
                 (SetIndirection::SetArray(set_array), ty) => {
                     self.report_error(&set_array, NonArrayIdx(ty.clone()));
-                    return Ty::Any;
+                    return (Ty::Any, None);
                 }
             }
         }
-        ty
+        (ty, None)
     }
 }
 

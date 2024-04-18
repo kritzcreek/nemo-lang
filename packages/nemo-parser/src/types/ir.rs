@@ -25,6 +25,97 @@ pub(crate) fn array_new(at: TextRange) -> Option<Intrinsic> {
     })
 }
 
+pub(crate) fn expr_decl(expr: Option<Expr>) -> Option<DeclarationData> {
+    Some(DeclarationData::Expr(expr?))
+}
+
+#[derive(Default)]
+pub(crate) struct WhileBuilder {
+    condition: Option<Expr>,
+    body: Option<Expr>,
+}
+
+impl WhileBuilder {
+    pub(crate) fn new() -> WhileBuilder {
+        Self::default()
+    }
+
+    pub(crate) fn condition(&mut self, condition: Option<Expr>) -> &mut Self {
+        self.condition = condition;
+        self
+    }
+
+    pub(crate) fn body(&mut self, body: Option<Expr>) -> &mut Self {
+        self.body = body;
+        self
+    }
+
+    pub(crate) fn build(self) -> Option<ir::DeclarationData> {
+        Some(DeclarationData::While {
+            condition: self.condition?,
+            body: self.body?,
+        })
+    }
+}
+
+#[derive(Default)]
+pub(crate) struct LetBuilder {
+    binder: Option<Name>,
+    expr: Option<Expr>,
+}
+
+impl LetBuilder {
+    pub(crate) fn new() -> LetBuilder {
+        Self::default()
+    }
+
+    pub(crate) fn binder(&mut self, binder: Name) -> &mut Self {
+        self.binder = Some(binder);
+        self
+    }
+
+    pub(crate) fn expr(&mut self, expr: Option<Expr>) -> &mut Self {
+        self.expr = expr;
+        self
+    }
+
+    pub(crate) fn build(self) -> Option<ir::DeclarationData> {
+        Some(DeclarationData::Let {
+            binder: self.binder?,
+            expr: self.expr?,
+        })
+    }
+}
+
+#[derive(Default)]
+pub(crate) struct SetBuilder {
+    set_target: Option<SetTarget>,
+    expr: Option<Expr>,
+}
+
+impl SetBuilder {
+    pub(crate) fn new() -> Self {
+        Self::default()
+    }
+
+    pub(crate) fn set_target(&mut self, set_target: Option<SetTarget>) -> &mut Self {
+        self.set_target = set_target;
+        self
+    }
+
+    pub(crate) fn expr(&mut self, expr: Option<Expr>) -> &mut Self {
+        self.expr = expr;
+        self
+    }
+
+    pub(crate) fn build(self) -> Option<ir::DeclarationData> {
+        Some(DeclarationData::Set {
+            set_target: self.set_target?,
+            expr: self.expr?,
+        })
+    }
+}
+
 pub(crate) struct ArrayBuilder {
     elems: Option<Vec<Expr>>,
 }
