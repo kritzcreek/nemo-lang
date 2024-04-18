@@ -263,7 +263,7 @@ fn generate_nodes(grammar: &AstSrc) -> Result<String> {
 }
 
 fn generate_syntax() -> Result<()> {
-    let mut grammar_str = include_str!("../../nemo-parser/grammar.ungram").to_string();
+    let mut grammar_str = include_str!("../../nemo-parser/src/parser/grammar.ungram").to_string();
     normalize_newlines(&mut grammar_str);
     let grammar = Grammar::from_str(&grammar_str).unwrap();
     println!("{:#?}", grammar);
