@@ -351,6 +351,26 @@ impl Typechecker {
         }
     }
 
+    fn infer_literal(&mut self, lit: &Literal) -> Ty {
+        match lit {
+            Literal::LitBool(_) => Ty::Bool,
+            Literal::LitFloat(l) => {
+                let float_tkn = l.float_lit_token().unwrap();
+                if float_tkn.text().parse::<f32>().is_err() {
+                    self.report_error_token(&float_tkn, InvalidLiteral);
+                }
+                Ty::F32
+            }
+            Literal::LitInt(l) => {
+                let int_tkn = l.int_lit_token().unwrap();
+                if int_tkn.text().parse::<i32>().is_err() {
+                    self.report_error_token(&int_tkn, InvalidLiteral);
+                }
+                Ty::I32
+            }
+        }
+    }
+
     fn infer_expr(&mut self, expr: &Expr) -> Ty {
         match self.infer_expr_inner(expr) {
             Some(ty) => {
@@ -376,23 +396,7 @@ impl Typechecker {
                     Ty::Array(Box::new(Ty::Any))
                 }
             }
-            Expr::ELit(l) => match l.literal().unwrap() {
-                Literal::LitBool(_) => Ty::Bool,
-                Literal::LitFloat(l) => {
-                    let float_tkn = l.float_lit_token().unwrap();
-                    if float_tkn.text().parse::<f32>().is_err() {
-                        self.report_error_token(&float_tkn, InvalidLiteral);
-                    }
-                    Ty::F32
-                }
-                Literal::LitInt(l) => {
-                    let int_tkn = l.int_lit_token().unwrap();
-                    if int_tkn.text().parse::<i32>().is_err() {
-                        self.report_error_token(&int_tkn, InvalidLiteral);
-                    }
-                    Ty::I32
-                }
-            },
+            Expr::ELit(l) => self.infer_literal(&l.literal().unwrap()),
             Expr::EVar(v) => {
                 let var_tkn = v.ident_token().unwrap();
                 match self.context.lookup_var(var_tkn.text()) {
