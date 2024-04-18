@@ -2,11 +2,11 @@
 /// written in an imperative style
 use nemo_backend::ir::{self, *};
 
-fn var(name: Name) -> ExprData {
+pub(crate) fn var(name: Name) -> ExprData {
     ExprData::Var(name)
 }
 
-fn lit(lit: Lit) -> ExprData {
+pub(crate) fn lit(lit: Lit) -> ExprData {
     ExprData::Lit(lit)
 }
 
