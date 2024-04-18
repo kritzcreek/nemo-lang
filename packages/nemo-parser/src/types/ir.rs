@@ -1,13 +1,28 @@
 /// A bunch of builders for backend ir, so the type checker can continue to be
 /// written in an imperative style
 use nemo_backend::ir::{self, *};
+use rowan::TextRange;
 
-pub(crate) fn var(name: Name) -> ExprData {
-    ExprData::Var(name)
+pub(crate) fn var(name: Name) -> Option<ExprData> {
+    Some(ExprData::Var(name))
 }
 
-pub(crate) fn lit(lit: Lit) -> ExprData {
-    ExprData::Lit(lit)
+pub(crate) fn lit(lit: Option<Lit>) -> Option<ExprData> {
+    Some(ExprData::Lit(lit?))
+}
+
+pub(crate) fn array_len(at: TextRange) -> Option<Intrinsic> {
+    Some(ir::Intrinsic {
+        it: ir::IntrinsicData::ArrayLen,
+        at,
+    })
+}
+
+pub(crate) fn array_new(at: TextRange) -> Option<Intrinsic> {
+    Some(ir::Intrinsic {
+        it: ir::IntrinsicData::ArrayNew,
+        at,
+    })
 }
 
 pub(crate) struct ArrayBuilder {
@@ -84,15 +99,19 @@ impl StructBuilder {
         self
     }
 
-    pub(crate) fn field(&mut self, elem: Option<(Name, Expr)>) -> &mut Self {
+    pub(crate) fn field(&mut self, name: Name, expr: Option<Expr>) -> &mut Self {
         if let Some(fields) = &mut self.fields {
-            if let Some(elem) = elem {
-                fields.push(elem)
+            if let Some(expr) = expr {
+                fields.push((name, expr))
             } else {
                 self.fields = None
             }
         }
         self
+    }
+
+    pub(crate) fn cancel(&mut self) {
+        self.fields = None
     }
 
     pub(crate) fn build(self) -> Option<ExprData> {
@@ -119,8 +138,8 @@ impl StructIdxBuilder {
         self
     }
 
-    pub(crate) fn index(&mut self, index: Option<Name>) -> &mut Self {
-        self.index = index;
+    pub(crate) fn index(&mut self, index: Name) -> &mut Self {
+        self.index = Some(index);
         self
     }
 
@@ -196,6 +215,10 @@ impl CallBuilder {
         self
     }
 
+    pub(crate) fn cancel(&mut self) {
+        self.arguments = None
+    }
+
     pub(crate) fn build(self) -> Option<ExprData> {
         Some(ExprData::Call {
             func: self.func?,
@@ -252,8 +275,8 @@ impl BinaryBuilder {
     pub(crate) fn new() -> Self {
         Self::default()
     }
-    pub(crate) fn op(&mut self, op: Option<Op>) -> &mut Self {
-        self.op = op;
+    pub(crate) fn op(&mut self, op: Op) -> &mut Self {
+        self.op = Some(op);
         self
     }
 

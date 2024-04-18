@@ -1,9 +1,15 @@
-use super::errors::{
-    TyError,
-    TyErrorData::{self, *},
+use super::ir::{
+    array_len, array_new, var, ArrayBuilder, ArrayIdxBuilder, BinaryBuilder, BlockBuilder,
+    CallBuilder, IfBuilder, IntrinsicBuilder, StructBuilder, StructIdxBuilder,
 };
-use super::ir::{ArrayBuilder, ArrayIdxBuilder, IfBuilder};
 use super::names::{Name, NameSupply};
+use super::{
+    errors::{
+        TyError,
+        TyErrorData::{self, *},
+    },
+    ir::lit,
+};
 use super::{FuncTy, Ty};
 use crate::syntax::ast::AstNode;
 use crate::syntax::token_ptr::SyntaxTokenPtr;
@@ -13,7 +19,7 @@ use crate::{
     builtins::lookup_builtin,
     lexer::{is_whitespace, SyntaxKind},
 };
-use nemo_backend::ir::{self, OpData};
+use nemo_backend::ir::{self, LitData, OpData};
 use rowan::TextRange;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -304,7 +310,7 @@ impl Typechecker {
                 let ty = match (top_let.ty().map(|t| self.check_ty(&t)), top_let.expr()) {
                     (None, None) => continue,
                     (Some(ty), None) => ty,
-                    (None, Some(e)) => self.infer_expr(&e),
+                    (None, Some(e)) => self.infer_expr(&e).0,
                     (Some(ty), Some(e)) => {
                         self.check_expr(&e, &ty);
                         ty
@@ -352,69 +358,106 @@ impl Typechecker {
         }
     }
 
-    fn infer_literal(&mut self, lit: &Literal) -> Ty {
-        match lit {
-            Literal::LitBool(_) => Ty::Bool,
+    fn infer_literal(&mut self, lit: &Literal) -> (Ty, Option<ir::Lit>) {
+        let (ty, it) = match lit {
+            Literal::LitBool(b) => (Ty::Bool, Some(LitData::Bool(b.true_token().is_some()))),
             Literal::LitFloat(l) => {
                 let float_tkn = l.float_lit_token().unwrap();
-                if float_tkn.text().parse::<f32>().is_err() {
+                if let Ok(float) = float_tkn.text().parse::<f32>() {
                     self.report_error_token(&float_tkn, InvalidLiteral);
+                    (Ty::F32, Some(ir::LitData::F32(float)))
+                } else {
+                    (Ty::F32, None)
                 }
-                Ty::F32
             }
             Literal::LitInt(l) => {
                 let int_tkn = l.int_lit_token().unwrap();
                 if int_tkn.text().parse::<i32>().is_err() {
                     self.report_error_token(&int_tkn, InvalidLiteral);
                 }
-                Ty::I32
-            }
-        }
-    }
-
-    fn infer_expr(&mut self, expr: &Expr) -> Ty {
-        match self.infer_expr_inner(expr) {
-            Some(ty) => {
-                self.record_typed(expr.syntax(), &ty);
-                ty
-            }
-            None => Ty::Any,
-        }
-    }
-
-    fn infer_expr_inner(&mut self, expr: &Expr) -> Option<Ty> {
-        let ty = match expr {
-            Expr::EArray(arr) => {
-                let mut elems = arr.exprs();
-                if let Some(first_elem) = elems.next() {
-                    let elem_ty = self.infer_expr(&first_elem);
-                    for elem in elems {
-                        self.check_expr(&elem, &elem_ty);
-                    }
-                    Ty::Array(Box::new(elem_ty))
+                if let Ok(int) = int_tkn.text().parse::<i32>() {
+                    self.report_error_token(&int_tkn, InvalidLiteral);
+                    (Ty::I32, Some(ir::LitData::I32(int)))
                 } else {
-                    self.report_error(arr, CantInferEmptyArray);
-                    Ty::Array(Box::new(Ty::Any))
+                    (Ty::I32, None)
                 }
             }
-            Expr::ELit(l) => self.infer_literal(&l.literal().unwrap()),
+        };
+        (
+            ty.clone(),
+            it.map(|it| ir::Lit {
+                at: lit.syntax().text_range(),
+                ty,
+                it,
+            }),
+        )
+    }
+
+    fn infer_callee(&mut self, expr: &Expr) -> (Ty, Option<ir::Callee>) {
+        match expr {
             Expr::EVar(v) => {
                 let var_tkn = v.ident_token().unwrap();
                 match self.context.lookup_var(var_tkn.text()) {
                     None => match lookup_builtin(var_tkn.text()) {
-                        Some(builtin) => Ty::Func(Box::new(builtin.ty.clone())),
-                        None => {
-                            self.report_error_token(
-                                &var_tkn,
-                                UnknownVar(var_tkn.text().to_string()),
-                            );
-                            return None;
+                        Some(builtin) => {
+                            return (
+                                Ty::Func(Box::new(builtin.ty.clone())),
+                                Some(ir::Callee::Builtin(builtin.name)),
+                            )
                         }
+                        None => {}
                     },
+                    Some(_) => {}
+                }
+            }
+            _ => {}
+        }
+        let (ty, ir) = self.infer_expr(expr);
+        (ty, ir.map(|x| ir::Callee::FuncRef(x)))
+    }
+
+    fn infer_expr(&mut self, expr: &Expr) -> (Ty, Option<ir::Expr>) {
+        match self.infer_expr_inner(expr) {
+            Some((ty, ir)) => {
+                self.record_typed(expr.syntax(), &ty);
+                (ty, ir)
+            }
+            None => (Ty::Any, None),
+        }
+    }
+
+    fn infer_expr_inner(&mut self, expr: &Expr) -> Option<(Ty, Option<ir::Expr>)> {
+        let (ty, ir): (Ty, Option<ir::ExprData>) = match expr {
+            Expr::EArray(arr) => {
+                let mut builder = ArrayBuilder::new();
+                let mut elems = arr.exprs();
+                if let Some(first_elem) = elems.next() {
+                    let (elem_ty, elem_ir) = self.infer_expr(&first_elem);
+                    builder.elem(elem_ir);
+                    for elem in elems {
+                        builder.elem(self.check_expr(&elem, &elem_ty));
+                    }
+                    (Ty::Array(Box::new(elem_ty)), builder.build())
+                } else {
+                    self.report_error(arr, CantInferEmptyArray);
+                    (Ty::Array(Box::new(Ty::Any)), None)
+                }
+            }
+            Expr::ELit(l) => {
+                let (ty, ir) = self.infer_literal(&l.literal().unwrap());
+                (ty, lit(ir))
+            }
+            Expr::EVar(v) => {
+                let var_tkn = v.ident_token().unwrap();
+                match self.context.lookup_var(var_tkn.text()) {
+                    None => {
+                        self.report_error_token(&var_tkn, UnknownVar(var_tkn.text().to_string()));
+                        return None;
+                    }
                     Some((ty, name)) => {
                         let return_ty = ty.clone();
                         self.record_ref(&var_tkn, *name);
-                        return_ty
+                        (return_ty, var(*name))
                     }
                 }
             }
@@ -429,12 +472,16 @@ impl Typechecker {
                         return None;
                     }
                     Some((def, name)) => {
+                        let mut builder = StructBuilder::new();
+                        builder.name(Some(name));
                         // TODO compute missing fields
                         for field in struct_expr.e_struct_fields() {
                             let Some(field_tkn) = field.ident_token() else {
+                                builder.cancel();
                                 continue;
                             };
                             let Some(field_expr) = field.expr() else {
+                                builder.cancel();
                                 continue;
                             };
 
@@ -446,19 +493,22 @@ impl Typechecker {
                                         field_name: field_tkn.text().to_string(),
                                     },
                                 );
+                                builder.cancel();
                                 continue;
                             };
                             self.record_ref(&field_tkn, *name);
-                            self.check_expr(&field_expr, ty);
+                            builder.field(*name, self.check_expr(&field_expr, ty));
                         }
-                        Ty::Struct(name)
+                        (Ty::Struct(name), builder.build())
                     }
                 }
             }
             Expr::ECall(call_expr) => {
                 let func_expr = call_expr.expr()?;
-                match self.infer_expr(&func_expr) {
-                    Ty::Func(func_ty) => {
+                match self.infer_callee(&func_expr) {
+                    (Ty::Func(func_ty), callee) => {
+                        let mut builder = CallBuilder::new();
+                        builder.func(callee);
                         if let Some(arg_list) = call_expr.e_arg_list() {
                             let arg_exprs: Vec<Expr> = arg_list.exprs().collect();
                             let arg_tys = func_ty.arguments;
@@ -466,15 +516,16 @@ impl Typechecker {
                                 self.report_error(
                                     &arg_list,
                                     ArgCountMismatch(arg_tys.len(), arg_exprs.len()),
-                                )
+                                );
+                                builder.cancel()
                             }
                             for (param, expected_ty) in arg_exprs.iter().zip(arg_tys.iter()) {
-                                self.check_expr(param, expected_ty);
+                                builder.argument(self.check_expr(param, expected_ty));
                             }
                         }
-                        func_ty.result
+                        (func_ty.result, builder.build())
                     }
-                    ty => {
+                    (ty, _) => {
                         if ty != Ty::Any {
                             self.report_error(&func_expr, NotAFunction(ty));
                         }
@@ -487,70 +538,91 @@ impl Typechecker {
                 let args: Vec<Expr> = intrinsic_expr.e_arg_list().unwrap().exprs().collect();
                 match (intrinsic_tkn.text(), args.len()) {
                     ("@array_len", 1) => {
-                        let ty = self.infer_expr(&args[0]);
+                        let (ty, ir) = self.infer_expr(&args[0]);
                         if !matches!(ty, Ty::Array(_)) {
                             self.report_error(
                                 &args[0],
                                 Message(format!("expected an array type, but got {:?}", ty)),
-                            )
+                            );
+                            (Ty::I32, None)
+                        } else {
+                            let mut builder = IntrinsicBuilder::new();
+                            builder.intrinsic(array_len(intrinsic_tkn.text_range()));
+                            builder.argument(ir);
+                            (Ty::I32, builder.build())
                         }
-                        Ty::I32
                     }
                     ("@array_new", 2) => {
-                        let elem_ty = self.infer_expr(&args[0]);
-                        self.check_expr(&args[1], &Ty::I32);
-                        Ty::Array(Box::new(elem_ty))
+                        let mut builder = IntrinsicBuilder::new();
+                        builder.intrinsic(array_new(intrinsic_tkn.text_range()));
+                        let (elem_ty, ir) = self.infer_expr(&args[0]);
+                        builder.argument(ir);
+                        builder.argument(self.check_expr(&args[1], &Ty::I32));
+                        (Ty::Array(Box::new(elem_ty)), builder.build())
                     }
                     (f, arg_count) => {
                         self.report_error_token(
                             &intrinsic_tkn,
                             UnknownIntrinsic(f.to_string(), arg_count),
                         );
-                        Ty::Any
+                        (Ty::Any, None)
                     }
                 }
             }
-            Expr::EParen(e) => self.infer_expr(&e.expr()?),
+            Expr::EParen(e) => {
+                let (ty, ir) = self.infer_expr(&e.expr()?);
+                (ty, ir.map(|x| *x.it))
+            }
             Expr::EIf(if_expr) => {
+                let mut builder = IfBuilder::new();
                 if let Some(condition) = if_expr.condition() {
-                    self.check_expr(&condition, &Ty::Bool);
+                    builder.condition(self.check_expr(&condition, &Ty::Bool));
                 }
                 if let Some(then_branch) = if_expr.then_branch() {
-                    let ty = self.infer_expr(&then_branch);
+                    let (ty, ir) = self.infer_expr(&then_branch);
+                    builder.then_branch(ir);
                     if let Some(else_branch) = if_expr.else_branch() {
-                        self.check_expr(&else_branch, &ty);
+                        builder.else_branch(self.check_expr(&else_branch, &ty));
                     }
-                    ty
+                    (ty, builder.build())
                 } else {
-                    Ty::Any
+                    (Ty::Any, None)
                 }
             }
             Expr::EArrayIdx(idx_expr) => {
+                let mut builder = ArrayIdxBuilder::new();
                 let arr_expr = idx_expr.expr().unwrap();
+                if let Some(index) = idx_expr.index() {
+                    builder.index(self.check_expr(&index, &Ty::I32));
+                }
                 let elem_ty = match self.infer_expr(&arr_expr) {
-                    Ty::Array(elem_ty) => *elem_ty,
-                    ty => {
+                    (Ty::Array(elem_ty), ir) => {
+                        builder.array(ir);
+                        *elem_ty
+                    }
+                    (ty, _) => {
                         if ty != Ty::Any {
                             self.report_error(&arr_expr, NonArrayIdx(ty))
                         }
                         return None;
                     }
                 };
-                if let Some(index) = idx_expr.index() {
-                    self.check_expr(&index, &Ty::I32);
-                }
-                elem_ty
+                (elem_ty, builder.build())
             }
             Expr::EStructIdx(idx_expr) => {
+                let mut builder = StructIdxBuilder::new();
                 let struct_expr = idx_expr.expr().unwrap();
                 let (def, name) = match self.infer_expr(&struct_expr) {
-                    Ty::Struct(name) => (
-                        self.context
-                            .lookup_type_def(name)
-                            .expect("inferred a type that wasn't defined"),
-                        name,
-                    ),
-                    ty => {
+                    (Ty::Struct(name), ir) => {
+                        builder.expr(ir);
+                        (
+                            self.context
+                                .lookup_type_def(name)
+                                .expect("inferred a type that wasn't defined"),
+                            name,
+                        )
+                    }
+                    (ty, _) => {
                         if ty != Ty::Any {
                             self.report_error(&struct_expr, NonStructIdx(ty))
                         }
@@ -574,14 +646,18 @@ impl Typechecker {
                     }
                     Some((t, n)) => {
                         self.record_ref(&field_name_tkn, *n);
-                        t.clone()
+                        builder.index(*n);
+                        (t.clone(), builder.build())
                     }
                 }
             }
             Expr::EBinary(bin_expr) => {
-                let lhs_ty = self.infer_expr(&bin_expr.lhs()?);
+                let mut builder = BinaryBuilder::new();
+                let (lhs_ty, lhs_ir) = self.infer_expr(&bin_expr.lhs()?);
+                builder.left(lhs_ir);
                 // TODO could maybe check the rhs based on operator and lhs?
-                let rhs_ty = self.infer_expr(&bin_expr.rhs()?);
+                let (rhs_ty, rhs_ir) = self.infer_expr(&bin_expr.rhs()?);
+                builder.right(rhs_ir);
                 let op_tkn = bin_expr.op()?;
                 if lhs_ty == Ty::Any || rhs_ty == Ty::Any {
                     return None;
@@ -596,21 +672,37 @@ impl Typechecker {
                         );
                         return None;
                     }
-                    Some((_, ty)) => ty,
+                    Some((op_data, ty)) => {
+                        let op = ir::Op {
+                            it: op_data,
+                            at: op_tkn.text_range(),
+                        };
+                        builder.op(op);
+                        (ty, builder.build())
+                    }
                 }
             }
             Expr::EBlock(block_expr) => {
+                let mut builder = BlockBuilder::new();
                 self.context.enter_block();
                 let mut ty = Ty::Unit;
                 for decl in block_expr.declarations() {
+                    // TODO (return ir::Declaration from infer_decl)
                     ty = self.infer_decl(&decl);
                 }
                 self.context.leave_block();
-                ty
+                (ty, builder.build())
             }
         };
 
-        Some(ty)
+        let ir_expr = ir.map(|expr_data| ir::Expr {
+            at: expr.syntax().text_range(),
+            // Bail if Ty is any?
+            ty: ty.clone(),
+            it: Box::new(expr_data),
+        });
+
+        Some((ty, ir_expr))
     }
 
     fn check_expr(&mut self, expr: &Expr, expected: &Ty) -> Option<ir::Expr> {
@@ -649,7 +741,7 @@ impl Typechecker {
                 .and_then(|expr| self.check_expr(&expr, expected))
                 .map(|ir| *ir.it),
             _ => {
-                let ty = self.infer_expr(expr);
+                let (ty, ir) = self.infer_expr(expr);
                 if *expected != Ty::Any && ty != Ty::Any && ty != *expected {
                     self.errors.push(TyError {
                         at: expr.syntax().text_range(),
@@ -659,7 +751,7 @@ impl Typechecker {
                         },
                     })
                 }
-                return None;
+                return ir;
             }
         };
         self.record_typed(expr.syntax(), expected);
