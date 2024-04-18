@@ -1,12 +1,11 @@
 use std::collections::HashMap;
 
-use nemo_frontend::syntax::Id;
 use wasm_encoder::{BlockType, ConstExpr, HeapType, Instruction};
 
 use crate::{
     ir::{
-        Callee, Declaration, DeclarationData, Expr, ExprData, IntrinsicData, Lit, LitData, Name,
-        Op, OpData, Program, SetTarget, SetTargetData, Ty,
+        Callee, Declaration, DeclarationData, Expr, ExprData, Id, IntrinsicData, Lit, LitData,
+        Name, Op, OpData, Program, SetTarget, SetTargetData, Ty,
     },
     wasm_builder::{BodyBuilder, Builder},
 };

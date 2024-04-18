@@ -1,5 +1,21 @@
 use core::fmt;
-use nemo_frontend::syntax::{Span, Spanned};
+use text_size::TextRange;
+
+trait Spanned {
+    fn at(&self) -> &TextRange;
+}
+
+#[derive(Debug, Eq, PartialEq, Clone, Hash)]
+pub struct Id {
+    pub it: String,
+    pub at: TextRange,
+}
+
+impl Spanned for Id {
+    fn at(&self) -> &TextRange {
+        &self.at
+    }
+}
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum Name {
@@ -57,11 +73,11 @@ pub struct FuncTy {
 #[derive(Debug, PartialEq)]
 pub struct Op {
     pub it: OpData,
-    pub at: Span,
+    pub at: TextRange,
 }
 
 impl Spanned for Op {
-    fn at(&self) -> &Span {
+    fn at(&self) -> &TextRange {
         &self.at
     }
 }
@@ -99,12 +115,12 @@ pub enum OpData {
 #[derive(Debug, PartialEq, Clone)]
 pub struct Lit {
     pub it: LitData,
-    pub at: Span,
+    pub at: TextRange,
     pub ty: Ty,
 }
 
 impl Spanned for Lit {
-    fn at(&self) -> &Span {
+    fn at(&self) -> &TextRange {
         &self.at
     }
 }
@@ -120,11 +136,11 @@ pub enum LitData {
 #[derive(Debug, PartialEq)]
 pub struct Intrinsic {
     pub it: IntrinsicData,
-    pub at: Span,
+    pub at: TextRange,
 }
 
 impl Spanned for Intrinsic {
-    fn at(&self) -> &Span {
+    fn at(&self) -> &TextRange {
         &self.at
     }
 }
@@ -138,12 +154,12 @@ pub enum IntrinsicData {
 #[derive(Debug, PartialEq)]
 pub struct Expr {
     pub it: Box<ExprData>,
-    pub at: Span,
+    pub at: TextRange,
     pub ty: Ty,
 }
 
 impl Spanned for Expr {
-    fn at(&self) -> &Span {
+    fn at(&self) -> &TextRange {
         &self.at
     }
 }
@@ -200,12 +216,12 @@ pub enum ExprData {
 #[derive(Debug, PartialEq)]
 pub struct Declaration {
     pub it: DeclarationData,
-    pub at: Span,
+    pub at: TextRange,
     pub ty: Ty,
 }
 
 impl Spanned for Declaration {
-    fn at(&self) -> &Span {
+    fn at(&self) -> &TextRange {
         &self.at
     }
 }
@@ -221,12 +237,12 @@ pub enum DeclarationData {
 #[derive(Debug, PartialEq)]
 pub struct SetTarget {
     pub it: SetTargetData,
-    pub at: Span,
+    pub at: TextRange,
     pub ty: Ty,
 }
 
 impl Spanned for SetTarget {
-    fn at(&self) -> &Span {
+    fn at(&self) -> &TextRange {
         &self.at
     }
 }
@@ -240,7 +256,7 @@ pub enum SetTargetData {
 
 #[derive(Debug, PartialEq)]
 pub struct Import {
-    pub span: Span,
+    pub span: TextRange,
     pub internal: Name,
     pub func_ty: FuncTy,
     pub external: String,
@@ -248,14 +264,14 @@ pub struct Import {
 
 #[derive(Debug, PartialEq)]
 pub struct Struct {
-    pub span: Span,
+    pub span: TextRange,
     pub name: Name,
     pub fields: Vec<(Name, Ty)>,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct Global {
-    pub span: Span,
+    pub span: TextRange,
     pub binder: Name,
     pub init: Expr,
 }

@@ -1,4 +1,4 @@
-use nemo_backend::{codegen::codegen, lower::lower};
+use nemo_backend::codegen::codegen;
 use nemo_frontend::{check_program, print_program};
 use serde_derive::{Deserialize, Serialize};
 
@@ -38,15 +38,16 @@ async fn async_run() {
                 warp::reply::with_status(json, StatusCode::BAD_REQUEST)
             }
             Ok(checked) => {
-                let printed = print_program(&checked);
-                let (program, name_map) = lower(checked);
-                let compiled = codegen(program, name_map);
-                let wasm = Wasm {
-                    renamed: printed,
-                    compiled,
-                };
-                let json = warp::reply::json(&wasm);
-                warp::reply::with_status(json, StatusCode::OK)
+                todo!()
+                // let printed = print_program(&checked);
+                // let (program, name_map) = lower(checked);
+                // let compiled = codegen(program, name_map);
+                // let wasm = Wasm {
+                //     renamed: printed,
+                //     compiled,
+                // };
+                // let json = warp::reply::json(&wasm);
+                // warp::reply::with_status(json, StatusCode::OK)
             }
         });
 

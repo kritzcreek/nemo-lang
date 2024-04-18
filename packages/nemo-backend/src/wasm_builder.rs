@@ -1,8 +1,7 @@
 use std::collections::HashMap;
 use std::iter;
 
-use crate::ir::{FuncTy, Import, Name, Struct, Ty};
-use nemo_frontend::syntax::Id;
+use crate::ir::{FuncTy, Id, Import, Name, Struct, Ty};
 use wasm_encoder::{
     self, ArrayType, CodeSection, CompositeType, ConstExpr, EntityType, ExportKind, ExportSection,
     FieldType, FuncType, Function, FunctionSection, GlobalSection, GlobalType, HeapType,
@@ -79,7 +78,7 @@ impl<'a> Builder<'a> {
     fn _print_funcs(&self) {
         for (name, id) in &self.name_map {
             if let Name::Func(n) = name {
-                eprintln!("$fn:{n} = {id}")
+                eprintln!("$fn:{n} = {id:?}")
             }
         }
     }
@@ -366,7 +365,10 @@ impl<'a> Builder<'a> {
             .or_else(|| self.lookup_import(name))
         {
             Some(f) => f,
-            None => panic!("Couldn't find a function for {}", self.resolve_name(*name)),
+            None => panic!(
+                "Couldn't find a function for {:?}",
+                self.resolve_name(*name)
+            ),
         }
     }
 }
