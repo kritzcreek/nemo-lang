@@ -1,15 +1,14 @@
 pub mod check;
 pub mod errors;
+mod ir;
 pub mod names;
-
-use std::{collections::HashMap, fmt};
-
-use crate::syntax::{nodes::Root, token_ptr::SyntaxTokenPtr, SyntaxNodePtr};
 
 use self::{
     check::{Occurence, Typechecker},
     errors::TyError,
 };
+use crate::syntax::{nodes::Root, token_ptr::SyntaxTokenPtr, SyntaxNodePtr};
+use std::collections::HashMap;
 
 pub use nemo_backend::ir::{FuncTy, Ty};
 

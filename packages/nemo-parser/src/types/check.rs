@@ -2,6 +2,7 @@ use super::errors::{
     TyError,
     TyErrorData::{self, *},
 };
+use super::ir::{ArrayBuilder, ArrayIdxBuilder, IfBuilder};
 use super::names::{Name, NameSupply};
 use super::{FuncTy, Ty};
 use crate::syntax::ast::AstNode;
@@ -343,7 +344,7 @@ impl Typechecker {
                 }
 
                 if let Some(body) = top_fn.body() {
-                    self.check_expr(&body.into(), &func_ty.result)
+                    self.check_expr(&body.into(), &func_ty.result);
                 }
 
                 self.context.leave_block();
@@ -448,7 +449,7 @@ impl Typechecker {
                                 continue;
                             };
                             self.record_ref(&field_tkn, *name);
-                            self.check_expr(&field_expr, ty)
+                            self.check_expr(&field_expr, ty);
                         }
                         Ty::Struct(name)
                     }
@@ -468,7 +469,7 @@ impl Typechecker {
                                 )
                             }
                             for (param, expected_ty) in arg_exprs.iter().zip(arg_tys.iter()) {
-                                self.check_expr(param, expected_ty)
+                                self.check_expr(param, expected_ty);
                             }
                         }
                         func_ty.result
@@ -512,12 +513,12 @@ impl Typechecker {
             Expr::EParen(e) => self.infer_expr(&e.expr()?),
             Expr::EIf(if_expr) => {
                 if let Some(condition) = if_expr.condition() {
-                    self.check_expr(&condition, &Ty::Bool)
+                    self.check_expr(&condition, &Ty::Bool);
                 }
                 if let Some(then_branch) = if_expr.then_branch() {
                     let ty = self.infer_expr(&then_branch);
                     if let Some(else_branch) = if_expr.else_branch() {
-                        self.check_expr(&else_branch, &ty)
+                        self.check_expr(&else_branch, &ty);
                     }
                     ty
                 } else {
@@ -612,36 +613,41 @@ impl Typechecker {
         Some(ty)
     }
 
-    fn check_expr(&mut self, expr: &Expr, expected: &Ty) {
-        match (expr, expected) {
+    fn check_expr(&mut self, expr: &Expr, expected: &Ty) -> Option<ir::Expr> {
+        let ir = match (expr, expected) {
             (Expr::EArray(expr), Ty::Array(elem_ty)) => {
+                let mut builder = ArrayBuilder::new();
                 for elem in expr.exprs() {
-                    self.check_expr(&elem, elem_ty);
+                    builder.elem(self.check_expr(&elem, elem_ty));
                 }
+                builder.build()
             }
             (Expr::EArrayIdx(idx_expr), elem_ty) => {
+                let mut builder = ArrayIdxBuilder::new();
                 let arr_expr = idx_expr.expr().unwrap();
-                self.check_expr(&arr_expr, &Ty::Array(Box::new(elem_ty.clone())));
+                builder.array(self.check_expr(&arr_expr, &Ty::Array(Box::new(elem_ty.clone()))));
                 if let Some(index) = idx_expr.index() {
-                    self.check_expr(&index, &Ty::I32);
+                    builder.index(self.check_expr(&index, &Ty::I32));
                 }
+                builder.build()
             }
             (Expr::EIf(expr), ty) => {
+                let mut builder = IfBuilder::new();
                 if let Some(condition) = expr.condition() {
-                    self.check_expr(&condition, &Ty::Bool)
+                    builder.condition(self.check_expr(&condition, &Ty::Bool));
                 }
-                if let Some(then_branch) = expr.then_branch() {
-                    self.check_expr(&then_branch, ty)
+                if let Some(then_branch) = expr.condition() {
+                    builder.then_branch(self.check_expr(&then_branch, ty));
                 }
-                if let Some(else_branch) = expr.else_branch() {
-                    self.check_expr(&else_branch, ty)
+                if let Some(else_branch) = expr.condition() {
+                    builder.else_branch(self.check_expr(&else_branch, ty));
                 }
+                builder.build()
             }
-            (Expr::EParen(expr), _) => {
-                if let Some(expr) = expr.expr() {
-                    self.check_expr(&expr, expected)
-                }
-            }
+            (Expr::EParen(expr), _) => expr
+                .expr()
+                .and_then(|expr| self.check_expr(&expr, expected))
+                .map(|ir| *ir.it),
             _ => {
                 let ty = self.infer_expr(expr);
                 if *expected != Ty::Any && ty != Ty::Any && ty != *expected {
@@ -653,10 +659,15 @@ impl Typechecker {
                         },
                     })
                 }
-                return;
+                return None;
             }
-        }
-        self.record_typed(expr.syntax(), expected)
+        };
+        self.record_typed(expr.syntax(), expected);
+        ir.map(|it| ir::Expr {
+            it: Box::new(it),
+            at: expr.syntax().text_range(),
+            ty: expected.clone(),
+        })
     }
 
     fn infer_decl(&mut self, decl: &Declaration) -> Ty {
@@ -695,11 +706,11 @@ impl Typechecker {
             Declaration::DWhile(while_decl) => {
                 let condition = while_decl.expr();
                 if let Some(condition) = condition {
-                    self.check_expr(&condition, &Ty::Bool)
+                    self.check_expr(&condition, &Ty::Bool);
                 }
                 let body = while_decl.e_block();
                 if let Some(body) = body {
-                    self.check_expr(&body.into(), &Ty::Unit)
+                    self.check_expr(&body.into(), &Ty::Unit);
                 }
                 Ty::Unit
             }
@@ -749,7 +760,7 @@ impl Typechecker {
                 }
                 (SetIndirection::SetArray(set_array), Ty::Array(elem_ty)) => {
                     if let Some(index) = set_array.expr() {
-                        self.check_expr(&index, &Ty::I32)
+                        self.check_expr(&index, &Ty::I32);
                     }
                     ty = (**elem_ty).clone();
                 }
