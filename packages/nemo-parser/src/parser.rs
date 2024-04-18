@@ -3,7 +3,7 @@ use crate::syntax::{NemoLanguage, SyntaxNode};
 use rowan::{Checkpoint, GreenNode, GreenNodeBuilder, Language};
 use text_size::{TextRange, TextSize};
 
-mod prog;
+mod grammar;
 
 pub type ParseError = (String, TextRange);
 
@@ -131,7 +131,7 @@ impl<'a> Parser<'a> {
 pub fn parse_prog(input: &str) -> Parse {
     let mut p = Parser::new(input);
     let c = p.checkpoint();
-    prog::prog(&mut p);
+    grammar::prog(&mut p);
     if !p.at(SyntaxKind::EOF) {
         p.error("failed to make progress");
         p.start_node(SyntaxKind::Error);
