@@ -446,25 +446,16 @@ fn set_decl(p: &mut Parser) {
 
 fn set_target(p: &mut Parser) {
     let c = p.checkpoint();
-    p.expect(T![ident]);
+    if p.expect(T![ident]) {
+        p.finish_at(c, SyntaxKind::EVar)
+    }
     while !p.at(SyntaxKind::EOF) && !p.at(T![=]) {
         match p.current() {
-            T![.] => {
-                let c = p.checkpoint();
-                p.bump(T![.]);
-                p.expect(T![ident]);
-                p.finish_at(c, SyntaxKind::SetStruct)
+            T![.] | T!['['] => postfix_expr(p, c),
+            _ => {
+                p.error("expected a set target");
+                break;
             }
-            T!['['] => {
-                let c = p.checkpoint();
-                p.bump(T!['[']);
-                if !expr(p).made_progress() {
-                    p.error("expected an expression")
-                }
-                p.expect(T![']']);
-                p.finish_at(c, SyntaxKind::SetArray)
-            }
-            _ => break,
         }
     }
     p.finish_at(c, SyntaxKind::SetTarget)

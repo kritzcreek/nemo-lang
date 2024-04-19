@@ -1193,11 +1193,12 @@ Root@0..4190
         SET_KW@1667..1670 "set"
         SPACE@1670..1671 " "
         SetTarget@1671..1709
-          IDENT@1671..1680 "particles"
-          SetStruct@1680..1687
-            DOT@1680..1681 "."
-            IDENT@1681..1687 "buffer"
-          SetArray@1687..1709
+          EArrayIdx@1671..1709
+            EStructIdx@1671..1687
+              EVar@1671..1680
+                IDENT@1671..1680 "particles"
+              DOT@1680..1681 "."
+              IDENT@1681..1687 "buffer"
             L_BRACKET@1687..1688 "["
             EStructIdx@1688..1707
               EVar@1688..1697
@@ -1217,8 +1218,9 @@ Root@0..4190
         SET_KW@1716..1719 "set"
         SPACE@1719..1720 " "
         SetTarget@1720..1740
-          IDENT@1720..1729 "particles"
-          SetStruct@1729..1740
+          EStructIdx@1720..1740
+            EVar@1720..1729
+              IDENT@1720..1729 "particles"
             DOT@1729..1730 "."
             IDENT@1730..1739 "watermark"
             SPACE@1739..1740 " "
@@ -2058,8 +2060,9 @@ Root@0..4190
                     SET_KW@2907..2910 "set"
                     SPACE@2910..2911 " "
                     SetTarget@2911..2917
-                      IDENT@2911..2913 "c1"
-                      SetStruct@2913..2917
+                      EStructIdx@2911..2917
+                        EVar@2911..2913
+                          IDENT@2911..2913 "c1"
                         DOT@2913..2914 "."
                         IDENT@2914..2916 "vx"
                         SPACE@2916..2917 " "
@@ -2094,8 +2097,9 @@ Root@0..4190
                     SET_KW@2967..2970 "set"
                     SPACE@2970..2971 " "
                     SetTarget@2971..2977
-                      IDENT@2971..2973 "c1"
-                      SetStruct@2973..2977
+                      EStructIdx@2971..2977
+                        EVar@2971..2973
+                          IDENT@2971..2973 "c1"
                         DOT@2973..2974 "."
                         IDENT@2974..2976 "vy"
                         SPACE@2976..2977 " "
@@ -2277,8 +2281,9 @@ Root@0..4190
             SET_KW@3231..3234 "set"
             SPACE@3234..3235 " "
             SetTarget@3235..3239
-              IDENT@3235..3238 "idx"
-              SPACE@3238..3239 " "
+              EVar@3235..3239
+                IDENT@3235..3238 "idx"
+                SPACE@3238..3239 " "
             EQUALS@3239..3240 "="
             SPACE@3240..3241 " "
             EBinary@3241..3248
@@ -2352,8 +2357,9 @@ Root@0..4190
         SET_KW@3359..3362 "set"
         SPACE@3362..3363 " "
         SetTarget@3363..3370
-          IDENT@3363..3367 "cube"
-          SetStruct@3367..3370
+          EStructIdx@3363..3370
+            EVar@3363..3367
+              IDENT@3363..3367 "cube"
             DOT@3367..3368 "."
             IDENT@3368..3369 "x"
             SPACE@3369..3370 " "
@@ -2388,8 +2394,9 @@ Root@0..4190
         SET_KW@3409..3412 "set"
         SPACE@3412..3413 " "
         SetTarget@3413..3420
-          IDENT@3413..3417 "cube"
-          SetStruct@3417..3420
+          EStructIdx@3413..3420
+            EVar@3413..3417
+              IDENT@3413..3417 "cube"
             DOT@3417..3418 "."
             IDENT@3418..3419 "y"
             SPACE@3419..3420 " "
@@ -2465,8 +2472,9 @@ Root@0..4190
               SET_KW@3500..3503 "set"
               SPACE@3503..3504 " "
               SetTarget@3504..3511
-                IDENT@3504..3508 "cube"
-                SetStruct@3508..3511
+                EStructIdx@3504..3511
+                  EVar@3504..3508
+                    IDENT@3504..3508 "cube"
                   DOT@3508..3509 "."
                   IDENT@3509..3510 "x"
                   SPACE@3510..3511 " "
@@ -2500,8 +2508,9 @@ Root@0..4190
               SET_KW@3544..3547 "set"
               SPACE@3547..3548 " "
               SetTarget@3548..3556
-                IDENT@3548..3552 "cube"
-                SetStruct@3552..3556
+                EStructIdx@3548..3556
+                  EVar@3548..3552
+                    IDENT@3548..3552 "cube"
                   DOT@3552..3553 "."
                   IDENT@3553..3555 "vx"
                   SPACE@3555..3556 " "
@@ -2575,8 +2584,9 @@ Root@0..4190
               SET_KW@3631..3634 "set"
               SPACE@3634..3635 " "
               SetTarget@3635..3642
-                IDENT@3635..3639 "cube"
-                SetStruct@3639..3642
+                EStructIdx@3635..3642
+                  EVar@3635..3639
+                    IDENT@3635..3639 "cube"
                   DOT@3639..3640 "."
                   IDENT@3640..3641 "y"
                   SPACE@3641..3642 " "
@@ -2610,8 +2620,9 @@ Root@0..4190
               SET_KW@3675..3678 "set"
               SPACE@3678..3679 " "
               SetTarget@3679..3687
-                IDENT@3679..3683 "cube"
-                SetStruct@3683..3687
+                EStructIdx@3679..3687
+                  EVar@3679..3683
+                    IDENT@3679..3683 "cube"
                   DOT@3683..3684 "."
                   IDENT@3684..3686 "vy"
                   SPACE@3686..3687 " "
@@ -2767,8 +2778,9 @@ Root@0..4190
             SET_KW@3923..3926 "set"
             SPACE@3926..3927 " "
             SetTarget@3927..3931
-              IDENT@3927..3930 "idx"
-              SPACE@3930..3931 " "
+              EVar@3927..3931
+                IDENT@3927..3930 "idx"
+                SPACE@3930..3931 " "
             EQUALS@3931..3932 "="
             SPACE@3932..3933 " "
             EBinary@3933..3940
@@ -2792,8 +2804,9 @@ Root@0..4190
         SET_KW@3949..3952 "set"
         SPACE@3952..3953 " "
         SetTarget@3953..3957
-          IDENT@3953..3956 "idx"
-          SPACE@3956..3957 " "
+          EVar@3953..3957
+            IDENT@3953..3956 "idx"
+            SPACE@3956..3957 " "
         EQUALS@3957..3958 "="
         SPACE@3958..3959 " "
         ELit@3959..3960
@@ -2871,8 +2884,9 @@ Root@0..4190
             SET_KW@4095..4098 "set"
             SPACE@4098..4099 " "
             SetTarget@4099..4113
-              IDENT@4099..4107 "particle"
-              SetStruct@4107..4113
+              EStructIdx@4099..4113
+                EVar@4099..4107
+                  IDENT@4099..4107 "particle"
                 DOT@4107..4108 "."
                 IDENT@4108..4112 "time"
                 SPACE@4112..4113 " "
@@ -2909,8 +2923,9 @@ Root@0..4190
             SET_KW@4167..4170 "set"
             SPACE@4170..4171 " "
             SetTarget@4171..4175
-              IDENT@4171..4174 "idx"
-              SPACE@4174..4175 " "
+              EVar@4171..4175
+                IDENT@4171..4174 "idx"
+                SPACE@4174..4175 " "
             EQUALS@4175..4176 "="
             SPACE@4176..4177 " "
             EBinary@4177..4184

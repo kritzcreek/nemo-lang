@@ -7,6 +7,18 @@ pub(crate) fn var(name: Name) -> Option<ExprData> {
     Some(ExprData::Var(name))
 }
 
+pub(crate) fn unit_lit(range: TextRange) -> Option<Expr> {
+    Some(Expr {
+        at: range,
+        ty: Ty::Unit,
+        it: Box::new(ExprData::Lit(Lit {
+            at: range,
+            ty: Ty::Unit,
+            it: LitData::Unit,
+        })),
+    })
+}
+
 pub(crate) fn lit(lit: Option<Lit>) -> Option<ExprData> {
     Some(ExprData::Lit(lit?))
 }
@@ -27,6 +39,60 @@ pub(crate) fn array_new(at: TextRange) -> Option<Intrinsic> {
 
 pub(crate) fn expr_decl(expr: Option<Expr>) -> Option<DeclarationData> {
     Some(DeclarationData::Expr(expr?))
+}
+
+#[derive(Debug)]
+pub(crate) struct FuncBuilder {
+    name: Option<Name>,
+    params: Option<Vec<(Name, Ty)>>,
+    return_ty: Option<Ty>,
+    body: Option<Expr>,
+}
+
+impl FuncBuilder {
+    pub(crate) fn new() -> Self {
+        FuncBuilder {
+            name: None,
+            params: Some(vec![]),
+            return_ty: None,
+            body: None,
+        }
+    }
+
+    pub(crate) fn name(&mut self, name: Name) -> &mut Self {
+        self.name = Some(name);
+        self
+    }
+
+    pub(crate) fn return_ty(&mut self, return_ty: Option<Ty>) -> &mut Self {
+        self.return_ty = return_ty;
+        self
+    }
+
+    pub(crate) fn param(&mut self, name: Name, param: Option<Ty>) -> &mut Self {
+        if let Some(params) = &mut self.params {
+            if let Some(param) = param {
+                params.push((name, param))
+            } else {
+                self.params = None
+            }
+        }
+        self
+    }
+
+    pub(crate) fn body(&mut self, body: Option<Expr>) -> &mut Self {
+        self.body = body;
+        self
+    }
+
+    pub(crate) fn build(self) -> Option<ir::Func> {
+        Some(Func {
+            name: self.name?,
+            params: self.params?,
+            return_ty: self.return_ty?,
+            body: self.body?,
+        })
+    }
 }
 
 #[derive(Default)]
@@ -87,7 +153,7 @@ impl LetBuilder {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub(crate) struct SetBuilder {
     set_target: Option<SetTarget>,
     expr: Option<Expr>,
@@ -116,6 +182,7 @@ impl SetBuilder {
     }
 }
 
+#[derive(Debug)]
 pub(crate) struct ArrayBuilder {
     elems: Option<Vec<Expr>>,
 }
@@ -390,6 +457,7 @@ impl BinaryBuilder {
     }
 }
 
+#[derive(Debug)]
 pub(crate) struct BlockBuilder {
     declarations: Option<Vec<Declaration>>,
     expr: Option<Expr>,
@@ -423,6 +491,62 @@ impl BlockBuilder {
         Some(ExprData::Block {
             declarations: self.declarations?,
             expr: self.expr?,
+        })
+    }
+}
+
+#[derive(Default)]
+pub(crate) struct SetArrayBuilder {
+    target: Option<Expr>,
+    index: Option<Expr>,
+}
+
+impl SetArrayBuilder {
+    pub(crate) fn new() -> Self {
+        Self::default()
+    }
+    pub(crate) fn target(&mut self, target: Option<Expr>) -> &mut Self {
+        self.target = target;
+        self
+    }
+
+    pub(crate) fn index(&mut self, index: Option<Expr>) -> &mut Self {
+        self.index = index;
+        self
+    }
+
+    pub(crate) fn build(self) -> Option<ir::SetTargetData> {
+        Some(SetTargetData::Array {
+            target: self.target?,
+            index: self.index?,
+        })
+    }
+}
+
+#[derive(Default)]
+pub(crate) struct SetStructBuilder {
+    target: Option<Expr>,
+    index: Option<Name>,
+}
+
+impl SetStructBuilder {
+    pub(crate) fn new() -> Self {
+        Self::default()
+    }
+    pub(crate) fn target(&mut self, target: Option<Expr>) -> &mut Self {
+        self.target = target;
+        self
+    }
+
+    pub(crate) fn index(&mut self, index: Name) -> &mut Self {
+        self.index = Some(index);
+        self
+    }
+
+    pub(crate) fn build(self) -> Option<ir::SetTargetData> {
+        Some(SetTargetData::Struct {
+            target: self.target?,
+            index: self.index?,
         })
     }
 }

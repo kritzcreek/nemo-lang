@@ -1,7 +1,7 @@
 use super::ir::{
-    array_len, array_new, expr_decl, var, ArrayBuilder, ArrayIdxBuilder, BinaryBuilder,
-    BlockBuilder, CallBuilder, IfBuilder, IntrinsicBuilder, LetBuilder, SetBuilder, StructBuilder,
-    StructIdxBuilder, WhileBuilder,
+    array_len, array_new, expr_decl, unit_lit, var, ArrayBuilder, ArrayIdxBuilder, BinaryBuilder,
+    BlockBuilder, CallBuilder, FuncBuilder, IfBuilder, IntrinsicBuilder, LetBuilder,
+    SetArrayBuilder, SetBuilder, StructBuilder, StructIdxBuilder, WhileBuilder,
 };
 use super::names::{Name, NameSupply};
 use super::{
@@ -15,6 +15,7 @@ use super::{FuncTy, Ty};
 use crate::syntax::ast::AstNode;
 use crate::syntax::token_ptr::SyntaxTokenPtr;
 use crate::syntax::{nodes::*, SyntaxNode, SyntaxNodePtr, SyntaxToken};
+use crate::types::ir::SetStructBuilder;
 use crate::T;
 use crate::{
     builtins::lookup_builtin,
@@ -60,12 +61,8 @@ impl Ctx {
         self.types_names.insert(v.to_string(), name);
     }
 
-    fn declare_struct_fields(&mut self, v: &str, def: StructDef) {
-        let name = self
-            .types_names
-            .get(v)
-            .expect("expected type to be forward-declared");
-        self.types_defs.insert(*name, Rc::new(def));
+    fn declare_struct_fields(&mut self, name: Name, def: StructDef) {
+        self.types_defs.insert(name, Rc::new(def));
     }
 
     fn lookup_type_name(&self, v: &str) -> Option<Name> {
@@ -178,36 +175,67 @@ impl Typechecker {
         })
     }
 
-    pub fn infer_program(&mut self, root: Root) {
+    pub fn infer_program(&mut self, root: Root) -> Option<ir::Program> {
         self.context.enter_block();
 
-        self.check_type_definitions(&root);
-        self.check_imports(&root);
+        let types = self.check_type_definitions(&root);
+        let imports = self.check_imports(&root);
         self.check_function_headers(&root);
 
-        self.check_globals(&root);
-        self.check_function_bodies(&root);
+        let globals = self.check_globals(&root);
+        let functions = self.check_function_bodies(&root);
 
         self.context.leave_block();
+
+        println!("{:?}", types);
+        println!("{:?}", imports);
+        println!("{:?}", globals);
+        println!("{:?}", functions);
+
+        Some(ir::Program {
+            imports: imports?,
+            structs: types?,
+            globals: globals?,
+            funcs: functions?,
+            start_fn: self.name_supply.start_idx(),
+        })
     }
 
-    fn check_imports(&mut self, root: &Root) {
+    fn check_imports(&mut self, root: &Root) -> Option<Vec<ir::Import>> {
+        let mut imports = Some(vec![]);
         for top_level in root.top_levels() {
             if let TopLevel::TopImport(i) = top_level {
                 let Some(internal_name_tkn) = i.imp_internal().and_then(|x| x.ident_token()) else {
+                    imports = None;
                     continue;
                 };
-                let func_ty = i.ty().map(|t| self.check_ty(&t)).unwrap_or(Ty::Any);
+                let ty = i.ty().map(|t| self.check_ty(&t)).unwrap_or(Ty::Any);
+
                 let name = self.name_supply.func_idx(&internal_name_tkn);
                 self.record_def(&internal_name_tkn, name);
 
-                self.context
-                    .add_var(internal_name_tkn.text().to_string(), func_ty, name)
+                if let Ty::Func(func_ty) = &ty {
+                    if let Some(imports) = &mut imports {
+                        if let Some(external_name_tkn) =
+                            i.imp_external().and_then(|x| x.ident_token())
+                        {
+                            imports.push(ir::Import {
+                                span: i.syntax().text_range(),
+                                internal: name,
+                                func_ty: *func_ty.clone(),
+                                external: external_name_tkn.text().to_string(),
+                            })
+                        }
+                    }
+                    self.context
+                        .add_var(internal_name_tkn.text().to_string(), ty, name)
+                }
             }
         }
+        imports
     }
 
-    fn check_type_definitions(&mut self, root: &Root) {
+    fn check_type_definitions(&mut self, root: &Root) -> Option<Vec<ir::Struct>> {
         let top_levels: Vec<TopLevel> = root.top_levels().collect();
         // Because types can be mutually recursive we need two passes:
         // - 1. Forward declare all types
@@ -223,6 +251,7 @@ impl Typechecker {
         }
 
         // - 2. Actually check their definitions
+        let mut structs = Some(vec![]);
         for top_level in top_levels.iter() {
             if let TopLevel::TopStruct(s) = top_level {
                 if let Some(struct_name_tkn) = s.upper_ident_token() {
@@ -231,22 +260,42 @@ impl Typechecker {
                     };
                     for field in s.struct_fields() {
                         let Some(field_name) = field.ident_token() else {
+                            structs = None;
                             continue;
                         };
                         let ty = match field.ty() {
                             Some(field_ty) => self.check_ty(&field_ty),
-                            None => Ty::Any,
+                            None => {
+                                structs = None;
+                                Ty::Any
+                            }
                         };
                         let name = self.name_supply.field_idx(&field_name);
                         self.record_def(&field_name, name);
 
                         def.fields.insert(field_name.text().to_string(), (ty, name));
                     }
-                    self.context
-                        .declare_struct_fields(struct_name_tkn.text(), def)
+                    let name = self
+                        .context
+                        .lookup_type_name(struct_name_tkn.text())
+                        .expect("non-forward declared struct");
+
+                    if let Some(structs) = &mut structs {
+                        structs.push(ir::Struct {
+                            span: s.syntax().text_range(),
+                            name,
+                            fields: def
+                                .fields
+                                .iter()
+                                .map(|(_, (ty, name))| (*name, ty.clone()))
+                                .collect(),
+                        })
+                    }
+                    self.context.declare_struct_fields(name, def)
                 }
             }
         }
+        structs
     }
 
     fn check_function_headers(&mut self, root: &Root) {
@@ -305,37 +354,59 @@ impl Typechecker {
         }
     }
 
-    fn check_globals(&mut self, root: &Root) {
+    fn check_globals(&mut self, root: &Root) -> Option<Vec<ir::Global>> {
+        let mut globals = Some(vec![]);
         for top_level in root.top_levels() {
             if let TopLevel::TopLet(top_let) = top_level {
-                let ty = match (top_let.ty().map(|t| self.check_ty(&t)), top_let.expr()) {
-                    (None, None) => continue,
-                    (Some(ty), None) => ty,
-                    (None, Some(e)) => self.infer_expr(&e).0,
+                let (ty, ir) = match (top_let.ty().map(|t| self.check_ty(&t)), top_let.expr()) {
+                    (None, None) => {
+                        globals = None;
+                        continue;
+                    }
+                    (Some(ty), None) => (ty, None),
+                    (None, Some(e)) => self.infer_expr(&e),
                     (Some(ty), Some(e)) => {
-                        self.check_expr(&e, &ty);
-                        ty
+                        let ir = self.check_expr(&e, &ty);
+                        (ty, ir)
                     }
                 };
                 if let Some(binder_tkn) = top_let.ident_token() {
                     let name = self.name_supply.global_idx(&binder_tkn);
                     self.record_def(&binder_tkn, name);
+                    if let Some(gs) = &mut globals {
+                        if let Some(ir) = ir {
+                            gs.push(ir::Global {
+                                span: top_let.syntax().text_range(),
+                                binder: name,
+                                init: ir,
+                            })
+                        } else {
+                            globals = None
+                        }
+                    }
                     self.context
                         .add_var(binder_tkn.text().to_string(), ty, name)
                 };
             }
         }
+        globals
     }
 
-    fn check_function_bodies(&mut self, root: &Root) {
+    fn check_function_bodies(&mut self, root: &Root) -> Option<Vec<ir::Func>> {
+        let mut funcs = Some(vec![]);
         for top_level in root.top_levels() {
             if let TopLevel::TopFn(top_fn) = top_level {
+                let mut builder = FuncBuilder::new();
                 let Some(func_name) = top_fn.ident_token() else {
+                    funcs = None;
                     continue;
                 };
-                let Some((Ty::Func(func_ty), _)) = self.context.lookup_var(func_name.text()) else {
+                let Some((Ty::Func(func_ty), name)) = self.context.lookup_var(func_name.text())
+                else {
                     panic!("didn't pre-declare function, {}", func_name.text())
                 };
+
+                builder.name(*name);
 
                 // Use Rc for Tys in the context?
                 let func_ty = func_ty.clone();
@@ -343,20 +414,34 @@ impl Typechecker {
                 self.context.enter_block();
                 for (param, ty) in top_fn.params().zip(func_ty.arguments.into_iter()) {
                     let Some(ident_tkn) = param.ident_token() else {
+                        funcs = None;
                         continue;
                     };
                     let name = self.name_supply.local_idx(&ident_tkn);
+                    builder.param(name, Some(ty.clone()));
                     self.record_def(&ident_tkn, name);
                     self.context.add_var(ident_tkn.text().to_string(), ty, name);
                 }
 
+                builder.return_ty(Some(func_ty.result.clone()));
+
                 if let Some(body) = top_fn.body() {
-                    self.check_expr(&body.into(), &func_ty.result);
+                    // println!("Checking body {}", func_name.text());
+                    builder.body(self.check_expr(&body.into(), &func_ty.result));
                 }
 
                 self.context.leave_block();
+
+                if let Some(fs) = &mut funcs {
+                    if let Some(func) = builder.build() {
+                        fs.push(func)
+                    } else {
+                        funcs = None
+                    }
+                }
             }
         }
+        funcs
     }
 
     fn infer_literal(&mut self, lit: &Literal) -> (Ty, Option<ir::Lit>) {
@@ -365,21 +450,18 @@ impl Typechecker {
             Literal::LitFloat(l) => {
                 let float_tkn = l.float_lit_token().unwrap();
                 if let Ok(float) = float_tkn.text().parse::<f32>() {
-                    self.report_error_token(&float_tkn, InvalidLiteral);
                     (Ty::F32, Some(ir::LitData::F32(float)))
                 } else {
+                    self.report_error_token(&float_tkn, InvalidLiteral);
                     (Ty::F32, None)
                 }
             }
             Literal::LitInt(l) => {
                 let int_tkn = l.int_lit_token().unwrap();
-                if int_tkn.text().parse::<i32>().is_err() {
-                    self.report_error_token(&int_tkn, InvalidLiteral);
-                }
                 if let Ok(int) = int_tkn.text().parse::<i32>() {
-                    self.report_error_token(&int_tkn, InvalidLiteral);
                     (Ty::I32, Some(ir::LitData::I32(int)))
                 } else {
+                    self.report_error_token(&int_tkn, InvalidLiteral);
                     (Ty::I32, None)
                 }
             }
@@ -614,44 +696,13 @@ impl Typechecker {
             Expr::EStructIdx(idx_expr) => {
                 let mut builder = StructIdxBuilder::new();
                 let struct_expr = idx_expr.expr().unwrap();
-                let (def, name) = match self.infer_expr(&struct_expr) {
-                    (Ty::Struct(name), ir) => {
-                        builder.expr(ir);
-                        (
-                            self.context
-                                .lookup_type_def(name)
-                                .expect("inferred a type that wasn't defined"),
-                            name,
-                        )
-                    }
-                    (ty, _) => {
-                        if ty != Ty::Any {
-                            self.report_error(&struct_expr, NonStructIdx(ty))
-                        }
-                        return None;
-                    }
-                };
+                let (ty_receiver, receiver_ir) = self.infer_expr(&struct_expr);
+                builder.expr(receiver_ir);
+
                 let field_name_tkn = idx_expr.ident_token()?;
-                match def.fields.get(field_name_tkn.text()) {
-                    None => {
-                        // TODO this isn't ideal, maybe we should require a
-                        // NameSupply when rendering the errors
-                        let struct_name = self.name_supply.lookup(name).unwrap().it.clone();
-                        self.report_error_token(
-                            &field_name_tkn,
-                            UnknownField {
-                                struct_name,
-                                field_name: field_name_tkn.text().to_string(),
-                            },
-                        );
-                        return None;
-                    }
-                    Some((t, n)) => {
-                        self.record_ref(&field_name_tkn, *n);
-                        builder.index(*n);
-                        (t.clone(), builder.build())
-                    }
-                }
+                let (field_name, ty) = self.check_struct_idx(&ty_receiver, &field_name_tkn)?;
+                builder.index(field_name);
+                (ty, builder.build())
             }
             Expr::EBinary(bin_expr) => {
                 let mut builder = BinaryBuilder::new();
@@ -686,15 +737,35 @@ impl Typechecker {
             }
             Expr::EBlock(block_expr) => {
                 let mut builder = BlockBuilder::new();
-                self.context.enter_block();
-                let mut ty = Ty::Unit;
-                for decl in block_expr.declarations() {
-                    let (new_ty, ir) = self.infer_decl(&decl);
-                    builder.declaration(ir);
-                    ty = new_ty;
+                let declarations: Vec<Declaration> = block_expr.declarations().collect();
+                match declarations.split_last() {
+                    None => {
+                        builder.expr(unit_lit(block_expr.syntax().text_range()));
+                        (Ty::Unit, builder.build())
+                    }
+                    Some((last, declarations)) => {
+                        self.context.enter_block();
+                        for decl in declarations {
+                            let (_, ir) = self.infer_decl(&decl);
+                            builder.declaration(ir);
+                        }
+                        let ty = match last {
+                            Declaration::DExpr(expr) => {
+                                let (new_ty, ir) = self.infer_expr(&expr.expr().unwrap());
+                                builder.expr(ir);
+                                new_ty
+                            }
+                            decl => {
+                                let (_, ir) = self.infer_decl(&decl);
+                                builder.declaration(ir);
+                                builder.expr(unit_lit(decl.syntax().text_range()));
+                                Ty::Unit
+                            }
+                        };
+                        self.context.leave_block();
+                        (ty, builder.build())
+                    }
                 }
-                self.context.leave_block();
-                (ty, builder.build())
             }
         };
 
@@ -708,6 +779,7 @@ impl Typechecker {
         Some((ty, ir_expr))
     }
 
+    // TODO: Could add a check case for blocks, passing down the check to the trailing Expr
     fn check_expr(&mut self, expr: &Expr, expected: &Ty) -> Option<ir::Expr> {
         let ir = match (expr, expected) {
             (Expr::EArray(expr), Ty::Array(elem_ty)) => {
@@ -763,6 +835,46 @@ impl Typechecker {
             at: expr.syntax().text_range(),
             ty: expected.clone(),
         })
+    }
+
+    fn check_struct_idx(
+        &mut self,
+        receiver: &Ty,
+        field_name_tkn: &SyntaxToken,
+    ) -> Option<(Name, Ty)> {
+        let (def, name) = match receiver {
+            Ty::Struct(name) => (
+                self.context
+                    .lookup_type_def(*name)
+                    .expect("inferred a type that wasn't defined"),
+                name,
+            ),
+            ty => {
+                if *ty != Ty::Any {
+                    self.report_error_token(field_name_tkn, NonStructIdx(ty.clone()))
+                }
+                return None;
+            }
+        };
+        match def.fields.get(field_name_tkn.text()) {
+            None => {
+                // TODO this isn't ideal, maybe we should require a
+                // NameSupply when rendering the errors
+                let struct_name = self.name_supply.lookup(*name).unwrap().it.clone();
+                self.report_error_token(
+                    &field_name_tkn,
+                    UnknownField {
+                        struct_name,
+                        field_name: field_name_tkn.text().to_string(),
+                    },
+                );
+                return None;
+            }
+            Some((t, n)) => {
+                self.record_ref(&field_name_tkn, *n);
+                return Some((*n, t.clone()));
+            }
+        }
     }
 
     fn infer_decl(&mut self, decl: &Declaration) -> (Ty, Option<ir::Declaration>) {
@@ -831,60 +943,71 @@ impl Typechecker {
         )
     }
 
-    // TODO desugar into expr + set target
     fn infer_set_target(&mut self, set_target: &SetTarget) -> (Ty, Option<ir::SetTarget>) {
-        let Some(ident_tkn) = set_target.ident_token() else {
+        let Some(expr) = set_target.set_target_expr() else {
             return (Ty::Any, None);
         };
-        let Some((ty, name)) = self.context.lookup_var(ident_tkn.text()) else {
-            self.report_error_token(&ident_tkn, UnknownVar(ident_tkn.text().to_string()));
-            return (Ty::Any, None);
-        };
-        let mut ty = ty.clone();
-        self.record_ref(&ident_tkn, *name);
-
-        for indirection in set_target.set_indirections() {
-            match (indirection, &ty) {
-                (SetIndirection::SetStruct(set_struct), Ty::Struct(name)) => {
-                    let def = self
-                        .context
-                        .lookup_type_def(*name)
-                        .expect("inferred unknown struct type");
-                    let Some(ident_tkn) = set_struct.ident_token() else {
-                        return (Ty::Any, None);
-                    };
-                    if let Some((field, name)) = def.fields.get(ident_tkn.text()) {
-                        self.record_ref(&ident_tkn, *name);
-                        ty = field.clone()
-                    } else {
-                        let struct_name = self.name_supply.lookup(*name).unwrap().it.clone();
-                        self.report_error_token(
-                            &ident_tkn,
-                            UnknownField {
-                                struct_name,
-                                field_name: ident_tkn.text().to_string(),
-                            },
-                        );
-                        return (Ty::Any, None);
-                    }
-                }
-                (SetIndirection::SetStruct(set_struct), ty) => {
-                    self.report_error(&set_struct, NonStructIdx(ty.clone()));
-                    return (Ty::Any, None);
-                }
-                (SetIndirection::SetArray(set_array), Ty::Array(elem_ty)) => {
-                    if let Some(index) = set_array.expr() {
-                        self.check_expr(&index, &Ty::I32);
-                    }
-                    ty = (**elem_ty).clone();
-                }
-                (SetIndirection::SetArray(set_array), ty) => {
-                    self.report_error(&set_array, NonArrayIdx(ty.clone()));
-                    return (Ty::Any, None);
+        let (ty, ir_data) = match expr {
+            SetTargetExpr::EVar(var) => {
+                let ident_tkn = var.ident_token().unwrap();
+                if let Some((ty, name)) = self.context.lookup_var(&ident_tkn.text()) {
+                    let ir = ir::SetTargetData::Var { name: *name };
+                    let ty = ty.clone();
+                    self.record_ref(&ident_tkn, *name);
+                    (ty, Some(ir))
+                } else {
+                    self.report_error_token(&ident_tkn, UnknownVar(ident_tkn.text().to_string()));
+                    (Ty::Any, None)
                 }
             }
-        }
-        (ty, None)
+            SetTargetExpr::EArrayIdx(arr_idx) => {
+                let mut builder = SetArrayBuilder::new();
+                let arr_ty = arr_idx.expr().map(|target| {
+                    let (ty, ir) = self.infer_expr(&target);
+                    builder.target(ir);
+                    ty
+                });
+
+                if let Some(index) = arr_idx.index() {
+                    builder.index(self.check_expr(&index, &Ty::I32));
+                }
+
+                match arr_ty {
+                    None | Some(Ty::Any) => (Ty::Any, None),
+                    Some(Ty::Array(elem_ty)) => ((*elem_ty).clone(), builder.build()),
+                    Some(t) => {
+                        self.report_error(&arr_idx, NonArrayIdx(t));
+                        (Ty::Any, None)
+                    }
+                }
+            }
+            SetTargetExpr::EStructIdx(struct_idx) => {
+                let mut builder = SetStructBuilder::new();
+                let Some(target_expr) = struct_idx.expr() else {
+                    return (Ty::Any, None);
+                };
+                let (target_ty, ir) = self.infer_expr(&target_expr);
+                builder.target(ir);
+                let Some(field_name_tkn) = struct_idx.ident_token() else {
+                    return (Ty::Any, None);
+                };
+
+                let Some((name, field_ty)) = self.check_struct_idx(&target_ty, &field_name_tkn)
+                else {
+                    return (Ty::Any, None);
+                };
+                builder.index(name);
+                (field_ty, builder.build())
+            }
+        };
+
+        let ir = ir_data.map(|ir_data| ir::SetTarget {
+            at: set_target.syntax().text_range(),
+            ty: ty.clone(),
+            it: ir_data,
+        });
+
+        (ty, ir)
     }
 }
 

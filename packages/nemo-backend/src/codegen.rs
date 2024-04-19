@@ -121,17 +121,21 @@ impl<'a> Codegen<'a> {
                 }
 
                 match func {
-                    Callee::Func(name) => {
-                        let func_idx = self.builder.lookup_func(&name);
-                        instrs.push(Instruction::Call(func_idx));
-                    }
                     Callee::FuncRef(callee) => {
                         let Ty::Func(ty) = &callee.ty else {
                             unreachable!("Non-function type for callee")
                         };
-                        let ty_idx = self.builder.func_type(ty);
-                        instrs.extend(self.compile_expr(body, callee));
-                        instrs.push(Instruction::CallRef(ty_idx))
+                        match *callee.it {
+                            ExprData::Var(name @ Name::Func(_)) => {
+                                let func_idx = self.builder.lookup_func(&name);
+                                instrs.push(Instruction::Call(func_idx));
+                            }
+                            _ => {
+                                let ty_idx = self.builder.func_type(ty);
+                                instrs.extend(self.compile_expr(body, callee));
+                                instrs.push(Instruction::CallRef(ty_idx))
+                            }
+                        }
                     }
                     Callee::Builtin(builtin) => instrs.push(builtin_instruction(builtin)),
                 }

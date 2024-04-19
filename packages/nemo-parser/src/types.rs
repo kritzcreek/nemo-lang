@@ -10,17 +10,20 @@ use self::{
 use crate::syntax::{nodes::Root, token_ptr::SyntaxTokenPtr, SyntaxNodePtr};
 use std::collections::HashMap;
 
-pub use nemo_backend::ir::{FuncTy, Ty};
+pub use nemo_backend::ir::{FuncTy, Program, Ty};
+use nemo_backend::ir::{Id, Name};
 
 pub struct CheckResult {
     pub errors: Vec<TyError>,
     pub names: HashMap<SyntaxTokenPtr, Occurence<String>>,
     pub typed_nodes: HashMap<SyntaxNodePtr, Ty>,
+    pub name_map: HashMap<Name, Id>,
+    pub ir: Option<Program>,
 }
 
 pub fn check_prog(prog: Root) -> CheckResult {
     let mut checker = Typechecker::new();
-    checker.infer_program(prog);
+    let ir = checker.infer_program(prog);
     let mut names = HashMap::new();
     for (k, v) in checker.names {
         let occ = match v {
@@ -29,9 +32,12 @@ pub fn check_prog(prog: Root) -> CheckResult {
         };
         names.insert(k, occ);
     }
+    let name_map = checker.name_supply.name_map;
     CheckResult {
         errors: checker.errors,
         names,
+        name_map,
         typed_nodes: checker.typed_nodes,
+        ir,
     }
 }

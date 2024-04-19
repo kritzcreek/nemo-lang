@@ -2,6 +2,7 @@ use std::{error::Error, fs, path::PathBuf};
 
 use clap::{Parser, Subcommand};
 use nemo_language_server::start_language_server;
+use nemo_parser::compile_program;
 use playground::run_playground;
 
 /// The nemo language
@@ -46,13 +47,12 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
             input_file,
             output_file,
         } => {
-            // let source = fs::read_to_string(&input_file)?;
-            // let compiled = compile_program(&source);
-            // fs::write(
-            //     output_file.unwrap_or_else(|| input_file.with_extension("wasm")),
-            //     compiled,
-            // )?;
-            panic!("Broken atm");
+            let source = fs::read_to_string(&input_file)?;
+            let compiled = compile_program(&source);
+            fs::write(
+                output_file.unwrap_or_else(|| input_file.with_extension("wasm")),
+                compiled.unwrap(),
+            )?;
             Ok(())
         }
         Commands::Check { input_file } => {

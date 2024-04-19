@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 pub use nemo_backend::ir::{Id, Name};
+use rowan::TextRange;
 
 use crate::syntax::SyntaxToken;
 
@@ -11,7 +12,7 @@ pub struct NameSupply {
     func: u32,
     typ: u32,
     field: u32,
-    name_map: HashMap<Name, Id>,
+    pub name_map: HashMap<Name, Id>,
 }
 
 fn token_into_id(tkn: &SyntaxToken) -> Id {
@@ -58,6 +59,19 @@ impl NameSupply {
         self.field += 1;
         let name = Name::Field(self.field);
         self.name_map.insert(name, token_into_id(field));
+        name
+    }
+
+    pub fn start_idx(&mut self) -> Name {
+        self.func += 1;
+        let name = Name::Func(self.func);
+        self.name_map.insert(
+            name,
+            Id {
+                it: "$start".to_string(),
+                at: TextRange::default(),
+            },
+        );
         name
     }
 

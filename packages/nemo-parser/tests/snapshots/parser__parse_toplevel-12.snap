@@ -68,8 +68,9 @@ Root@0..178
         SET_KW@52..55 "set"
         SPACE@55..56 " "
         SetTarget@56..58
-          IDENT@56..57 "x"
-          SPACE@57..58 " "
+          EVar@56..58
+            IDENT@56..57 "x"
+            SPACE@57..58 " "
         EQUALS@58..59 "="
         SPACE@59..60 " "
         ELit@60..61
@@ -82,8 +83,9 @@ Root@0..178
         SET_KW@67..70 "set"
         SPACE@70..71 " "
         SetTarget@71..76
-          IDENT@71..72 "x"
-          SetArray@72..76
+          EArrayIdx@71..76
+            EVar@71..72
+              IDENT@71..72 "x"
             L_BRACKET@72..73 "["
             ELit@73..74
               LitInt@73..74
@@ -102,8 +104,9 @@ Root@0..178
         SET_KW@85..88 "set"
         SPACE@88..89 " "
         SetTarget@89..93
-          IDENT@89..90 "x"
-          SetStruct@90..93
+          EStructIdx@89..93
+            EVar@89..90
+              IDENT@89..90 "x"
             DOT@90..91 "."
             IDENT@91..92 "y"
             SPACE@92..93 " "
@@ -119,14 +122,15 @@ Root@0..178
         SET_KW@102..105 "set"
         SPACE@105..106 " "
         SetTarget@106..113
-          IDENT@106..107 "x"
-          SetArray@107..110
-            L_BRACKET@107..108 "["
-            ELit@108..109
-              LitInt@108..109
-                INT_LIT@108..109 "0"
-            R_BRACKET@109..110 "]"
-          SetStruct@110..113
+          EStructIdx@106..113
+            EArrayIdx@106..110
+              EVar@106..107
+                IDENT@106..107 "x"
+              L_BRACKET@107..108 "["
+              ELit@108..109
+                LitInt@108..109
+                  INT_LIT@108..109 "0"
+              R_BRACKET@109..110 "]"
             DOT@110..111 "."
             IDENT@111..112 "y"
             SPACE@112..113 " "
@@ -142,11 +146,12 @@ Root@0..178
         SET_KW@122..125 "set"
         SPACE@125..126 " "
         SetTarget@126..133
-          IDENT@126..127 "x"
-          SetStruct@127..129
-            DOT@127..128 "."
-            IDENT@128..129 "y"
-          SetArray@129..133
+          EArrayIdx@126..133
+            EStructIdx@126..129
+              EVar@126..127
+                IDENT@126..127 "x"
+              DOT@127..128 "."
+              IDENT@128..129 "y"
             L_BRACKET@129..130 "["
             ELit@130..131
               LitInt@130..131

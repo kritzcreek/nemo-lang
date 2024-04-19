@@ -1,5 +1,5 @@
 use nemo_backend::codegen::codegen;
-use nemo_parser::check_program;
+use nemo_parser::{check_program, compile_program};
 use serde_derive::{Deserialize, Serialize};
 
 use warp::{
@@ -26,7 +26,20 @@ pub fn run_playground() {
 }
 
 fn run_pipeline(code: Code) -> WithStatus<Json> {
-    todo!()
+    match compile_program(&code.code) {
+        None => {
+            let json = warp::reply::json(&"Error compiling program");
+            warp::reply::with_status(json, StatusCode::BAD_REQUEST)
+        }
+        Some(compiled) => {
+            let wasm = Wasm {
+                renamed: code.code,
+                compiled,
+            };
+            let json = warp::reply::json(&wasm);
+            warp::reply::with_status(json, StatusCode::OK)
+        }
+    }
     // match check_program(&code.code) {
     //     Err(err) => {
     //         let err_msg = format!("{}", err);
@@ -35,7 +48,6 @@ fn run_pipeline(code: Code) -> WithStatus<Json> {
     //         warp::reply::with_status(json, StatusCode::BAD_REQUEST)
     //     }
     //     Ok(checked) => {
-    //         todo!()
     //         let printed = print_program(&checked);
     //         let (program, name_map) = lower(checked);
     //         let compiled = codegen(program, name_map);
@@ -43,8 +55,8 @@ fn run_pipeline(code: Code) -> WithStatus<Json> {
     //             renamed: printed,
     //             compiled,
     //         };
-    // let json = warp::reply::json(&wasm);
-    // warp::reply::with_status(json, StatusCode::OK)
+    //         let json = warp::reply::json(&wasm);
+    //         warp::reply::with_status(json, StatusCode::OK)
     //     }
     // }
 }

@@ -96,7 +96,5 @@ DSet = 'set' SetTarget '=' Expr
 DWhile = 'while' Expr EBlock
 DExpr = Expr
 
-SetTarget = 'ident' SetIndirection*
-SetIndirection = SetStruct | SetArray
-SetStruct = '.' 'ident'
-SetArray = '[' Expr ']'
+SetTarget = SetTargetExpr
+SetTargetExpr = EVar | EArrayIdx | EStructIdx

@@ -121,3 +121,11 @@ fn main() = {
 fn add(x : i32, y : i32) : i32 = {
     x + y
 }
+
+---
+
+fn add_particle(p : Particle) = {
+  set particles.buffer[particles.watermark] = p;
+  set particles.watermark =
+    i32_rem_s(particles.watermark + 1, @array_len(particles.buffer))
+}

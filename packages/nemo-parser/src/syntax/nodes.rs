@@ -1,3 +1,4 @@
+#![allow(clippy)]
 use super::{
     ast::{support, AstChildren, AstNode},
     SyntaxKind::{self, *},
@@ -542,38 +543,8 @@ pub struct SetTarget {
     pub(crate) syntax: SyntaxNode,
 }
 impl SetTarget {
-    pub fn ident_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T![ident])
-    }
-    pub fn set_indirections(&self) -> AstChildren<SetIndirection> {
-        support::children(&self.syntax)
-    }
-}
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct SetStruct {
-    pub(crate) syntax: SyntaxNode,
-}
-impl SetStruct {
-    pub fn dot_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T![.])
-    }
-    pub fn ident_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T![ident])
-    }
-}
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct SetArray {
-    pub(crate) syntax: SyntaxNode,
-}
-impl SetArray {
-    pub fn l_brack_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T!['['])
-    }
-    pub fn expr(&self) -> Option<Expr> {
+    pub fn set_target_expr(&self) -> Option<SetTargetExpr> {
         support::child(&self.syntax)
-    }
-    pub fn r_brack_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T![']'])
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -622,9 +593,10 @@ pub enum Declaration {
     DExpr(DExpr),
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum SetIndirection {
-    SetStruct(SetStruct),
-    SetArray(SetArray),
+pub enum SetTargetExpr {
+    EVar(EVar),
+    EArrayIdx(EArrayIdx),
+    EStructIdx(EStructIdx),
 }
 impl AstNode for Root {
     fn can_cast(kind: SyntaxKind) -> bool {
@@ -1211,36 +1183,6 @@ impl AstNode for SetTarget {
         &self.syntax
     }
 }
-impl AstNode for SetStruct {
-    fn can_cast(kind: SyntaxKind) -> bool {
-        kind == SetStruct
-    }
-    fn cast(syntax: SyntaxNode) -> Option<Self> {
-        if Self::can_cast(syntax.kind()) {
-            Some(Self { syntax })
-        } else {
-            None
-        }
-    }
-    fn syntax(&self) -> &SyntaxNode {
-        &self.syntax
-    }
-}
-impl AstNode for SetArray {
-    fn can_cast(kind: SyntaxKind) -> bool {
-        kind == SetArray
-    }
-    fn cast(syntax: SyntaxNode) -> Option<Self> {
-        if Self::can_cast(syntax.kind()) {
-            Some(Self { syntax })
-        } else {
-            None
-        }
-    }
-    fn syntax(&self) -> &SyntaxNode {
-        &self.syntax
-    }
-}
 impl From<TopImport> for TopLevel {
     fn from(node: TopImport) -> TopLevel {
         TopLevel::TopImport(node)
@@ -1542,35 +1484,42 @@ impl AstNode for Declaration {
         }
     }
 }
-impl From<SetStruct> for SetIndirection {
-    fn from(node: SetStruct) -> SetIndirection {
-        SetIndirection::SetStruct(node)
+impl From<EVar> for SetTargetExpr {
+    fn from(node: EVar) -> SetTargetExpr {
+        SetTargetExpr::EVar(node)
     }
 }
-impl From<SetArray> for SetIndirection {
-    fn from(node: SetArray) -> SetIndirection {
-        SetIndirection::SetArray(node)
+impl From<EArrayIdx> for SetTargetExpr {
+    fn from(node: EArrayIdx) -> SetTargetExpr {
+        SetTargetExpr::EArrayIdx(node)
     }
 }
-impl AstNode for SetIndirection {
+impl From<EStructIdx> for SetTargetExpr {
+    fn from(node: EStructIdx) -> SetTargetExpr {
+        SetTargetExpr::EStructIdx(node)
+    }
+}
+impl AstNode for SetTargetExpr {
     fn can_cast(kind: SyntaxKind) -> bool {
         match kind {
-            SetStruct | SetArray => true,
+            EVar | EArrayIdx | EStructIdx => true,
             _ => false,
         }
     }
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         let res = match syntax.kind() {
-            SetStruct => SetIndirection::SetStruct(SetStruct { syntax }),
-            SetArray => SetIndirection::SetArray(SetArray { syntax }),
+            EVar => SetTargetExpr::EVar(EVar { syntax }),
+            EArrayIdx => SetTargetExpr::EArrayIdx(EArrayIdx { syntax }),
+            EStructIdx => SetTargetExpr::EStructIdx(EStructIdx { syntax }),
             _ => return None,
         };
         Some(res)
     }
     fn syntax(&self) -> &SyntaxNode {
         match self {
-            SetIndirection::SetStruct(it) => &it.syntax,
-            SetIndirection::SetArray(it) => &it.syntax,
+            SetTargetExpr::EVar(it) => &it.syntax,
+            SetTargetExpr::EArrayIdx(it) => &it.syntax,
+            SetTargetExpr::EStructIdx(it) => &it.syntax,
         }
     }
 }
@@ -1599,7 +1548,7 @@ impl std::fmt::Display for Declaration {
         std::fmt::Display::fmt(self.syntax(), f)
     }
 }
-impl std::fmt::Display for SetIndirection {
+impl std::fmt::Display for SetTargetExpr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
     }
@@ -1795,16 +1744,6 @@ impl std::fmt::Display for DExpr {
     }
 }
 impl std::fmt::Display for SetTarget {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        std::fmt::Display::fmt(self.syntax(), f)
-    }
-}
-impl std::fmt::Display for SetStruct {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        std::fmt::Display::fmt(self.syntax(), f)
-    }
-}
-impl std::fmt::Display for SetArray {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
     }

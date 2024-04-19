@@ -200,7 +200,6 @@ impl Spanned for Expr {
 #[derive(Debug, PartialEq)]
 pub enum Callee {
     FuncRef(Expr),
-    Func(Name),
     Builtin(&'static str),
 }
 
