@@ -1,11 +1,39 @@
 use crate::lexer::{Lexer, SyntaxKind, TToken};
 use crate::syntax::{NemoLanguage, SyntaxNode};
+use ariadne::{Config, Label, Report, ReportKind, Source};
 use rowan::{Checkpoint, GreenNode, GreenNodeBuilder, Language};
+use std::{fmt, str};
 use text_size::{TextRange, TextSize};
+use yansi::Color;
 
 mod grammar;
 
-pub type ParseError = (String, TextRange);
+#[derive(Debug)]
+pub struct ParseError {
+    it: String,
+    at: TextRange,
+}
+
+impl ParseError {
+    pub fn display<'err, 'src>(&'err self, source: &'src str) -> ParseErrorDisplay<'src, 'err> {
+        ParseErrorDisplay {
+            source,
+            parse_error: self,
+        }
+    }
+}
+
+pub struct ParseErrorDisplay<'src, 'err> {
+    source: &'src str,
+    parse_error: &'err ParseError,
+}
+
+impl fmt::Display for ParseErrorDisplay<'_, '_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        render_parse_error(self.source, self.parse_error, true, f);
+        Ok(())
+    }
+}
 
 pub struct Parser<'a> {
     tokens: Vec<TToken<'a>>,
@@ -124,7 +152,10 @@ impl<'a> Parser<'a> {
     }
 
     fn error(&mut self, msg: &str) {
-        self.errors.push((msg.to_string(), self.span()))
+        self.errors.push(ParseError {
+            it: msg.to_string(),
+            at: self.span(),
+        })
     }
 }
 
@@ -149,8 +180,8 @@ pub fn parse_prog(input: &str) -> Parse {
 }
 
 pub struct Parse {
-    green_node: GreenNode,
-    errors: Vec<(String, TextRange)>,
+    pub green_node: GreenNode,
+    pub errors: Vec<ParseError>,
 }
 
 impl Parse {
@@ -166,7 +197,36 @@ impl Parse {
         formatted[0..formatted.len() - 1].to_string()
     }
 
-    pub fn errors(&self) -> &[ParseError] {
-        &self.errors
+    pub fn has_errors(&self) -> bool {
+        !self.errors.is_empty()
     }
+}
+
+pub fn render_parse_error(
+    source: &str,
+    error: &ParseError,
+    colors: bool,
+    output: &mut fmt::Formatter,
+) {
+    let file_name = "source";
+
+    let out = Color::Fixed(81);
+    let cache = (file_name, Source::from(source));
+
+    // TODO avoid this allocation
+    let mut out_buf = Vec::new();
+    Report::build(ReportKind::Error, file_name, 12)
+        .with_code("Parsing error")
+        .with_message(&error.it)
+        .with_label(
+            Label::new((file_name, error.at.start().into()..error.at.end().into()))
+                .with_message(error.it.to_string())
+                .with_color(out),
+        )
+        .with_config(Config::default().with_color(colors))
+        .finish()
+        .write(cache, &mut out_buf)
+        .unwrap();
+
+    writeln!(output, "{}", str::from_utf8(&out_buf).unwrap()).unwrap();
 }

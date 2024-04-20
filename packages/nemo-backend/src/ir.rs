@@ -1,4 +1,5 @@
 use core::fmt;
+use std::collections::HashMap;
 use text_size::TextRange;
 
 trait Spanned {
@@ -37,6 +38,8 @@ impl fmt::Display for Name {
         }
     }
 }
+
+pub type NameMap = HashMap<Name, Id>;
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub enum Ty {

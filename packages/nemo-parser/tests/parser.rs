@@ -1,6 +1,7 @@
-use nemo_parser::parser::parse_prog;
-
 use insta::{assert_snapshot, glob};
+use nemo_parser::parser::parse_prog;
+use std::fmt::Write;
+use std::str;
 
 /// Copied from the Rust compiler: https://github.com/rust-lang/rust/pull/62948/
 /// Replaces `\r\n` with `\n` in-place in `src`.
@@ -69,12 +70,13 @@ fn parse_toplevel() {
         };
         for inp in input.split("---\n") {
             let parse = parse_prog(inp);
-            let errors = parse.errors();
-            let error_output = if errors.is_empty() {
-                "".to_string()
-            } else {
-                format!("=== ERRORS ===\n\n{:#?}", errors)
-            };
+            let mut error_output = String::new();
+            if parse.has_errors() {
+                writeln!(&mut error_output, "=== ERRORS ===").unwrap();
+                for error in &parse.errors {
+                    writeln!(&mut error_output, "{}", error.display(inp)).unwrap();
+                }
+            }
             let output = format!("{}\n---\n{}\n{}", inp, parse.debug_tree(), error_output);
             assert_snapshot!(output);
         }
@@ -89,13 +91,14 @@ fn parse_example() {
         normalize_newlines(&mut input);
         input
     };
+    let mut error_output = String::new();
     let parse = parse_prog(&input);
-    let errors = parse.errors();
-    let error_output = if errors.is_empty() {
-        "".to_string()
-    } else {
-        format!("=== ERRORS ===\n\n{:#?}", errors)
-    };
+    if parse.has_errors() {
+        writeln!(&mut error_output, "=== ERRORS ===").unwrap();
+        for error in &parse.errors {
+            writeln!(&mut error_output, "{}", error.display(&input)).unwrap();
+        }
+    }
     let output = format!("{}\n{}", parse.debug_tree(), error_output);
     assert_snapshot!(output);
 }

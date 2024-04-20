@@ -187,11 +187,6 @@ impl Typechecker {
 
         self.context.leave_block();
 
-        println!("{:?}", types);
-        println!("{:?}", imports);
-        println!("{:?}", globals);
-        println!("{:?}", functions);
-
         Some(ir::Program {
             imports: imports?,
             structs: types?,
@@ -477,26 +472,19 @@ impl Typechecker {
     }
 
     fn infer_callee(&mut self, expr: &Expr) -> (Ty, Option<ir::Callee>) {
-        match expr {
-            Expr::EVar(v) => {
-                let var_tkn = v.ident_token().unwrap();
-                match self.context.lookup_var(var_tkn.text()) {
-                    None => match lookup_builtin(var_tkn.text()) {
-                        Some(builtin) => {
-                            return (
-                                Ty::Func(Box::new(builtin.ty.clone())),
-                                Some(ir::Callee::Builtin(builtin.name)),
-                            )
-                        }
-                        None => {}
-                    },
-                    Some(_) => {}
+        if let Expr::EVar(v) = expr {
+            let var_tkn = v.ident_token().unwrap();
+            if self.context.lookup_var(var_tkn.text()).is_none() {
+                if let Some(builtin) = lookup_builtin(var_tkn.text()) {
+                    return (
+                        Ty::Func(Box::new(builtin.ty.clone())),
+                        Some(ir::Callee::Builtin(builtin.name)),
+                    );
                 }
             }
-            _ => {}
         }
         let (ty, ir) = self.infer_expr(expr);
-        (ty, ir.map(|x| ir::Callee::FuncRef(x)))
+        (ty, ir.map(ir::Callee::FuncRef))
     }
 
     fn infer_expr(&mut self, expr: &Expr) -> (Ty, Option<ir::Expr>) {
@@ -746,7 +734,7 @@ impl Typechecker {
                     Some((last, declarations)) => {
                         self.context.enter_block();
                         for decl in declarations {
-                            let (_, ir) = self.infer_decl(&decl);
+                            let (_, ir) = self.infer_decl(decl);
                             builder.declaration(ir);
                         }
                         let ty = match last {
@@ -756,7 +744,7 @@ impl Typechecker {
                                 new_ty
                             }
                             decl => {
-                                let (_, ir) = self.infer_decl(&decl);
+                                let (_, ir) = self.infer_decl(decl);
                                 builder.declaration(ir);
                                 builder.expr(unit_lit(decl.syntax().text_range()));
                                 Ty::Unit
@@ -862,17 +850,17 @@ impl Typechecker {
                 // NameSupply when rendering the errors
                 let struct_name = self.name_supply.lookup(*name).unwrap().it.clone();
                 self.report_error_token(
-                    &field_name_tkn,
+                    field_name_tkn,
                     UnknownField {
                         struct_name,
                         field_name: field_name_tkn.text().to_string(),
                     },
                 );
-                return None;
+                None
             }
             Some((t, n)) => {
-                self.record_ref(&field_name_tkn, *n);
-                return Some((*n, t.clone()));
+                self.record_ref(field_name_tkn, *n);
+                Some((*n, t.clone()))
             }
         }
     }
@@ -950,7 +938,7 @@ impl Typechecker {
         let (ty, ir_data) = match expr {
             SetTargetExpr::EVar(var) => {
                 let ident_tkn = var.ident_token().unwrap();
-                if let Some((ty, name)) = self.context.lookup_var(&ident_tkn.text()) {
+                if let Some((ty, name)) = self.context.lookup_var(ident_tkn.text()) {
                     let ir = ir::SetTargetData::Var { name: *name };
                     let ty = ty.clone();
                     self.record_ref(&ident_tkn, *name);

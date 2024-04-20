@@ -10,11 +10,7 @@ use std::{
     str::FromStr,
 };
 use ungrammar::{Grammar, Rule};
-
-use crate::{
-    ast_src::{AstEnumSrc, AstNodeSrc, AstSrc, Cardinality, Field},
-    // codegen::{reformat, update, Mode},
-};
+use crate::ast_src::{AstEnumSrc, AstNodeSrc, AstSrc, Cardinality, Field};
 
 pub fn project_root() -> PathBuf {
     Path::new(
@@ -243,7 +239,6 @@ fn generate_nodes(grammar: &AstSrc) -> Result<String> {
         });
 
     let ast = quote! {
-        #![allow(clippy)]
         use super::{
             SyntaxNode, SyntaxToken, SyntaxKind::{self, *},
             ast::{AstNode, AstChildren, support},

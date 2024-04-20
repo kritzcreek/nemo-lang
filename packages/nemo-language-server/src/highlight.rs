@@ -1,4 +1,3 @@
-use tree_sitter::{Parser, Tree};
 use tree_sitter_highlight::HighlightConfiguration;
 use tree_sitter_highlight::HighlightEvent;
 use tree_sitter_highlight::Highlighter;
@@ -7,12 +6,6 @@ use tree_sitter_nemo::{language, HIGHLIGHTS_QUERY};
 pub const HIGHLIGHT_NAMES: [&str; 7] = [
     "keyword", "type", "function", "operator", "property", "number", "comment",
 ];
-
-pub fn parse_program(program: &str) -> Tree {
-    let mut parser = Parser::new();
-    parser.set_language(language()).unwrap();
-    parser.parse(program, None).unwrap()
-}
 
 pub fn highlight(program: &str) -> Vec<HighlightEvent> {
     let nemo_language = language();

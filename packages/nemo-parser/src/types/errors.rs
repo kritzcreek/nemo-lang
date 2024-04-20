@@ -2,11 +2,33 @@ use crate::types::Ty;
 use ariadne::{Color, Config, Label, Report, ReportKind, Source};
 use core::fmt;
 use rowan::TextRange;
+use std::str;
 
 #[derive(Debug)]
 pub struct TyError {
     pub at: TextRange,
     pub it: TyErrorData,
+}
+
+impl TyError {
+    pub fn display<'err, 'src>(&'err self, source: &'src str) -> TyErrorDisplay<'src, 'err> {
+        TyErrorDisplay {
+            source,
+            ty_error: self,
+        }
+    }
+}
+
+pub struct TyErrorDisplay<'src, 'err> {
+    source: &'src str,
+    ty_error: &'err TyError,
+}
+
+impl fmt::Display for TyErrorDisplay<'_, '_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        render_ty_error(self.source, self.ty_error, true, f);
+        Ok(())
+    }
 }
 
 #[derive(Debug)]
@@ -42,12 +64,6 @@ pub enum TyErrorData {
         expected: Ty,
         actual: Ty,
     },
-}
-
-impl fmt::Display for TyError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?} {}", self.at, self.it)
-    }
 }
 
 impl fmt::Display for TyErrorData {
@@ -148,13 +164,19 @@ fn error_label(err_data: &TyErrorData) -> String {
     }
 }
 
-pub fn render_ty_error(source: &str, ty_error: &TyError, colors: bool) -> String {
+pub fn render_ty_error(
+    source: &str,
+    ty_error: &TyError,
+    colors: bool,
+    output: &mut fmt::Formatter,
+) {
     let file_name = "source";
 
     let out = Color::Fixed(81);
     let cache = (file_name, Source::from(source));
 
-    let mut output: Vec<u8> = Vec::new();
+    // TODO avoid this allocation
+    let mut out_buf = Vec::new();
 
     Report::build(ReportKind::Error, file_name, 12)
         .with_code(code_for_error(&ty_error.it))
@@ -167,13 +189,10 @@ pub fn render_ty_error(source: &str, ty_error: &TyError, colors: bool) -> String
             .with_message(format!("{}", ty_error.it))
             .with_color(out),
         )
-        // .with_note(format!(
-        //     "Outputs of {} expressions must coerce to the same type",
-        //     "match".fg(out)
-        // ))
         .with_config(Config::default().with_color(colors))
         .finish()
-        .write(cache, &mut output)
+        .write(cache, &mut out_buf)
         .unwrap();
-    String::from_utf8(output).unwrap()
+
+    writeln!(output, "{}", str::from_utf8(&out_buf).unwrap()).unwrap();
 }

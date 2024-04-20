@@ -1,19 +1,20 @@
 use insta::{assert_snapshot, glob};
 use nemo_parser::check_program;
-use nemo_parser::types::errors::render_ty_error;
 use std::fmt::Write;
 use std::fs;
 use std::path::Path;
+use std::str;
 use yansi::Paint;
 
 fn check_failing(path: &Path, source: String) {
-    let errors = check_program(&source).1;
+    let errors = check_program(&source);
     if errors.is_empty() {
         eprintln!("{} was expected to fail, but didn't", path.display())
     }
+
     let mut err_buf = String::new();
     for error in errors {
-        writeln!(&mut err_buf, "{}", render_ty_error(&source, &error, false)).unwrap()
+        write!(&mut err_buf, "{}", error.display(&source)).unwrap();
     }
     assert_snapshot!(err_buf)
 }

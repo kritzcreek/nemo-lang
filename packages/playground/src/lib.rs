@@ -1,5 +1,4 @@
-use nemo_backend::codegen::codegen;
-use nemo_parser::{check_program, compile_program};
+use nemo_parser::{compile_program, render_errors};
 use serde_derive::{Deserialize, Serialize};
 
 use warp::{
@@ -27,11 +26,11 @@ pub fn run_playground() {
 
 fn run_pipeline(code: Code) -> WithStatus<Json> {
     match compile_program(&code.code) {
-        None => {
-            let json = warp::reply::json(&"Error compiling program");
+        Err(errs) => {
+            let json = warp::reply::json(&render_errors(&errs, &code.code));
             warp::reply::with_status(json, StatusCode::BAD_REQUEST)
         }
-        Some(compiled) => {
+        Ok(compiled) => {
             let wasm = Wasm {
                 renamed: code.code,
                 compiled,
@@ -40,25 +39,6 @@ fn run_pipeline(code: Code) -> WithStatus<Json> {
             warp::reply::with_status(json, StatusCode::OK)
         }
     }
-    // match check_program(&code.code) {
-    //     Err(err) => {
-    //         let err_msg = format!("{}", err);
-    //         eprintln!("{err_msg}");
-    //         let json = warp::reply::json(&err_msg);
-    //         warp::reply::with_status(json, StatusCode::BAD_REQUEST)
-    //     }
-    //     Ok(checked) => {
-    //         let printed = print_program(&checked);
-    //         let (program, name_map) = lower(checked);
-    //         let compiled = codegen(program, name_map);
-    //         let wasm = Wasm {
-    //             renamed: printed,
-    //             compiled,
-    //         };
-    //         let json = warp::reply::json(&wasm);
-    //         warp::reply::with_status(json, StatusCode::OK)
-    //     }
-    // }
 }
 
 async fn async_run() {
@@ -70,7 +50,7 @@ async fn async_run() {
     let compile = warp::post()
         .and(warp::path("compile"))
         .and(warp::body::json())
-        .map(|c| run_pipeline(c));
+        .map(run_pipeline);
 
     let files = warp::fs::dir("packages/playground/static");
 

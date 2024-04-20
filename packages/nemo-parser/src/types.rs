@@ -8,16 +8,14 @@ use self::{
     errors::TyError,
 };
 use crate::syntax::{nodes::Root, token_ptr::SyntaxTokenPtr, SyntaxNodePtr};
+pub use nemo_backend::ir::{FuncTy, NameMap, Program, Ty};
 use std::collections::HashMap;
-
-pub use nemo_backend::ir::{FuncTy, Program, Ty};
-use nemo_backend::ir::{Id, Name};
 
 pub struct CheckResult {
     pub errors: Vec<TyError>,
     pub names: HashMap<SyntaxTokenPtr, Occurence<String>>,
     pub typed_nodes: HashMap<SyntaxNodePtr, Ty>,
-    pub name_map: HashMap<Name, Id>,
+    pub name_map: NameMap,
     pub ir: Option<Program>,
 }
 

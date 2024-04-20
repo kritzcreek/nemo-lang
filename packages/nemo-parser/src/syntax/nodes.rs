@@ -1,4 +1,3 @@
-#![allow(clippy)]
 use super::{
     ast::{support, AstChildren, AstNode},
     SyntaxKind::{self, *},
