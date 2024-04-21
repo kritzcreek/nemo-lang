@@ -91,14 +91,23 @@ impl Ctx {
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum Occurence<N> {
+pub enum Occurrence<N> {
     Def(N),
     Ref(N),
 }
 
+impl<N> Occurrence<N> {
+    pub fn name(&self) -> &N {
+        match self {
+            Occurrence::Def(n) => n,
+            Occurrence::Ref(n) => n,
+        }
+    }
+}
+
 pub struct Typechecker {
     pub typed_nodes: HashMap<SyntaxNodePtr, Ty>,
-    pub names: HashMap<SyntaxTokenPtr, Occurence<Name>>,
+    pub names: HashMap<SyntaxTokenPtr, Occurrence<Name>>,
     pub errors: Vec<TyError>,
 
     pub name_supply: NameSupply,
@@ -126,14 +135,14 @@ impl Typechecker {
     fn record_def(&mut self, token: &SyntaxToken, name: Name) {
         let previous = self
             .names
-            .insert(SyntaxTokenPtr::new(token), Occurence::Def(name));
+            .insert(SyntaxTokenPtr::new(token), Occurrence::Def(name));
         assert!(previous.is_none())
     }
 
     fn record_ref(&mut self, token: &SyntaxToken, name: Name) {
         let previous = self
             .names
-            .insert(SyntaxTokenPtr::new(token), Occurence::Ref(name));
+            .insert(SyntaxTokenPtr::new(token), Occurrence::Ref(name));
         assert!(previous.is_none())
     }
 
@@ -544,6 +553,7 @@ impl Typechecker {
                         return None;
                     }
                     Some((def, name)) => {
+                        self.record_ref(&struct_name_tkn, name);
                         let mut builder = StructBuilder::new();
                         builder.name(Some(name));
                         // TODO compute missing fields

@@ -2,22 +2,24 @@ mod highlight;
 pub mod vfs;
 
 use highlight::{highlight, HIGHLIGHT_NAMES};
-use line_index::LineIndex;
+use line_index::{LineCol, LineIndex, TextRange};
 use lsp_server::{Connection, ExtractError, Message, Notification, Request, RequestId, Response};
 use lsp_types::notification::{DidChangeTextDocument, DidCloseTextDocument, DidOpenTextDocument};
-use lsp_types::request::{DocumentDiagnosticRequest, SemanticTokensFullRequest};
+use lsp_types::request::{DocumentDiagnosticRequest, GotoDefinition, SemanticTokensFullRequest};
 use lsp_types::{
     Diagnostic, DiagnosticOptions, DiagnosticServerCapabilities, DiagnosticSeverity,
-    DocumentDiagnosticReport, FullDocumentDiagnosticReport, InitializeParams, Position, Range,
-    RelatedFullDocumentDiagnosticReport, SemanticToken, SemanticTokenType, SemanticTokens,
-    SemanticTokensFullOptions, SemanticTokensLegend, SemanticTokensOptions,
-    SemanticTokensServerCapabilities, ServerCapabilities, TextDocumentSyncCapability,
-    TextDocumentSyncKind, WorkDoneProgressOptions,
+    DocumentDiagnosticReport, FullDocumentDiagnosticReport, GotoDefinitionResponse,
+    InitializeParams, Location, OneOf, Position, Range, RelatedFullDocumentDiagnosticReport,
+    SemanticToken, SemanticTokenType, SemanticTokens, SemanticTokensFullOptions,
+    SemanticTokensLegend, SemanticTokensOptions, SemanticTokensServerCapabilities,
+    ServerCapabilities, TextDocumentSyncCapability, TextDocumentSyncKind, WorkDoneProgressOptions,
 };
 use nemo_parser::types::NameMap;
 use nemo_parser::CheckError;
+use serde_json::json;
 use std::error::Error;
 use tree_sitter_highlight::{Highlight, HighlightEvent};
+use vfs::FileData;
 
 use crate::vfs::Vfs;
 
@@ -51,6 +53,7 @@ pub fn start_language_server() -> Result<(), Box<dyn Error + Sync + Send>> {
         diagnostic_provider: Some(DiagnosticServerCapabilities::Options(
             DiagnosticOptions::default(),
         )),
+        definition_provider: Some(OneOf::Left(true)),
         ..Default::default()
     })
     .unwrap();
@@ -112,7 +115,7 @@ fn main_loop(
                     Err(err @ ExtractError::JsonError { .. }) => panic!("{err:?}"),
                     Err(ExtractError::MethodMismatch(req)) => req,
                 };
-                let _req = match cast_request::<DocumentDiagnosticRequest>(req) {
+                let req = match cast_request::<DocumentDiagnosticRequest>(req) {
                     Ok((id, params)) => {
                         let uri = params.text_document.uri;
                         let file_path = uri.to_file_path().unwrap();
@@ -131,18 +134,55 @@ fn main_loop(
                                 full_document_diagnostic_report: FullDocumentDiagnosticReport {
                                     result_id: None,
                                     items: file_data
-                                        .diagnostics
+                                        .check_result
+                                        .errors
                                         .iter()
                                         .map(|e| {
                                             make_diagnostic(
                                                 e,
-                                                &file_data.name_map,
+                                                &file_data.check_result.name_map,
                                                 &file_data.line_index,
                                             )
                                         })
                                         .collect(),
                                 },
                             });
+                        let result = serde_json::to_value(&result).unwrap();
+
+                        let resp = Response {
+                            id,
+                            result: Some(result),
+                            error: None,
+                        };
+                        connection.sender.send(Message::Response(resp))?;
+                        continue;
+                    }
+                    Err(err @ ExtractError::JsonError { .. }) => panic!("{err:?}"),
+                    Err(ExtractError::MethodMismatch(req)) => req,
+                };
+                let _req = match cast_request::<GotoDefinition>(req) {
+                    Ok((id, params)) => {
+                        let uri = params.text_document_position_params.text_document.uri;
+                        let position = params.text_document_position_params.position;
+                        let file_path = uri.to_file_path().unwrap();
+                        eprintln!("Attempting to read {uri} as file {}", file_path.display());
+
+                        let file_data = match vfs.read_file(&file_path) {
+                            Some(program) => program,
+                            None => {
+                                vfs.open_file(file_path.clone()).unwrap();
+                                vfs.read_file(&file_path).unwrap()
+                            }
+                        };
+                        let Some(range) = find_definition(file_data, &position) else {
+                            connection.sender.send(Message::Response(Response {
+                                id,
+                                result: Some(json!("null")),
+                                error: None,
+                            }))?;
+                            continue;
+                        };
+                        let result = GotoDefinitionResponse::Scalar(Location { uri, range });
                         let result = serde_json::to_value(&result).unwrap();
 
                         let resp = Response {
@@ -165,7 +205,7 @@ fn main_loop(
                 let not = match cast_notification::<DidOpenTextDocument>(not) {
                     Ok(params) => {
                         vfs.insert_file(
-                            params.text_document.uri.to_file_path().unwrap(),
+                            &params.text_document.uri.to_file_path().unwrap(),
                             params.text_document.text,
                         );
                         continue;
@@ -263,6 +303,39 @@ fn semantic_tokens(content: &str, events: Vec<HighlightEvent>) -> Vec<SemanticTo
     }
 
     tokens
+}
+
+fn resolve_text_range(range: &TextRange, line_index: &LineIndex) -> Option<Range> {
+    let start = line_index.try_line_col(range.start())?;
+    let end = line_index.try_line_col(range.end())?;
+    Some(Range {
+        start: Position {
+            line: start.line,
+            character: start.col,
+        },
+        end: Position {
+            line: end.line,
+            character: end.col,
+        },
+    })
+}
+
+fn find_definition(file_data: &FileData, position: &Position) -> Option<Range> {
+    let offset = file_data.line_index.offset(LineCol {
+        line: position.line,
+        col: position.character,
+    })?;
+    let (_, occurrence) = file_data
+        .check_result
+        .names
+        .iter()
+        .find(|(node_ptr, _)| node_ptr.0.contains(offset))?;
+    let name = occurrence.name();
+    file_data
+        .check_result
+        .name_map
+        .get(name)
+        .and_then(|def| resolve_text_range(&def.at, &file_data.line_index))
 }
 
 fn cast_request<R>(req: Request) -> Result<(RequestId, R::Params), ExtractError<Request>>

@@ -5,14 +5,11 @@ pub mod syntax;
 pub mod types;
 
 use line_index::{LineCol, LineIndex};
-use nemo_backend::{
-    codegen::codegen,
-    ir::{self, NameMap},
-};
+use nemo_backend::{codegen::codegen, ir::NameMap};
 use parser::{parse_prog, ParseError};
 use std::fmt::{self, Write};
 use syntax::{ast::AstNode, nodes::Root};
-use types::errors::TyError;
+use types::{errors::TyError, CheckResult};
 
 #[derive(Debug)]
 pub enum CheckError {
@@ -75,14 +72,13 @@ pub fn render_errors(errs: &[CheckError], source: &str, name_map: &NameMap) -> S
     output
 }
 
-pub fn run_frontend(source: &str) -> (ir::NameMap, Result<ir::Program, Vec<CheckError>>) {
+pub fn run_frontend(source: &str) -> CheckResult<CheckError> {
     let parse = parse_prog(source);
     let mut errors = vec![];
     let check_result = match Root::cast(parse.syntax()) {
         None => panic!("Parse didn't yield a Root node"),
         Some(root) => types::check_prog(root),
     };
-    let name_map = check_result.name_map;
 
     for error in parse.errors {
         errors.push(CheckError::ParseError(error));
@@ -90,22 +86,31 @@ pub fn run_frontend(source: &str) -> (ir::NameMap, Result<ir::Program, Vec<Check
     for error in check_result.errors {
         errors.push(CheckError::TypeError(error));
     }
-    if !errors.is_empty() {
-        return (name_map, Err(errors));
-    }
-    let Some(ir) = check_result.ir else {
+    if errors.is_empty() && check_result.ir.is_none() {
         panic!("No IR generated, despite no errors")
     };
-    (name_map, Ok(ir))
+
+    CheckResult {
+        errors,
+        name_map: check_result.name_map,
+        typed_nodes: check_result.typed_nodes,
+        names: check_result.names,
+        ir: check_result.ir,
+    }
 }
 
 pub fn check_program(source: &str) -> (NameMap, Vec<CheckError>) {
-    let (name_map, result) = run_frontend(source);
-    (name_map, result.err().unwrap_or_default())
+    let check_result = run_frontend(source);
+    (check_result.name_map, check_result.errors)
 }
 
 pub fn compile_program(source: &str) -> (NameMap, Result<Vec<u8>, Vec<CheckError>>) {
-    let (name_map, result) = run_frontend(source);
-    let compiled = result.map(|ir| codegen(ir, &name_map));
-    (name_map, compiled)
+    let check_result = run_frontend(source);
+    // Maybe don't return Wasm if there are errors?
+    if let Some(ir) = check_result.ir {
+        let wasm = codegen(ir, &check_result.name_map);
+        (check_result.name_map, Ok(wasm))
+    } else {
+        (check_result.name_map, Err(check_result.errors))
+    }
 }

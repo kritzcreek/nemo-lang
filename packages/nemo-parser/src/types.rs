@@ -4,36 +4,30 @@ mod ir;
 pub mod names;
 
 use self::{
-    check::{Occurence, Typechecker},
+    check::{Occurrence, Typechecker},
     errors::TyError,
 };
 use crate::syntax::{nodes::Root, token_ptr::SyntaxTokenPtr, SyntaxNodePtr};
+use nemo_backend::ir::Name;
 pub use nemo_backend::ir::{FuncTy, NameMap, Program, Ty};
 use std::collections::HashMap;
 
-pub struct CheckResult {
-    pub errors: Vec<TyError>,
-    pub names: HashMap<SyntaxTokenPtr, Occurence<String>>,
+#[derive(Debug)]
+pub struct CheckResult<E> {
+    pub errors: Vec<E>,
+    pub names: HashMap<SyntaxTokenPtr, Occurrence<Name>>,
     pub typed_nodes: HashMap<SyntaxNodePtr, Ty>,
     pub name_map: NameMap,
     pub ir: Option<Program>,
 }
 
-pub fn check_prog(prog: Root) -> CheckResult {
+pub fn check_prog(prog: Root) -> CheckResult<TyError> {
     let mut checker = Typechecker::new();
     let ir = checker.infer_program(prog);
-    let mut names = HashMap::new();
-    for (k, v) in checker.names {
-        let occ = match v {
-            Occurence::Def(n) => Occurence::Def(checker.name_supply.lookup(n).unwrap().it.clone()),
-            Occurence::Ref(n) => Occurence::Ref(checker.name_supply.lookup(n).unwrap().it.clone()),
-        };
-        names.insert(k, occ);
-    }
     let name_map = checker.name_supply.name_map;
     CheckResult {
         errors: checker.errors,
-        names,
+        names: checker.names,
         name_map,
         typed_nodes: checker.typed_nodes,
         ir,
