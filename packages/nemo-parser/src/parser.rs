@@ -1,6 +1,7 @@
 use crate::lexer::{Lexer, SyntaxKind, TToken};
 use crate::syntax::{NemoLanguage, SyntaxNode};
 use ariadne::{Config, Label, Report, ReportKind, Source};
+use line_index::{LineCol, LineIndex};
 use rowan::{Checkpoint, GreenNode, GreenNodeBuilder, Language};
 use std::{fmt, str};
 use text_size::{TextRange, TextSize};
@@ -10,8 +11,8 @@ mod grammar;
 
 #[derive(Debug)]
 pub struct ParseError {
-    it: String,
-    at: TextRange,
+    pub it: String,
+    pub at: TextRange,
 }
 
 impl ParseError {
@@ -20,6 +21,12 @@ impl ParseError {
             source,
             parse_error: self,
         }
+    }
+
+    pub fn line_col(&self, line_index: &LineIndex) -> (LineCol, LineCol) {
+        let start = line_index.line_col(self.at.start());
+        let end = line_index.line_col(self.at.end());
+        (start, end)
     }
 }
 

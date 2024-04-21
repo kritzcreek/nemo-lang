@@ -7,14 +7,14 @@ use std::str;
 use yansi::Paint;
 
 fn check_failing(path: &Path, source: String) {
-    let errors = check_program(&source);
+    let (name_map, errors) = check_program(&source);
     if errors.is_empty() {
         eprintln!("{} was expected to fail, but didn't", path.display())
     }
 
     let mut err_buf = String::new();
     for error in errors {
-        write!(&mut err_buf, "{}", error.display(&source)).unwrap();
+        write!(&mut err_buf, "{}", error.display(&source, &name_map)).unwrap();
     }
     assert_snapshot!(err_buf)
 }

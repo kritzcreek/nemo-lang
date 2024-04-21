@@ -26,11 +26,11 @@ pub fn run_playground() {
 
 fn run_pipeline(code: Code) -> WithStatus<Json> {
     match compile_program(&code.code) {
-        Err(errs) => {
-            let json = warp::reply::json(&render_errors(&errs, &code.code));
+        (name_map, Err(errs)) => {
+            let json = warp::reply::json(&render_errors(&errs, &code.code, &name_map));
             warp::reply::with_status(json, StatusCode::BAD_REQUEST)
         }
-        Ok(compiled) => {
+        (_, Ok(compiled)) => {
             let wasm = Wasm {
                 renamed: code.code,
                 compiled,

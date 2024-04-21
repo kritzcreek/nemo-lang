@@ -72,7 +72,7 @@ fn draw_cube(cube : Cube) = {
   let size = cube.size;
   begin_path();
   move_to(x, y);
-  line_to(x , y + cube.size);
+  line_to(x, y + cube.size);
   line_to(x + cube.size, y + cube.size);
   line_to(x + cube.size, y);
   set_stroke_color(cube.color.r, cube.color.g, cube.color.b);

@@ -48,7 +48,7 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
             output_file,
         } => {
             let source = fs::read_to_string(&input_file)?;
-            let compiled = compile_program(&source);
+            let (_, compiled) = compile_program(&source);
             fs::write(
                 output_file.unwrap_or_else(|| input_file.with_extension("wasm")),
                 compiled.unwrap(),

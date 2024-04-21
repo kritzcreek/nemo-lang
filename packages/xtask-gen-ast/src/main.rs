@@ -1,5 +1,6 @@
 mod ast_src;
 
+use crate::ast_src::{AstEnumSrc, AstNodeSrc, AstSrc, Cardinality, Field};
 use anyhow::Result;
 use quote::{format_ident, quote};
 use std::{
@@ -10,7 +11,6 @@ use std::{
     str::FromStr,
 };
 use ungrammar::{Grammar, Rule};
-use crate::ast_src::{AstEnumSrc, AstNodeSrc, AstSrc, Cardinality, Field};
 
 pub fn project_root() -> PathBuf {
     Path::new(

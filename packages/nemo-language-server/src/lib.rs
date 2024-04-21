@@ -2,14 +2,23 @@ mod highlight;
 pub mod vfs;
 
 use highlight::{highlight, HIGHLIGHT_NAMES};
+use line_index::LineIndex;
 use lsp_server::{Connection, ExtractError, Message, Notification, Request, RequestId, Response};
-use lsp_types::notification::{DidChangeTextDocument, DidCloseTextDocument, DidOpenTextDocument};
-use lsp_types::request::SemanticTokensFullRequest;
-use lsp_types::{
-    InitializeParams, SemanticToken, SemanticTokenType, SemanticTokens, SemanticTokensFullOptions,
-    SemanticTokensLegend, SemanticTokensOptions, SemanticTokensServerCapabilities,
-    ServerCapabilities, TextDocumentSyncCapability, TextDocumentSyncKind, WorkDoneProgressOptions,
+use lsp_types::notification::{
+    DidChangeTextDocument, DidCloseTextDocument, DidOpenTextDocument, Notification as _,
+    PublishDiagnostics,
 };
+use lsp_types::request::{DocumentDiagnosticRequest, SemanticTokensFullRequest};
+use lsp_types::{
+    Diagnostic, DiagnosticOptions, DiagnosticServerCapabilities, DiagnosticSeverity,
+    DocumentDiagnosticReport, FullDocumentDiagnosticReport, InitializeParams, Position,
+    PublishDiagnosticsParams, Range, RelatedFullDocumentDiagnosticReport, SemanticToken,
+    SemanticTokenType, SemanticTokens, SemanticTokensFullOptions, SemanticTokensLegend,
+    SemanticTokensOptions, SemanticTokensServerCapabilities, ServerCapabilities,
+    TextDocumentSyncCapability, TextDocumentSyncKind, WorkDoneProgressOptions,
+};
+use nemo_parser::types::NameMap;
+use nemo_parser::CheckError;
 use std::error::Error;
 use tree_sitter_highlight::{Highlight, HighlightEvent};
 
@@ -42,6 +51,9 @@ pub fn start_language_server() -> Result<(), Box<dyn Error + Sync + Send>> {
                 full: Some(SemanticTokensFullOptions::Bool(true)),
             },
         )),
+        diagnostic_provider: Some(DiagnosticServerCapabilities::Options(
+            DiagnosticOptions::default(),
+        )),
         ..Default::default()
     })
     .unwrap();
@@ -71,17 +83,17 @@ fn main_loop(
                     return Ok(());
                 }
                 eprintln!("got request: {req:?}");
-                match cast_request::<SemanticTokensFullRequest>(req) {
+                let req = match cast_request::<SemanticTokensFullRequest>(req) {
                     Ok((id, params)) => {
                         let uri = params.text_document.uri;
                         let file_path = uri.to_file_path().unwrap();
                         eprintln!("Attempting to read {uri} as file {}", file_path.display());
 
                         let program = match vfs.read_file(&file_path) {
-                            Some(program) => program.as_str(),
+                            Some(program) => program.content.as_str(),
                             None => {
                                 vfs.open_file(file_path.clone()).unwrap();
-                                vfs.read_file(&file_path).unwrap()
+                                vfs.read_file(&file_path).unwrap().content.as_str()
                             }
                         };
 
@@ -90,6 +102,50 @@ fn main_loop(
                             result_id: None,
                             data: semantic_tokens(program, events),
                         };
+                        let result = serde_json::to_value(&result).unwrap();
+
+                        let resp = Response {
+                            id,
+                            result: Some(result),
+                            error: None,
+                        };
+                        connection.sender.send(Message::Response(resp))?;
+                        continue;
+                    }
+                    Err(err @ ExtractError::JsonError { .. }) => panic!("{err:?}"),
+                    Err(ExtractError::MethodMismatch(req)) => req,
+                };
+                let _req = match cast_request::<DocumentDiagnosticRequest>(req) {
+                    Ok((id, params)) => {
+                        let uri = params.text_document.uri;
+                        let file_path = uri.to_file_path().unwrap();
+                        eprintln!("Attempting to read {uri} as file {}", file_path.display());
+
+                        let file_data = match vfs.read_file(&file_path) {
+                            Some(program) => program,
+                            None => {
+                                vfs.open_file(file_path.clone()).unwrap();
+                                vfs.read_file(&file_path).unwrap()
+                            }
+                        };
+                        let result =
+                            DocumentDiagnosticReport::Full(RelatedFullDocumentDiagnosticReport {
+                                related_documents: None,
+                                full_document_diagnostic_report: FullDocumentDiagnosticReport {
+                                    result_id: None,
+                                    items: file_data
+                                        .diagnostics
+                                        .iter()
+                                        .map(|e| {
+                                            make_diagnostic(
+                                                e,
+                                                &file_data.name_map,
+                                                &file_data.line_index,
+                                            )
+                                        })
+                                        .collect(),
+                                },
+                            });
                         let result = serde_json::to_value(&result).unwrap();
 
                         let resp = Response {
@@ -134,6 +190,16 @@ fn main_loop(
                 let not = match cast_notification::<DidCloseTextDocument>(not) {
                     Ok(params) => {
                         vfs.remove_file(&params.text_document.uri.to_file_path().unwrap());
+                        let result = PublishDiagnosticsParams {
+                            uri: params.text_document.uri,
+                            diagnostics: vec![],
+                            version: None,
+                        };
+                        let notification =
+                            Notification::new(PublishDiagnostics::METHOD.into(), result);
+                        connection
+                            .sender
+                            .send(Message::Notification(notification))?;
                         continue;
                     }
                     Err(err @ ExtractError::JsonError { .. }) => panic!("{err:?}"),
@@ -144,6 +210,30 @@ fn main_loop(
         }
     }
     Ok(())
+}
+
+fn make_diagnostic(error: &CheckError, name_map: &NameMap, line_index: &LineIndex) -> Diagnostic {
+    let (start, end) = error.line_col(line_index);
+    Diagnostic {
+        range: Range {
+            start: Position {
+                line: start.line,
+                character: start.col,
+            },
+            end: Position {
+                line: end.line,
+                character: end.col,
+            },
+        },
+        severity: Some(DiagnosticSeverity::ERROR),
+        code: None,
+        code_description: None,
+        source: Some("nemo".to_string()),
+        message: error.message(name_map),
+        related_information: None,
+        tags: None,
+        data: None,
+    }
 }
 
 fn semantic_tokens(content: &str, events: Vec<HighlightEvent>) -> Vec<SemanticToken> {

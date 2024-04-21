@@ -43,7 +43,7 @@ pub struct Export {
 }
 
 pub struct Builder<'a> {
-    name_map: HashMap<Name, Id>,
+    name_map: &'a HashMap<Name, Id>,
     funcs: HashMap<Name, FuncData<'a>>,
     globals: HashMap<Name, GlobalData>,
     types: Vec<RecType>,
@@ -59,7 +59,7 @@ pub struct Builder<'a> {
 }
 
 impl<'a> Builder<'a> {
-    pub fn new(name_map: HashMap<Name, Id>) -> Builder<'a> {
+    pub fn new(name_map: &'a HashMap<Name, Id>) -> Builder<'a> {
         Builder {
             name_map,
             funcs: HashMap::new(),
@@ -76,7 +76,7 @@ impl<'a> Builder<'a> {
     }
 
     fn _print_funcs(&self) {
-        for (name, id) in &self.name_map {
+        for (name, id) in self.name_map {
             if let Name::Func(n) = name {
                 eprintln!("$fn:{n} = {id:?}")
             }

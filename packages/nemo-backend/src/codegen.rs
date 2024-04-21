@@ -10,7 +10,7 @@ use crate::{
     wasm_builder::{BodyBuilder, Builder},
 };
 
-pub fn codegen(program: Program, name_map: HashMap<Name, Id>) -> Vec<u8> {
+pub fn codegen(program: Program, name_map: &HashMap<Name, Id>) -> Vec<u8> {
     let builder = Builder::new(name_map);
     let mut codegen = Codegen { builder };
     codegen.compile_program(program);

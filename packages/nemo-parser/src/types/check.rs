@@ -708,7 +708,10 @@ impl Typechecker {
                         self.report_error_token(
                             &op_tkn,
                             Message(format!(
-                                "Invalid operator {} for lhs of type {lhs_ty} and rhs of type {rhs_ty}", op_tkn.text()
+                                "Invalid operator {} for lhs of type {} and rhs of type {}",
+                                op_tkn.text(),
+                                lhs_ty.display(&self.name_supply.name_map),
+                                rhs_ty.display(&self.name_supply.name_map)
                             )),
                         );
                         return None;

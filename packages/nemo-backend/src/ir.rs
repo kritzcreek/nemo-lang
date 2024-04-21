@@ -1,5 +1,5 @@
 use core::fmt;
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Debug};
 use text_size::TextRange;
 
 trait Spanned {
@@ -55,16 +55,27 @@ pub enum Ty {
     Any,
 }
 
-impl fmt::Display for Ty {
+impl Ty {
+    pub fn display<'a>(&'a self, name_map: &'a NameMap) -> TyDisplay<'a> {
+        TyDisplay { ty: self, name_map }
+    }
+}
+
+pub struct TyDisplay<'a> {
+    ty: &'a Ty,
+    name_map: &'a NameMap,
+}
+
+impl fmt::Display for TyDisplay<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
+        match self.ty {
             Ty::I32 => write!(f, "i32"),
             Ty::F32 => write!(f, "f32"),
             Ty::Bool => write!(f, "bool"),
             Ty::Unit => write!(f, "unit"),
-            Ty::Array(t) => write!(f, "[{}]", t),
-            Ty::Struct(t) => t.fmt(f),
-            Ty::Func(func_ty) => func_ty.fmt(f),
+            Ty::Array(t) => write!(f, "[{}]", t.display(self.name_map)),
+            Ty::Struct(t) => write!(f, "{}", self.name_map.get(t).unwrap().it),
+            Ty::Func(func_ty) => func_ty.display(self.name_map).fmt(f),
             Ty::Any => write!(f, "ANY"),
         }
     }
@@ -76,17 +87,32 @@ pub struct FuncTy {
     pub result: Ty,
 }
 
-impl fmt::Display for FuncTy {
+impl FuncTy {
+    pub fn display<'a>(&'a self, name_map: &'a NameMap) -> FuncTyDisplay<'a> {
+        FuncTyDisplay {
+            func_ty: self,
+            name_map,
+        }
+    }
+}
+
+pub struct FuncTyDisplay<'a> {
+    func_ty: &'a FuncTy,
+    name_map: &'a NameMap,
+}
+
+impl fmt::Display for FuncTyDisplay<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "fn ({}) -> {}",
-            self.arguments
+            self.func_ty
+                .arguments
                 .iter()
-                .map(|a| format!("{a}"))
+                .map(|a| format!("{}", a.display(self.name_map)))
                 .collect::<Vec<String>>()
                 .join(", "),
-            self.result
+            self.func_ty.result.display(self.name_map)
         )
     }
 }
