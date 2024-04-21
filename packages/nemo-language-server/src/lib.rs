@@ -4,18 +4,15 @@ pub mod vfs;
 use highlight::{highlight, HIGHLIGHT_NAMES};
 use line_index::LineIndex;
 use lsp_server::{Connection, ExtractError, Message, Notification, Request, RequestId, Response};
-use lsp_types::notification::{
-    DidChangeTextDocument, DidCloseTextDocument, DidOpenTextDocument, Notification as _,
-    PublishDiagnostics,
-};
+use lsp_types::notification::{DidChangeTextDocument, DidCloseTextDocument, DidOpenTextDocument};
 use lsp_types::request::{DocumentDiagnosticRequest, SemanticTokensFullRequest};
 use lsp_types::{
     Diagnostic, DiagnosticOptions, DiagnosticServerCapabilities, DiagnosticSeverity,
-    DocumentDiagnosticReport, FullDocumentDiagnosticReport, InitializeParams, Position,
-    PublishDiagnosticsParams, Range, RelatedFullDocumentDiagnosticReport, SemanticToken,
-    SemanticTokenType, SemanticTokens, SemanticTokensFullOptions, SemanticTokensLegend,
-    SemanticTokensOptions, SemanticTokensServerCapabilities, ServerCapabilities,
-    TextDocumentSyncCapability, TextDocumentSyncKind, WorkDoneProgressOptions,
+    DocumentDiagnosticReport, FullDocumentDiagnosticReport, InitializeParams, Position, Range,
+    RelatedFullDocumentDiagnosticReport, SemanticToken, SemanticTokenType, SemanticTokens,
+    SemanticTokensFullOptions, SemanticTokensLegend, SemanticTokensOptions,
+    SemanticTokensServerCapabilities, ServerCapabilities, TextDocumentSyncCapability,
+    TextDocumentSyncKind, WorkDoneProgressOptions,
 };
 use nemo_parser::types::NameMap;
 use nemo_parser::CheckError;
@@ -190,16 +187,6 @@ fn main_loop(
                 let not = match cast_notification::<DidCloseTextDocument>(not) {
                     Ok(params) => {
                         vfs.remove_file(&params.text_document.uri.to_file_path().unwrap());
-                        let result = PublishDiagnosticsParams {
-                            uri: params.text_document.uri,
-                            diagnostics: vec![],
-                            version: None,
-                        };
-                        let notification =
-                            Notification::new(PublishDiagnostics::METHOD.into(), result);
-                        connection
-                            .sender
-                            .send(Message::Notification(notification))?;
                         continue;
                     }
                     Err(err @ ExtractError::JsonError { .. }) => panic!("{err:?}"),
