@@ -1,0 +1,6 @@
+---
+source: packages/frontend/tests/types.rs
+expression: err_buf
+input_file: packages/frontend/tests/type_errors/missing_field.nemo
+---
+

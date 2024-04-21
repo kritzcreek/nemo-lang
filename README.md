@@ -4,25 +4,6 @@ nemo is a small procedural programming language that compiles to Wasm 2.0
 
 It's main purpose is to serve as a teaching tool in my compilers course.
 
-## New parser
-
-- [x] Logos lexer
-- [x] Rowan based parser
-- [x] Set up AST generation (xtask + ungrammar)
-- [x] Implement new type checker
-- [ ] Integrate grammar/parser viewer into playground
-- [ ] Elaborate directly into backend IR
-
-- Move name resolution into the type checker?
-
-  - We're already tracking scope and resolving names, might as well do it here
-  - In a future with compilation units, how do we represent local names vs external names? (Future Christoph will figure this out)
-  - Does type checking annotate or elaborate?
-
-    - I think the only way to support partial trees and still emit an annotated tree is to use side-tables for types as well as names. This means we'll need to key on a NodeId or SourceRange type (use Rowan's SyntaxNodePtr as the key)
-
-    Having a side table like that is going to make go-to-definition and find-references easy to implement
-
 # Example Program
 
 Here's a small program that when given a few canvas functions as imports draws three colored cubes bouncing up and down
@@ -128,6 +109,6 @@ Features we implement "on-top"
 - Nested set targets for composite types: `set p.particles[2].vx = 10.0`
 - Block scoping
 
-# Compiler Structure/Pipeline Overview
+# Compiler Structure/Pipeline Overview (Slightly out-of-date)
 
 ![CompilerOverview](https://github.com/kritzcreek/nemo-lang/assets/6189397/db0ef74c-c7c3-410f-9e71-4b4c28ed0451)

@@ -1,0 +1,22 @@
+---
+source: packages/frontend/tests/types.rs
+expression: err_buf
+input_file: packages/frontend/tests/type_errors/field_type_mismatch.nemo
+---
+[15] Error: Type mismatch. Expected i32, but got bool
+   ╭─[source:2:2]
+   │
+ 6 │   F { x = true }
+   │           ──┬──  
+   │             ╰──── Type mismatch. Expected i32, but got bool
+───╯
+
+[15] Error: Type mismatch. Expected unit, but got F
+   ╭─[source:2:2]
+   │
+ 5 │ ╭─▶ fn main() = {
+   ┆ ┆   
+ 7 │ ├─▶ }
+   │ │      
+   │ ╰────── Type mismatch. Expected unit, but got F
+───╯

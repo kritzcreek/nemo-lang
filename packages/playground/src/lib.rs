@@ -1,4 +1,4 @@
-use nemo_parser::{compile_program, render_errors};
+use frontend::{compile_program, render_errors};
 use serde_derive::{Deserialize, Serialize};
 
 use warp::{
