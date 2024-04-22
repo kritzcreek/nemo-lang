@@ -1,8 +1,8 @@
 # nemo-lang
 
-nemo is a small procedural programming language that compiles to Wasm 2.0
+nemo is a small procedural programming language that compiles to Wasm GC
 
-It's main purpose is to serve as a teaching tool in my compilers course.
+Its main purpose is to serve as a teaching tool in my compilers course.
 
 # Example Program
 
