@@ -1222,11 +1222,11 @@
           "named": true
         },
         {
-          "type": "top_import",
+          "type": "top_global",
           "named": true
         },
         {
-          "type": "top_let",
+          "type": "top_import",
           "named": true
         },
         {
@@ -1539,43 +1539,7 @@
     }
   },
   {
-    "type": "top_import",
-    "named": true,
-    "fields": {
-      "external": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "lower_ident",
-            "named": true
-          }
-        ]
-      },
-      "internal": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "lower_ident",
-            "named": true
-          }
-        ]
-      },
-      "type": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "ty_func",
-            "named": true
-          }
-        ]
-      }
-    }
-  },
-  {
-    "type": "top_let",
+    "type": "top_global",
     "named": true,
     "fields": {
       "annotation": {
@@ -1680,6 +1644,42 @@
           },
           {
             "type": "var_e",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "top_import",
+    "named": true,
+    "fields": {
+      "external": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "lower_ident",
+            "named": true
+          }
+        ]
+      },
+      "internal": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "lower_ident",
+            "named": true
+          }
+        ]
+      },
+      "type": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "ty_func",
             "named": true
           }
         ]
@@ -2044,6 +2044,10 @@
   },
   {
     "type": "from",
+    "named": false
+  },
+  {
+    "type": "global",
     "named": false
   },
   {

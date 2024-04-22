@@ -196,9 +196,8 @@ module.exports = grammar({
     ),
 
     // Toplevel
-
-    top_let: $ => seq(
-      'let',
+    top_global: $ => seq(
+      'global',
       field('binder', $.lower_ident),
       optional(seq(':', field('annotation', $._type))),
       '=',
@@ -244,7 +243,7 @@ module.exports = grammar({
     ),
 
     _toplevel: $ => choice(
-      $.top_let,
+      $.top_global,
       $.top_import,
       $.top_func,
       $.top_struct

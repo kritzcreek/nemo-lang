@@ -1183,12 +1183,12 @@
         }
       ]
     },
-    "top_let": {
+    "top_global": {
       "type": "SEQ",
       "members": [
         {
           "type": "STRING",
-          "value": "let"
+          "value": "global"
         },
         {
           "type": "FIELD",
@@ -1503,7 +1503,7 @@
       "members": [
         {
           "type": "SYMBOL",
-          "name": "top_let"
+          "name": "top_global"
         },
         {
           "type": "SYMBOL",
@@ -1536,4 +1536,3 @@
   "inline": [],
   "supertypes": []
 }
-
