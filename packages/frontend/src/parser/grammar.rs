@@ -40,7 +40,6 @@ fn toplevel(p: &mut Parser) -> Progress {
             if !expr(p).made_progress() {
                 p.error("expected an expression")
             }
-            p.expect(SyntaxKind::SEMICOLON);
             p.finish_at(c, SyntaxKind::TopGlobal);
             Progress::Made
         }

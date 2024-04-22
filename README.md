@@ -28,15 +28,15 @@ struct Cube {
   color : Color
 }
 
-let red = Color { r = 180.0, g = 0.0, b = 0.0 };
-let green = Color { r = 0.0, g = 180.0, b = 0.0 };
-let blue = Color { r = 0.0, g = 0.0, b = 180.0 };
+global red = Color { r = 180.0, g = 0.0, b = 0.0 }
+global green = Color { r = 0.0, g = 180.0, b = 0.0 }
+global blue = Color { r = 0.0, g = 0.0, b = 180.0 }
 
-let cubes = [
+global cubes = [
   Cube { x = 100.0, y = 0.0, vx = 0.0, vy = 14.0, size = 10.0, color = red },
   Cube { x = 250.0, y = 0.0, vx = 0.0, vy = 13.0, size = 15.0, color = green },
   Cube { x = 400.0, y = 0.0, vx = 0.0, vy = 12.0, size = 20.0, color = blue }
-];
+]
 
 fn clamp(min : f32, val : f32, max : f32) : f32 = {
   f32_min(max, f32_max(min, val))

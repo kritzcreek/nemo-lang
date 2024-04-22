@@ -1234,10 +1234,6 @@
             "type": "SYMBOL",
             "name": "_expr"
           }
-        },
-        {
-          "type": "STRING",
-          "value": ";"
         }
       ]
     },
