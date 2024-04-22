@@ -1,0 +1,12 @@
+---
+source: packages/frontend/tests/types.rs
+expression: err_buf
+input_file: packages/frontend/tests/type_errors/unknown_struct.nemo
+---
+[07] Error: Unknown type Unknown
+   ╭─[source:1:13]
+   │
+ 2 │   let x = Unknown {}
+   │           ───┬───  
+   │              ╰───── Unknown type Unknown
+───╯

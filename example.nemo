@@ -34,14 +34,14 @@ struct RingBuffer {
   watermark : i32
 }
 
-let two_pi = 3.14159265359 * 2.0;
-let particle_timer = 200.0;
+global two_pi = 3.14159265359 * 2.0
+global particle_timer = 200.0
 
-let red = Color { r = 180.0, g = 0.0, b = 0.0 };
-let green = Color { r = 0.0, g = 180.0, b = 0.0 };
-let blue = Color { r = 0.0, g = 0.0, b = 180.0 };
+global red = Color { r = 180.0, g = 0.0, b = 0.0 }
+global green = Color { r = 0.0, g = 180.0, b = 0.0 }
+global blue = Color { r = 0.0, g = 0.0, b = 180.0 }
 
-let cubes = [
+global cubes = [
   Cube { x =   0.0, y = 0.0, vx =  9.0, vy = 14.0, size = 10.0, color = red },
   Cube { x = 100.0, y = 0.0, vx = 10.0, vy = 13.0, size = 15.0, color = green },
   Cube { x = 200.0, y = 0.0, vx = 11.0, vy = 12.0, size = 20.0, color = blue },
@@ -49,12 +49,12 @@ let cubes = [
   Cube { x = 400.0, y = 0.0, vx = 13.0, vy = 10.0, size = 30.0, color = green },
   Cube { x = 500.0, y = 0.0, vx = 14.0, vy =  9.0, size = 35.0, color = red },
   Cube { x = 500.0, y = 0.0, vx = 19.0, vy = 17.0, size = 35.0, color = blue }
-];
+]
 
-let particles = RingBuffer {
+global particles = RingBuffer {
   buffer = @array_new(Particle { x = 0.0, y = 0.0, color = red, time = 0.0 }, 25),
   watermark = 0
-};
+}
 
 fn add_particle(p : Particle) = {
   set particles.buffer[particles.watermark] = p;
@@ -72,7 +72,7 @@ fn draw_cube(cube : Cube) = {
   let size = cube.size;
   begin_path();
   move_to(x, y);
-  line_to(x , y + cube.size);
+  line_to(x, y + cube.size);
   line_to(x + cube.size, y + cube.size);
   line_to(x + cube.size, y);
   set_stroke_color(cube.color.r, cube.color.g, cube.color.b);
@@ -106,6 +106,17 @@ fn collide_cubes(c1 : Cube, c2 : Cube) = {
   } else {}
 }
 
+fn collide_cube(cube : Cube) = {
+  let idx = 0;
+  while idx < @array_len(cubes) {
+    if cubes[idx].x == cube.x && cubes[idx].y == cube.y {
+    } else {
+      collide_cubes(cube, cubes[idx])
+    };
+    set idx = idx + 1
+  }
+}
+
 fn tick_cube(cube : Cube, elapsed_time_ms : f32) = {
   let elapsed_factor = elapsed_time_ms / 48.0;
 
@@ -121,18 +132,6 @@ fn tick_cube(cube : Cube, elapsed_time_ms : f32) = {
     set cube.y = clamp(0.0, cube.y, 500.0);
     set cube.vy = f32_neg(cube.vy)
   } else {}
-}
-
-fn collide_cube(cube : Cube) = {
-  let idx = 0;
-  while idx < @array_len(cubes) {
-    if cubes[idx].x == cube.x && cubes[idx].y == cube.y {
-    } else {
-      collide_cubes(cube, cubes[idx])
-    };
-    set idx = idx + 1
-  }
-
 }
 
 fn tick(elapsed_time_ms : f32) = {

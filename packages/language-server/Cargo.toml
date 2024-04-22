@@ -1,0 +1,16 @@
+[package]
+name = "language-server"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[dependencies]
+frontend = { path = "../frontend" }
+lsp-server = "0.7.5"
+lsp-types = "0.95.0"
+serde = "1.0.192"
+serde_json = "1.0.108"
+tree-sitter = "0.22.5"
+tree-sitter-highlight = "0.22.5"
+tree-sitter-nemo = { path = "../tree-sitter-nemo" }
+line-index = "0.1.1"

@@ -1,0 +1,12 @@
+---
+source: packages/frontend/tests/types.rs
+expression: err_buf
+input_file: packages/frontend/tests/type_errors/cant_infer_empty_array.nemo
+---
+[17] Error: Can't infer type of an empty array
+   ╭─[source:1:13]
+   │
+ 2 │   let x = []
+   │           ─┬  
+   │            ╰── Can't infer type of an empty array
+───╯
