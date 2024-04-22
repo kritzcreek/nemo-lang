@@ -63,6 +63,10 @@ pub enum TyErrorData {
     NonArrayIdx(Ty),
     NonStructIdx(Ty),
     NotAFunction(Ty),
+    NonFunctionImport {
+        name: Name,
+        ty: Ty,
+    },
     ArgCountMismatch(usize, usize),
     FieldTypeMismatch {
         struct_name: Name,
@@ -103,6 +107,7 @@ fn code_for_error(err_data: &TyErrorData) -> i32 {
         TyErrorData::TypeMismatch { .. } => 15,
         TyErrorData::NotAFunction(_) => 16,
         TyErrorData::CantInferEmptyArray => 17,
+        TyErrorData::NonFunctionImport { .. } => 18,
     }
 }
 
@@ -129,6 +134,11 @@ fn error_label(err_data: &TyErrorData, name_map: &NameMap) -> String {
         ),
         TyErrorData::NotAFunction(ty) => format!(
             "Can't a call a value of type {} as a function",
+            ty.display(name_map)
+        ),
+        TyErrorData::NonFunctionImport { name, ty } => format!(
+            "Can't import a non-function value. {} is of type {}",
+            name_map.get(name).unwrap().it,
             ty.display(name_map)
         ),
         TyErrorData::ArgCountMismatch(expected, actual) => format!(

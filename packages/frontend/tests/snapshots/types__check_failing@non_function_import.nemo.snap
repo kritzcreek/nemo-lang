@@ -1,0 +1,12 @@
+---
+source: packages/frontend/tests/types.rs
+expression: err_buf
+input_file: packages/frontend/tests/type_errors/non_function_import.nemo
+---
+[18] Error: Can't import a non-function value. internal is of type i32
+   ╭─[source:1:13]
+   │
+ 1 │ import internal : i32 from external
+   │                   ──┬─  
+   │                     ╰─── Can't import a non-function value. internal is of type i32
+───╯

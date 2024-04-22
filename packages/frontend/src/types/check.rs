@@ -206,37 +206,50 @@ impl Typechecker {
     }
 
     fn check_imports(&mut self, root: &Root) -> Option<Vec<ir::Import>> {
-        let mut imports = Some(vec![]);
+        let mut imports = vec![];
         for top_level in root.top_levels() {
             if let TopLevel::TopImport(i) = top_level {
                 let Some(internal_name_tkn) = i.imp_internal().and_then(|x| x.ident_token()) else {
-                    imports = None;
                     continue;
                 };
-                let ty = i.ty().map(|t| self.check_ty(&t)).unwrap_or(Ty::Any);
-
                 let name = self.name_supply.func_idx(&internal_name_tkn);
                 self.record_def(&internal_name_tkn, name);
 
-                if let Ty::Func(func_ty) = &ty {
-                    if let Some(imports) = &mut imports {
-                        if let Some(external_name_tkn) =
-                            i.imp_external().and_then(|x| x.ident_token())
-                        {
-                            imports.push(ir::Import {
-                                span: i.syntax().text_range(),
-                                internal: name,
-                                func_ty: *func_ty.clone(),
-                                external: external_name_tkn.text().to_string(),
-                            })
+                let ty = if let Some(ty_node) = i.ty() {
+                    match self.check_ty(&ty_node) {
+                        ty @ (Ty::Func(_) | Ty::Any) => ty,
+                        ty => {
+                            self.report_error(&ty_node, NonFunctionImport { name, ty });
+                            Ty::Any
                         }
                     }
-                    self.context
-                        .add_var(internal_name_tkn.text().to_string(), ty, name)
-                }
+                } else {
+                    Ty::Any
+                };
+                imports.push(self.build_import_ir(&i, name, &ty));
+                self.context
+                    .add_var(internal_name_tkn.text().to_string(), ty, name);
             }
         }
-        imports
+        imports.into_iter().collect()
+    }
+
+    fn build_import_ir(
+        &mut self,
+        import: &TopImport,
+        internal: Name,
+        ty: &Ty,
+    ) -> Option<ir::Import> {
+        let Ty::Func(func_ty) = ty else {
+            return None;
+        };
+        let external_name_tkn = import.imp_external()?.ident_token()?;
+        Some(ir::Import {
+            span: import.syntax().text_range(),
+            internal,
+            func_ty: *func_ty.clone(),
+            external: external_name_tkn.text().to_string(),
+        })
     }
 
     fn check_type_definitions(&mut self, root: &Root) -> Option<Vec<ir::Struct>> {
