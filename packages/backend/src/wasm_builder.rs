@@ -298,6 +298,7 @@ impl<'a> Builder<'a> {
         let val_type = self.val_ty(ty);
         let ty = GlobalType {
             val_type,
+            shared: false,
             mutable: true,
         };
         let global_data = GlobalData { index, ty, init };

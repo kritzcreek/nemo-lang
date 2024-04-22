@@ -148,14 +148,17 @@ impl<'a> Codegen<'a> {
                 instrs
             }
             ExprData::Array(elements) => {
-                let elem_count = elements.len() as u32;
-                let ty_idx = self.builder.array_type(&expr.ty);
+                let array_size = elements.len() as u32;
+                let array_type_index = self.builder.array_type(&expr.ty);
 
                 let mut instrs = vec![];
                 for element in elements {
                     instrs.extend(self.compile_expr(body, element));
                 }
-                instrs.push(Instruction::ArrayNewFixed(ty_idx, elem_count));
+                instrs.push(Instruction::ArrayNewFixed {
+                    array_type_index,
+                    array_size,
+                });
                 instrs
             }
             ExprData::ArrayIdx { array, index } => {
@@ -205,9 +208,12 @@ impl<'a> Codegen<'a> {
                 instrs
             }
             ExprData::StructIdx { expr, index } => {
-                let (struct_ty, field_index) = self.builder.lookup_field(&index);
+                let (struct_type_index, field_index) = self.builder.lookup_field(&index);
                 let mut instrs = self.compile_expr(body, expr);
-                instrs.push(Instruction::StructGet(struct_ty, field_index));
+                instrs.push(Instruction::StructGet {
+                    struct_type_index,
+                    field_index,
+                });
                 instrs
             }
             ExprData::Intrinsic {
@@ -290,10 +296,13 @@ impl<'a> Codegen<'a> {
                 instrs
             }
             SetTargetData::Struct { target, index } => {
-                let (struct_ty, field_idx) = self.builder.lookup_field(&index);
+                let (struct_type_index, field_index) = self.builder.lookup_field(&index);
                 let mut instrs = self.compile_expr(body, target);
                 instrs.extend(self.compile_expr(body, expr));
-                instrs.push(Instruction::StructSet(struct_ty, field_idx));
+                instrs.push(Instruction::StructSet {
+                    struct_type_index,
+                    field_index,
+                });
                 instrs
             }
             SetTargetData::Var { name } => {
