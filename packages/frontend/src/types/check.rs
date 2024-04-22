@@ -375,7 +375,10 @@ impl Typechecker {
         let mut globals = Some(vec![]);
         for top_level in root.top_levels() {
             if let TopLevel::TopGlobal(top_global) = top_level {
-                let (ty, ir) = match (top_global.ty().map(|t| self.check_ty(&t)), top_global.expr()) {
+                let (ty, ir) = match (
+                    top_global.ty().map(|t| self.check_ty(&t)),
+                    top_global.expr(),
+                ) {
                     (None, None) => {
                         globals = None;
                         continue;

@@ -7,6 +7,7 @@ pub mod types;
 use backend::{codegen::codegen, ir::NameMap};
 use line_index::{LineCol, LineIndex};
 use parser::{parse_prog, ParseError};
+use rowan::TextRange;
 use std::fmt::{self, Write};
 use syntax::{ast::AstNode, nodes::Root};
 use types::{errors::TyError, CheckResult};
@@ -41,6 +42,13 @@ impl CheckError {
         match self {
             CheckError::ParseError(err) => err.it.clone(),
             CheckError::TypeError(err) => err.message(name_map),
+        }
+    }
+
+    pub fn at(&self) -> TextRange {
+        match self {
+            CheckError::ParseError(err) => err.at,
+            CheckError::TypeError(err) => err.at,
         }
     }
 }
@@ -106,11 +114,11 @@ pub fn check_program(source: &str) -> (NameMap, Vec<CheckError>) {
 
 pub fn compile_program(source: &str) -> (NameMap, Result<Vec<u8>, Vec<CheckError>>) {
     let check_result = run_frontend(source);
-    // Maybe don't return Wasm if there are errors?
-    if let Some(ir) = check_result.ir {
-        let wasm = codegen(ir, &check_result.name_map);
-        (check_result.name_map, Ok(wasm))
-    } else {
-        (check_result.name_map, Err(check_result.errors))
+    match check_result.ir {
+        Some(ir) if check_result.errors.is_empty() => {
+            let wasm = codegen(ir, &check_result.name_map);
+            (check_result.name_map, Ok(wasm))
+        }
+        _ => (check_result.name_map, Err(check_result.errors)),
     }
 }
