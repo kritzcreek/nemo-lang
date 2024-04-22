@@ -1,0 +1,97 @@
+Root = TopLevel*
+
+// TopLevel
+TopLevel
+  = TopImport
+  | TopGlobal
+  | TopStruct
+  | TopFn
+
+TopImport = 'import' ImpInternal ':' Type 'from' ImpExternal
+ImpInternal = 'ident'
+ImpExternal = 'ident'
+
+TopGlobal = 'global' 'ident' ':' Type '=' Expr
+
+TopStruct = 'struct' 'upper_ident' '{' StructField* '}'
+StructField = 'ident' ':' Type
+
+TopFn = 'fn' 'ident' '(' Param* ')' (':' Type)? '=' body:EBlock
+Param = 'ident' ':' Type
+
+// Types
+Type
+  = TyInt
+  | TyFloat
+  | TyBool
+  | TyUnit
+  | TyArray
+  | TyCons
+  | TyFn
+
+TyInt = 'i32'
+TyFloat = 'f32'
+TyBool = 'bool'
+TyUnit = 'unit'
+TyArray = '[' elem:Type ']'
+TyCons = 'upper_ident'
+
+TyFn = 'fn' TyArgList '->' result:Type
+TyArgList = '(' Type* ')'
+
+// Literals
+Literal = LitBool | LitFloat | LitInt
+
+LitInt = 'int_lit'
+LitBool = 'true' | 'false'
+LitFloat = 'float_lit'
+
+// Expressions
+Expr
+  = ELit
+  | EVar
+  | EArray
+  | EStruct
+  | ECall
+  | EParen
+  | EBinary
+  | EArrayIdx
+  | EStructIdx
+  | EIf
+  | EBlock
+  | EIntrinsic
+
+ELit = Literal
+EVar = 'ident'
+EArray = '[' Expr* ']'
+EParen = '(' Expr ')'
+EArrayIdx = Expr '[' index:Expr ']'
+
+ECall = Expr EArgList
+EArgList = '(' Expr* ')'
+
+EBinary = lhs:Expr op:('+' | '-') rhs:Expr
+
+EStruct = 'upper_ident' '{' EStructField* '}'
+EStructField = 'ident' '=' Expr
+
+EStructIdx = Expr '.' 'ident'
+EIf = 'if' condition:Expr then_branch:EBlock 'else' else_branch:EBlock
+EBlock = '{' Declaration* '}'
+
+EIntrinsic = 'at_ident' EArgList
+
+// Declarations
+Declaration
+  = DLet
+  | DSet
+  | DWhile
+  | DExpr
+
+DLet = 'let' 'ident' (':' Type)? '=' Expr
+DSet = 'set' SetTarget '=' Expr
+DWhile = 'while' Expr EBlock
+DExpr = Expr
+
+SetTarget = SetTargetExpr
+SetTargetExpr = EVar | EArrayIdx | EStructIdx

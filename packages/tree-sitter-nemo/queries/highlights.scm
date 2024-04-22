@@ -1,5 +1,6 @@
 "struct" @keyword
 "fn" @keyword
+"global" @keyword
 "let" @keyword
 "set" @keyword
 "import" @keyword
@@ -7,7 +8,8 @@
 "if" @keyword
 "else" @keyword
 "while" @keyword
-(bool_lit) @keyword
+"true" @keyword
+"false" @keyword
 
 (ty_i32) @type
 (ty_f32) @type

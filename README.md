@@ -1,8 +1,8 @@
 # nemo-lang
 
-nemo is a small procedural programming language that compiles to Wasm 2.0
+nemo is a small procedural programming language that compiles to Wasm GC
 
-It's main purpose is to serve as a teaching tool in my compilers course.
+Its main purpose is to serve as a teaching tool in my compilers course.
 
 # Example Program
 
@@ -28,15 +28,15 @@ struct Cube {
   color : Color
 }
 
-let red = Color { r = 180.0, g = 0.0, b = 0.0 };
-let green = Color { r = 0.0, g = 180.0, b = 0.0 };
-let blue = Color { r = 0.0, g = 0.0, b = 180.0 };
+global red = Color { r = 180.0, g = 0.0, b = 0.0 }
+global green = Color { r = 0.0, g = 180.0, b = 0.0 }
+global blue = Color { r = 0.0, g = 0.0, b = 180.0 }
 
-let cubes = [
+global cubes = [
   Cube { x = 100.0, y = 0.0, vx = 0.0, vy = 14.0, size = 10.0, color = red },
   Cube { x = 250.0, y = 0.0, vx = 0.0, vy = 13.0, size = 15.0, color = green },
   Cube { x = 400.0, y = 0.0, vx = 0.0, vy = 12.0, size = 20.0, color = blue }
-];
+]
 
 fn clamp(min : f32, val : f32, max : f32) : f32 = {
   f32_min(max, f32_max(min, val))
@@ -109,6 +109,6 @@ Features we implement "on-top"
 - Nested set targets for composite types: `set p.particles[2].vx = 10.0`
 - Block scoping
 
-# Compiler Structure/Pipeline Overview
+# Compiler Structure/Pipeline Overview (Slightly out-of-date)
 
 ![CompilerOverview](https://github.com/kritzcreek/nemo-lang/assets/6189397/db0ef74c-c7c3-410f-9e71-4b4c28ed0451)

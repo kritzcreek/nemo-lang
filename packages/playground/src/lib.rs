@@ -1,8 +1,11 @@
-use nemo_backend::{codegen::codegen, lower::lower};
-use nemo_frontend::{check_program, print_program};
+use frontend::{compile_program, render_errors};
 use serde_derive::{Deserialize, Serialize};
 
-use warp::{hyper::StatusCode, Filter};
+use warp::{
+    hyper::StatusCode,
+    reply::{Json, WithStatus},
+    Filter,
+};
 
 #[derive(Deserialize, Serialize)]
 struct Code {
@@ -21,6 +24,23 @@ pub fn run_playground() {
     rt.block_on(async { async_run().await })
 }
 
+fn run_pipeline(code: Code) -> WithStatus<Json> {
+    match compile_program(&code.code) {
+        (name_map, Err(errs)) => {
+            let json = warp::reply::json(&render_errors(&errs, &code.code, &name_map));
+            warp::reply::with_status(json, StatusCode::BAD_REQUEST)
+        }
+        (_, Ok(compiled)) => {
+            let wasm = Wasm {
+                renamed: code.code,
+                compiled,
+            };
+            let json = warp::reply::json(&wasm);
+            warp::reply::with_status(json, StatusCode::OK)
+        }
+    }
+}
+
 async fn async_run() {
     pretty_env_logger::init();
 
@@ -30,25 +50,7 @@ async fn async_run() {
     let compile = warp::post()
         .and(warp::path("compile"))
         .and(warp::body::json())
-        .map(|code: Code| match check_program(&code.code) {
-            Err(err) => {
-                let err_msg = format!("{}", err);
-                eprintln!("{err_msg}");
-                let json = warp::reply::json(&err_msg);
-                warp::reply::with_status(json, StatusCode::BAD_REQUEST)
-            }
-            Ok(checked) => {
-                let printed = print_program(&checked);
-                let (program, name_map) = lower(checked);
-                let compiled = codegen(program, name_map);
-                let wasm = Wasm {
-                    renamed: printed,
-                    compiled,
-                };
-                let json = warp::reply::json(&wasm);
-                warp::reply::with_status(json, StatusCode::OK)
-            }
-        });
+        .map(run_pipeline);
 
     let files = warp::fs::dir("packages/playground/static");
 

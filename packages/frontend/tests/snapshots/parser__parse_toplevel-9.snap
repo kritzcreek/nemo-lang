@@ -1,0 +1,46 @@
+---
+source: packages/frontend/tests/parser.rs
+expression: output
+input_file: packages/frontend/tests/passing/toplevel.nemo
+---
+global _ = if true { 1 } else { 3 }
+
+
+---
+Root@0..36
+  TopGlobal@0..36
+    LINEFEED@0..1 "\n"
+    GLOBAL_KW@1..7 "global"
+    SPACE@7..8 " "
+    IDENT@8..9 "_"
+    SPACE@9..10 " "
+    EQUALS@10..11 "="
+    SPACE@11..12 " "
+    EIf@12..36
+      IF_KW@12..14 "if"
+      SPACE@14..15 " "
+      ELit@15..20
+        LitBool@15..20
+          TRUE_KW@15..19 "true"
+          SPACE@19..20 " "
+      EBlock@20..26
+        L_BRACE@20..21 "{"
+        SPACE@21..22 " "
+        DExpr@22..24
+          ELit@22..24
+            LitInt@22..24
+              INT_LIT@22..23 "1"
+              SPACE@23..24 " "
+        R_BRACE@24..25 "}"
+        SPACE@25..26 " "
+      ELSE_KW@26..30 "else"
+      SPACE@30..31 " "
+      EBlock@31..36
+        L_BRACE@31..32 "{"
+        SPACE@32..33 " "
+        DExpr@33..35
+          ELit@33..35
+            LitInt@33..35
+              INT_LIT@33..34 "3"
+              SPACE@34..35 " "
+        R_BRACE@35..36 "}"
