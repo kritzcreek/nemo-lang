@@ -268,10 +268,6 @@ impl StructBuilder {
         self
     }
 
-    pub(crate) fn cancel(&mut self) {
-        self.fields = None
-    }
-
     pub(crate) fn build(self) -> Option<ExprData> {
         Some(ExprData::Struct {
             name: self.name?,

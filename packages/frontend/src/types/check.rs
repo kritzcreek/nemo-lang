@@ -557,16 +557,11 @@ impl Typechecker {
                         let mut builder = StructBuilder::new();
                         builder.name(Some(name));
                         // TODO compute missing fields
+                        let mut seen = vec![];
                         for field in struct_expr.e_struct_fields() {
                             let Some(field_tkn) = field.ident_token() else {
-                                builder.cancel();
                                 continue;
                             };
-                            let Some(field_expr) = field.expr() else {
-                                builder.cancel();
-                                continue;
-                            };
-
                             let Some((ty, field_name)) = def.fields.get(field_tkn.text()) else {
                                 self.report_error_token(
                                     &field_tkn,
@@ -575,11 +570,25 @@ impl Typechecker {
                                         field_name: field_tkn.text().to_string(),
                                     },
                                 );
-                                builder.cancel();
                                 continue;
                             };
                             self.record_ref(&field_tkn, *field_name);
-                            builder.field(*field_name, self.check_expr(&field_expr, ty));
+                            seen.push(*field_name);
+                            if let Some(field_expr) = field.expr() {
+                                builder.field(*field_name, self.check_expr(&field_expr, ty));
+                            }
+                        }
+                        // TODO report all missing fields at once
+                        for (_, field_name) in def.fields.values() {
+                            if !seen.contains(field_name) {
+                                self.report_error_token(
+                                    &struct_name_tkn,
+                                    MissingField {
+                                        struct_name: name,
+                                        field_name: *field_name,
+                                    },
+                                );
+                            }
                         }
                         (Ty::Struct(name), builder.build())
                     }
