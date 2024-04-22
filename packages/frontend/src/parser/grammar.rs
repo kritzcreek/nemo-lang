@@ -17,9 +17,18 @@ impl Progress {
 }
 
 pub fn prog(p: &mut Parser) {
-    while toplevel(p) == Progress::Made {}
+    while !p.at(SyntaxKind::EOF) {
+        if !toplevel(p).made_progress() {
+            // RECOVERY
+            p.error("expected a top-level declaration");
+            while !p.at(SyntaxKind::EOF) && !TOP_LEVEL_FIRST.contains(&p.current()) {
+                p.bump_any();
+            }
+        }
+    }
 }
 
+const TOP_LEVEL_FIRST: [SyntaxKind; 4] = [T![let], T![fn], T![import], T![struct]];
 fn toplevel(p: &mut Parser) -> Progress {
     match p.current() {
         T![let] => {
@@ -58,7 +67,6 @@ fn top_import(p: &mut Parser) {
     p.expect(T![ident]);
     p.finish_node();
     p.expect(T![:]);
-    // TODO: Check for only function types
     if !typ(p).made_progress() {
         p.error("expected a function type")
     }
@@ -100,7 +108,9 @@ fn top_fn(p: &mut Parser) {
     param_list(p);
     typ_annot(p);
     p.expect(T![=]);
-    block_expr(p);
+    if !block_expr(p).made_progress() {
+        p.error("expected a function body")
+    }
     p.finish_at(c, SyntaxKind::TopFn)
 }
 
@@ -189,6 +199,20 @@ fn typ(p: &mut Parser) -> Progress {
     Progress::Made
 }
 
+// const EXPR_FIRST: [SyntaxKind; 11] = [
+//     T![true],
+//     T![false],
+//     T![int_lit],
+//     T![float_lit],
+//     T![ident],
+//     T![upper_ident],
+//     T!['('],
+//     T![if],
+//     T!['{'],
+//     T!['['],
+//     T![at_ident],
+// ];
+
 fn lit(p: &mut Parser) -> Progress {
     let c = p.checkpoint();
     match p.current() {
@@ -256,8 +280,7 @@ fn expr(p: &mut Parser) -> Progress {
         return Progress::Made;
     }
     if p.at(T!['{']) {
-        block_expr(p);
-        return Progress::Made;
+        return block_expr(p);
     }
     expr_bp(p, 0)
 }
@@ -268,15 +291,21 @@ fn if_expr(p: &mut Parser) {
     if !expr(p).made_progress() {
         p.error("expected a condition")
     }
-    block_expr(p);
+    if !block_expr(p).made_progress() {
+        p.error("expected a block as the then branch")
+    }
     p.expect(T![else]);
-    block_expr(p);
+    if !block_expr(p).made_progress() {
+        p.error("expected a block as the else branch")
+    }
     p.finish_at(c, SyntaxKind::EIf)
 }
 
-fn block_expr(p: &mut Parser) {
+fn block_expr(p: &mut Parser) -> Progress {
     let c = p.checkpoint();
-    p.expect(T!['{']);
+    if !p.eat(T!['{']) {
+        return Progress::None;
+    }
     while !p.at(SyntaxKind::EOF) && !p.at(T!['}']) {
         if !decl(p).made_progress() {
             break;
@@ -287,7 +316,8 @@ fn block_expr(p: &mut Parser) {
         }
     }
     p.expect(T!['}']);
-    p.finish_at(c, SyntaxKind::EBlock)
+    p.finish_at(c, SyntaxKind::EBlock);
+    Progress::Made
 }
 
 fn call_arg_list(p: &mut Parser) {
@@ -467,6 +497,8 @@ fn while_decl(p: &mut Parser) {
     if !expr(p).made_progress() {
         p.error("expected an expression")
     }
-    block_expr(p);
+    if !block_expr(p).made_progress() {
+        p.error("expected a while body")
+    }
     p.finish_at(c, SyntaxKind::DWhile)
 }
