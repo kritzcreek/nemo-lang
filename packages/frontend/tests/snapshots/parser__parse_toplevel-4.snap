@@ -3,15 +3,15 @@ source: packages/frontend/tests/parser.rs
 expression: output
 input_file: packages/frontend/tests/passing/toplevel.nemo
 ---
-global _ = x[1];
-global _ = x[x[x]];
-global _ = [1, 2][0];
-global _ = [[1]][0][0];
+global _ = x[1]
+global _ = x[x[x]]
+global _ = [1, 2][0]
+global _ = [[1]][0][0]
 
 
 ---
-Root@0..83
-  TopGlobal@0..17
+Root@0..79
+  TopGlobal@0..16
     LINEFEED@0..1 "\n"
     GLOBAL_KW@1..7 "global"
     SPACE@7..8 " "
@@ -27,81 +27,77 @@ Root@0..83
         LitInt@14..15
           INT_LIT@14..15 "1"
       R_BRACKET@15..16 "]"
-    SEMICOLON@16..17 ";"
-  TopGlobal@17..37
-    LINEFEED@17..18 "\n"
-    GLOBAL_KW@18..24 "global"
-    SPACE@24..25 " "
-    IDENT@25..26 "_"
-    SPACE@26..27 " "
-    EQUALS@27..28 "="
-    SPACE@28..29 " "
-    EArrayIdx@29..36
-      EVar@29..30
-        IDENT@29..30 "x"
-      L_BRACKET@30..31 "["
-      EArrayIdx@31..35
-        EVar@31..32
-          IDENT@31..32 "x"
-        L_BRACKET@32..33 "["
-        EVar@33..34
-          IDENT@33..34 "x"
-        R_BRACKET@34..35 "]"
-      R_BRACKET@35..36 "]"
-    SEMICOLON@36..37 ";"
-  TopGlobal@37..59
-    LINEFEED@37..38 "\n"
-    GLOBAL_KW@38..44 "global"
+  TopGlobal@16..35
+    LINEFEED@16..17 "\n"
+    GLOBAL_KW@17..23 "global"
+    SPACE@23..24 " "
+    IDENT@24..25 "_"
+    SPACE@25..26 " "
+    EQUALS@26..27 "="
+    SPACE@27..28 " "
+    EArrayIdx@28..35
+      EVar@28..29
+        IDENT@28..29 "x"
+      L_BRACKET@29..30 "["
+      EArrayIdx@30..34
+        EVar@30..31
+          IDENT@30..31 "x"
+        L_BRACKET@31..32 "["
+        EVar@32..33
+          IDENT@32..33 "x"
+        R_BRACKET@33..34 "]"
+      R_BRACKET@34..35 "]"
+  TopGlobal@35..56
+    LINEFEED@35..36 "\n"
+    GLOBAL_KW@36..42 "global"
+    SPACE@42..43 " "
+    IDENT@43..44 "_"
     SPACE@44..45 " "
-    IDENT@45..46 "_"
+    EQUALS@45..46 "="
     SPACE@46..47 " "
-    EQUALS@47..48 "="
-    SPACE@48..49 " "
-    EArrayIdx@49..58
-      EArray@49..55
-        L_BRACKET@49..50 "["
-        ELit@50..51
-          LitInt@50..51
-            INT_LIT@50..51 "1"
-        COMMA@51..52 ","
-        SPACE@52..53 " "
-        ELit@53..54
-          LitInt@53..54
-            INT_LIT@53..54 "2"
-        R_BRACKET@54..55 "]"
-      L_BRACKET@55..56 "["
-      ELit@56..57
-        LitInt@56..57
-          INT_LIT@56..57 "0"
-      R_BRACKET@57..58 "]"
-    SEMICOLON@58..59 ";"
-  TopGlobal@59..83
-    LINEFEED@59..60 "\n"
-    GLOBAL_KW@60..66 "global"
-    SPACE@66..67 " "
-    IDENT@67..68 "_"
-    SPACE@68..69 " "
-    EQUALS@69..70 "="
-    SPACE@70..71 " "
-    EArrayIdx@71..82
-      EArrayIdx@71..79
-        EArray@71..76
-          L_BRACKET@71..72 "["
-          EArray@72..75
-            L_BRACKET@72..73 "["
-            ELit@73..74
-              LitInt@73..74
-                INT_LIT@73..74 "1"
-            R_BRACKET@74..75 "]"
-          R_BRACKET@75..76 "]"
-        L_BRACKET@76..77 "["
-        ELit@77..78
-          LitInt@77..78
-            INT_LIT@77..78 "0"
-        R_BRACKET@78..79 "]"
-      L_BRACKET@79..80 "["
-      ELit@80..81
-        LitInt@80..81
-          INT_LIT@80..81 "0"
-      R_BRACKET@81..82 "]"
-    SEMICOLON@82..83 ";"
+    EArrayIdx@47..56
+      EArray@47..53
+        L_BRACKET@47..48 "["
+        ELit@48..49
+          LitInt@48..49
+            INT_LIT@48..49 "1"
+        COMMA@49..50 ","
+        SPACE@50..51 " "
+        ELit@51..52
+          LitInt@51..52
+            INT_LIT@51..52 "2"
+        R_BRACKET@52..53 "]"
+      L_BRACKET@53..54 "["
+      ELit@54..55
+        LitInt@54..55
+          INT_LIT@54..55 "0"
+      R_BRACKET@55..56 "]"
+  TopGlobal@56..79
+    LINEFEED@56..57 "\n"
+    GLOBAL_KW@57..63 "global"
+    SPACE@63..64 " "
+    IDENT@64..65 "_"
+    SPACE@65..66 " "
+    EQUALS@66..67 "="
+    SPACE@67..68 " "
+    EArrayIdx@68..79
+      EArrayIdx@68..76
+        EArray@68..73
+          L_BRACKET@68..69 "["
+          EArray@69..72
+            L_BRACKET@69..70 "["
+            ELit@70..71
+              LitInt@70..71
+                INT_LIT@70..71 "1"
+            R_BRACKET@71..72 "]"
+          R_BRACKET@72..73 "]"
+        L_BRACKET@73..74 "["
+        ELit@74..75
+          LitInt@74..75
+            INT_LIT@74..75 "0"
+        R_BRACKET@75..76 "]"
+      L_BRACKET@76..77 "["
+      ELit@77..78
+        LitInt@77..78
+          INT_LIT@77..78 "0"
+      R_BRACKET@78..79 "]"

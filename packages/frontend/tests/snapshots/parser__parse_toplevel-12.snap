@@ -15,12 +15,12 @@ global _ = {
       1;
       2
     };
-};
+}
 
 
 ---
-Root@0..181
-  TopGlobal@0..181
+Root@0..180
+  TopGlobal@0..180
     LINEFEED@0..1 "\n"
     GLOBAL_KW@1..7 "global"
     SPACE@7..8 " "
@@ -192,4 +192,3 @@ Root@0..181
       SEMICOLON@177..178 ";"
       LINEFEED@178..179 "\n"
       R_BRACE@179..180 "}"
-    SEMICOLON@180..181 ";"

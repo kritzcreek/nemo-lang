@@ -3,12 +3,12 @@ source: packages/frontend/tests/parser.rs
 expression: output
 input_file: packages/frontend/tests/passing/toplevel.nemo
 ---
-global _ = if true { 1 } else { 3 };
+global _ = if true { 1 } else { 3 }
 
 
 ---
-Root@0..37
-  TopGlobal@0..37
+Root@0..36
+  TopGlobal@0..36
     LINEFEED@0..1 "\n"
     GLOBAL_KW@1..7 "global"
     SPACE@7..8 " "
@@ -44,4 +44,3 @@ Root@0..37
               INT_LIT@33..34 "3"
               SPACE@34..35 " "
         R_BRACE@35..36 "}"
-    SEMICOLON@36..37 ";"

@@ -3,10 +3,10 @@ source: packages/frontend/tests/types.rs
 expression: err_buf
 input_file: packages/frontend/tests/type_errors/invalid_literal.nemo
 ---
-[Parsing error] Error: expected a top-level declaration
+[02] Error: Invalid literal couldn't be parsed
    ╭─[source:1:13]
    │
- 1 │ let x = 1000000000000000000000000000000000000000000000000000000000000;
-   │ ─┬─  
-   │  ╰─── expected a top-level declaration
+ 1 │ global x = 1000000000000000000000000000000000000000000000000000000000000
+   │            ──────────────────────────────┬──────────────────────────────  
+   │                                          ╰──────────────────────────────── Invalid literal couldn't be parsed
 ───╯

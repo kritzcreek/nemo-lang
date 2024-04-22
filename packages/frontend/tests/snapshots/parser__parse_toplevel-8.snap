@@ -3,13 +3,13 @@ source: packages/frontend/tests/parser.rs
 expression: output
 input_file: packages/frontend/tests/passing/toplevel.nemo
 ---
-global _ = @array_len([]);
-global _ = @array_new(1, 2);
+global _ = @array_len([])
+global _ = @array_new(1, 2)
 
 
 ---
-Root@0..56
-  TopGlobal@0..27
+Root@0..54
+  TopGlobal@0..26
     LINEFEED@0..1 "\n"
     GLOBAL_KW@1..7 "global"
     SPACE@7..8 " "
@@ -25,26 +25,24 @@ Root@0..56
           L_BRACKET@23..24 "["
           R_BRACKET@24..25 "]"
         R_PAREN@25..26 ")"
-    SEMICOLON@26..27 ";"
-  TopGlobal@27..56
-    LINEFEED@27..28 "\n"
-    GLOBAL_KW@28..34 "global"
-    SPACE@34..35 " "
-    IDENT@35..36 "_"
-    SPACE@36..37 " "
-    EQUALS@37..38 "="
-    SPACE@38..39 " "
-    EIntrinsic@39..55
-      AT_IDENT@39..49 "@array_new"
-      EArgList@49..55
-        L_PAREN@49..50 "("
-        ELit@50..51
-          LitInt@50..51
-            INT_LIT@50..51 "1"
-        COMMA@51..52 ","
-        SPACE@52..53 " "
-        ELit@53..54
-          LitInt@53..54
-            INT_LIT@53..54 "2"
-        R_PAREN@54..55 ")"
-    SEMICOLON@55..56 ";"
+  TopGlobal@26..54
+    LINEFEED@26..27 "\n"
+    GLOBAL_KW@27..33 "global"
+    SPACE@33..34 " "
+    IDENT@34..35 "_"
+    SPACE@35..36 " "
+    EQUALS@36..37 "="
+    SPACE@37..38 " "
+    EIntrinsic@38..54
+      AT_IDENT@38..48 "@array_new"
+      EArgList@48..54
+        L_PAREN@48..49 "("
+        ELit@49..50
+          LitInt@49..50
+            INT_LIT@49..50 "1"
+        COMMA@50..51 ","
+        SPACE@51..52 " "
+        ELit@52..53
+          LitInt@52..53
+            INT_LIT@52..53 "2"
+        R_PAREN@53..54 ")"

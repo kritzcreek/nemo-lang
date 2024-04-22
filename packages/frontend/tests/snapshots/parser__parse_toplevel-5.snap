@@ -3,15 +3,15 @@ source: packages/frontend/tests/parser.rs
 expression: output
 input_file: packages/frontend/tests/passing/toplevel.nemo
 ---
-global _ = Vec { };
-global _ = Vec { x = 10 };
-global _ = Vec { x = 10, y = 1.0 };
-global _ = Vec { x = 10, y = 1.0, };
+global _ = Vec { }
+global _ = Vec { x = 10 }
+global _ = Vec { x = 10, y = 1.0 }
+global _ = Vec { x = 10, y = 1.0, }
 
 
 ---
-Root@0..120
-  TopGlobal@0..20
+Root@0..116
+  TopGlobal@0..19
     LINEFEED@0..1 "\n"
     GLOBAL_KW@1..7 "global"
     SPACE@7..8 " "
@@ -25,97 +25,93 @@ Root@0..120
       L_BRACE@16..17 "{"
       SPACE@17..18 " "
       R_BRACE@18..19 "}"
-    SEMICOLON@19..20 ";"
-  TopGlobal@20..47
-    LINEFEED@20..21 "\n"
-    GLOBAL_KW@21..27 "global"
-    SPACE@27..28 " "
-    IDENT@28..29 "_"
-    SPACE@29..30 " "
-    EQUALS@30..31 "="
-    SPACE@31..32 " "
-    EStruct@32..46
-      UPPER_IDENT@32..35 "Vec"
-      SPACE@35..36 " "
-      L_BRACE@36..37 "{"
-      SPACE@37..38 " "
-      EStructField@38..45
-        IDENT@38..39 "x"
-        SPACE@39..40 " "
-        EQUALS@40..41 "="
-        SPACE@41..42 " "
-        ELit@42..45
-          LitInt@42..45
-            INT_LIT@42..44 "10"
-            SPACE@44..45 " "
-      R_BRACE@45..46 "}"
-    SEMICOLON@46..47 ";"
-  TopGlobal@47..83
-    LINEFEED@47..48 "\n"
-    GLOBAL_KW@48..54 "global"
+  TopGlobal@19..45
+    LINEFEED@19..20 "\n"
+    GLOBAL_KW@20..26 "global"
+    SPACE@26..27 " "
+    IDENT@27..28 "_"
+    SPACE@28..29 " "
+    EQUALS@29..30 "="
+    SPACE@30..31 " "
+    EStruct@31..45
+      UPPER_IDENT@31..34 "Vec"
+      SPACE@34..35 " "
+      L_BRACE@35..36 "{"
+      SPACE@36..37 " "
+      EStructField@37..44
+        IDENT@37..38 "x"
+        SPACE@38..39 " "
+        EQUALS@39..40 "="
+        SPACE@40..41 " "
+        ELit@41..44
+          LitInt@41..44
+            INT_LIT@41..43 "10"
+            SPACE@43..44 " "
+      R_BRACE@44..45 "}"
+  TopGlobal@45..80
+    LINEFEED@45..46 "\n"
+    GLOBAL_KW@46..52 "global"
+    SPACE@52..53 " "
+    IDENT@53..54 "_"
     SPACE@54..55 " "
-    IDENT@55..56 "_"
+    EQUALS@55..56 "="
     SPACE@56..57 " "
-    EQUALS@57..58 "="
-    SPACE@58..59 " "
-    EStruct@59..82
-      UPPER_IDENT@59..62 "Vec"
+    EStruct@57..80
+      UPPER_IDENT@57..60 "Vec"
+      SPACE@60..61 " "
+      L_BRACE@61..62 "{"
       SPACE@62..63 " "
-      L_BRACE@63..64 "{"
-      SPACE@64..65 " "
-      EStructField@65..71
-        IDENT@65..66 "x"
+      EStructField@63..69
+        IDENT@63..64 "x"
+        SPACE@64..65 " "
+        EQUALS@65..66 "="
         SPACE@66..67 " "
-        EQUALS@67..68 "="
-        SPACE@68..69 " "
-        ELit@69..71
-          LitInt@69..71
-            INT_LIT@69..71 "10"
-      COMMA@71..72 ","
-      SPACE@72..73 " "
-      EStructField@73..81
-        IDENT@73..74 "y"
+        ELit@67..69
+          LitInt@67..69
+            INT_LIT@67..69 "10"
+      COMMA@69..70 ","
+      SPACE@70..71 " "
+      EStructField@71..79
+        IDENT@71..72 "y"
+        SPACE@72..73 " "
+        EQUALS@73..74 "="
         SPACE@74..75 " "
-        EQUALS@75..76 "="
-        SPACE@76..77 " "
-        ELit@77..81
-          LitFloat@77..81
-            FLOAT_LIT@77..80 "1.0"
-            SPACE@80..81 " "
-      R_BRACE@81..82 "}"
-    SEMICOLON@82..83 ";"
-  TopGlobal@83..120
-    LINEFEED@83..84 "\n"
-    GLOBAL_KW@84..90 "global"
-    SPACE@90..91 " "
-    IDENT@91..92 "_"
-    SPACE@92..93 " "
-    EQUALS@93..94 "="
-    SPACE@94..95 " "
-    EStruct@95..119
-      UPPER_IDENT@95..98 "Vec"
-      SPACE@98..99 " "
-      L_BRACE@99..100 "{"
-      SPACE@100..101 " "
-      EStructField@101..107
-        IDENT@101..102 "x"
-        SPACE@102..103 " "
-        EQUALS@103..104 "="
-        SPACE@104..105 " "
-        ELit@105..107
-          LitInt@105..107
-            INT_LIT@105..107 "10"
-      COMMA@107..108 ","
-      SPACE@108..109 " "
-      EStructField@109..116
-        IDENT@109..110 "y"
-        SPACE@110..111 " "
-        EQUALS@111..112 "="
-        SPACE@112..113 " "
-        ELit@113..116
-          LitFloat@113..116
-            FLOAT_LIT@113..116 "1.0"
-      COMMA@116..117 ","
-      SPACE@117..118 " "
-      R_BRACE@118..119 "}"
-    SEMICOLON@119..120 ";"
+        ELit@75..79
+          LitFloat@75..79
+            FLOAT_LIT@75..78 "1.0"
+            SPACE@78..79 " "
+      R_BRACE@79..80 "}"
+  TopGlobal@80..116
+    LINEFEED@80..81 "\n"
+    GLOBAL_KW@81..87 "global"
+    SPACE@87..88 " "
+    IDENT@88..89 "_"
+    SPACE@89..90 " "
+    EQUALS@90..91 "="
+    SPACE@91..92 " "
+    EStruct@92..116
+      UPPER_IDENT@92..95 "Vec"
+      SPACE@95..96 " "
+      L_BRACE@96..97 "{"
+      SPACE@97..98 " "
+      EStructField@98..104
+        IDENT@98..99 "x"
+        SPACE@99..100 " "
+        EQUALS@100..101 "="
+        SPACE@101..102 " "
+        ELit@102..104
+          LitInt@102..104
+            INT_LIT@102..104 "10"
+      COMMA@104..105 ","
+      SPACE@105..106 " "
+      EStructField@106..113
+        IDENT@106..107 "y"
+        SPACE@107..108 " "
+        EQUALS@108..109 "="
+        SPACE@109..110 " "
+        ELit@110..113
+          LitFloat@110..113
+            FLOAT_LIT@110..113 "1.0"
+      COMMA@113..114 ","
+      SPACE@114..115 " "
+      R_BRACE@115..116 "}"

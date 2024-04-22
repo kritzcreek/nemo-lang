@@ -3,18 +3,18 @@ source: packages/frontend/tests/parser.rs
 expression: output
 input_file: packages/frontend/tests/passing/toplevel.nemo
 ---
-global _ = {};
-global _ = {1};
+global _ = {}
+global _ = {1}
 global _ = {
     1;
     x;
     2
-};
+}
 
 
 ---
-Root@0..67
-  TopGlobal@0..15
+Root@0..64
+  TopGlobal@0..14
     LINEFEED@0..1 "\n"
     GLOBAL_KW@1..7 "global"
     SPACE@7..8 " "
@@ -25,52 +25,49 @@ Root@0..67
     EBlock@12..14
       L_BRACE@12..13 "{"
       R_BRACE@13..14 "}"
-    SEMICOLON@14..15 ";"
-  TopGlobal@15..31
-    LINEFEED@15..16 "\n"
-    GLOBAL_KW@16..22 "global"
-    SPACE@22..23 " "
-    IDENT@23..24 "_"
-    SPACE@24..25 " "
-    EQUALS@25..26 "="
-    SPACE@26..27 " "
-    EBlock@27..30
-      L_BRACE@27..28 "{"
-      DExpr@28..29
-        ELit@28..29
-          LitInt@28..29
-            INT_LIT@28..29 "1"
-      R_BRACE@29..30 "}"
-    SEMICOLON@30..31 ";"
-  TopGlobal@31..67
-    LINEFEED@31..32 "\n"
-    GLOBAL_KW@32..38 "global"
+  TopGlobal@14..29
+    LINEFEED@14..15 "\n"
+    GLOBAL_KW@15..21 "global"
+    SPACE@21..22 " "
+    IDENT@22..23 "_"
+    SPACE@23..24 " "
+    EQUALS@24..25 "="
+    SPACE@25..26 " "
+    EBlock@26..29
+      L_BRACE@26..27 "{"
+      DExpr@27..28
+        ELit@27..28
+          LitInt@27..28
+            INT_LIT@27..28 "1"
+      R_BRACE@28..29 "}"
+  TopGlobal@29..64
+    LINEFEED@29..30 "\n"
+    GLOBAL_KW@30..36 "global"
+    SPACE@36..37 " "
+    IDENT@37..38 "_"
     SPACE@38..39 " "
-    IDENT@39..40 "_"
+    EQUALS@39..40 "="
     SPACE@40..41 " "
-    EQUALS@41..42 "="
-    SPACE@42..43 " "
-    EBlock@43..66
-      L_BRACE@43..44 "{"
-      DExpr@44..50
-        ELit@44..50
-          LitInt@44..50
-            LINEFEED@44..45 "\n"
-            SPACE@45..49 "    "
-            INT_LIT@49..50 "1"
-      SEMICOLON@50..51 ";"
-      DExpr@51..57
-        EVar@51..57
-          LINEFEED@51..52 "\n"
-          SPACE@52..56 "    "
-          IDENT@56..57 "x"
-      SEMICOLON@57..58 ";"
-      DExpr@58..64
-        ELit@58..64
-          LitInt@58..64
-            LINEFEED@58..59 "\n"
-            SPACE@59..63 "    "
-            INT_LIT@63..64 "2"
-      LINEFEED@64..65 "\n"
-      R_BRACE@65..66 "}"
-    SEMICOLON@66..67 ";"
+    EBlock@41..64
+      L_BRACE@41..42 "{"
+      DExpr@42..48
+        ELit@42..48
+          LitInt@42..48
+            LINEFEED@42..43 "\n"
+            SPACE@43..47 "    "
+            INT_LIT@47..48 "1"
+      SEMICOLON@48..49 ";"
+      DExpr@49..55
+        EVar@49..55
+          LINEFEED@49..50 "\n"
+          SPACE@50..54 "    "
+          IDENT@54..55 "x"
+      SEMICOLON@55..56 ";"
+      DExpr@56..62
+        ELit@56..62
+          LitInt@56..62
+            LINEFEED@56..57 "\n"
+            SPACE@57..61 "    "
+            INT_LIT@61..62 "2"
+      LINEFEED@62..63 "\n"
+      R_BRACE@63..64 "}"
