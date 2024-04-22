@@ -11,7 +11,7 @@ pub fn highlight(program: &str) -> Vec<HighlightEvent> {
     let nemo_language = language();
 
     let mut nemo_config =
-        HighlightConfiguration::new(nemo_language, HIGHLIGHTS_QUERY, "", "").unwrap();
+        HighlightConfiguration::new(nemo_language, "nemo", HIGHLIGHTS_QUERY, "", "").unwrap();
 
     nemo_config.configure(&HIGHLIGHT_NAMES);
 

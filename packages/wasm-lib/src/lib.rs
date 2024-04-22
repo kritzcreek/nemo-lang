@@ -16,7 +16,7 @@ pub struct CompileResult {
 
 #[wasm_bindgen]
 pub fn compile(input: &str) -> CompileResult {
-    let (name_map, result) = frontend::compile_program(&input);
+    let (name_map, result) = frontend::compile_program(input);
     match result {
         Ok(wasm) => CompileResult {
             wasm,
@@ -27,7 +27,7 @@ pub fn compile(input: &str) -> CompileResult {
             errors: errors
                 .into_iter()
                 .map(|e| Diagnostic {
-                    message: format!("{}", e.message(&name_map)),
+                    message: e.message(&name_map),
                     start: e.at().start().into(),
                     end: e.at().end().into(),
                 })
