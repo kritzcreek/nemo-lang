@@ -28,12 +28,12 @@ pub fn prog(p: &mut Parser) {
     }
 }
 
-const TOP_LEVEL_FIRST: [SyntaxKind; 4] = [T![let], T![fn], T![import], T![struct]];
+const TOP_LEVEL_FIRST: [SyntaxKind; 4] = [T![global], T![fn], T![import], T![struct]];
 fn toplevel(p: &mut Parser) -> Progress {
     match p.current() {
-        T![let] => {
+        T![global] => {
             let c = p.checkpoint();
-            p.bump(SyntaxKind::LET_KW);
+            p.bump(T![global]);
             p.expect(SyntaxKind::IDENT);
             typ_annot(p);
             p.expect(SyntaxKind::EQUALS);
@@ -41,7 +41,7 @@ fn toplevel(p: &mut Parser) -> Progress {
                 p.error("expected an expression")
             }
             p.expect(SyntaxKind::SEMICOLON);
-            p.finish_at(c, SyntaxKind::TopLet);
+            p.finish_at(c, SyntaxKind::TopGlobal);
             Progress::Made
         }
         T![fn] => {

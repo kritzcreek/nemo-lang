@@ -34,14 +34,14 @@ struct RingBuffer {
   watermark : i32
 }
 
-let two_pi = 3.14159265359 * 2.0;
-let particle_timer = 200.0;
+global two_pi = 3.14159265359 * 2.0;
+global particle_timer = 200.0;
 
-let red = Color { r = 180.0, g = 0.0, b = 0.0 };
-let green = Color { r = 0.0, g = 180.0, b = 0.0 };
-let blue = Color { r = 0.0, g = 0.0, b = 180.0 };
+global red = Color { r = 180.0, g = 0.0, b = 0.0 };
+global green = Color { r = 0.0, g = 180.0, b = 0.0 };
+global blue = Color { r = 0.0, g = 0.0, b = 180.0 };
 
-let cubes = [
+global cubes = [
   Cube { x =   0.0, y = 0.0, vx =  9.0, vy = 14.0, size = 10.0, color = red },
   Cube { x = 100.0, y = 0.0, vx = 10.0, vy = 13.0, size = 15.0, color = green },
   Cube { x = 200.0, y = 0.0, vx = 11.0, vy = 12.0, size = 20.0, color = blue },
@@ -51,7 +51,7 @@ let cubes = [
   Cube { x = 500.0, y = 0.0, vx = 19.0, vy = 17.0, size = 35.0, color = blue }
 ];
 
-let particles = RingBuffer {
+global particles = RingBuffer {
   buffer = @array_new(Particle { x = 0.0, y = 0.0, color = red, time = 0.0 }, 25),
   watermark = 0
 };

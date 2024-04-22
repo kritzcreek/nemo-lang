@@ -3,97 +3,97 @@ source: packages/frontend/tests/parser.rs
 expression: output
 input_file: packages/frontend/tests/passing/toplevel.nemo
 ---
-let _ = 0;
-let _ = 4242;
-let _ = true;
-let _ = false;
-let _ = 0.0;
-let _ = 0.1234;
-let _ = 1234.1234;
+global _ = 0;
+global _ = 4242;
+global _ = true;
+global _ = false;
+global _ = 0.0;
+global _ = 0.1234;
+global _ = 1234.1234;
 
 
 ---
-Root@0..101
-  TopLet@0..10
-    LET_KW@0..3 "let"
-    SPACE@3..4 " "
-    IDENT@4..5 "_"
-    SPACE@5..6 " "
-    EQUALS@6..7 "="
-    SPACE@7..8 " "
-    ELit@8..9
-      LitInt@8..9
-        INT_LIT@8..9 "0"
-    SEMICOLON@9..10 ";"
-  TopLet@10..24
-    LINEFEED@10..11 "\n"
-    LET_KW@11..14 "let"
-    SPACE@14..15 " "
-    IDENT@15..16 "_"
-    SPACE@16..17 " "
-    EQUALS@17..18 "="
-    SPACE@18..19 " "
-    ELit@19..23
-      LitInt@19..23
-        INT_LIT@19..23 "4242"
-    SEMICOLON@23..24 ";"
-  TopLet@24..38
-    LINEFEED@24..25 "\n"
-    LET_KW@25..28 "let"
-    SPACE@28..29 " "
-    IDENT@29..30 "_"
-    SPACE@30..31 " "
-    EQUALS@31..32 "="
-    SPACE@32..33 " "
-    ELit@33..37
-      LitBool@33..37
-        TRUE_KW@33..37 "true"
-    SEMICOLON@37..38 ";"
-  TopLet@38..53
-    LINEFEED@38..39 "\n"
-    LET_KW@39..42 "let"
-    SPACE@42..43 " "
-    IDENT@43..44 "_"
-    SPACE@44..45 " "
-    EQUALS@45..46 "="
-    SPACE@46..47 " "
-    ELit@47..52
-      LitBool@47..52
-        FALSE_KW@47..52 "false"
-    SEMICOLON@52..53 ";"
-  TopLet@53..66
-    LINEFEED@53..54 "\n"
-    LET_KW@54..57 "let"
-    SPACE@57..58 " "
-    IDENT@58..59 "_"
-    SPACE@59..60 " "
-    EQUALS@60..61 "="
-    SPACE@61..62 " "
-    ELit@62..65
-      LitFloat@62..65
-        FLOAT_LIT@62..65 "0.0"
-    SEMICOLON@65..66 ";"
-  TopLet@66..82
-    LINEFEED@66..67 "\n"
-    LET_KW@67..70 "let"
-    SPACE@70..71 " "
-    IDENT@71..72 "_"
+Root@0..122
+  TopGlobal@0..13
+    GLOBAL_KW@0..6 "global"
+    SPACE@6..7 " "
+    IDENT@7..8 "_"
+    SPACE@8..9 " "
+    EQUALS@9..10 "="
+    SPACE@10..11 " "
+    ELit@11..12
+      LitInt@11..12
+        INT_LIT@11..12 "0"
+    SEMICOLON@12..13 ";"
+  TopGlobal@13..30
+    LINEFEED@13..14 "\n"
+    GLOBAL_KW@14..20 "global"
+    SPACE@20..21 " "
+    IDENT@21..22 "_"
+    SPACE@22..23 " "
+    EQUALS@23..24 "="
+    SPACE@24..25 " "
+    ELit@25..29
+      LitInt@25..29
+        INT_LIT@25..29 "4242"
+    SEMICOLON@29..30 ";"
+  TopGlobal@30..47
+    LINEFEED@30..31 "\n"
+    GLOBAL_KW@31..37 "global"
+    SPACE@37..38 " "
+    IDENT@38..39 "_"
+    SPACE@39..40 " "
+    EQUALS@40..41 "="
+    SPACE@41..42 " "
+    ELit@42..46
+      LitBool@42..46
+        TRUE_KW@42..46 "true"
+    SEMICOLON@46..47 ";"
+  TopGlobal@47..65
+    LINEFEED@47..48 "\n"
+    GLOBAL_KW@48..54 "global"
+    SPACE@54..55 " "
+    IDENT@55..56 "_"
+    SPACE@56..57 " "
+    EQUALS@57..58 "="
+    SPACE@58..59 " "
+    ELit@59..64
+      LitBool@59..64
+        FALSE_KW@59..64 "false"
+    SEMICOLON@64..65 ";"
+  TopGlobal@65..81
+    LINEFEED@65..66 "\n"
+    GLOBAL_KW@66..72 "global"
     SPACE@72..73 " "
-    EQUALS@73..74 "="
+    IDENT@73..74 "_"
     SPACE@74..75 " "
-    ELit@75..81
-      LitFloat@75..81
-        FLOAT_LIT@75..81 "0.1234"
-    SEMICOLON@81..82 ";"
-  TopLet@82..101
-    LINEFEED@82..83 "\n"
-    LET_KW@83..86 "let"
-    SPACE@86..87 " "
-    IDENT@87..88 "_"
+    EQUALS@75..76 "="
+    SPACE@76..77 " "
+    ELit@77..80
+      LitFloat@77..80
+        FLOAT_LIT@77..80 "0.0"
+    SEMICOLON@80..81 ";"
+  TopGlobal@81..100
+    LINEFEED@81..82 "\n"
+    GLOBAL_KW@82..88 "global"
     SPACE@88..89 " "
-    EQUALS@89..90 "="
+    IDENT@89..90 "_"
     SPACE@90..91 " "
-    ELit@91..100
-      LitFloat@91..100
-        FLOAT_LIT@91..100 "1234.1234"
-    SEMICOLON@100..101 ";"
+    EQUALS@91..92 "="
+    SPACE@92..93 " "
+    ELit@93..99
+      LitFloat@93..99
+        FLOAT_LIT@93..99 "0.1234"
+    SEMICOLON@99..100 ";"
+  TopGlobal@100..122
+    LINEFEED@100..101 "\n"
+    GLOBAL_KW@101..107 "global"
+    SPACE@107..108 " "
+    IDENT@108..109 "_"
+    SPACE@109..110 " "
+    EQUALS@110..111 "="
+    SPACE@111..112 " "
+    ELit@112..121
+      LitFloat@112..121
+        FLOAT_LIT@112..121 "1234.1234"
+    SEMICOLON@121..122 ";"

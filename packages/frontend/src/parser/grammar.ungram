@@ -3,7 +3,7 @@ Root = TopLevel*
 // TopLevel
 TopLevel
   = TopImport
-  | TopLet
+  | TopGlobal
   | TopStruct
   | TopFn
 
@@ -11,7 +11,7 @@ TopImport = 'import' ImpInternal ':' Type 'from' ImpExternal
 ImpInternal = 'ident'
 ImpExternal = 'ident'
 
-TopLet = 'let' 'ident' ':' Type '=' Expr
+TopGlobal = 'global' 'ident' ':' Type '=' Expr
 
 TopStruct = 'struct' 'upper_ident' '{' StructField* '}'
 StructField = 'ident' ':' Type

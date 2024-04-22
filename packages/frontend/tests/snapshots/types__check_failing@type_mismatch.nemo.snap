@@ -3,18 +3,10 @@ source: packages/frontend/tests/types.rs
 expression: err_buf
 input_file: packages/frontend/tests/type_errors/type_mismatch.nemo
 ---
-[Parsing error] Error: expected SEMICOLON
+[Parsing error] Error: expected a top-level declaration
    ╭─[source:1:13]
    │
  1 │ let x : i32 = 10.0
-   │                   ┬  
-   │                   ╰── expected SEMICOLON
-───╯
-
-[15] Error: Type mismatch. Expected i32, but got f32
-   ╭─[source:1:13]
-   │
- 1 │ let x : i32 = 10.0
-   │               ──┬─  
-   │                 ╰─── Type mismatch. Expected i32, but got f32
+   │ ─┬─  
+   │  ╰─── expected a top-level declaration
 ───╯

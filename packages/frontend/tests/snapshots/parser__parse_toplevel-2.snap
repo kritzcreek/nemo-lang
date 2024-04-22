@@ -3,242 +3,242 @@ source: packages/frontend/tests/parser.rs
 expression: output
 input_file: packages/frontend/tests/passing/toplevel.nemo
 ---
-let _ : i32 = 0;
-let _ : f32 = 0;
-let _ : bool = 0;
-let _ : unit = 0;
-let _ : Struct = 0;
-let _ : [i32] = 0;
-let _ : [[Struct]] = 0;
-let _ : fn() -> unit = 0;
-let _ : fn(i32) -> f32 = 0;
-let _ : fn(i32, f32, fn(i32) -> i32) -> f32 = 0;
+global _ : i32 = 0;
+global _ : f32 = 0;
+global _ : bool = 0;
+global _ : unit = 0;
+global _ : Struct = 0;
+global _ : [i32] = 0;
+global _ : [[Struct]] = 0;
+global _ : fn() -> unit = 0;
+global _ : fn(i32) -> f32 = 0;
+global _ : fn(i32, f32, fn(i32) -> i32) -> f32 = 0;
 
 
 ---
-Root@0..236
-  TopLet@0..17
+Root@0..266
+  TopGlobal@0..20
     LINEFEED@0..1 "\n"
-    LET_KW@1..4 "let"
-    SPACE@4..5 " "
-    IDENT@5..6 "_"
-    SPACE@6..7 " "
-    COLON@7..8 ":"
-    SPACE@8..9 " "
-    TyInt@9..13
-      I32_BUILTIN@9..12 "i32"
-      SPACE@12..13 " "
-    EQUALS@13..14 "="
-    SPACE@14..15 " "
-    ELit@15..16
-      LitInt@15..16
-        INT_LIT@15..16 "0"
-    SEMICOLON@16..17 ";"
-  TopLet@17..34
-    LINEFEED@17..18 "\n"
-    LET_KW@18..21 "let"
-    SPACE@21..22 " "
-    IDENT@22..23 "_"
-    SPACE@23..24 " "
-    COLON@24..25 ":"
-    SPACE@25..26 " "
-    TyFloat@26..30
-      F32_BUILTIN@26..29 "f32"
-      SPACE@29..30 " "
-    EQUALS@30..31 "="
+    GLOBAL_KW@1..7 "global"
+    SPACE@7..8 " "
+    IDENT@8..9 "_"
+    SPACE@9..10 " "
+    COLON@10..11 ":"
+    SPACE@11..12 " "
+    TyInt@12..16
+      I32_BUILTIN@12..15 "i32"
+      SPACE@15..16 " "
+    EQUALS@16..17 "="
+    SPACE@17..18 " "
+    ELit@18..19
+      LitInt@18..19
+        INT_LIT@18..19 "0"
+    SEMICOLON@19..20 ";"
+  TopGlobal@20..40
+    LINEFEED@20..21 "\n"
+    GLOBAL_KW@21..27 "global"
+    SPACE@27..28 " "
+    IDENT@28..29 "_"
+    SPACE@29..30 " "
+    COLON@30..31 ":"
     SPACE@31..32 " "
-    ELit@32..33
-      LitInt@32..33
-        INT_LIT@32..33 "0"
-    SEMICOLON@33..34 ";"
-  TopLet@34..52
-    LINEFEED@34..35 "\n"
-    LET_KW@35..38 "let"
-    SPACE@38..39 " "
-    IDENT@39..40 "_"
-    SPACE@40..41 " "
-    COLON@41..42 ":"
-    SPACE@42..43 " "
-    TyBool@43..48
-      BOOL_BUILTIN@43..47 "bool"
-      SPACE@47..48 " "
-    EQUALS@48..49 "="
+    TyFloat@32..36
+      F32_BUILTIN@32..35 "f32"
+      SPACE@35..36 " "
+    EQUALS@36..37 "="
+    SPACE@37..38 " "
+    ELit@38..39
+      LitInt@38..39
+        INT_LIT@38..39 "0"
+    SEMICOLON@39..40 ";"
+  TopGlobal@40..61
+    LINEFEED@40..41 "\n"
+    GLOBAL_KW@41..47 "global"
+    SPACE@47..48 " "
+    IDENT@48..49 "_"
     SPACE@49..50 " "
-    ELit@50..51
-      LitInt@50..51
-        INT_LIT@50..51 "0"
-    SEMICOLON@51..52 ";"
-  TopLet@52..70
-    LINEFEED@52..53 "\n"
-    LET_KW@53..56 "let"
-    SPACE@56..57 " "
-    IDENT@57..58 "_"
+    COLON@50..51 ":"
+    SPACE@51..52 " "
+    TyBool@52..57
+      BOOL_BUILTIN@52..56 "bool"
+      SPACE@56..57 " "
+    EQUALS@57..58 "="
     SPACE@58..59 " "
-    COLON@59..60 ":"
-    SPACE@60..61 " "
-    TyUnit@61..66
-      UNIT_BUILTIN@61..65 "unit"
-      SPACE@65..66 " "
-    EQUALS@66..67 "="
-    SPACE@67..68 " "
-    ELit@68..69
-      LitInt@68..69
-        INT_LIT@68..69 "0"
-    SEMICOLON@69..70 ";"
-  TopLet@70..90
-    LINEFEED@70..71 "\n"
-    LET_KW@71..74 "let"
-    SPACE@74..75 " "
-    IDENT@75..76 "_"
-    SPACE@76..77 " "
-    COLON@77..78 ":"
-    SPACE@78..79 " "
-    TyCons@79..86
-      UPPER_IDENT@79..85 "Struct"
-      SPACE@85..86 " "
-    EQUALS@86..87 "="
-    SPACE@87..88 " "
-    ELit@88..89
-      LitInt@88..89
-        INT_LIT@88..89 "0"
-    SEMICOLON@89..90 ";"
-  TopLet@90..109
-    LINEFEED@90..91 "\n"
-    LET_KW@91..94 "let"
-    SPACE@94..95 " "
-    IDENT@95..96 "_"
-    SPACE@96..97 " "
-    COLON@97..98 ":"
-    SPACE@98..99 " "
-    TyArray@99..105
-      L_BRACKET@99..100 "["
-      TyInt@100..103
-        I32_BUILTIN@100..103 "i32"
-      R_BRACKET@103..104 "]"
-      SPACE@104..105 " "
-    EQUALS@105..106 "="
-    SPACE@106..107 " "
-    ELit@107..108
-      LitInt@107..108
-        INT_LIT@107..108 "0"
-    SEMICOLON@108..109 ";"
-  TopLet@109..133
-    LINEFEED@109..110 "\n"
-    LET_KW@110..113 "let"
-    SPACE@113..114 " "
-    IDENT@114..115 "_"
-    SPACE@115..116 " "
-    COLON@116..117 ":"
-    SPACE@117..118 " "
-    TyArray@118..129
-      L_BRACKET@118..119 "["
-      TyArray@119..127
-        L_BRACKET@119..120 "["
-        TyCons@120..126
-          UPPER_IDENT@120..126 "Struct"
-        R_BRACKET@126..127 "]"
-      R_BRACKET@127..128 "]"
-      SPACE@128..129 " "
-    EQUALS@129..130 "="
-    SPACE@130..131 " "
-    ELit@131..132
-      LitInt@131..132
-        INT_LIT@131..132 "0"
-    SEMICOLON@132..133 ";"
-  TopLet@133..159
-    LINEFEED@133..134 "\n"
-    LET_KW@134..137 "let"
-    SPACE@137..138 " "
-    IDENT@138..139 "_"
-    SPACE@139..140 " "
-    COLON@140..141 ":"
-    SPACE@141..142 " "
-    TyFn@142..155
-      FN_KW@142..144 "fn"
-      TyArgList@144..147
-        L_PAREN@144..145 "("
-        R_PAREN@145..146 ")"
-        SPACE@146..147 " "
-      ARROW@147..149 "->"
+    ELit@59..60
+      LitInt@59..60
+        INT_LIT@59..60 "0"
+    SEMICOLON@60..61 ";"
+  TopGlobal@61..82
+    LINEFEED@61..62 "\n"
+    GLOBAL_KW@62..68 "global"
+    SPACE@68..69 " "
+    IDENT@69..70 "_"
+    SPACE@70..71 " "
+    COLON@71..72 ":"
+    SPACE@72..73 " "
+    TyUnit@73..78
+      UNIT_BUILTIN@73..77 "unit"
+      SPACE@77..78 " "
+    EQUALS@78..79 "="
+    SPACE@79..80 " "
+    ELit@80..81
+      LitInt@80..81
+        INT_LIT@80..81 "0"
+    SEMICOLON@81..82 ";"
+  TopGlobal@82..105
+    LINEFEED@82..83 "\n"
+    GLOBAL_KW@83..89 "global"
+    SPACE@89..90 " "
+    IDENT@90..91 "_"
+    SPACE@91..92 " "
+    COLON@92..93 ":"
+    SPACE@93..94 " "
+    TyCons@94..101
+      UPPER_IDENT@94..100 "Struct"
+      SPACE@100..101 " "
+    EQUALS@101..102 "="
+    SPACE@102..103 " "
+    ELit@103..104
+      LitInt@103..104
+        INT_LIT@103..104 "0"
+    SEMICOLON@104..105 ";"
+  TopGlobal@105..127
+    LINEFEED@105..106 "\n"
+    GLOBAL_KW@106..112 "global"
+    SPACE@112..113 " "
+    IDENT@113..114 "_"
+    SPACE@114..115 " "
+    COLON@115..116 ":"
+    SPACE@116..117 " "
+    TyArray@117..123
+      L_BRACKET@117..118 "["
+      TyInt@118..121
+        I32_BUILTIN@118..121 "i32"
+      R_BRACKET@121..122 "]"
+      SPACE@122..123 " "
+    EQUALS@123..124 "="
+    SPACE@124..125 " "
+    ELit@125..126
+      LitInt@125..126
+        INT_LIT@125..126 "0"
+    SEMICOLON@126..127 ";"
+  TopGlobal@127..154
+    LINEFEED@127..128 "\n"
+    GLOBAL_KW@128..134 "global"
+    SPACE@134..135 " "
+    IDENT@135..136 "_"
+    SPACE@136..137 " "
+    COLON@137..138 ":"
+    SPACE@138..139 " "
+    TyArray@139..150
+      L_BRACKET@139..140 "["
+      TyArray@140..148
+        L_BRACKET@140..141 "["
+        TyCons@141..147
+          UPPER_IDENT@141..147 "Struct"
+        R_BRACKET@147..148 "]"
+      R_BRACKET@148..149 "]"
       SPACE@149..150 " "
-      TyUnit@150..155
-        UNIT_BUILTIN@150..154 "unit"
-        SPACE@154..155 " "
-    EQUALS@155..156 "="
-    SPACE@156..157 " "
-    ELit@157..158
-      LitInt@157..158
-        INT_LIT@157..158 "0"
-    SEMICOLON@158..159 ";"
-  TopLet@159..187
-    LINEFEED@159..160 "\n"
-    LET_KW@160..163 "let"
+    EQUALS@150..151 "="
+    SPACE@151..152 " "
+    ELit@152..153
+      LitInt@152..153
+        INT_LIT@152..153 "0"
+    SEMICOLON@153..154 ";"
+  TopGlobal@154..183
+    LINEFEED@154..155 "\n"
+    GLOBAL_KW@155..161 "global"
+    SPACE@161..162 " "
+    IDENT@162..163 "_"
     SPACE@163..164 " "
-    IDENT@164..165 "_"
+    COLON@164..165 ":"
     SPACE@165..166 " "
-    COLON@166..167 ":"
-    SPACE@167..168 " "
-    TyFn@168..183
-      FN_KW@168..170 "fn"
-      TyArgList@170..176
-        L_PAREN@170..171 "("
-        TyInt@171..174
-          I32_BUILTIN@171..174 "i32"
-        R_PAREN@174..175 ")"
-        SPACE@175..176 " "
-      ARROW@176..178 "->"
-      SPACE@178..179 " "
-      TyFloat@179..183
-        F32_BUILTIN@179..182 "f32"
-        SPACE@182..183 " "
-    EQUALS@183..184 "="
-    SPACE@184..185 " "
-    ELit@185..186
-      LitInt@185..186
-        INT_LIT@185..186 "0"
-    SEMICOLON@186..187 ";"
-  TopLet@187..236
-    LINEFEED@187..188 "\n"
-    LET_KW@188..191 "let"
-    SPACE@191..192 " "
-    IDENT@192..193 "_"
-    SPACE@193..194 " "
-    COLON@194..195 ":"
-    SPACE@195..196 " "
-    TyFn@196..232
-      FN_KW@196..198 "fn"
-      TyArgList@198..225
-        L_PAREN@198..199 "("
-        TyInt@199..202
-          I32_BUILTIN@199..202 "i32"
-        COMMA@202..203 ","
-        SPACE@203..204 " "
-        TyFloat@204..207
-          F32_BUILTIN@204..207 "f32"
-        COMMA@207..208 ","
-        SPACE@208..209 " "
-        TyFn@209..223
-          FN_KW@209..211 "fn"
-          TyArgList@211..217
-            L_PAREN@211..212 "("
-            TyInt@212..215
-              I32_BUILTIN@212..215 "i32"
-            R_PAREN@215..216 ")"
-            SPACE@216..217 " "
-          ARROW@217..219 "->"
-          SPACE@219..220 " "
-          TyInt@220..223
-            I32_BUILTIN@220..223 "i32"
-        R_PAREN@223..224 ")"
-        SPACE@224..225 " "
-      ARROW@225..227 "->"
-      SPACE@227..228 " "
-      TyFloat@228..232
-        F32_BUILTIN@228..231 "f32"
-        SPACE@231..232 " "
-    EQUALS@232..233 "="
-    SPACE@233..234 " "
-    ELit@234..235
-      LitInt@234..235
-        INT_LIT@234..235 "0"
-    SEMICOLON@235..236 ";"
+    TyFn@166..179
+      FN_KW@166..168 "fn"
+      TyArgList@168..171
+        L_PAREN@168..169 "("
+        R_PAREN@169..170 ")"
+        SPACE@170..171 " "
+      ARROW@171..173 "->"
+      SPACE@173..174 " "
+      TyUnit@174..179
+        UNIT_BUILTIN@174..178 "unit"
+        SPACE@178..179 " "
+    EQUALS@179..180 "="
+    SPACE@180..181 " "
+    ELit@181..182
+      LitInt@181..182
+        INT_LIT@181..182 "0"
+    SEMICOLON@182..183 ";"
+  TopGlobal@183..214
+    LINEFEED@183..184 "\n"
+    GLOBAL_KW@184..190 "global"
+    SPACE@190..191 " "
+    IDENT@191..192 "_"
+    SPACE@192..193 " "
+    COLON@193..194 ":"
+    SPACE@194..195 " "
+    TyFn@195..210
+      FN_KW@195..197 "fn"
+      TyArgList@197..203
+        L_PAREN@197..198 "("
+        TyInt@198..201
+          I32_BUILTIN@198..201 "i32"
+        R_PAREN@201..202 ")"
+        SPACE@202..203 " "
+      ARROW@203..205 "->"
+      SPACE@205..206 " "
+      TyFloat@206..210
+        F32_BUILTIN@206..209 "f32"
+        SPACE@209..210 " "
+    EQUALS@210..211 "="
+    SPACE@211..212 " "
+    ELit@212..213
+      LitInt@212..213
+        INT_LIT@212..213 "0"
+    SEMICOLON@213..214 ";"
+  TopGlobal@214..266
+    LINEFEED@214..215 "\n"
+    GLOBAL_KW@215..221 "global"
+    SPACE@221..222 " "
+    IDENT@222..223 "_"
+    SPACE@223..224 " "
+    COLON@224..225 ":"
+    SPACE@225..226 " "
+    TyFn@226..262
+      FN_KW@226..228 "fn"
+      TyArgList@228..255
+        L_PAREN@228..229 "("
+        TyInt@229..232
+          I32_BUILTIN@229..232 "i32"
+        COMMA@232..233 ","
+        SPACE@233..234 " "
+        TyFloat@234..237
+          F32_BUILTIN@234..237 "f32"
+        COMMA@237..238 ","
+        SPACE@238..239 " "
+        TyFn@239..253
+          FN_KW@239..241 "fn"
+          TyArgList@241..247
+            L_PAREN@241..242 "("
+            TyInt@242..245
+              I32_BUILTIN@242..245 "i32"
+            R_PAREN@245..246 ")"
+            SPACE@246..247 " "
+          ARROW@247..249 "->"
+          SPACE@249..250 " "
+          TyInt@250..253
+            I32_BUILTIN@250..253 "i32"
+        R_PAREN@253..254 ")"
+        SPACE@254..255 " "
+      ARROW@255..257 "->"
+      SPACE@257..258 " "
+      TyFloat@258..262
+        F32_BUILTIN@258..261 "f32"
+        SPACE@261..262 " "
+    EQUALS@262..263 "="
+    SPACE@263..264 " "
+    ELit@264..265
+      LitInt@264..265
+        INT_LIT@264..265 "0"
+    SEMICOLON@265..266 ";"

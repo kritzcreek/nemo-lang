@@ -374,8 +374,8 @@ impl Typechecker {
     fn check_globals(&mut self, root: &Root) -> Option<Vec<ir::Global>> {
         let mut globals = Some(vec![]);
         for top_level in root.top_levels() {
-            if let TopLevel::TopLet(top_let) = top_level {
-                let (ty, ir) = match (top_let.ty().map(|t| self.check_ty(&t)), top_let.expr()) {
+            if let TopLevel::TopGlobal(top_global) = top_level {
+                let (ty, ir) = match (top_global.ty().map(|t| self.check_ty(&t)), top_global.expr()) {
                     (None, None) => {
                         globals = None;
                         continue;
@@ -387,13 +387,13 @@ impl Typechecker {
                         (ty, ir)
                     }
                 };
-                if let Some(binder_tkn) = top_let.ident_token() {
+                if let Some(binder_tkn) = top_global.ident_token() {
                     let name = self.name_supply.global_idx(&binder_tkn);
                     self.record_def(&binder_tkn, name);
                     if let Some(gs) = &mut globals {
                         if let Some(ir) = ir {
                             gs.push(ir::Global {
-                                span: top_let.syntax().text_range(),
+                                span: top_global.syntax().text_range(),
                                 binder: name,
                                 init: ir,
                             })

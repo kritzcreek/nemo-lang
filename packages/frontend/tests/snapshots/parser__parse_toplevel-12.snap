@@ -3,7 +3,7 @@ source: packages/frontend/tests/parser.rs
 expression: output
 input_file: packages/frontend/tests/passing/toplevel.nemo
 ---
-let _ = {
+global _ = {
     let x = 1;
     let y : i32 = 10;
     set x = 1;
@@ -19,177 +19,177 @@ let _ = {
 
 
 ---
-Root@0..178
-  TopLet@0..178
+Root@0..181
+  TopGlobal@0..181
     LINEFEED@0..1 "\n"
-    LET_KW@1..4 "let"
-    SPACE@4..5 " "
-    IDENT@5..6 "_"
-    SPACE@6..7 " "
-    EQUALS@7..8 "="
-    SPACE@8..9 " "
-    EBlock@9..177
-      L_BRACE@9..10 "{"
-      DLet@10..24
-        LINEFEED@10..11 "\n"
-        SPACE@11..15 "    "
-        LET_KW@15..18 "let"
-        SPACE@18..19 " "
-        IDENT@19..20 "x"
-        SPACE@20..21 " "
-        EQUALS@21..22 "="
-        SPACE@22..23 " "
-        ELit@23..24
-          LitInt@23..24
-            INT_LIT@23..24 "1"
-      SEMICOLON@24..25 ";"
-      DLet@25..46
-        LINEFEED@25..26 "\n"
-        SPACE@26..30 "    "
-        LET_KW@30..33 "let"
-        SPACE@33..34 " "
-        IDENT@34..35 "y"
-        SPACE@35..36 " "
-        COLON@36..37 ":"
-        SPACE@37..38 " "
-        TyInt@38..42
-          I32_BUILTIN@38..41 "i32"
-          SPACE@41..42 " "
-        EQUALS@42..43 "="
-        SPACE@43..44 " "
-        ELit@44..46
-          LitInt@44..46
-            INT_LIT@44..46 "10"
-      SEMICOLON@46..47 ";"
-      DSet@47..61
-        LINEFEED@47..48 "\n"
-        SPACE@48..52 "    "
-        SET_KW@52..55 "set"
-        SPACE@55..56 " "
-        SetTarget@56..58
-          EVar@56..58
-            IDENT@56..57 "x"
-            SPACE@57..58 " "
-        EQUALS@58..59 "="
-        SPACE@59..60 " "
-        ELit@60..61
-          LitInt@60..61
-            INT_LIT@60..61 "1"
-      SEMICOLON@61..62 ";"
-      DSet@62..79
-        LINEFEED@62..63 "\n"
-        SPACE@63..67 "    "
-        SET_KW@67..70 "set"
-        SPACE@70..71 " "
-        SetTarget@71..76
-          EArrayIdx@71..76
-            EVar@71..72
-              IDENT@71..72 "x"
-            L_BRACKET@72..73 "["
-            ELit@73..74
-              LitInt@73..74
-                INT_LIT@73..74 "0"
-            R_BRACKET@74..75 "]"
-            SPACE@75..76 " "
-        EQUALS@76..77 "="
-        SPACE@77..78 " "
-        ELit@78..79
-          LitInt@78..79
-            INT_LIT@78..79 "1"
-      SEMICOLON@79..80 ";"
-      DSet@80..96
-        LINEFEED@80..81 "\n"
-        SPACE@81..85 "    "
-        SET_KW@85..88 "set"
-        SPACE@88..89 " "
-        SetTarget@89..93
-          EStructIdx@89..93
-            EVar@89..90
-              IDENT@89..90 "x"
-            DOT@90..91 "."
-            IDENT@91..92 "y"
-            SPACE@92..93 " "
-        EQUALS@93..94 "="
-        SPACE@94..95 " "
-        ELit@95..96
-          LitInt@95..96
-            INT_LIT@95..96 "1"
-      SEMICOLON@96..97 ";"
-      DSet@97..116
-        LINEFEED@97..98 "\n"
-        SPACE@98..102 "    "
-        SET_KW@102..105 "set"
-        SPACE@105..106 " "
-        SetTarget@106..113
-          EStructIdx@106..113
-            EArrayIdx@106..110
-              EVar@106..107
-                IDENT@106..107 "x"
-              L_BRACKET@107..108 "["
-              ELit@108..109
-                LitInt@108..109
-                  INT_LIT@108..109 "0"
-              R_BRACKET@109..110 "]"
-            DOT@110..111 "."
-            IDENT@111..112 "y"
-            SPACE@112..113 " "
-        EQUALS@113..114 "="
-        SPACE@114..115 " "
-        ELit@115..116
-          LitInt@115..116
-            INT_LIT@115..116 "1"
-      SEMICOLON@116..117 ";"
-      DSet@117..136
-        LINEFEED@117..118 "\n"
-        SPACE@118..122 "    "
-        SET_KW@122..125 "set"
-        SPACE@125..126 " "
-        SetTarget@126..133
-          EArrayIdx@126..133
-            EStructIdx@126..129
-              EVar@126..127
-                IDENT@126..127 "x"
-              DOT@127..128 "."
-              IDENT@128..129 "y"
-            L_BRACKET@129..130 "["
-            ELit@130..131
-              LitInt@130..131
-                INT_LIT@130..131 "0"
-            R_BRACKET@131..132 "]"
-            SPACE@132..133 " "
-        EQUALS@133..134 "="
-        SPACE@134..135 " "
-        ELit@135..136
-          LitInt@135..136
-            INT_LIT@135..136 "1"
-      SEMICOLON@136..137 ";"
-      DWhile@137..174
-        LINEFEED@137..138 "\n"
-        SPACE@138..142 "    "
-        WHILE_KW@142..147 "while"
-        SPACE@147..148 " "
-        EVar@148..150
-          IDENT@148..149 "x"
-          SPACE@149..150 " "
-        EBlock@150..174
-          L_BRACE@150..151 "{"
-          DExpr@151..159
-            ELit@151..159
-              LitInt@151..159
-                LINEFEED@151..152 "\n"
-                SPACE@152..158 "      "
-                INT_LIT@158..159 "1"
-          SEMICOLON@159..160 ";"
-          DExpr@160..168
-            ELit@160..168
-              LitInt@160..168
-                LINEFEED@160..161 "\n"
-                SPACE@161..167 "      "
-                INT_LIT@167..168 "2"
-          LINEFEED@168..169 "\n"
-          SPACE@169..173 "    "
-          R_BRACE@173..174 "}"
-      SEMICOLON@174..175 ";"
-      LINEFEED@175..176 "\n"
-      R_BRACE@176..177 "}"
-    SEMICOLON@177..178 ";"
+    GLOBAL_KW@1..7 "global"
+    SPACE@7..8 " "
+    IDENT@8..9 "_"
+    SPACE@9..10 " "
+    EQUALS@10..11 "="
+    SPACE@11..12 " "
+    EBlock@12..180
+      L_BRACE@12..13 "{"
+      DLet@13..27
+        LINEFEED@13..14 "\n"
+        SPACE@14..18 "    "
+        LET_KW@18..21 "let"
+        SPACE@21..22 " "
+        IDENT@22..23 "x"
+        SPACE@23..24 " "
+        EQUALS@24..25 "="
+        SPACE@25..26 " "
+        ELit@26..27
+          LitInt@26..27
+            INT_LIT@26..27 "1"
+      SEMICOLON@27..28 ";"
+      DLet@28..49
+        LINEFEED@28..29 "\n"
+        SPACE@29..33 "    "
+        LET_KW@33..36 "let"
+        SPACE@36..37 " "
+        IDENT@37..38 "y"
+        SPACE@38..39 " "
+        COLON@39..40 ":"
+        SPACE@40..41 " "
+        TyInt@41..45
+          I32_BUILTIN@41..44 "i32"
+          SPACE@44..45 " "
+        EQUALS@45..46 "="
+        SPACE@46..47 " "
+        ELit@47..49
+          LitInt@47..49
+            INT_LIT@47..49 "10"
+      SEMICOLON@49..50 ";"
+      DSet@50..64
+        LINEFEED@50..51 "\n"
+        SPACE@51..55 "    "
+        SET_KW@55..58 "set"
+        SPACE@58..59 " "
+        SetTarget@59..61
+          EVar@59..61
+            IDENT@59..60 "x"
+            SPACE@60..61 " "
+        EQUALS@61..62 "="
+        SPACE@62..63 " "
+        ELit@63..64
+          LitInt@63..64
+            INT_LIT@63..64 "1"
+      SEMICOLON@64..65 ";"
+      DSet@65..82
+        LINEFEED@65..66 "\n"
+        SPACE@66..70 "    "
+        SET_KW@70..73 "set"
+        SPACE@73..74 " "
+        SetTarget@74..79
+          EArrayIdx@74..79
+            EVar@74..75
+              IDENT@74..75 "x"
+            L_BRACKET@75..76 "["
+            ELit@76..77
+              LitInt@76..77
+                INT_LIT@76..77 "0"
+            R_BRACKET@77..78 "]"
+            SPACE@78..79 " "
+        EQUALS@79..80 "="
+        SPACE@80..81 " "
+        ELit@81..82
+          LitInt@81..82
+            INT_LIT@81..82 "1"
+      SEMICOLON@82..83 ";"
+      DSet@83..99
+        LINEFEED@83..84 "\n"
+        SPACE@84..88 "    "
+        SET_KW@88..91 "set"
+        SPACE@91..92 " "
+        SetTarget@92..96
+          EStructIdx@92..96
+            EVar@92..93
+              IDENT@92..93 "x"
+            DOT@93..94 "."
+            IDENT@94..95 "y"
+            SPACE@95..96 " "
+        EQUALS@96..97 "="
+        SPACE@97..98 " "
+        ELit@98..99
+          LitInt@98..99
+            INT_LIT@98..99 "1"
+      SEMICOLON@99..100 ";"
+      DSet@100..119
+        LINEFEED@100..101 "\n"
+        SPACE@101..105 "    "
+        SET_KW@105..108 "set"
+        SPACE@108..109 " "
+        SetTarget@109..116
+          EStructIdx@109..116
+            EArrayIdx@109..113
+              EVar@109..110
+                IDENT@109..110 "x"
+              L_BRACKET@110..111 "["
+              ELit@111..112
+                LitInt@111..112
+                  INT_LIT@111..112 "0"
+              R_BRACKET@112..113 "]"
+            DOT@113..114 "."
+            IDENT@114..115 "y"
+            SPACE@115..116 " "
+        EQUALS@116..117 "="
+        SPACE@117..118 " "
+        ELit@118..119
+          LitInt@118..119
+            INT_LIT@118..119 "1"
+      SEMICOLON@119..120 ";"
+      DSet@120..139
+        LINEFEED@120..121 "\n"
+        SPACE@121..125 "    "
+        SET_KW@125..128 "set"
+        SPACE@128..129 " "
+        SetTarget@129..136
+          EArrayIdx@129..136
+            EStructIdx@129..132
+              EVar@129..130
+                IDENT@129..130 "x"
+              DOT@130..131 "."
+              IDENT@131..132 "y"
+            L_BRACKET@132..133 "["
+            ELit@133..134
+              LitInt@133..134
+                INT_LIT@133..134 "0"
+            R_BRACKET@134..135 "]"
+            SPACE@135..136 " "
+        EQUALS@136..137 "="
+        SPACE@137..138 " "
+        ELit@138..139
+          LitInt@138..139
+            INT_LIT@138..139 "1"
+      SEMICOLON@139..140 ";"
+      DWhile@140..177
+        LINEFEED@140..141 "\n"
+        SPACE@141..145 "    "
+        WHILE_KW@145..150 "while"
+        SPACE@150..151 " "
+        EVar@151..153
+          IDENT@151..152 "x"
+          SPACE@152..153 " "
+        EBlock@153..177
+          L_BRACE@153..154 "{"
+          DExpr@154..162
+            ELit@154..162
+              LitInt@154..162
+                LINEFEED@154..155 "\n"
+                SPACE@155..161 "      "
+                INT_LIT@161..162 "1"
+          SEMICOLON@162..163 ";"
+          DExpr@163..171
+            ELit@163..171
+              LitInt@163..171
+                LINEFEED@163..164 "\n"
+                SPACE@164..170 "      "
+                INT_LIT@170..171 "2"
+          LINEFEED@171..172 "\n"
+          SPACE@172..176 "    "
+          R_BRACE@176..177 "}"
+      SEMICOLON@177..178 ";"
+      LINEFEED@178..179 "\n"
+      R_BRACE@179..180 "}"
+    SEMICOLON@180..181 ";"

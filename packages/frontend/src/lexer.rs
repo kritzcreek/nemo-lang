@@ -131,6 +131,15 @@ pub enum SyntaxKind {
     #[token("fn")]
     FN_KW,
 
+    #[token("global")]
+    GLOBAL_KW,
+
+    #[token("import")]
+    IMPORT_KW,
+
+    #[token("from")]
+    FROM_KW,
+
     #[token("let")]
     LET_KW,
 
@@ -148,12 +157,6 @@ pub enum SyntaxKind {
 
     #[token("while")]
     WHILE_KW,
-
-    #[token("import")]
-    IMPORT_KW,
-
-    #[token("from")]
-    FROM_KW,
 
     #[token("true")]
     TRUE_KW,
@@ -278,7 +281,7 @@ pub enum SyntaxKind {
     TyCons,
 
     // Top level
-    TopLet,
+    TopGlobal,
     TopFn,
     TopImport,
     TopStruct,
@@ -365,6 +368,7 @@ macro_rules ! T {
     [bool] => { SyntaxKind::BOOL_BUILTIN };
     [unit] => { SyntaxKind::UNIT_BUILTIN };
     [fn] => { SyntaxKind::FN_KW };
+    [global] => { SyntaxKind::GLOBAL_KW };
     [import] => { SyntaxKind::IMPORT_KW };
     [from] => { SyntaxKind::FROM_KW };
     [if] => { SyntaxKind::IF_KW };
