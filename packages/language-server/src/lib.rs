@@ -1,6 +1,8 @@
 mod highlight;
 pub mod vfs;
 
+use frontend::types::NameMap;
+use frontend::CheckError;
 use highlight::{highlight, HIGHLIGHT_NAMES};
 use line_index::{LineCol, LineIndex, TextRange};
 use lsp_server::{Connection, ExtractError, Message, Notification, Request, RequestId, Response};
@@ -17,8 +19,6 @@ use lsp_types::{
     SemanticTokensServerCapabilities, ServerCapabilities, TextDocumentSyncCapability,
     TextDocumentSyncKind, WorkDoneProgressOptions,
 };
-use frontend::types::NameMap;
-use frontend::CheckError;
 use serde_json::json;
 use std::error::Error;
 use tree_sitter_highlight::{Highlight, HighlightEvent};

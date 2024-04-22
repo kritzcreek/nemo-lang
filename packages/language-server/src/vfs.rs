@@ -1,7 +1,7 @@
-use line_index::LineIndex;
 use frontend::run_frontend;
 use frontend::types::CheckResult;
 use frontend::CheckError;
+use line_index::LineIndex;
 use std::collections::HashMap;
 use std::fs;
 use std::io;

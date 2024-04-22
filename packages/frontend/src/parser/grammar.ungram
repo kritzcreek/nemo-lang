@@ -65,20 +65,17 @@ ELit = Literal
 EVar = 'ident'
 EArray = '[' Expr* ']'
 EParen = '(' Expr ')'
-// TODO: Needs custom impl
 EArrayIdx = Expr '[' index:Expr ']'
 
 ECall = Expr EArgList
 EArgList = '(' Expr* ')'
 
-// TODO: Needs custom impl
 EBinary = lhs:Expr op:('+' | '-') rhs:Expr
 
 EStruct = 'upper_ident' '{' EStructField* '}'
 EStructField = 'ident' '=' Expr
 
 EStructIdx = Expr '.' 'ident'
-// TODO: Needs custom impl
 EIf = 'if' condition:Expr then_branch:EBlock 'else' else_branch:EBlock
 EBlock = '{' Declaration* '}'
 

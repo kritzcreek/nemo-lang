@@ -1,8 +1,8 @@
 use std::{error::Error, fs, path::PathBuf};
 
 use clap::{Parser, Subcommand};
-use language_server::start_language_server;
 use frontend::compile_program;
+use language_server::start_language_server;
 use playground::run_playground;
 
 /// The nemo language

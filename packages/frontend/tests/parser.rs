@@ -1,5 +1,5 @@
-use insta::{assert_snapshot, glob};
 use frontend::parser::parse_prog;
+use insta::{assert_snapshot, glob};
 use std::fmt::Write;
 use std::str;
 

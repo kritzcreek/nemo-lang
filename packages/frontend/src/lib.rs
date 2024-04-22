@@ -4,8 +4,8 @@ pub mod parser;
 pub mod syntax;
 pub mod types;
 
-use line_index::{LineCol, LineIndex};
 use backend::{codegen::codegen, ir::NameMap};
+use line_index::{LineCol, LineIndex};
 use parser::{parse_prog, ParseError};
 use std::fmt::{self, Write};
 use syntax::{ast::AstNode, nodes::Root};

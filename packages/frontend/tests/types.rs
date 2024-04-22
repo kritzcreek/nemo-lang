@@ -1,5 +1,5 @@
-use insta::{assert_snapshot, glob};
 use frontend::check_program;
+use insta::{assert_snapshot, glob};
 use std::fmt::Write;
 use std::fs;
 use std::path::Path;

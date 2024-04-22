@@ -1,8 +1,8 @@
 use crate::types::Ty;
 use ariadne::{Color, Config, Label, Report, ReportKind, Source};
+use backend::ir::{Name, NameMap};
 use core::fmt;
 use line_index::{LineCol, LineIndex};
-use backend::ir::NameMap;
 use rowan::TextRange;
 use std::str;
 
@@ -65,18 +65,18 @@ pub enum TyErrorData {
     NotAFunction(Ty),
     ArgCountMismatch(usize, usize),
     FieldTypeMismatch {
-        struct_name: String,
-        field_name: String,
+        struct_name: Name,
+        field_name: Name,
         expected: Ty,
         actual: Ty,
     },
     UnknownField {
-        struct_name: String,
+        struct_name: Name,
         field_name: String,
     },
     MissingField {
-        struct_name: String,
-        field_name: String,
+        struct_name: Name,
+        field_name: Name,
     },
     TypeMismatch {
         expected: Ty,
@@ -145,18 +145,27 @@ fn error_label(err_data: &TyErrorData, name_map: &NameMap) -> String {
             expected,
             actual,
         } => format!(
-            "Mismatched field type. {struct_name}.{field_name} expects {}, but got {}",
+            "Mismatched field type. {}.{} expects {}, but got {}",
+            name_map.get(struct_name).unwrap().it,
+            name_map.get(field_name).unwrap().it,
             expected.display(name_map),
             actual.display(name_map)
         ),
         TyErrorData::UnknownField {
             struct_name,
             field_name,
-        } => format!("Unknown field. {struct_name} does not have a field named {field_name}"),
+        } => format!(
+            "Unknown field. {} does not have a field named {field_name}",
+            name_map.get(struct_name).unwrap().it
+        ),
         TyErrorData::MissingField {
             struct_name,
             field_name,
-        } => format!("Missing field. {struct_name}.{field_name} was not provided"),
+        } => format!(
+            "Missing field. {}.{} was not provided",
+            name_map.get(struct_name).unwrap().it,
+            name_map.get(field_name).unwrap().it
+        ),
         TyErrorData::TypeMismatch { expected, actual } => format!(
             "Type mismatch. Expected {}, but got {}",
             expected.display(name_map),
@@ -177,7 +186,6 @@ pub fn render_ty_error(
     let out = Color::Fixed(81);
     let cache = (file_name, Source::from(source));
 
-    // TODO avoid this allocation
     let mut out_buf = Vec::new();
 
     Report::build(ReportKind::Error, file_name, 12)

@@ -567,19 +567,19 @@ impl Typechecker {
                                 continue;
                             };
 
-                            let Some((ty, name)) = def.fields.get(field_tkn.text()) else {
+                            let Some((ty, field_name)) = def.fields.get(field_tkn.text()) else {
                                 self.report_error_token(
                                     &field_tkn,
                                     UnknownField {
-                                        struct_name: struct_name_tkn.text().to_string(),
+                                        struct_name: name,
                                         field_name: field_tkn.text().to_string(),
                                     },
                                 );
                                 builder.cancel();
                                 continue;
                             };
-                            self.record_ref(&field_tkn, *name);
-                            builder.field(*name, self.check_expr(&field_expr, ty));
+                            self.record_ref(&field_tkn, *field_name);
+                            builder.field(*field_name, self.check_expr(&field_expr, ty));
                         }
                         (Ty::Struct(name), builder.build())
                     }
@@ -859,13 +859,10 @@ impl Typechecker {
         };
         match def.fields.get(field_name_tkn.text()) {
             None => {
-                // TODO this isn't ideal, maybe we should require a
-                // NameSupply when rendering the errors
-                let struct_name = self.name_supply.lookup(*name).unwrap().it.clone();
                 self.report_error_token(
                     field_name_tkn,
                     UnknownField {
-                        struct_name,
+                        struct_name: *name,
                         field_name: field_name_tkn.text().to_string(),
                     },
                 );

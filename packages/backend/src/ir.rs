@@ -27,15 +27,23 @@ pub enum Name {
     Field(u32),
 }
 
-impl fmt::Display for Name {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Name::Global(x) => write!(f, "$g:{x}"),
-            Name::Local(x) => write!(f, "$l:{x}"),
-            Name::Func(x) => write!(f, "$fn:{x}"),
-            Name::Type(x) => write!(f, "$t:{x}"),
-            Name::Field(x) => write!(f, "$f:{x}"),
+impl Name {
+    pub fn display<'a>(&'a self, name_map: &'a NameMap) -> NameDisplay<'a> {
+        NameDisplay {
+            name: self,
+            name_map,
         }
+    }
+}
+
+pub struct NameDisplay<'a> {
+    name: &'a Name,
+    name_map: &'a NameMap,
+}
+
+impl fmt::Display for NameDisplay<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.name_map.get(self.name).unwrap().it)
     }
 }
 

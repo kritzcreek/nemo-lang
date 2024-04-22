@@ -111,7 +111,7 @@ impl<'a> Codegen<'a> {
                 Name::Local(_) => vec![Instruction::LocalGet(body.lookup_local(&v).unwrap())],
                 Name::Global(_) => vec![Instruction::GlobalGet(self.builder.lookup_global(&v))],
                 Name::Func(_) => vec![Instruction::RefFunc(self.builder.lookup_func(&v))],
-                n => unreachable!("Cannot compile a variable reference to {n}"),
+                n => unreachable!("Cannot compile a variable reference to {n:?}"),
             },
             ExprData::Call { func, arguments } => {
                 let mut instrs = vec![];
