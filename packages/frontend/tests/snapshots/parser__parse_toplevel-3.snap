@@ -10,7 +10,7 @@ global _ = [1, 2,]
 global _ = [[1], []]
 
 
----
+// ---
 Root@0..87
   TopGlobal@0..14
     LINEFEED@0..1 "\n"

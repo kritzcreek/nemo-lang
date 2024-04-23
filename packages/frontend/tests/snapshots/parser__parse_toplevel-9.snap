@@ -6,7 +6,7 @@ input_file: packages/frontend/tests/passing/toplevel.nemo
 global _ = if true { 1 } else { 3 }
 
 
----
+// ---
 Root@0..36
   TopGlobal@0..36
     LINEFEED@0..1 "\n"

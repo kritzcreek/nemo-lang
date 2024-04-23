@@ -9,7 +9,7 @@ global _ = [1, 2][0]
 global _ = [[1]][0][0]
 
 
----
+// ---
 Root@0..79
   TopGlobal@0..16
     LINEFEED@0..1 "\n"

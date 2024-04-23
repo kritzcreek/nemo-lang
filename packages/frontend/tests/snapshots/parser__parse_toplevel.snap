@@ -12,7 +12,7 @@ global _ = 0.1234
 global _ = 1234.1234
 
 
----
+// ---
 Root@0..115
   TopGlobal@0..12
     GLOBAL_KW@0..6 "global"

@@ -22,7 +22,7 @@ fn add(x : i32, y : i32) : i32 = {
 }
 
 
----
+// ---
 Root@0..194
   TopImport@0..53
     LINEFEED@0..1 "\n"

@@ -1,4 +1,4 @@
-use frontend::check_program;
+use frontend::{check_program, CheckError};
 use insta::{assert_snapshot, glob};
 use std::fmt::Write;
 use std::fs;
@@ -8,8 +8,11 @@ use yansi::Paint;
 
 fn check_failing(path: &Path, source: String) {
     let (name_map, errors) = check_program(&source);
+    if errors.iter().any(|e| matches!(e, CheckError::ParseError(_))) {
+        panic!("{} was expected to fail with a type error, but had a parse error instead", path.display())
+    }
     if errors.is_empty() {
-        eprintln!("{} was expected to fail, but didn't", path.display())
+        panic!("{} was expected to fail, but didn't", path.display())
     }
 
     let mut err_buf = String::new();

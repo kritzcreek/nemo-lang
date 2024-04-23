@@ -7,7 +7,7 @@ global _ = @array_len([])
 global _ = @array_new(1, 2)
 
 
----
+// ---
 Root@0..54
   TopGlobal@0..26
     LINEFEED@0..1 "\n"

@@ -15,7 +15,7 @@ global _ : fn(i32) -> f32 = 0
 global _ : fn(i32, f32, fn(i32) -> i32) -> f32 = 0
 
 
----
+// ---
 Root@0..256
   TopGlobal@0..19
     LINEFEED@0..1 "\n"

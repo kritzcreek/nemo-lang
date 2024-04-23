@@ -18,7 +18,7 @@ global _ = {
 }
 
 
----
+// ---
 Root@0..180
   TopGlobal@0..180
     LINEFEED@0..1 "\n"
