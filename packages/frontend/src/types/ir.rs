@@ -369,10 +369,6 @@ impl CallBuilder {
         self
     }
 
-    pub(crate) fn cancel(&mut self) {
-        self.arguments = None
-    }
-
     pub(crate) fn build(self) -> Option<ExprData> {
         Some(ExprData::Call {
             func: self.func?,

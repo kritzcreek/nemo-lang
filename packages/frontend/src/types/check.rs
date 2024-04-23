@@ -199,7 +199,7 @@ impl Typechecker {
         Some(ir::Program {
             imports: imports?,
             structs: types?,
-            globals: globals?,
+            globals,
             funcs: functions?,
             start_fn: self.name_supply.start_idx(),
         })
@@ -371,8 +371,8 @@ impl Typechecker {
         }
     }
 
-    fn check_globals(&mut self, root: &Root) -> Option<Vec<ir::Global>> {
-        let mut globals = Some(vec![]);
+    fn check_globals(&mut self, root: &Root) -> Vec<ir::Global> {
+        let mut globals = vec![];
         for top_level in root.top_levels() {
             if let TopLevel::TopGlobal(top_global) = top_level {
                 let (ty, ir) = match (
@@ -380,7 +380,6 @@ impl Typechecker {
                     top_global.expr(),
                 ) {
                     (None, None) => {
-                        globals = None;
                         continue;
                     }
                     (Some(ty), None) => (ty, None),
@@ -393,16 +392,12 @@ impl Typechecker {
                 if let Some(binder_tkn) = top_global.ident_token() {
                     let name = self.name_supply.global_idx(&binder_tkn);
                     self.record_def(&binder_tkn, name);
-                    if let Some(gs) = &mut globals {
-                        if let Some(ir) = ir {
-                            gs.push(ir::Global {
-                                span: top_global.syntax().text_range(),
-                                binder: name,
-                                init: ir,
-                            })
-                        } else {
-                            globals = None
-                        }
+                    if let Some(ir) = ir {
+                        globals.push(ir::Global {
+                            span: top_global.syntax().text_range(),
+                            binder: name,
+                            init: ir,
+                        })
                     }
                     self.context
                         .add_var(binder_tkn.text().to_string(), ty, name)
@@ -624,7 +619,6 @@ impl Typechecker {
                                     &arg_list,
                                     ArgCountMismatch(arg_tys.len(), arg_exprs.len()),
                                 );
-                                builder.cancel()
                             }
                             for (param, expected_ty) in arg_exprs.iter().zip(arg_tys.iter()) {
                                 builder.argument(self.check_expr(param, expected_ty));
