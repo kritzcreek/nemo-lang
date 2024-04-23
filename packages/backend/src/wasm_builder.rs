@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 use std::iter;
 
-use crate::ir::{FuncTy, Id, Import, Name, Struct, Ty};
+use crate::ir::{FuncTy, Id, Import, Name, NameMap, Struct, Ty};
 use wasm_encoder::{
     self, ArrayType, CodeSection, CompositeType, ConstExpr, EntityType, ExportKind, ExportSection,
     FieldType, FuncType, Function, FunctionSection, GlobalSection, GlobalType, HeapType,
-    ImportSection, Instruction, Module, RefType, StartSection, StorageType, StructType, SubType,
-    TypeSection, ValType,
+    ImportSection, IndirectNameMap, Instruction, Module, NameMap as WasmNameMap, NameSection,
+    RefType, StartSection, StorageType, StructType, SubType, TypeSection, ValType,
 };
 
 type FuncIdx = u32;
@@ -20,12 +20,13 @@ type RecType = Vec<SubType>;
 pub struct FuncData<'a> {
     index: FuncIdx,
     ty: TypeIdx,
-    locals: Option<Vec<ValType>>,
+    locals: Option<FnLocals>,
     body: Option<Vec<Instruction<'a>>>,
 }
 
 pub struct GlobalData {
     index: GlobalIdx,
+    name: Name,
     ty: GlobalType,
     init: ConstExpr,
 }
@@ -43,7 +44,7 @@ pub struct Export {
 }
 
 pub struct Builder<'a> {
-    name_map: &'a HashMap<Name, Id>,
+    name_map: &'a NameMap,
     funcs: HashMap<Name, FuncData<'a>>,
     globals: HashMap<Name, GlobalData>,
     types: Vec<RecType>,
@@ -92,19 +93,36 @@ impl<'a> Builder<'a> {
         for ty in self.types {
             type_section.rec(ty);
         }
+
+        let mut field_names = HashMap::new();
+        for (name, (ty_idx, field_idx)) in self.fields {
+            field_names
+                .entry(ty_idx)
+                .or_insert(WasmNameMap::new())
+                .append(field_idx, &self.name_map.get(&name).unwrap().it);
+        }
+        let mut all_field_names = IndirectNameMap::new();
+        for (ty_idx, names) in field_names {
+            all_field_names.append(ty_idx, &names);
+        }
+
         // import_section
+        let mut function_names = WasmNameMap::new();
+
         let mut import_section = ImportSection::new();
         let _import_count = self.imports.len();
         let mut imports: Vec<_> = self.imports.into_iter().collect();
         imports.sort_by_key(|(_, v)| v.index);
-        for (_, data) in imports {
+        for (name, data) in imports {
             import_section.import(&data.ns, &data.func, EntityType::Function(data.ty_idx));
+            function_names.append(data.index, &self.name_map.get(&name).unwrap().it);
         }
         // function_section
         let mut function_section = FunctionSection::new();
         let mut funcs: Vec<_> = self.funcs.into_iter().collect();
         funcs.sort_by_key(|(_, v)| v.index);
-        for (_, func) in funcs.iter() {
+        for (name, func) in funcs.iter() {
+            function_names.append(func.index, &self.name_map.get(&name).unwrap().it);
             function_section.function(func.ty);
         }
 
@@ -114,8 +132,10 @@ impl<'a> Builder<'a> {
         let mut globals: Vec<GlobalData> = self.globals.into_values().collect();
         globals.sort_by_key(|v| v.index);
         let mut global_section = GlobalSection::new();
+        let mut global_names = WasmNameMap::new();
         for data in globals {
             global_section.global(data.ty, &data.init);
+            global_names.append(data.index, &self.name_map.get(&data.name).unwrap().it)
         }
         // export_section
         let mut export_section = ExportSection::new();
@@ -130,19 +150,37 @@ impl<'a> Builder<'a> {
         // elem_section
         // code_section
         let mut code_section = CodeSection::new();
+        let mut all_local_names = IndirectNameMap::new();
         for (_ix, (_name, func)) in funcs.into_iter().enumerate() {
-            let _ix = _ix + _import_count;
-            let mut func_body = Function::new_with_locals_types(func.locals.unwrap());
-            // if _ix == 14 {
-            //     eprintln!("func #{_ix} = {}\n{:#?}", _name, func.body.clone().unwrap())
-            // }
+            let Some(FnLocals { locals, names }) = func.locals else {
+                panic!(
+                    "No locals for function {}",
+                    self.name_map.get(&_name).unwrap().it
+                )
+            };
+            let mut func_body = Function::new_with_locals_types(locals);
             for instr in func.body.unwrap() {
                 func_body.instruction(&instr);
             }
             func_body.instruction(&Instruction::End);
             code_section.function(&func_body);
+
+            let mut local_names = WasmNameMap::new();
+            for (index, name) in names {
+                local_names.append(index, &self.name_map.get(&name).unwrap().it);
+            }
+
+            let ix = (_ix + _import_count) as u32;
+            all_local_names.append(ix, &local_names);
         }
         // data_section
+
+        // name section
+        let mut name_section = NameSection::new();
+        name_section.functions(&function_names);
+        name_section.locals(&all_local_names);
+        name_section.globals(&global_names);
+        name_section.fields(&all_field_names);
 
         module.section(&type_section);
         module.section(&import_section);
@@ -151,6 +189,7 @@ impl<'a> Builder<'a> {
         module.section(&export_section);
         start_section.map(|s| module.section(&s));
         module.section(&code_section);
+        module.section(&name_section);
         module.finish()
     }
 
@@ -218,6 +257,8 @@ impl<'a> Builder<'a> {
             Ty::I32 | Ty::Unit | Ty::Bool => ValType::I32,
             Ty::Struct(s) => {
                 let (idx, _) = self.struct_type(*s);
+                // Could make these non-nullable, but then we'd need separate
+                // nullable types for lazily initialized globals
                 ValType::Ref(RefType {
                     nullable: true,
                     heap_type: HeapType::Concrete(*idx),
@@ -301,7 +342,12 @@ impl<'a> Builder<'a> {
             shared: false,
             mutable: true,
         };
-        let global_data = GlobalData { index, ty, init };
+        let global_data = GlobalData {
+            index,
+            ty,
+            init,
+            name,
+        };
         self.globals.insert(name, global_data);
         index
     }
@@ -354,7 +400,7 @@ impl<'a> Builder<'a> {
         );
     }
 
-    pub fn fill_func(&mut self, name: Name, locals: Vec<ValType>, body: Vec<Instruction<'a>>) {
+    pub fn fill_func(&mut self, name: Name, locals: FnLocals, body: Vec<Instruction<'a>>) {
         self.funcs.entry(name).and_modify(|f| {
             f.locals = Some(locals);
             f.body = Some(body)
@@ -387,6 +433,11 @@ pub struct BodyBuilder {
     locals: HashMap<Name, LocalData>,
 }
 
+pub struct FnLocals {
+    locals: Vec<ValType>,
+    names: HashMap<LocalIdx, Name>,
+}
+
 impl BodyBuilder {
     pub fn new(params: Vec<(Name, ValType)>) -> BodyBuilder {
         BodyBuilder {
@@ -415,13 +466,24 @@ impl BodyBuilder {
         self.locals.get(name).map(|v| v.index)
     }
 
-    pub fn get_locals(self) -> Vec<ValType> {
+    pub fn get_locals(self) -> FnLocals {
+        let mut names = HashMap::new();
         let mut locals: Vec<LocalData> = self
             .locals
-            .into_values()
-            .filter(|l| l.index >= self.params as u32)
+            .into_iter()
+            .filter_map(|(name, l)| {
+                names.insert(l.index, name);
+                if l.index >= self.params as u32 {
+                    Some(l)
+                } else {
+                    None
+                }
+            })
             .collect();
         locals.sort_by_key(|l| l.index);
-        locals.into_iter().map(|l| l.ty).collect()
+        FnLocals {
+            locals: locals.into_iter().map(|l| l.ty).collect(),
+            names,
+        }
     }
 }
