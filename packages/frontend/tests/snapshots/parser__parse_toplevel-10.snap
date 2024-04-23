@@ -12,7 +12,7 @@ global _ = {
 }
 
 
----
+// ---
 Root@0..64
   TopGlobal@0..14
     LINEFEED@0..1 "\n"

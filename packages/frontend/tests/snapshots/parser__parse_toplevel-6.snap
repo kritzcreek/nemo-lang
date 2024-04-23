@@ -8,7 +8,7 @@ global _ = v.x.y
 global _ = v[0].y
 
 
----
+// ---
 Root@0..50
   TopGlobal@0..15
     LINEFEED@0..1 "\n"

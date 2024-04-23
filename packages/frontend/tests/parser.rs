@@ -68,16 +68,12 @@ fn parse_toplevel() {
             normalize_newlines(&mut input);
             input
         };
-        for inp in input.split("---\n") {
+        for inp in input.split("// ---\n") {
             let parse = parse_prog(inp);
-            let mut error_output = String::new();
             if parse.has_errors() {
-                writeln!(&mut error_output, "=== ERRORS ===").unwrap();
-                for error in &parse.errors {
-                    writeln!(&mut error_output, "{}", error.display(inp)).unwrap();
-                }
+                panic!("{}: Failed with {:?}", path.display(), inp);
             }
-            let output = format!("{}\n---\n{}\n{}", inp, parse.debug_tree(), error_output);
+            let output = format!("{}\n// ---\n{}", inp, parse.debug_tree());
             assert_snapshot!(output);
         }
     });

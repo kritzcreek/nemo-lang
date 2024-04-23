@@ -12,7 +12,7 @@ global _ = 1 + x.y
 global _ = f32_abs(delta_x) > f32_abs(delta_y)
 
 
----
+// ---
 Root@0..212
   TopGlobal@0..17
     LINEFEED@0..1 "\n"

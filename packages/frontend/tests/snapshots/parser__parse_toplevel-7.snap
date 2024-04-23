@@ -12,7 +12,7 @@ global _ = x[1].f()
 global _ = f(1)(x)
 
 
----
+// ---
 Root@0..129
   TopGlobal@0..15
     LINEFEED@0..1 "\n"

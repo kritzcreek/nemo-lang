@@ -9,7 +9,7 @@ global _ = Vec { x = 10, y = 1.0 }
 global _ = Vec { x = 10, y = 1.0, }
 
 
----
+// ---
 Root@0..116
   TopGlobal@0..19
     LINEFEED@0..1 "\n"
