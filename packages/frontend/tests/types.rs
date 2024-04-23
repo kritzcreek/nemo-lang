@@ -8,8 +8,14 @@ use yansi::Paint;
 
 fn check_failing(path: &Path, source: String) {
     let (name_map, errors) = check_program(&source);
-    if errors.iter().any(|e| matches!(e, CheckError::ParseError(_))) {
-        panic!("{} was expected to fail with a type error, but had a parse error instead", path.display())
+    if errors
+        .iter()
+        .any(|e| matches!(e, CheckError::ParseError(_)))
+    {
+        panic!(
+            "{} was expected to fail with a type error, but had a parse error instead",
+            path.display()
+        )
     }
     if errors.is_empty() {
         panic!("{} was expected to fail, but didn't", path.display())
