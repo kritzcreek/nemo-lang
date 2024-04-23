@@ -89,9 +89,14 @@ impl<'a> Builder<'a> {
         // self._print_funcs();
 
         // type_section
+        let mut type_names = WasmNameMap::new();
         let mut type_section = TypeSection::new();
         for ty in self.types {
             type_section.rec(ty);
+        }
+
+        for (name, (idx, _)) in self.structs {
+            type_names.append(idx, &self.name_map.get(&name).unwrap().it);
         }
 
         let mut field_names = HashMap::new();
@@ -179,6 +184,7 @@ impl<'a> Builder<'a> {
         let mut name_section = NameSection::new();
         name_section.functions(&function_names);
         name_section.locals(&all_local_names);
+        name_section.types(&type_names);
         name_section.globals(&global_names);
         name_section.fields(&all_field_names);
 
