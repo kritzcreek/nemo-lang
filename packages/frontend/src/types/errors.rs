@@ -17,11 +17,13 @@ impl TyError {
         &'err self,
         source: &'src str,
         name_map: &'src NameMap,
+        colors: bool,
     ) -> TyErrorDisplay<'src, 'err> {
         TyErrorDisplay {
             source,
             name_map,
             ty_error: self,
+            colors,
         }
     }
 
@@ -40,11 +42,12 @@ pub struct TyErrorDisplay<'src, 'err> {
     ty_error: &'err TyError,
     source: &'src str,
     name_map: &'src NameMap,
+    colors: bool,
 }
 
 impl fmt::Display for TyErrorDisplay<'_, '_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        render_ty_error(self.source, self.name_map, self.ty_error, true, f);
+        render_ty_error(self.source, self.name_map, self.ty_error, self.colors, f);
         Ok(())
     }
 }
@@ -192,10 +195,7 @@ pub fn render_ty_error(
     output: &mut fmt::Formatter,
 ) {
     let file_name = "source";
-
-    let out = Color::Fixed(81);
     let cache = (file_name, Source::from(source));
-
     let mut out_buf = Vec::new();
 
     Report::build(ReportKind::Error, file_name, 12)
@@ -206,8 +206,7 @@ pub fn render_ty_error(
                 file_name,
                 ty_error.at.start().into()..ty_error.at.end().into(),
             ))
-            .with_message(error_label(&ty_error.it, name_map))
-            .with_color(out),
+            .with_message(error_label(&ty_error.it, name_map)),
         )
         .with_config(Config::default().with_color(colors))
         .finish()

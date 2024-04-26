@@ -97,7 +97,7 @@ fn parse_example() {
     if parse.has_errors() {
         writeln!(&mut error_output, "=== ERRORS ===").unwrap();
         for error in &parse.errors {
-            writeln!(&mut error_output, "{}", error.display(&input)).unwrap();
+            writeln!(&mut error_output, "{}", error.display(&input, false)).unwrap();
         }
     }
     let output = format!("{}\n{}", parse.debug_tree(), error_output);
