@@ -19,11 +19,13 @@ impl Progress {
 pub fn prog(p: &mut Parser) {
     while !p.at(SyntaxKind::EOF) {
         if !toplevel(p).made_progress() {
+            let c = p.checkpoint();
             // RECOVERY
             p.error("expected a top-level declaration");
             while !p.at(SyntaxKind::EOF) && !TOP_LEVEL_FIRST.contains(&p.current()) {
                 p.bump_any();
             }
+            p.finish_at(c, SyntaxKind::Error)
         }
     }
 }
@@ -53,6 +55,10 @@ fn toplevel(p: &mut Parser) -> Progress {
         }
         T![struct] => {
             top_struct(p);
+            Progress::Made
+        }
+        T![variant] => {
+            top_variant(p);
             Progress::Made
         }
         _ => Progress::None,
@@ -98,6 +104,25 @@ fn top_struct(p: &mut Parser) {
     p.finish_at(c, SyntaxKind::TopStruct)
 }
 
+fn top_variant(p: &mut Parser) {
+    let c = p.checkpoint();
+    p.bump(T![variant]);
+    p.expect(T![upper_ident]);
+    p.expect(T!['{']);
+    while !p.at(SyntaxKind::EOF) && !p.at(T!['}']) {
+        if !p.at(T![struct]) {
+            p.error("expected a struct");
+            break;
+        }
+        top_struct(p);
+        if !p.at(T!['}']) && !p.expect(T![,]) {
+            break;
+        }
+    }
+    p.expect(T!['}']);
+    p.finish_at(c, SyntaxKind::TopVariant)
+}
+
 fn top_fn(p: &mut Parser) {
     let c = p.checkpoint();
     p.bump(SyntaxKind::FN_KW);
@@ -133,6 +158,18 @@ fn param_list(p: &mut Parser) {
     }
 }
 
+fn qualifier(p: &mut Parser) -> Progress {
+    if p.at(T![upper_ident]) && p.nth_at(1, T![::]) {
+        let c = p.checkpoint();
+        p.bump(T![upper_ident]);
+        p.bump(T![::]);
+        p.finish_at(c, SyntaxKind::Qualifier);
+        Progress::Made
+    } else {
+        Progress::None
+    }
+}
+
 fn typ_annot(p: &mut Parser) -> Progress {
     if !p.eat(SyntaxKind::COLON) {
         return Progress::None;
@@ -163,7 +200,8 @@ fn typ(p: &mut Parser) -> Progress {
             p.finish_at(c, SyntaxKind::TyUnit)
         }
         T![upper_ident] => {
-            p.bump(T![upper_ident]);
+            qualifier(p);
+            p.expect(T![upper_ident]);
             p.finish_at(c, SyntaxKind::TyCons)
         }
         T!['['] => {
@@ -281,6 +319,10 @@ fn expr(p: &mut Parser) -> Progress {
     if p.at(T!['{']) {
         return block_expr(p);
     }
+    if p.at(T![match]) {
+        match_expr(p);
+        return Progress::Made;
+    }
     expr_bp(p, 0)
 }
 
@@ -317,6 +359,55 @@ fn block_expr(p: &mut Parser) -> Progress {
     p.expect(T!['}']);
     p.finish_at(c, SyntaxKind::EBlock);
     Progress::Made
+}
+
+fn match_expr(p: &mut Parser) {
+    let c = p.checkpoint();
+    p.bump(T![match]);
+    expr_bp(p, 0);
+    p.expect(T!['{']);
+    while !p.at(SyntaxKind::EOF) && !p.at(T!['}']) {
+        if !match_branch(p).made_progress() {
+            break;
+        }
+        if !p.at(T!['}']) && !p.expect(T![,]) {
+            break;
+        }
+    }
+    p.expect(T!['}']);
+    p.finish_at(c, SyntaxKind::EMatch)
+}
+
+fn match_branch(p: &mut Parser) -> Progress {
+    let c = p.checkpoint();
+    if !pattern(p).made_progress() {
+        return Progress::None;
+    }
+    p.expect(T![=>]);
+    if block_expr(p).made_progress() {
+        p.error("expected a body for this branch")
+    }
+    p.finish_at(c, SyntaxKind::EMatchBranch);
+    Progress::Made
+}
+
+fn pattern(p: &mut Parser) -> Progress {
+    let c = p.checkpoint();
+    match p.current() {
+        T![ident] => {
+            p.bump(T![ident]);
+            p.finish_at(c, SyntaxKind::PatVar);
+            Progress::Made
+        }
+        T![upper_ident] => {
+            qualifier(p);
+            p.expect(T![upper_ident]);
+            p.expect(T![ident]);
+            p.finish_at(c, SyntaxKind::PatVariant);
+            Progress::Made
+        }
+        _ => Progress::None,
+    }
 }
 
 fn call_arg_list(p: &mut Parser) {
@@ -393,7 +484,8 @@ fn atom(p: &mut Parser) -> Progress {
             p.finish_at(c, SyntaxKind::EArray)
         }
         T![upper_ident] => {
-            p.bump(T![upper_ident]);
+            qualifier(p);
+            p.expect(T![upper_ident]);
             if p.expect(T!['{']) {
                 while !p.at(SyntaxKind::EOF) && !p.at(T!['}']) {
                     let c = p.checkpoint();

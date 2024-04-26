@@ -3,102 +3,177 @@ source: packages/frontend/tests/parser.rs
 expression: output
 input_file: packages/frontend/tests/passing/toplevel.nemo
 ---
-fn add_particle(p : Particle) = {
-  set particles.buffer[particles.watermark] = p;
-  set particles.watermark =
-    i32_rem_s(particles.watermark + 1, @array_len(particles.buffer))
+import internal : fn (i32, f32) -> i32 from external
+
+struct Vec {
+  x : f32,
+  y : f32,
 }
+
+global x = 10
+global y : f32 = 10.0
+
+fn main() = {
+
+}
+
+fn add(x : i32, y : i32) : i32 = {
+    x + y
+}
+
+
 // ---
-Root@0..182
-  TopFn@0..182
+Root@0..194
+  TopImport@0..53
     LINEFEED@0..1 "\n"
-    FN_KW@1..3 "fn"
-    SPACE@3..4 " "
-    IDENT@4..16 "add_particle"
-    L_PAREN@16..17 "("
-    Param@17..29
-      IDENT@17..18 "p"
-      SPACE@18..19 " "
-      COLON@19..20 ":"
-      SPACE@20..21 " "
-      TyCons@21..29
-        UPPER_IDENT@21..29 "Particle"
-    R_PAREN@29..30 ")"
-    SPACE@30..31 " "
-    EQUALS@31..32 "="
-    SPACE@32..33 " "
-    EBlock@33..182
-      L_BRACE@33..34 "{"
-      DSet@34..82
-        LINEFEED@34..35 "\n"
-        SPACE@35..37 "  "
-        SET_KW@37..40 "set"
-        SPACE@40..41 " "
-        SetTarget@41..79
-          EArrayIdx@41..79
-            EStructIdx@41..57
-              EVar@41..50
-                IDENT@41..50 "particles"
-              DOT@50..51 "."
-              IDENT@51..57 "buffer"
-            L_BRACKET@57..58 "["
-            EStructIdx@58..77
-              EVar@58..67
-                IDENT@58..67 "particles"
-              DOT@67..68 "."
-              IDENT@68..77 "watermark"
-            R_BRACKET@77..78 "]"
-            SPACE@78..79 " "
-        EQUALS@79..80 "="
-        SPACE@80..81 " "
-        EVar@81..82
-          IDENT@81..82 "p"
-      SEMICOLON@82..83 ";"
-      DSet@83..180
-        LINEFEED@83..84 "\n"
-        SPACE@84..86 "  "
-        SET_KW@86..89 "set"
-        SPACE@89..90 " "
-        SetTarget@90..110
-          EStructIdx@90..110
-            EVar@90..99
-              IDENT@90..99 "particles"
-            DOT@99..100 "."
-            IDENT@100..109 "watermark"
-            SPACE@109..110 " "
-        EQUALS@110..111 "="
-        ECall@111..180
-          EVar@111..125
-            LINEFEED@111..112 "\n"
-            SPACE@112..116 "    "
-            IDENT@116..125 "i32_rem_s"
-          EArgList@125..180
-            L_PAREN@125..126 "("
-            EBinary@126..149
-              EStructIdx@126..146
-                EVar@126..135
-                  IDENT@126..135 "particles"
-                DOT@135..136 "."
-                IDENT@136..145 "watermark"
-                SPACE@145..146 " "
-              BinOp@146..148
-                PLUS@146..147 "+"
-                SPACE@147..148 " "
-              ELit@148..149
-                LitInt@148..149
-                  INT_LIT@148..149 "1"
-            COMMA@149..150 ","
-            SPACE@150..151 " "
-            EIntrinsic@151..179
-              AT_IDENT@151..161 "@array_len"
-              EArgList@161..179
-                L_PAREN@161..162 "("
-                EStructIdx@162..178
-                  EVar@162..171
-                    IDENT@162..171 "particles"
-                  DOT@171..172 "."
-                  IDENT@172..178 "buffer"
-                R_PAREN@178..179 ")"
-            R_PAREN@179..180 ")"
-      LINEFEED@180..181 "\n"
-      R_BRACE@181..182 "}"
+    IMPORT_KW@1..7 "import"
+    SPACE@7..8 " "
+    ImpInternal@8..17
+      IDENT@8..16 "internal"
+      SPACE@16..17 " "
+    COLON@17..18 ":"
+    SPACE@18..19 " "
+    TyFn@19..40
+      FN_KW@19..21 "fn"
+      SPACE@21..22 " "
+      TyArgList@22..33
+        L_PAREN@22..23 "("
+        TyInt@23..26
+          I32_BUILTIN@23..26 "i32"
+        COMMA@26..27 ","
+        SPACE@27..28 " "
+        TyFloat@28..31
+          F32_BUILTIN@28..31 "f32"
+        R_PAREN@31..32 ")"
+        SPACE@32..33 " "
+      ARROW@33..35 "->"
+      SPACE@35..36 " "
+      TyInt@36..40
+        I32_BUILTIN@36..39 "i32"
+        SPACE@39..40 " "
+    FROM_KW@40..44 "from"
+    SPACE@44..45 " "
+    ImpExternal@45..53
+      IDENT@45..53 "external"
+  TopStruct@53..91
+    LINEFEED@53..54 "\n"
+    LINEFEED@54..55 "\n"
+    STRUCT_KW@55..61 "struct"
+    SPACE@61..62 " "
+    UPPER_IDENT@62..65 "Vec"
+    SPACE@65..66 " "
+    L_BRACE@66..67 "{"
+    StructField@67..77
+      LINEFEED@67..68 "\n"
+      SPACE@68..70 "  "
+      IDENT@70..71 "x"
+      SPACE@71..72 " "
+      COLON@72..73 ":"
+      SPACE@73..74 " "
+      TyFloat@74..77
+        F32_BUILTIN@74..77 "f32"
+    COMMA@77..78 ","
+    StructField@78..88
+      LINEFEED@78..79 "\n"
+      SPACE@79..81 "  "
+      IDENT@81..82 "y"
+      SPACE@82..83 " "
+      COLON@83..84 ":"
+      SPACE@84..85 " "
+      TyFloat@85..88
+        F32_BUILTIN@85..88 "f32"
+    COMMA@88..89 ","
+    LINEFEED@89..90 "\n"
+    R_BRACE@90..91 "}"
+  TopGlobal@91..106
+    LINEFEED@91..92 "\n"
+    LINEFEED@92..93 "\n"
+    GLOBAL_KW@93..99 "global"
+    SPACE@99..100 " "
+    IDENT@100..101 "x"
+    SPACE@101..102 " "
+    EQUALS@102..103 "="
+    SPACE@103..104 " "
+    ELit@104..106
+      LitInt@104..106
+        INT_LIT@104..106 "10"
+  TopGlobal@106..128
+    LINEFEED@106..107 "\n"
+    GLOBAL_KW@107..113 "global"
+    SPACE@113..114 " "
+    IDENT@114..115 "y"
+    SPACE@115..116 " "
+    COLON@116..117 ":"
+    SPACE@117..118 " "
+    TyFloat@118..122
+      F32_BUILTIN@118..121 "f32"
+      SPACE@121..122 " "
+    EQUALS@122..123 "="
+    SPACE@123..124 " "
+    ELit@124..128
+      LitFloat@124..128
+        FLOAT_LIT@124..128 "10.0"
+  TopFn@128..146
+    LINEFEED@128..129 "\n"
+    LINEFEED@129..130 "\n"
+    FN_KW@130..132 "fn"
+    SPACE@132..133 " "
+    IDENT@133..137 "main"
+    L_PAREN@137..138 "("
+    R_PAREN@138..139 ")"
+    SPACE@139..140 " "
+    EQUALS@140..141 "="
+    SPACE@141..142 " "
+    EBlock@142..146
+      L_BRACE@142..143 "{"
+      LINEFEED@143..144 "\n"
+      LINEFEED@144..145 "\n"
+      R_BRACE@145..146 "}"
+  TopFn@146..194
+    LINEFEED@146..147 "\n"
+    LINEFEED@147..148 "\n"
+    FN_KW@148..150 "fn"
+    SPACE@150..151 " "
+    IDENT@151..154 "add"
+    L_PAREN@154..155 "("
+    Param@155..164
+      IDENT@155..156 "x"
+      SPACE@156..157 " "
+      COLON@157..158 ":"
+      SPACE@158..159 " "
+      TyInt@159..162
+        I32_BUILTIN@159..162 "i32"
+      COMMA@162..163 ","
+      SPACE@163..164 " "
+    Param@164..171
+      IDENT@164..165 "y"
+      SPACE@165..166 " "
+      COLON@166..167 ":"
+      SPACE@167..168 " "
+      TyInt@168..171
+        I32_BUILTIN@168..171 "i32"
+    R_PAREN@171..172 ")"
+    SPACE@172..173 " "
+    COLON@173..174 ":"
+    SPACE@174..175 " "
+    TyInt@175..179
+      I32_BUILTIN@175..178 "i32"
+      SPACE@178..179 " "
+    EQUALS@179..180 "="
+    SPACE@180..181 " "
+    EBlock@181..194
+      L_BRACE@181..182 "{"
+      DExpr@182..192
+        EBinary@182..192
+          EVar@182..189
+            LINEFEED@182..183 "\n"
+            SPACE@183..187 "    "
+            IDENT@187..188 "x"
+            SPACE@188..189 " "
+          BinOp@189..191
+            PLUS@189..190 "+"
+            SPACE@190..191 " "
+          EVar@191..192
+            IDENT@191..192 "y"
+      LINEFEED@192..193 "\n"
+      R_BRACE@193..194 "}"

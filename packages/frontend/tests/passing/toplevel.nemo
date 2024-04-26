@@ -104,6 +104,26 @@ global _ = {
 
 // ---
 
+variant Rope {
+  struct Leaf { char : i32 },
+  struct Node {
+    children : [Rope],
+    len : i32
+  },
+}
+
+global _ = Rope::Leaf { char = 2 }
+global _ = Rope::Node { children = [], len = 10 }
+global _ = Rope::Node { children = [], len = 10 }
+
+global _ = match rope {
+  Rope::Leaf leaf => { leaf.char },
+  Rope::Node node => { node.children + node.len },
+}
+
+
+// ---
+
 import internal : fn (i32, f32) -> i32 from external
 
 struct Vec {

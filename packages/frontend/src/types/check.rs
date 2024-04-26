@@ -28,7 +28,21 @@ use std::rc::Rc;
 
 #[derive(Debug, Clone)]
 struct StructDef {
+    name: Name,
+    variant: Option<Name>,
     fields: HashMap<String, (Ty, Name)>,
+}
+
+#[derive(Debug, Clone)]
+struct VariantDef {
+    name: Name,
+    alternatives: HashMap<String, Name>,
+}
+
+#[derive(Debug, Clone)]
+enum TypeDef {
+    Struct(Rc<StructDef>),
+    Variant(Rc<VariantDef>),
 }
 
 // NOTE: We could consider passing an explicit Ctx around,
@@ -37,7 +51,8 @@ struct StructDef {
 struct Ctx {
     values: Vec<HashMap<String, (Ty, Name)>>,
     types_names: HashMap<String, Name>,
-    types_defs: HashMap<Name, Rc<StructDef>>,
+    struct_defs: HashMap<Name, Rc<StructDef>>,
+    variant_defs: HashMap<Name, Rc<VariantDef>>,
 }
 
 impl Ctx {
@@ -45,7 +60,8 @@ impl Ctx {
         Ctx {
             values: vec![],
             types_names: HashMap::new(),
-            types_defs: HashMap::new(),
+            struct_defs: HashMap::new(),
+            variant_defs: HashMap::new(),
         }
     }
 
@@ -61,24 +77,58 @@ impl Ctx {
         self.types_names.insert(v.to_string(), name);
     }
 
+    fn declare_alternatives(&mut self, name: Name, def: VariantDef) {
+        self.variant_defs.insert(name, Rc::new(def));
+    }
+
     fn declare_struct_fields(&mut self, name: Name, def: StructDef) {
-        self.types_defs.insert(name, Rc::new(def));
+        self.struct_defs.insert(name, Rc::new(def));
     }
 
     fn lookup_type_name(&self, v: &str) -> Option<Name> {
         self.types_names.get(v).copied()
     }
 
-    fn lookup_type_def(&self, name: Name) -> Option<Rc<StructDef>> {
-        self.types_defs.get(&name).cloned()
+    fn lookup_type_def(&self, name: Name) -> Option<TypeDef> {
+        if let Some(struct_def) = self.struct_defs.get(&name) {
+            Some(TypeDef::Struct(struct_def.clone()))
+        } else if let Some(variant_def) = self.variant_defs.get(&name) {
+            Some(TypeDef::Variant(variant_def.clone()))
+        } else {
+            None
+        }
     }
 
-    fn lookup_type(&self, v: &str) -> Option<(Rc<StructDef>, Name)> {
+    fn lookup_type(&self, v: &str) -> Option<TypeDef> {
         let n = self.lookup_type_name(v)?;
         let def = self
             .lookup_type_def(n)
             .expect("type declared but not defined");
-        Some((def, n))
+        Some(def)
+    }
+
+    fn lookup_struct(&self, ty: &str) -> Option<Rc<StructDef>> {
+        let def = self.lookup_type(ty)?;
+        match def {
+            TypeDef::Struct(s) => Some(s),
+            _ => None,
+        }
+    }
+
+    fn lookup_alternative(&self, ty: &str, alt: &str) -> Option<Rc<StructDef>> {
+        let def = self.lookup_type(ty)?;
+        match def {
+            TypeDef::Variant(var_def) => {
+                let struct_name = var_def.alternatives.get(alt)?;
+                Some(
+                    self.struct_defs
+                        .get(&struct_name)
+                        .expect("variant def references unknown struct")
+                        .clone(),
+                )
+            }
+            _ => None,
+        }
     }
 
     fn enter_block(&mut self) {
@@ -253,63 +303,94 @@ impl Typechecker {
     }
 
     fn check_type_definitions(&mut self, root: &Root) -> Option<Vec<ir::Struct>> {
-        let top_levels: Vec<TopLevel> = root.top_levels().collect();
         // Because types can be mutually recursive we need two passes:
         // - 1. Forward declare all types
-        for top_level in top_levels.iter() {
-            if let TopLevel::TopStruct(s) = top_level {
-                if let Some(tkn) = s.upper_ident_token() {
-                    let name = self.name_supply.type_idx(&tkn);
-                    self.record_def(&tkn, name);
+        let mut alt_struct_defs = vec![];
+        for top_level in root.top_levels() {
+            match top_level {
+                TopLevel::TopStruct(s) => {
+                    if let Some(tkn) = s.upper_ident_token() {
+                        let name = self.name_supply.type_idx(&tkn);
+                        self.record_def(&tkn, name);
 
-                    self.context.declare_type(tkn.text(), name)
+                        self.context.declare_type(tkn.text(), name)
+                    }
                 }
+                TopLevel::TopVariant(v) => {
+                    if let Some(tkn) = v.upper_ident_token() {
+                        let name = self.name_supply.type_idx(&tkn);
+                        self.record_def(&tkn, name);
+                        self.context.declare_type(tkn.text(), name);
+                        let mut def = VariantDef {
+                            name,
+                            alternatives: HashMap::new(),
+                        };
+                        for alt in v.top_structs() {
+                            if let Some(tkn) = alt.upper_ident_token() {
+                                let alt_name = self.name_supply.type_idx(&tkn);
+                                self.record_def(&tkn, alt_name);
+                                self.context.declare_type(tkn.text(), alt_name);
+                                def.alternatives.insert(tkn.text().to_string(), alt_name);
+                            }
+                            alt_struct_defs.push((alt, Some(name)))
+                        }
+                        self.context.declare_alternatives(name, def)
+                    }
+                }
+                _ => {}
             }
         }
 
         // - 2. Actually check their definitions
         let mut structs = Some(vec![]);
-        for top_level in top_levels.iter() {
-            if let TopLevel::TopStruct(s) = top_level {
-                if let Some(struct_name_tkn) = s.upper_ident_token() {
-                    let mut def = StructDef {
-                        fields: HashMap::new(),
+        let top_structs = root.top_levels().filter_map(|tl| {
+            if let TopLevel::TopStruct(s) = tl {
+                Some((s, None))
+            } else {
+                None
+            }
+        });
+        for (s, variant) in top_structs.chain(alt_struct_defs.into_iter()) {
+            if let Some(struct_name_tkn) = s.upper_ident_token() {
+                let name = self
+                    .context
+                    .lookup_type_name(struct_name_tkn.text())
+                    .expect("non-forward declared struct");
+                let mut def = StructDef {
+                    name,
+                    variant,
+                    fields: HashMap::new(),
+                };
+                for field in s.struct_fields() {
+                    let Some(field_name) = field.ident_token() else {
+                        structs = None;
+                        continue;
                     };
-                    for field in s.struct_fields() {
-                        let Some(field_name) = field.ident_token() else {
+                    let ty = match field.ty() {
+                        Some(field_ty) => self.check_ty(&field_ty),
+                        None => {
                             structs = None;
-                            continue;
-                        };
-                        let ty = match field.ty() {
-                            Some(field_ty) => self.check_ty(&field_ty),
-                            None => {
-                                structs = None;
-                                Ty::Any
-                            }
-                        };
-                        let name = self.name_supply.field_idx(&field_name);
-                        self.record_def(&field_name, name);
+                            Ty::Any
+                        }
+                    };
+                    let name = self.name_supply.field_idx(&field_name);
+                    self.record_def(&field_name, name);
 
-                        def.fields.insert(field_name.text().to_string(), (ty, name));
-                    }
-                    let name = self
-                        .context
-                        .lookup_type_name(struct_name_tkn.text())
-                        .expect("non-forward declared struct");
-
-                    if let Some(structs) = &mut structs {
-                        structs.push(ir::Struct {
-                            span: s.syntax().text_range(),
-                            name,
-                            fields: def
-                                .fields
-                                .iter()
-                                .map(|(_, (ty, name))| (*name, ty.clone()))
-                                .collect(),
-                        })
-                    }
-                    self.context.declare_struct_fields(name, def)
+                    def.fields.insert(field_name.text().to_string(), (ty, name));
                 }
+
+                if let Some(structs) = &mut structs {
+                    structs.push(ir::Struct {
+                        span: s.syntax().text_range(),
+                        name,
+                        fields: def
+                            .fields
+                            .iter()
+                            .map(|(_, (ty, name))| (*name, ty.clone()))
+                            .collect(),
+                    })
+                }
+                self.context.declare_struct_fields(name, def)
             }
         }
         structs
@@ -349,13 +430,34 @@ impl Typechecker {
                 None => Ty::Array(Box::new(Ty::Any)),
             },
             Type::TyCons(t) => {
-                let ty_name = t.upper_ident_token().unwrap();
-                let Some(name) = self.context.lookup_type_name(ty_name.text()) else {
-                    self.report_error_token(&ty_name, UnknownType(ty_name.text().to_string()));
-                    return Ty::Any;
-                };
-                self.record_ref(&ty_name, name);
-                Ty::Struct(name)
+                if let Some(ty) = t.qualifier().map(|q| q.upper_ident_token().unwrap()) {
+                    let Some(TypeDef::Variant(ty_def)) = self.context.lookup_type(ty.text()) else {
+                        self.report_error_token(&ty, UnknownType(ty.text().to_string()));
+                        return Ty::Any;
+                    };
+                    self.record_ref(&ty, ty_def.name);
+
+                    let Some(alt) = t.upper_ident_token() else {
+                        return Ty::Any;
+                    };
+                    let Some(name) = ty_def.alternatives.get(alt.text()) else {
+                        self.report_error_token(
+                            &alt,
+                            UnknownType(format!("{}::{}", ty.text(), alt.text())),
+                        );
+                        return Ty::Any;
+                    };
+                    self.record_ref(&alt, *name);
+                    Ty::Struct(*name)
+                } else {
+                    let ty_name = t.upper_ident_token().unwrap();
+                    let Some(name) = self.context.lookup_type_name(ty_name.text()) else {
+                        self.report_error_token(&ty_name, UnknownType(ty_name.text().to_string()));
+                        return Ty::Any;
+                    };
+                    self.record_ref(&ty_name, name);
+                    Ty::Struct(name)
+                }
             }
             Type::TyFn(t) => {
                 let mut arguments = vec![];
@@ -554,8 +656,17 @@ impl Typechecker {
                 }
             }
             Expr::EStruct(struct_expr) => {
-                let struct_name_tkn = struct_expr.upper_ident_token().unwrap();
-                match self.context.lookup_type(struct_name_tkn.text()) {
+                let (struct_def, struct_name_tkn) = if let Some(ty) = struct_expr
+                    .qualifier()
+                    .map(|q| q.upper_ident_token().unwrap())
+                {
+                    let alt = struct_expr.upper_ident_token()?;
+                    (self.context.lookup_alternative(ty.text(), alt.text()), alt)
+                } else {
+                    let tkn = struct_expr.upper_ident_token()?;
+                    (self.context.lookup_struct(tkn.text()), tkn)
+                };
+                match struct_def {
                     None => {
                         self.report_error_token(
                             &struct_name_tkn,
@@ -563,11 +674,11 @@ impl Typechecker {
                         );
                         return None;
                     }
-                    Some((def, name)) => {
+                    Some(def) => {
+                        let name = def.name;
                         self.record_ref(&struct_name_tkn, name);
                         let mut builder = StructBuilder::new();
                         builder.name(Some(name));
-                        // TODO compute missing fields
                         let mut seen = vec![];
                         for field in struct_expr.e_struct_fields() {
                             let Some(field_tkn) = field.ident_token() else {
@@ -690,6 +801,7 @@ impl Typechecker {
                     (Ty::Any, None)
                 }
             }
+            Expr::EMatch(match_expr) => todo!(),
             Expr::EArrayIdx(idx_expr) => {
                 let mut builder = ArrayIdxBuilder::new();
                 let arr_expr = idx_expr.expr().unwrap();
@@ -862,13 +974,20 @@ impl Typechecker {
         receiver: &Ty,
         field_name_tkn: &SyntaxToken,
     ) -> Option<(Name, Ty)> {
-        let (def, name) = match receiver {
-            Ty::Struct(name) => (
-                self.context
+        let def = match receiver {
+            Ty::Struct(name) => {
+                let type_def = self
+                    .context
                     .lookup_type_def(*name)
-                    .expect("inferred a type that wasn't defined"),
-                name,
-            ),
+                    .expect("inferred a type that wasn't defined");
+                match type_def {
+                    TypeDef::Struct(s) => s,
+                    TypeDef::Variant(_) => {
+                        self.report_error_token(field_name_tkn, NonStructIdx(receiver.clone()));
+                        return None;
+                    }
+                }
+            }
             ty => {
                 if *ty != Ty::Any {
                     self.report_error_token(field_name_tkn, NonStructIdx(ty.clone()))
@@ -881,7 +1000,7 @@ impl Typechecker {
                 self.report_error_token(
                     field_name_tkn,
                     UnknownField {
-                        struct_name: *name,
+                        struct_name: def.name,
                         field_name: field_name_tkn.text().to_string(),
                     },
                 );

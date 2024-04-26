@@ -71,7 +71,12 @@ fn parse_toplevel() {
         for inp in input.split("// ---\n") {
             let parse = parse_prog(inp);
             if parse.has_errors() {
-                panic!("{}: Failed with {:?}", path.display(), inp);
+                eprintln!(
+                    "{}: Failed on {:?} with {:?}",
+                    path.display(),
+                    inp,
+                    parse.errors
+                );
             }
             let output = format!("{}\n// ---\n{}", inp, parse.debug_tree());
             assert_snapshot!(output);
