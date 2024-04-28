@@ -384,7 +384,7 @@ fn match_branch(p: &mut Parser) -> Progress {
         return Progress::None;
     }
     p.expect(T![=>]);
-    if block_expr(p).made_progress() {
+    if !block_expr(p).made_progress() {
         p.error("expected a body for this branch")
     }
     p.finish_at(c, SyntaxKind::EMatchBranch);

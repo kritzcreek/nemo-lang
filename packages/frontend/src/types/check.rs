@@ -115,6 +115,14 @@ impl Ctx {
         }
     }
 
+    fn lookup_variant(&self, ty: &str) -> Option<Rc<VariantDef>> {
+        let def = self.lookup_type(ty)?;
+        match def {
+            TypeDef::Variant(s) => Some(s),
+            _ => None,
+        }
+    }
+
     fn lookup_alternative(&self, ty: &str, alt: &str) -> Option<Rc<StructDef>> {
         let def = self.lookup_type(ty)?;
         match def {
@@ -661,6 +669,8 @@ impl Typechecker {
                     .map(|q| q.upper_ident_token().unwrap())
                 {
                     let alt = struct_expr.upper_ident_token()?;
+                    // TODO record reference for variant
+                    // self.record_ref(&ty, NAME_GOES_HERE)
                     (self.context.lookup_alternative(ty.text(), alt.text()), alt)
                 } else {
                     let tkn = struct_expr.upper_ident_token()?;
@@ -712,7 +722,7 @@ impl Typechecker {
                                 );
                             }
                         }
-                        (Ty::Struct(name), builder.build())
+                        (Ty::Struct(def.variant.unwrap_or(name)), builder.build())
                     }
                 }
             }
@@ -801,7 +811,35 @@ impl Typechecker {
                     (Ty::Any, None)
                 }
             }
-            Expr::EMatch(match_expr) => todo!(),
+            Expr::EMatch(match_expr) => {
+                let Some(scrutinee) = match_expr.scrutinee() else {
+                    return None;
+                };
+
+                let (ty_scrutinee, ir_scrutinee) = self.infer_expr(&scrutinee);
+                let mut ty = None;
+                for branch in match_expr.e_match_branchs() {
+                    let (Some(pattern), Some(body)) = (branch.pattern(), branch.body()) else {
+                        continue;
+                    };
+                    self.context.enter_block();
+                    let Some(()) = self.check_pattern(&pattern, &ty_scrutinee) else {
+                        self.report_error(&pattern, CantInferEmptyArray);
+                        continue;
+                    };
+                    let body_ir = if let Some(expected) = &ty {
+                        self.check_expr(&body.into(), expected)
+                    } else {
+                        let (ty_body, ir) = self.infer_expr(&body.into());
+                        if ty_body != Ty::Any {
+                            ty = Some(ty_body);
+                        }
+                        ir
+                    };
+                    self.context.leave_block();
+                }
+                (ty.unwrap_or(Ty::Any), None)
+            }
             Expr::EArrayIdx(idx_expr) => {
                 let mut builder = ArrayIdxBuilder::new();
                 let arr_expr = idx_expr.expr().unwrap();
@@ -870,33 +908,30 @@ impl Typechecker {
             Expr::EBlock(block_expr) => {
                 let mut builder = BlockBuilder::new();
                 let declarations: Vec<Declaration> = block_expr.declarations().collect();
-                match declarations.split_last() {
-                    None => {
-                        builder.expr(unit_lit(block_expr.syntax().text_range()));
-                        (Ty::Unit, builder.build())
+                if let Some((last, declarations)) = declarations.split_last() {
+                    self.context.enter_block();
+                    for decl in declarations {
+                        let (_, ir) = self.infer_decl(decl);
+                        builder.declaration(ir);
                     }
-                    Some((last, declarations)) => {
-                        self.context.enter_block();
-                        for decl in declarations {
+                    let ty = match last {
+                        Declaration::DExpr(expr) => {
+                            let (new_ty, ir) = self.infer_expr(&expr.expr().unwrap());
+                            builder.expr(ir);
+                            new_ty
+                        }
+                        decl => {
                             let (_, ir) = self.infer_decl(decl);
                             builder.declaration(ir);
+                            builder.expr(unit_lit(decl.syntax().text_range()));
+                            Ty::Unit
                         }
-                        let ty = match last {
-                            Declaration::DExpr(expr) => {
-                                let (new_ty, ir) = self.infer_expr(&expr.expr().unwrap());
-                                builder.expr(ir);
-                                new_ty
-                            }
-                            decl => {
-                                let (_, ir) = self.infer_decl(decl);
-                                builder.declaration(ir);
-                                builder.expr(unit_lit(decl.syntax().text_range()));
-                                Ty::Unit
-                            }
-                        };
-                        self.context.leave_block();
-                        (ty, builder.build())
-                    }
+                    };
+                    self.context.leave_block();
+                    (ty, builder.build())
+                } else {
+                    builder.expr(unit_lit(block_expr.syntax().text_range()));
+                    (Ty::Unit, builder.build())
                 }
             }
         };
@@ -1146,6 +1181,48 @@ impl Typechecker {
         });
 
         (ty, ir)
+    }
+
+    fn check_pattern(&mut self, pattern: &Pattern, expected: &Ty) -> Option<()> {
+        match pattern {
+            Pattern::PatVariant(pat) => {
+                let ty = pat.qualifier()?.upper_ident_token()?;
+                let ctor = pat.upper_ident_token()?;
+                let var = pat.ident_token()?;
+                let Some(def) = self.context.lookup_variant(ty.text()) else {
+                    // report error UnknownVariant
+                    return None;
+                };
+                match expected {
+                    Ty::Struct(s) if def.name == *s => {
+                        if let Some(struct_name) = def.alternatives.get(ctor.text()) {
+                            let name = self.name_supply.local_idx(&var);
+                            self.context.add_var(
+                                var.text().to_string(),
+                                Ty::Struct(*struct_name),
+                                name,
+                            );
+                            Some(())
+                        } else {
+                            // report error UnknownAlternative
+                            None
+                        }
+                    }
+                    Ty::Any => None,
+                    _ => {
+                        // report error PatternDoesntMatchType
+                        None
+                    }
+                }
+            }
+            Pattern::PatVar(v) => {
+                let ident_tkn = v.ident_token().unwrap();
+                let name = self.name_supply.local_idx(&ident_tkn);
+                self.context
+                    .add_var(ident_tkn.text().to_string(), expected.clone(), name);
+                Some(())
+            }
+        }
     }
 }
 

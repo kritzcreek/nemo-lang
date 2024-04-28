@@ -113,12 +113,12 @@ variant Rope {
 }
 
 global _ = Rope::Leaf { char = 2 }
-global _ = Rope::Node { children = [], len = 10 }
+global rope = Rope::Node { children = [], len = 10 }
 global _ = Rope::Node { children = [], len = 10 }
 
 global _ = match rope {
   Rope::Leaf leaf => { leaf.char },
-  Rope::Node node => { node.children + node.len },
+  Rope::Node node => { @array_len(node.children) + node.len },
 }
 
 
