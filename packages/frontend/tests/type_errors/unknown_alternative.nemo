@@ -1,0 +1,11 @@
+variant V {
+  struct S {}
+}
+
+fn main() = {
+  V::Unknown {};
+
+  match V::S{} {
+    V::Unknown _ => {}
+  }
+}

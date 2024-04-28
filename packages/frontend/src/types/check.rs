@@ -823,10 +823,8 @@ impl Typechecker {
                         continue;
                     };
                     self.context.enter_block();
-                    let Some(()) = self.check_pattern(&pattern, &ty_scrutinee) else {
-                        self.report_error(&pattern, CantInferEmptyArray);
-                        continue;
-                    };
+                    // TODO handle return value
+                    self.check_pattern(&pattern, &ty_scrutinee);
                     let body_ir = if let Some(expected) = &ty {
                         self.check_expr(&body.into(), expected)
                     } else {
@@ -1190,27 +1188,41 @@ impl Typechecker {
                 let ctor = pat.upper_ident_token()?;
                 let var = pat.ident_token()?;
                 let Some(def) = self.context.lookup_variant(ty.text()) else {
-                    // report error UnknownVariant
+                    self.report_error_token(&ty, UnknownType(ty.text().to_string()));
                     return None;
                 };
+                self.record_ref(&ty, def.name);
                 match expected {
                     Ty::Struct(s) if def.name == *s => {
                         if let Some(struct_name) = def.alternatives.get(ctor.text()) {
+                            self.record_ref(&ctor, *struct_name);
                             let name = self.name_supply.local_idx(&var);
                             self.context.add_var(
                                 var.text().to_string(),
                                 Ty::Struct(*struct_name),
                                 name,
                             );
+                            self.record_def(&var, name);
                             Some(())
                         } else {
-                            // report error UnknownAlternative
+                            self.report_error_token(
+                                &ctor,
+                                UnknownAlternative {
+                                    variant_name: def.name,
+                                    alternative: ctor.text().to_string(),
+                                },
+                            );
                             None
                         }
                     }
                     Ty::Any => None,
                     _ => {
-                        // report error PatternDoesntMatchType
+                        self.report_error(
+                            pattern,
+                            PatternTypeMismatch {
+                                expected: expected.clone(),
+                            },
+                        );
                         None
                     }
                 }
@@ -1220,6 +1232,7 @@ impl Typechecker {
                 let name = self.name_supply.local_idx(&ident_tkn);
                 self.context
                     .add_var(ident_tkn.text().to_string(), expected.clone(), name);
+                self.record_def(&ident_tkn, name);
                 Some(())
             }
         }

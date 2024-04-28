@@ -77,6 +77,10 @@ pub enum TyErrorData {
         expected: Ty,
         actual: Ty,
     },
+    UnknownAlternative {
+        variant_name: Name,
+        alternative: String,
+    },
     UnknownField {
         struct_name: Name,
         field_name: String,
@@ -88,6 +92,9 @@ pub enum TyErrorData {
     TypeMismatch {
         expected: Ty,
         actual: Ty,
+    },
+    PatternTypeMismatch {
+        expected: Ty,
     },
 }
 
@@ -111,6 +118,8 @@ fn code_for_error(err_data: &TyErrorData) -> i32 {
         TyErrorData::NotAFunction(_) => 16,
         TyErrorData::CantInferEmptyArray => 17,
         TyErrorData::NonFunctionImport { .. } => 18,
+        TyErrorData::UnknownAlternative { .. } => 19,
+        TyErrorData::PatternTypeMismatch { .. } => 20,
     }
 }
 
@@ -164,6 +173,13 @@ fn error_label(err_data: &TyErrorData, name_map: &NameMap) -> String {
             expected.display(name_map),
             actual.display(name_map)
         ),
+        TyErrorData::UnknownAlternative {
+            variant_name,
+            alternative,
+        } => format!(
+            "Unknown alternative. {} does not have an alternative named {alternative}",
+            name_map.get(variant_name).unwrap().it
+        ),
         TyErrorData::UnknownField {
             struct_name,
             field_name,
@@ -183,6 +199,10 @@ fn error_label(err_data: &TyErrorData, name_map: &NameMap) -> String {
             "Type mismatch. Expected {}, but got {}",
             expected.display(name_map),
             actual.display(name_map)
+        ),
+        TyErrorData::PatternTypeMismatch { expected } => format!(
+            "This pattern can't match a value of type {}",
+            expected.display(name_map),
         ),
     }
 }

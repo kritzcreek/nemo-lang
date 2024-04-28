@@ -1,0 +1,12 @@
+---
+source: packages/frontend/tests/types.rs
+expression: err_buf
+input_file: packages/frontend/tests/type_errors/unknown_variant.nemo
+---
+[07] Error: Unknown type Unknown
+   ╭─[source:1:13]
+   │
+ 3 │     Unknown::C _ => {}
+   │     ───┬───  
+   │        ╰───── Unknown type Unknown
+───╯
