@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 
-use wasm_encoder::{BlockType, ConstExpr, HeapType, Instruction};
+use wasm_encoder::{BlockType, ConstExpr, HeapType, Instruction, RefType, ValType};
 
 use crate::{
     ir::{
         Callee, Declaration, DeclarationData, Expr, ExprData, Id, IntrinsicData, Lit, LitData,
-        Name, Op, OpData, Program, SetTarget, SetTargetData, Ty,
+        Name, Op, OpData, Pattern, PatternData, Program, SetTarget, SetTargetData, Ty,
     },
     wasm_builder::{BodyBuilder, Builder},
 };
@@ -191,6 +191,45 @@ impl<'a> Codegen<'a> {
                 instrs.extend(self.compile_expr(body, expr));
                 instrs
             }
+            ExprData::Match {
+                scrutinee,
+                branches,
+            } => {
+                let mut instrs = vec![];
+                let scrutinee_ty = self.builder.val_ty(&scrutinee.ty);
+                instrs.extend(self.compile_expr(body, scrutinee));
+
+                let scrutinee_local = body.fresh_local(scrutinee_ty);
+                instrs.push(Instruction::LocalSet(scrutinee_local));
+
+                let ret_ty = self.builder.val_ty(&expr.ty);
+
+                // TODO: I hate this. builder support for blocks?
+                let branch_count = branches.len() as u32;
+                instrs.push(Instruction::Block(BlockType::Result(ret_ty)));
+                instrs.push(Instruction::Block(BlockType::Empty));
+                let mut checks = vec![];
+                let mut bodies = vec![];
+                for (depth, branch) in branches.into_iter().enumerate() {
+                    let depth = depth as u32;
+                    instrs.push(Instruction::Block(BlockType::Empty));
+                    let (check, setup) =
+                        self.compile_pattern(body, branch.pattern, scrutinee_local);
+                    checks.extend(check);
+                    checks.push(Instruction::BrIf(depth));
+
+                    bodies.extend(setup);
+                    bodies.extend(self.compile_expr(body, branch.body));
+                    bodies.push(Instruction::Br(branch_count + 2 - depth));
+                    bodies.push(Instruction::End)
+                }
+                instrs.extend(checks);
+                instrs.push(Instruction::End);
+                instrs.extend(bodies);
+                instrs.push(Instruction::End);
+                instrs.push(Instruction::End);
+                instrs
+            }
             ExprData::Struct { name, mut fields } => {
                 let mut instrs = vec![];
                 let struct_ty = {
@@ -232,6 +271,63 @@ impl<'a> Codegen<'a> {
                     }
                 }
                 instrs
+            }
+        }
+    }
+
+    fn compile_pattern(
+        &mut self,
+        body: &mut BodyBuilder,
+        pattern: Pattern,
+        scrutinee_idx: u32,
+    ) -> (Vec<Instruction<'a>>, Vec<Instruction<'a>>) {
+        match *pattern.it {
+            PatternData::Var(v) => {
+                let ty = self.builder.val_ty(&pattern.ty);
+                let idx = body.new_local(v, ty);
+                (
+                    vec![Instruction::I32Const(1)],
+                    vec![
+                        Instruction::LocalGet(scrutinee_idx),
+                        Instruction::LocalSet(idx),
+                    ],
+                )
+            }
+            PatternData::Variant {
+                variant,
+                alternative,
+                binder,
+                struct_ty,
+            } => {
+                let Ty::Struct(name) = pattern.ty else {
+                    return (
+                        vec![Instruction::Unreachable],
+                        vec![Instruction::Unreachable],
+                    );
+                };
+                let (struct_idx, _) = self.builder.struct_type(name);
+                let check = vec![
+                    Instruction::LocalGet(scrutinee_idx),
+                    Instruction::StructGet {
+                        struct_type_index: *struct_idx,
+                        // The tag field is always 0
+                        field_index: 0,
+                    },
+                    Instruction::I32Const(self.builder.variant_tag(variant, alternative)),
+                    Instruction::I32Eq,
+                ];
+                let (ty_idx, _) = self.builder.struct_type(struct_ty);
+                let val_ty = ValType::Ref(RefType {
+                    nullable: false,
+                    heap_type: HeapType::Concrete(*ty_idx),
+                });
+
+                let setup = vec![
+                    Instruction::LocalGet(scrutinee_idx),
+                    Instruction::RefCastNonNull(HeapType::Concrete(*ty_idx)),
+                    Instruction::LocalSet(body.new_local(binder, val_ty)),
+                ];
+                (check, setup)
             }
         }
     }
@@ -314,7 +410,7 @@ impl<'a> Codegen<'a> {
                     Name::Local(_) => {
                         instrs.push(Instruction::LocalSet(body.lookup_local(&name).unwrap()));
                     }
-                    Name::Func(_) | Name::Type(_) | Name::Field(_) => {
+                    Name::Func(_) | Name::Type(_) | Name::Field(_) | Name::Gen(_) => {
                         unreachable!("can't set a non local/global variable")
                     }
                 };

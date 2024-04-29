@@ -45,6 +45,7 @@ pub struct Export {
 
 pub struct Builder<'a> {
     name_map: &'a NameMap,
+    name_gen: u32,
     funcs: HashMap<Name, FuncData<'a>>,
     globals: HashMap<Name, GlobalData>,
     types: Vec<RecType>,
@@ -63,6 +64,7 @@ impl<'a> Builder<'a> {
     pub fn new(name_map: &'a HashMap<Name, Id>) -> Builder<'a> {
         Builder {
             name_map,
+            name_gen: 0,
             funcs: HashMap::new(),
             globals: HashMap::new(),
             types: vec![],
@@ -251,6 +253,10 @@ impl<'a> Builder<'a> {
         }
     }
 
+    pub fn variant_tag(&self, variant: Name, alternative: Name) -> i32 {
+        todo!()
+    }
+
     pub fn struct_type(&'a self, name: Name) -> &'a (TypeIdx, Vec<Name>) {
         self.structs
             .get(&name)
@@ -435,8 +441,9 @@ struct LocalData {
 }
 
 pub struct BodyBuilder {
-    params: usize,
-    locals: HashMap<Name, LocalData>,
+    param_count: usize,
+    locals: Vec<ValType>,
+    named_locals: HashMap<Name, u32>,
 }
 
 pub struct FnLocals {
@@ -446,50 +453,42 @@ pub struct FnLocals {
 
 impl BodyBuilder {
     pub fn new(params: Vec<(Name, ValType)>) -> BodyBuilder {
+        let param_count = params.len();
+        let mut locals = vec![];
+        let mut named_locals = HashMap::new();
+        for (idx, (name, ty)) in params.into_iter().enumerate() {
+            locals.push(ty);
+            named_locals.insert(name, idx as u32);
+        }
         BodyBuilder {
-            params: params.len(),
-            locals: HashMap::from_iter(params.into_iter().enumerate().map(
-                |(index, (name, ty))| {
-                    (
-                        name,
-                        LocalData {
-                            index: index as u32,
-                            ty,
-                        },
-                    )
-                },
-            )),
+            param_count,
+            locals,
+            named_locals,
         }
     }
 
     pub fn new_local(&mut self, name: Name, ty: ValType) -> LocalIdx {
+        let index = self.fresh_local(ty);
+        self.named_locals.insert(name, index);
+        index
+    }
+
+    pub fn fresh_local(&mut self, ty: ValType) -> LocalIdx {
         let index = self.locals.len() as u32;
-        self.locals.insert(name, LocalData { index, ty });
+        self.locals.push(ty);
         index
     }
 
     pub fn lookup_local(&self, name: &Name) -> Option<LocalIdx> {
-        self.locals.get(name).map(|v| v.index)
+        self.named_locals.get(name).copied()
     }
 
     pub fn get_locals(self) -> FnLocals {
         let mut names = HashMap::new();
-        let mut locals: Vec<LocalData> = self
-            .locals
-            .into_iter()
-            .filter_map(|(name, l)| {
-                names.insert(l.index, name);
-                if l.index >= self.params as u32 {
-                    Some(l)
-                } else {
-                    None
-                }
-            })
-            .collect();
-        locals.sort_by_key(|l| l.index);
-        FnLocals {
-            locals: locals.into_iter().map(|l| l.ty).collect(),
-            names,
+        for (k, v) in self.named_locals {
+            names.insert(v, k);
         }
+        let locals = self.locals[self.param_count..].to_vec();
+        FnLocals { locals, names }
     }
 }

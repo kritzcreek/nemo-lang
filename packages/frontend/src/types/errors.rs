@@ -1,5 +1,5 @@
 use crate::types::Ty;
-use ariadne::{Color, Config, Label, Report, ReportKind, Source};
+use ariadne::{Config, Label, Report, ReportKind, Source};
 use backend::ir::{Name, NameMap};
 use core::fmt;
 use line_index::{LineCol, LineIndex};

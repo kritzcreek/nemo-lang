@@ -18,6 +18,7 @@ impl Spanned for Id {
     }
 }
 
+// Should we have spanned names as well?
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum Name {
     Global(u32),
@@ -25,6 +26,7 @@ pub enum Name {
     Func(u32),
     Type(u32),
     Field(u32),
+    Gen(u32),
 }
 
 impl Name {
@@ -140,7 +142,7 @@ impl fmt::Display for FuncTyDisplay<'_> {
 //
 // We also try to keep as many Spans around as possible, mostly to help us when debugging our compiler
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Op {
     pub it: OpData,
     pub at: TextRange,
@@ -203,7 +205,7 @@ pub enum LitData {
     Unit,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Intrinsic {
     pub it: IntrinsicData,
     pub at: TextRange,
@@ -221,7 +223,32 @@ pub enum IntrinsicData {
     ArrayNew,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
+pub struct Pattern {
+    pub it: Box<PatternData>,
+    pub at: TextRange,
+    pub ty: Ty,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum PatternData {
+    Var(Name),
+    Variant {
+        variant: Name,
+        alternative: Name,
+        binder: Name,
+        struct_ty: Name,
+    },
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct MatchBranch {
+    pub at: TextRange,
+    pub pattern: Pattern,
+    pub body: Expr,
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub struct Expr {
     pub it: Box<ExprData>,
     pub at: TextRange,
@@ -234,13 +261,13 @@ impl Spanned for Expr {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Callee {
     FuncRef(Expr),
     Builtin(&'static str),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum ExprData {
     Lit(Lit),
     Var(Name),
@@ -276,13 +303,17 @@ pub enum ExprData {
         expr: Expr,
         index: Name,
     },
+    Match {
+        scrutinee: Expr,
+        branches: Vec<MatchBranch>,
+    },
     Intrinsic {
         intrinsic: Intrinsic,
         arguments: Vec<Expr>,
     },
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Declaration {
     pub it: DeclarationData,
     pub at: TextRange,
@@ -295,7 +326,7 @@ impl Spanned for Declaration {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum DeclarationData {
     Let { binder: Name, expr: Expr },
     Set { set_target: SetTarget, expr: Expr },
@@ -303,7 +334,7 @@ pub enum DeclarationData {
     While { condition: Expr, body: Expr },
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct SetTarget {
     pub it: SetTargetData,
     pub at: TextRange,
@@ -316,14 +347,14 @@ impl Spanned for SetTarget {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum SetTargetData {
     Array { target: Expr, index: Expr },
     Struct { target: Expr, index: Name },
     Var { name: Name },
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Import {
     pub span: TextRange,
     pub internal: Name,
@@ -331,21 +362,21 @@ pub struct Import {
     pub external: String,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Struct {
     pub span: TextRange,
     pub name: Name,
     pub fields: Vec<(Name, Ty)>,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Global {
     pub span: TextRange,
     pub binder: Name,
     pub init: Expr,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Func {
     pub name: Name,
     pub params: Vec<(Name, Ty)>,
@@ -362,7 +393,7 @@ impl Func {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Program {
     pub imports: Vec<Import>,
     pub structs: Vec<Struct>,
