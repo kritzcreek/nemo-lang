@@ -421,18 +421,16 @@ impl<'a> Codegen<'a> {
             self.builder.declare_import(import);
         }
 
-        // TODO clean this up
+        // Variants need to be declared before structs
         for type_def in program.types.iter() {
-            match type_def {
-                TypeDef::Variant(v) => self.builder.declare_variant(v.clone()),
-                _ => {}
+            if let TypeDef::Variant(v) = type_def {
+                self.builder.declare_variant(v.clone())
             }
         }
 
         for type_def in program.types {
-            match type_def {
-                TypeDef::Struct(s) => self.builder.declare_struct(s),
-                _ => {}
+            if let TypeDef::Struct(s) = type_def {
+                self.builder.declare_struct(s)
             }
         }
 

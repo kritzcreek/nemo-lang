@@ -153,7 +153,7 @@ impl<'a> Builder<'a> {
         let mut funcs: Vec<_> = self.funcs.into_iter().collect();
         funcs.sort_by_key(|(_, v)| v.index);
         for (name, func) in funcs.iter() {
-            function_names.append(func.index, &self.name_map.get(&name).unwrap().it);
+            function_names.append(func.index, &self.name_map.get(name).unwrap().it);
             function_section.function(func.ty);
         }
 
