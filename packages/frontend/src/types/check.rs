@@ -189,24 +189,24 @@ impl Typechecker {
     }
 
     fn record_def(&mut self, token: &SyntaxToken, name: Name) {
-        let previous = self
+        let previous_def = self
             .names
             .insert(SyntaxTokenPtr::new(token), Occurrence::Def(name));
-        assert!(previous.is_none())
+        assert!(previous_def.is_none())
     }
 
     fn record_ref(&mut self, token: &SyntaxToken, name: Name) {
-        let previous = self
+        let previous_ref = self
             .names
             .insert(SyntaxTokenPtr::new(token), Occurrence::Ref(name));
-        assert!(previous.is_none())
+        assert!(previous_ref.is_none())
     }
 
     fn record_typed(&mut self, node: &SyntaxNode, ty: &Ty) {
-        let previous = self
+        let previous_typed = self
             .typed_nodes
             .insert(SyntaxNodePtr::new(node), ty.clone());
-        assert!(previous.is_none())
+        assert!(previous_typed.is_none())
     }
 
     fn report_error_token(&mut self, elem: &SyntaxToken, error: TyErrorData) {
@@ -998,10 +998,10 @@ impl Typechecker {
                 if let Some(condition) = expr.condition() {
                     builder.condition(self.check_expr(&condition, &Ty::Bool));
                 }
-                if let Some(then_branch) = expr.condition() {
+                if let Some(then_branch) = expr.then_branch() {
                     builder.then_branch(self.check_expr(&then_branch, ty));
                 }
-                if let Some(else_branch) = expr.condition() {
+                if let Some(else_branch) = expr.else_branch() {
                     builder.else_branch(self.check_expr(&else_branch, ty));
                 }
                 builder.build()

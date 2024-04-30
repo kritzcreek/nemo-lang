@@ -13,12 +13,21 @@ struct Color {
   b : f32
 }
 
-struct Cube {
+variant Body {
+  struct Cube {
+    size : f32
+  },
+  struct Circle {
+    radius : f32
+  }
+}
+
+struct Shape {
   x : f32,
   y : f32,
   vx : f32,
   vy : f32,
-  size : f32,
+  body : Body,
   color : Color
 }
 
@@ -42,13 +51,13 @@ global green = Color { r = 0.0, g = 180.0, b = 0.0 }
 global blue = Color { r = 0.0, g = 0.0, b = 180.0 }
 
 global cubes = [
-  Cube { x =   0.0, y = 0.0, vx =  9.0, vy = 14.0, size = 10.0, color = red },
-  Cube { x = 100.0, y = 0.0, vx = 10.0, vy = 13.0, size = 15.0, color = green },
-  Cube { x = 200.0, y = 0.0, vx = 11.0, vy = 12.0, size = 20.0, color = blue },
-  Cube { x = 300.0, y = 0.0, vx = 12.0, vy = 11.0, size = 25.0, color = blue },
-  Cube { x = 400.0, y = 0.0, vx = 13.0, vy = 10.0, size = 30.0, color = green },
-  Cube { x = 500.0, y = 0.0, vx = 14.0, vy =  9.0, size = 35.0, color = red },
-  Cube { x = 500.0, y = 0.0, vx = 19.0, vy = 17.0, size = 35.0, color = blue }
+  Shape { x =   0.0, y = 0.0, vx =  9.0, vy = 14.0, body = Body::Cube { size = 10.0 }, color = red },
+  Shape { x = 100.0, y = 0.0, vx = 10.0, vy = 13.0, body = Body::Cube { size = 15.0 }, color = green },
+  Shape { x = 200.0, y = 0.0, vx = 11.0, vy = 12.0, body = Body::Circle { radius = 10.0 }, color = blue },
+  Shape { x = 300.0, y = 0.0, vx = 12.0, vy = 11.0, body = Body::Cube { size = 25.0 }, color = blue },
+  Shape { x = 400.0, y = 0.0, vx = 13.0, vy = 10.0, body = Body::Cube { size = 30.0 }, color = green },
+  Shape { x = 500.0, y = 0.0, vx = 14.0, vy =  9.0, body = Body::Circle { radius = 17.0 }, color = red },
+  Shape { x = 500.0, y = 0.0, vx = 19.0, vy = 17.0, body = Body::Cube { size = 35.0 }, color = blue }
 ]
 
 global particles = RingBuffer {
@@ -66,15 +75,30 @@ fn clamp(min : f32, val : f32, max : f32) : f32 = {
   f32_min(max, f32_max(min, val))
 }
 
-fn draw_cube(cube : Cube) = {
-  let x = cube.x;
-  let y = cube.y;
-  let size = cube.size;
+fn size(body : Body) : f32 = {
+  match body {
+    Body::Cube c => { c.size },
+    Body::Circle c => { c.radius * 2.0 }
+  }
+}
+
+fn draw_body(x : f32, y : f32, body : Body) = {
+  match body {
+    Body::Cube c => {
+        move_to(x, y);
+        line_to(x , y + c.size);
+        line_to(x + c.size, y + c.size);
+        line_to(x + c.size, y);
+    },
+    Body::Circle c => {
+      arc(x, y, c.radius, 0.0, two_pi);
+    }
+  }
+}
+
+fn draw_cube(cube : Shape) = {
   begin_path();
-  move_to(x, y);
-  line_to(x, y + cube.size);
-  line_to(x + cube.size, y + cube.size);
-  line_to(x + cube.size, y);
+  draw_body(cube.x, cube.y, cube.body);
   set_stroke_color(cube.color.r, cube.color.g, cube.color.b);
   close_path();
   stroke()
@@ -89,9 +113,9 @@ fn draw_particle(particle : Particle) = {
   } else {}
 }
 
-fn collide_cubes(c1 : Cube, c2 : Cube) = {
-  let overlap_x = c1.x < c2.x + c2.size && c1.x + c1.size > c2.x;
-  let overlap_y = c1.y < c2.y + c2.size && c1.y + c1.size > c2.y;
+fn collide_cubes(c1 : Shape, c2 : Shape) = {
+  let overlap_x = c1.x < c2.x + size(c2.body) && c1.x + size(c1.body) > c2.x;
+  let overlap_y = c1.y < c2.y + size(c2.body) && c1.y + size(c1.body) > c2.y;
 
   if overlap_y && overlap_x {
     add_particle(Particle { x = c1.x, y = c1.y, color = c1.color, time = particle_timer });
@@ -106,7 +130,7 @@ fn collide_cubes(c1 : Cube, c2 : Cube) = {
   } else {}
 }
 
-fn collide_cube(cube : Cube) = {
+fn collide_cube(cube : Shape) = {
   let idx = 0;
   while idx < @array_len(cubes) {
     if cubes[idx].x == cube.x && cubes[idx].y == cube.y {
@@ -117,7 +141,7 @@ fn collide_cube(cube : Cube) = {
   }
 }
 
-fn tick_cube(cube : Cube, elapsed_time_ms : f32) = {
+fn tick_cube(cube : Shape, elapsed_time_ms : f32) = {
   let elapsed_factor = elapsed_time_ms / 48.0;
 
   set cube.x = cube.x + cube.vx * elapsed_factor;
