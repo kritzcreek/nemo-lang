@@ -5,8 +5,8 @@ edition = "2021"
 license = "MIT"
 
 [dependencies]
-ariadne = "0.4.0"
-yansi = "0.5.1"
+ariadne = "0.4.1"
+yansi = "1"
 logos = "0.14.0"
 num-derive = "0.4.2"
 num-traits = "0.2.18"

@@ -22,9 +22,9 @@ function make_binary_rules(expr) {
       seq(
         field("left", expr),
         field("op", choice(...ops)),
-        field("right", expr)
-      )
-    )
+        field("right", expr),
+      ),
+    ),
   );
   return choice(...levels);
 }
@@ -43,6 +43,18 @@ module.exports = grammar({
     upper_ident: ($) => /[A-Z][a-zA-Z0-9_]*/,
     intrinsic_ident: ($) => /@[a-z_][a-zA-Z0-9_]*/,
 
+    qualifier: ($) => seq($.upper_ident, "::"),
+
+    // Patterns
+    _pattern: ($) => choice($.var_pat, $.variant_pat),
+
+    var_pat: ($) => $.lower_ident,
+    variant_pat: ($) =>
+      seq(
+        field("type", seq($.qualifier, $.upper_ident)),
+        field("binder", $.lower_ident),
+      ),
+
     // Literals
     int_lit: ($) => choice("0", /[1-9][0-9]*/),
     float_lit: ($) => token(seq(choice("0", /[0-9]*/), ".", /[0-9]+/)),
@@ -55,23 +67,23 @@ module.exports = grammar({
     array_idx_e: ($) =>
       prec(
         100,
-        seq(field("array", $._expr), "[", field("index", $._expr), "]")
+        seq(field("array", $._expr), "[", field("index", $._expr), "]"),
       ),
 
     struct_field_e: ($) =>
       seq(field("name", $.lower_ident), "=", field("expr", $._expr)),
     struct_e: ($) =>
       seq(
-        field("struct", $.upper_ident),
+        field("struct", seq(optional($.qualifier), $.upper_ident)),
         "{",
         comma_sep_trailing($.struct_field_e),
-        "}"
+        "}",
       ),
     // Needs to be higher than the highest operator precedence
     struct_idx_e: ($) =>
       prec(
         100,
-        seq(field("expr", $._expr), ".", field("index", $.lower_ident))
+        seq(field("expr", $._expr), ".", field("index", $.lower_ident)),
       ),
     if_e: ($) =>
       seq(
@@ -79,8 +91,20 @@ module.exports = grammar({
         field("condition", $._expr),
         field("then", $.block_e),
         "else",
-        field("else", $.block_e)
+        field("else", $.block_e),
       ),
+
+    match_e: ($) =>
+      seq(
+        "match",
+        field("scrutinee", $._expr),
+        "{",
+        comma_sep_trailing($.match_branch),
+        "}",
+      ),
+
+    match_branch: ($) =>
+      seq(field("pattern", $._pattern), "=>", field("body", $.block_e)),
 
     call_args: ($) => seq("(", comma_sep_trailing($._expr), ")"),
     call_e: ($) =>
@@ -91,7 +115,7 @@ module.exports = grammar({
     intrinsic_e: ($) =>
       seq(
         field("function", $.intrinsic_ident),
-        field("arguments", $.call_args)
+        field("arguments", $.call_args),
       ),
     binary_e: ($) => make_binary_rules($._expr),
 
@@ -107,7 +131,7 @@ module.exports = grammar({
         $.if_e,
         $.intrinsic_e,
         $.array_idx_e,
-        $.struct_idx_e
+        $.struct_idx_e,
       ),
 
     // Extracted this rule to make it clear that we want the parser to greedily parse:
@@ -126,7 +150,8 @@ module.exports = grammar({
         $.binary_e,
         $.intrinsic_e,
         $.array_idx_e,
-        $.struct_idx_e
+        $.struct_idx_e,
+        $.match_e,
       ),
 
     // Declarations
@@ -143,7 +168,7 @@ module.exports = grammar({
         field("binder", $.lower_ident),
         optional(seq(":", field("annotation", $._type))),
         "=",
-        field("expr", $._expr)
+        field("expr", $._expr),
       ),
     set_decl: ($) =>
       seq("set", field("target", $._set_target), "=", field("expr", $._expr)),
@@ -167,7 +192,7 @@ module.exports = grammar({
         comma_sep_trailing(field("argument", $._type)),
         ")",
         "->",
-        field("result", $._type)
+        field("result", $._type),
       ),
     _type: ($) =>
       choice(
@@ -177,7 +202,7 @@ module.exports = grammar({
         $.ty_unit,
         $.ty_array,
         $.ty_struct,
-        $.ty_func
+        $.ty_func,
       ),
 
     // Toplevel
@@ -187,7 +212,7 @@ module.exports = grammar({
         field("binder", $.lower_ident),
         optional(seq(":", field("annotation", $._type))),
         "=",
-        field("expr", $._expr)
+        field("expr", $._expr),
       ),
 
     top_import: ($) =>
@@ -197,7 +222,7 @@ module.exports = grammar({
         ":",
         field("type", $.ty_func),
         "from",
-        field("external", $.lower_ident)
+        field("external", $.lower_ident),
       ),
 
     func_param: ($) =>
@@ -210,7 +235,7 @@ module.exports = grammar({
         field("params", $.func_params),
         optional(seq(":", field("result", $._type))),
         "=",
-        field("body", $.block_e)
+        field("body", $.block_e),
       ),
 
     struct_field_top: ($) =>
@@ -221,10 +246,25 @@ module.exports = grammar({
         field("name", $.upper_ident),
         "{",
         comma_sep_trailing($.struct_field_top),
-        "}"
+        "}",
+      ),
+
+    top_variant: ($) =>
+      seq(
+        "variant",
+        field("name", $.upper_ident),
+        "{",
+        comma_sep_trailing($.top_struct),
+        "}",
       ),
 
     _toplevel: ($) =>
-      choice($.top_global, $.top_import, $.top_func, $.top_struct),
+      choice(
+        $.top_global,
+        $.top_import,
+        $.top_func,
+        $.top_struct,
+        $.top_variant,
+      ),
   },
 });

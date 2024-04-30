@@ -152,8 +152,14 @@ pub enum SyntaxKind {
     #[token("else")]
     ELSE_KW,
 
+    #[token("match")]
+    MATCH_KW,
+
     #[token("struct")]
     STRUCT_KW,
+
+    #[token("variant")]
+    VARIANT_KW,
 
     #[token("while")]
     WHILE_KW,
@@ -251,6 +257,9 @@ pub enum SyntaxKind {
     #[token("<=")]
     R_ANGLE_EQ,
 
+    #[token("::")]
+    DOUBLE_COLON,
+
     #[token(":")]
     COLON,
 
@@ -263,6 +272,9 @@ pub enum SyntaxKind {
     #[token("->")]
     ARROW,
 
+    #[token("=>")]
+    FAT_ARROW,
+
     EOF,
 
     // Composite nodes
@@ -270,6 +282,7 @@ pub enum SyntaxKind {
     BinOp,
     TyArgList,
     EArgList,
+    Qualifier,
 
     // Types
     TyInt,
@@ -285,6 +298,7 @@ pub enum SyntaxKind {
     TopFn,
     TopImport,
     TopStruct,
+    TopVariant,
 
     // Imports
     ImpInternal,
@@ -310,8 +324,12 @@ pub enum SyntaxKind {
     EArrayIdx,
     EStructIdx,
     EIf,
+    EMatch,
     EBlock,
     EIntrinsic,
+
+    // Match expressions
+    EMatchBranch,
 
     // Declarations
     DLet,
@@ -328,6 +346,8 @@ pub enum SyntaxKind {
     Root,
 
     // Patterns
+    PatVariant,
+    PatVar,
 
     // Modifiers
 
@@ -358,9 +378,11 @@ macro_rules ! T {
     [==] => { SyntaxKind::DOUBLE_EQUALS };
     [!=] => { SyntaxKind::NOT_EQUALS };
     [.] => { SyntaxKind::DOT };
+    [::] => { SyntaxKind::DOUBLE_COLON };
     [:] => { SyntaxKind::COLON };
     [=] => { SyntaxKind::EQUALS };
     [->] => { SyntaxKind::ARROW };
+    [=>] => { SyntaxKind::FAT_ARROW };
     [true] => { SyntaxKind::TRUE_KW };
     [false] => { SyntaxKind::FALSE_KW };
     [i32] => { SyntaxKind::I32_BUILTIN };
@@ -373,9 +395,11 @@ macro_rules ! T {
     [from] => { SyntaxKind::FROM_KW };
     [if] => { SyntaxKind::IF_KW };
     [else] => { SyntaxKind::ELSE_KW };
+    [match] => { SyntaxKind::MATCH_KW };
     [let] => { SyntaxKind::LET_KW };
     [set] => { SyntaxKind::SET_KW };
     [struct] => { SyntaxKind::STRUCT_KW };
+    [variant] => { SyntaxKind::VARIANT_KW };
     [while] => { SyntaxKind::WHILE_KW };
     [import] => { SyntaxKind::IMPORT_KW };
     [int_lit] => { SyntaxKind::INT_LIT };

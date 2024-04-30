@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::iter;
 
-use crate::ir::{FuncTy, Id, Import, Name, NameMap, Struct, Ty};
+use crate::ir::{FuncTy, Id, Import, Name, NameMap, Struct, Ty, Variant};
 use wasm_encoder::{
     self, ArrayType, CodeSection, CompositeType, ConstExpr, EntityType, ExportKind, ExportSection,
     FieldType, FuncType, Function, FunctionSection, GlobalSection, GlobalType, HeapType,
@@ -14,8 +14,6 @@ type TypeIdx = u32;
 type FieldIdx = u32;
 type GlobalIdx = u32;
 type LocalIdx = u32;
-
-type RecType = Vec<SubType>;
 
 pub struct FuncData<'a> {
     index: FuncIdx,
@@ -43,11 +41,33 @@ pub struct Export {
     desc: (ExportKind, u32),
 }
 
+#[derive(Debug)]
+pub struct StructInfo {
+    pub type_idx: TypeIdx,
+    pub fields: Vec<Name>,
+    pub variant_tag: Option<i32>,
+}
+
+#[derive(Debug)]
+pub struct VariantInfo {
+    pub type_idx: TypeIdx,
+    pub alternatives: Vec<Name>,
+}
+
+impl VariantInfo {
+    pub fn tag(&self, alternative: Name) -> i32 {
+        self.alternatives
+            .iter()
+            .position(|a| *a == alternative)
+            .expect("unknown alternative") as i32
+    }
+}
+
 pub struct Builder<'a> {
     name_map: &'a NameMap,
     funcs: HashMap<Name, FuncData<'a>>,
     globals: HashMap<Name, GlobalData>,
-    types: Vec<RecType>,
+    types: Vec<SubType>,
     imports: HashMap<Name, ImportData>,
     exports: Vec<Export>,
     start_fn: Option<FuncIdx>,
@@ -55,7 +75,8 @@ pub struct Builder<'a> {
     // Uses the arrays _ELEM TYPE_ as the key
     arrays: HashMap<ValType, TypeIdx>,
     func_tys: HashMap<FuncType, TypeIdx>,
-    structs: HashMap<Name, (TypeIdx, Vec<Name>)>,
+    structs: HashMap<Name, StructInfo>,
+    variants: HashMap<Name, VariantInfo>,
     fields: HashMap<Name, (TypeIdx, FieldIdx)>,
 }
 
@@ -69,6 +90,7 @@ impl<'a> Builder<'a> {
             arrays: HashMap::new(),
             func_tys: HashMap::new(),
             structs: HashMap::new(),
+            variants: HashMap::new(),
             fields: HashMap::new(),
             imports: HashMap::new(),
             exports: vec![],
@@ -92,11 +114,15 @@ impl<'a> Builder<'a> {
         let mut type_names = WasmNameMap::new();
         let mut type_section = TypeSection::new();
         for ty in self.types {
-            type_section.rec(ty);
+            type_section.subtype(&ty);
         }
 
-        for (name, (idx, _)) in self.structs {
-            type_names.append(idx, &self.name_map.get(&name).unwrap().it);
+        for (name, info) in self.structs {
+            type_names.append(info.type_idx, &self.name_map.get(&name).unwrap().it);
+        }
+
+        for (name, info) in self.variants {
+            type_names.append(info.type_idx, &self.name_map.get(&name).unwrap().it);
         }
 
         let mut field_names = HashMap::new();
@@ -127,7 +153,7 @@ impl<'a> Builder<'a> {
         let mut funcs: Vec<_> = self.funcs.into_iter().collect();
         funcs.sort_by_key(|(_, v)| v.index);
         for (name, func) in funcs.iter() {
-            function_names.append(func.index, &self.name_map.get(&name).unwrap().it);
+            function_names.append(func.index, &self.name_map.get(name).unwrap().it);
             function_section.function(func.ty);
         }
 
@@ -206,8 +232,44 @@ impl<'a> Builder<'a> {
             .unwrap_or_else(|| panic!("Failed to resolve: {name:?}"))
     }
 
+    pub fn declare_variant(&mut self, ty: Variant) {
+        let idx = self.types.len() as u32;
+        self.types.push(SubType {
+            is_final: false,
+            supertype_idx: None,
+            composite_type: CompositeType::Struct(StructType {
+                fields: vec![FieldType {
+                    element_type: StorageType::Val(ValType::I32),
+                    mutable: false,
+                }]
+                .into_boxed_slice(),
+            }),
+        });
+        self.variants.insert(
+            ty.name,
+            VariantInfo {
+                type_idx: idx,
+                alternatives: ty.alternatives,
+            },
+        );
+    }
+
     pub fn declare_struct(&mut self, ty: Struct) {
-        let mut fields = Vec::with_capacity(ty.fields.len());
+        let mut supertype_idx = None;
+        let mut variant_tag = None;
+        let mut fields = if let Some(v) = ty.variant {
+            supertype_idx = Some(self.variant_type(v).type_idx);
+            variant_tag = Some(self.variant_tag(v, ty.name));
+
+            let mut fields = Vec::with_capacity(ty.fields.len() + 1);
+            fields.push(FieldType {
+                element_type: StorageType::Val(ValType::I32),
+                mutable: false,
+            });
+            fields
+        } else {
+            Vec::with_capacity(ty.fields.len())
+        };
         let mut field_names = vec![];
         for (name, ty) in ty.fields {
             field_names.push(name);
@@ -220,17 +282,28 @@ impl<'a> Builder<'a> {
         let index = self.types.len() as u32;
 
         for (field_idx, field_name) in field_names.iter().enumerate() {
-            self.fields.insert(*field_name, (index, field_idx as u32));
+            let mut idx = field_idx;
+            if ty.variant.is_some() {
+                idx += 1
+            };
+            self.fields.insert(*field_name, (index, idx as u32));
         }
 
-        self.types.push(vec![SubType {
+        self.types.push(SubType {
             is_final: true,
-            supertype_idx: None,
+            supertype_idx,
             composite_type: CompositeType::Struct(StructType {
                 fields: fields.into_boxed_slice(),
             }),
-        }]);
-        self.structs.insert(ty.name, (index, field_names));
+        });
+
+        let struct_info = StructInfo {
+            type_idx: index,
+            fields: field_names,
+            variant_tag,
+        };
+
+        self.structs.insert(ty.name, struct_info);
     }
 
     pub fn func_type(&mut self, ty: &FuncTy) -> TypeIdx {
@@ -241,17 +314,37 @@ impl<'a> Builder<'a> {
             Some(idx) => *idx,
             None => {
                 let idx = self.types.len() as TypeIdx;
-                self.types.push(vec![SubType {
+                self.types.push(SubType {
                     is_final: true,
                     supertype_idx: None,
                     composite_type: CompositeType::Func(func_type),
-                }]);
+                });
                 idx
             }
         }
     }
 
-    pub fn struct_type(&'a self, name: Name) -> &'a (TypeIdx, Vec<Name>) {
+    pub fn variant_tag(&self, variant: Name, alternative: Name) -> i32 {
+        self.variant_type(variant).tag(alternative)
+    }
+
+    pub fn heap_type(&'a self, name: Name) -> TypeIdx {
+        if let Some(v) = self.variants.get(&name) {
+            v.type_idx
+        } else if let Some(str) = self.structs.get(&name) {
+            str.type_idx
+        } else {
+            panic!("tried to get heap type before declaring it")
+        }
+    }
+
+    pub fn variant_type(&'a self, name: Name) -> &'a VariantInfo {
+        self.variants
+            .get(&name)
+            .expect("Tried to get variant type before declaring it")
+    }
+
+    pub fn struct_type(&'a self, name: Name) -> &'a StructInfo {
         self.structs
             .get(&name)
             .expect("Tried to get struct type before declaring it")
@@ -262,12 +355,12 @@ impl<'a> Builder<'a> {
             Ty::F32 => ValType::F32,
             Ty::I32 | Ty::Unit | Ty::Bool => ValType::I32,
             Ty::Struct(s) => {
-                let (idx, _) = self.struct_type(*s);
+                let idx = self.heap_type(*s);
                 // Could make these non-nullable, but then we'd need separate
                 // nullable types for lazily initialized globals
                 ValType::Ref(RefType {
                     nullable: true,
-                    heap_type: HeapType::Concrete(*idx),
+                    heap_type: HeapType::Concrete(idx),
                 })
             }
             Ty::Array(el_ty) => {
@@ -304,14 +397,14 @@ impl<'a> Builder<'a> {
             Some(ix) => *ix,
             None => {
                 let ix = self.types.len();
-                self.types.push(vec![SubType {
+                self.types.push(SubType {
                     is_final: true,
                     supertype_idx: None,
                     composite_type: CompositeType::Array(ArrayType(FieldType {
                         element_type: StorageType::Val(elem_val_ty),
                         mutable: true,
                     })),
-                }]);
+                });
                 ix as u32
             }
         }
@@ -375,11 +468,11 @@ impl<'a> Builder<'a> {
     pub fn declare_start(&mut self, name: Name) {
         let index = (self.imports.len() + self.funcs.len()) as u32;
         let ty = self.types.len() as u32;
-        self.types.push(vec![SubType {
+        self.types.push(SubType {
             is_final: true,
             supertype_idx: None,
             composite_type: CompositeType::Func(FuncType::new(vec![], vec![])),
-        }]);
+        });
         self.funcs.insert(
             name,
             FuncData {
@@ -429,14 +522,10 @@ impl<'a> Builder<'a> {
     }
 }
 
-struct LocalData {
-    index: LocalIdx,
-    ty: ValType,
-}
-
 pub struct BodyBuilder {
-    params: usize,
-    locals: HashMap<Name, LocalData>,
+    param_count: usize,
+    locals: Vec<ValType>,
+    named_locals: HashMap<Name, u32>,
 }
 
 pub struct FnLocals {
@@ -446,50 +535,42 @@ pub struct FnLocals {
 
 impl BodyBuilder {
     pub fn new(params: Vec<(Name, ValType)>) -> BodyBuilder {
+        let param_count = params.len();
+        let mut locals = vec![];
+        let mut named_locals = HashMap::new();
+        for (idx, (name, ty)) in params.into_iter().enumerate() {
+            locals.push(ty);
+            named_locals.insert(name, idx as u32);
+        }
         BodyBuilder {
-            params: params.len(),
-            locals: HashMap::from_iter(params.into_iter().enumerate().map(
-                |(index, (name, ty))| {
-                    (
-                        name,
-                        LocalData {
-                            index: index as u32,
-                            ty,
-                        },
-                    )
-                },
-            )),
+            param_count,
+            locals,
+            named_locals,
         }
     }
 
     pub fn new_local(&mut self, name: Name, ty: ValType) -> LocalIdx {
+        let index = self.fresh_local(ty);
+        self.named_locals.insert(name, index);
+        index
+    }
+
+    pub fn fresh_local(&mut self, ty: ValType) -> LocalIdx {
         let index = self.locals.len() as u32;
-        self.locals.insert(name, LocalData { index, ty });
+        self.locals.push(ty);
         index
     }
 
     pub fn lookup_local(&self, name: &Name) -> Option<LocalIdx> {
-        self.locals.get(name).map(|v| v.index)
+        self.named_locals.get(name).copied()
     }
 
     pub fn get_locals(self) -> FnLocals {
         let mut names = HashMap::new();
-        let mut locals: Vec<LocalData> = self
-            .locals
-            .into_iter()
-            .filter_map(|(name, l)| {
-                names.insert(l.index, name);
-                if l.index >= self.params as u32 {
-                    Some(l)
-                } else {
-                    None
-                }
-            })
-            .collect();
-        locals.sort_by_key(|l| l.index);
-        FnLocals {
-            locals: locals.into_iter().map(|l| l.ty).collect(),
-            names,
+        for (k, v) in self.named_locals {
+            names.insert(v, k);
         }
+        let locals = self.locals[self.param_count..].to_vec();
+        FnLocals { locals, names }
     }
 }

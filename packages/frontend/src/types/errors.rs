@@ -1,5 +1,5 @@
 use crate::types::Ty;
-use ariadne::{Color, Config, Label, Report, ReportKind, Source};
+use ariadne::{Config, Label, Report, ReportKind, Source};
 use backend::ir::{Name, NameMap};
 use core::fmt;
 use line_index::{LineCol, LineIndex};
@@ -17,11 +17,13 @@ impl TyError {
         &'err self,
         source: &'src str,
         name_map: &'src NameMap,
+        colors: bool,
     ) -> TyErrorDisplay<'src, 'err> {
         TyErrorDisplay {
             source,
             name_map,
             ty_error: self,
+            colors,
         }
     }
 
@@ -40,11 +42,12 @@ pub struct TyErrorDisplay<'src, 'err> {
     ty_error: &'err TyError,
     source: &'src str,
     name_map: &'src NameMap,
+    colors: bool,
 }
 
 impl fmt::Display for TyErrorDisplay<'_, '_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        render_ty_error(self.source, self.name_map, self.ty_error, true, f);
+        render_ty_error(self.source, self.name_map, self.ty_error, self.colors, f);
         Ok(())
     }
 }
@@ -74,6 +77,10 @@ pub enum TyErrorData {
         expected: Ty,
         actual: Ty,
     },
+    UnknownAlternative {
+        variant_name: Name,
+        alternative: String,
+    },
     UnknownField {
         struct_name: Name,
         field_name: String,
@@ -85,6 +92,9 @@ pub enum TyErrorData {
     TypeMismatch {
         expected: Ty,
         actual: Ty,
+    },
+    PatternTypeMismatch {
+        expected: Ty,
     },
 }
 
@@ -108,6 +118,8 @@ fn code_for_error(err_data: &TyErrorData) -> i32 {
         TyErrorData::NotAFunction(_) => 16,
         TyErrorData::CantInferEmptyArray => 17,
         TyErrorData::NonFunctionImport { .. } => 18,
+        TyErrorData::UnknownAlternative { .. } => 19,
+        TyErrorData::PatternTypeMismatch { .. } => 20,
     }
 }
 
@@ -161,6 +173,13 @@ fn error_label(err_data: &TyErrorData, name_map: &NameMap) -> String {
             expected.display(name_map),
             actual.display(name_map)
         ),
+        TyErrorData::UnknownAlternative {
+            variant_name,
+            alternative,
+        } => format!(
+            "Unknown alternative. {} does not have an alternative named {alternative}",
+            name_map.get(variant_name).unwrap().it
+        ),
         TyErrorData::UnknownField {
             struct_name,
             field_name,
@@ -181,6 +200,10 @@ fn error_label(err_data: &TyErrorData, name_map: &NameMap) -> String {
             expected.display(name_map),
             actual.display(name_map)
         ),
+        TyErrorData::PatternTypeMismatch { expected } => format!(
+            "This pattern can't match a value of type {}",
+            expected.display(name_map),
+        ),
     }
 }
 
@@ -192,10 +215,7 @@ pub fn render_ty_error(
     output: &mut fmt::Formatter,
 ) {
     let file_name = "source";
-
-    let out = Color::Fixed(81);
     let cache = (file_name, Source::from(source));
-
     let mut out_buf = Vec::new();
 
     Report::build(ReportKind::Error, file_name, 12)
@@ -206,8 +226,7 @@ pub fn render_ty_error(
                 file_name,
                 ty_error.at.start().into()..ty_error.at.end().into(),
             ))
-            .with_message(error_label(&ty_error.it, name_map))
-            .with_color(out),
+            .with_message(error_label(&ty_error.it, name_map)),
         )
         .with_config(Config::default().with_color(colors))
         .finish()

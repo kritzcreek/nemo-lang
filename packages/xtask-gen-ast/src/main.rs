@@ -491,6 +491,7 @@ impl Field {
                 let name = match name.as_str() {
                     ";" => "semicolon",
                     "->" => "arrow",
+                    "=>" => "fat_arrow",
                     "'{'" => "l_brace",
                     "'}'" => "r_brace",
                     "'('" => "l_paren",

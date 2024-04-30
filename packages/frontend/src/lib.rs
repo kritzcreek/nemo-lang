@@ -23,11 +23,13 @@ impl CheckError {
         &'err self,
         source: &'src str,
         name_map: &'src NameMap,
+        colors: bool,
     ) -> DisplayCheckError<'src, 'err> {
         DisplayCheckError {
             source,
             error: self,
             name_map,
+            colors,
         }
     }
 
@@ -57,16 +59,21 @@ pub struct DisplayCheckError<'a, 'b> {
     error: &'b CheckError,
     source: &'a str,
     name_map: &'a NameMap,
+    colors: bool,
 }
 
 impl fmt::Display for DisplayCheckError<'_, '_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.error {
             CheckError::ParseError(err) => {
-                write!(f, "{}", err.display(self.source))
+                write!(f, "{}", err.display(self.source, self.colors))
             }
             CheckError::TypeError(err) => {
-                write!(f, "{}", err.display(self.source, self.name_map))
+                write!(
+                    f,
+                    "{}",
+                    err.display(self.source, self.name_map, self.colors)
+                )
             }
         }
     }
@@ -75,7 +82,7 @@ impl fmt::Display for DisplayCheckError<'_, '_> {
 pub fn render_errors(errs: &[CheckError], source: &str, name_map: &NameMap) -> String {
     let mut output = String::new();
     for err in errs {
-        writeln!(output, "{}", err.display(source, name_map)).unwrap();
+        writeln!(output, "{}", err.display(source, name_map, true)).unwrap();
     }
     output
 }

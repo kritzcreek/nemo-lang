@@ -7,6 +7,10 @@ pub(crate) fn var(name: Name) -> Option<ExprData> {
     Some(ExprData::Var(name))
 }
 
+pub(crate) fn var_pat(name: Name) -> Option<PatternData> {
+    Some(PatternData::Var(name))
+}
+
 pub(crate) fn unit_lit(range: TextRange) -> Option<Expr> {
     Some(Expr {
         at: range,
@@ -39,6 +43,42 @@ pub(crate) fn array_new(at: TextRange) -> Option<Intrinsic> {
 
 pub(crate) fn expr_decl(expr: Option<Expr>) -> Option<DeclarationData> {
     Some(DeclarationData::Expr(expr?))
+}
+
+#[derive(Debug, Default)]
+pub(crate) struct PatVariantBuilder {
+    variant: Option<Name>,
+    alternative: Option<Name>,
+    binder: Option<Name>,
+}
+
+impl PatVariantBuilder {
+    pub(crate) fn new() -> Self {
+        Self::default()
+    }
+
+    pub(crate) fn variant(&mut self, variant: Name) -> &mut Self {
+        self.variant = Some(variant);
+        self
+    }
+
+    pub(crate) fn alternative(&mut self, alternative: Name) -> &mut Self {
+        self.alternative = Some(alternative);
+        self
+    }
+
+    pub(crate) fn binder(&mut self, binder: Name) -> &mut Self {
+        self.binder = Some(binder);
+        self
+    }
+
+    pub(crate) fn build(self) -> Option<ir::PatternData> {
+        Some(PatternData::Variant {
+            variant: self.variant?,
+            alternative: self.alternative?,
+            binder: self.binder?,
+        })
+    }
 }
 
 #[derive(Debug)]
@@ -336,6 +376,44 @@ impl IfBuilder {
             condition: self.condition?,
             then_branch: self.then_branch?,
             else_branch: self.else_branch?,
+        })
+    }
+}
+
+#[derive(Debug)]
+pub(crate) struct MatchBuilder {
+    scrutinee: Option<Expr>,
+    branches: Option<Vec<MatchBranch>>,
+}
+
+impl MatchBuilder {
+    pub(crate) fn new() -> Self {
+        MatchBuilder {
+            scrutinee: None,
+            branches: Some(vec![]),
+        }
+    }
+
+    pub(crate) fn branch(&mut self, branch: Option<MatchBranch>) -> &mut Self {
+        if let Some(branches) = &mut self.branches {
+            if let Some(branch) = branch {
+                branches.push(branch)
+            } else {
+                self.branches = None
+            }
+        }
+        self
+    }
+
+    pub(crate) fn scrutinee(&mut self, scrutinee: Option<Expr>) -> &mut Self {
+        self.scrutinee = scrutinee;
+        self
+    }
+
+    pub(crate) fn build(self) -> Option<ir::ExprData> {
+        Some(ExprData::Match {
+            scrutinee: self.scrutinee?,
+            branches: self.branches?,
         })
     }
 }
