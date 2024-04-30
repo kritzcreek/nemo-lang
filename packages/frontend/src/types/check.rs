@@ -1,7 +1,8 @@
 use super::ir::{
-    array_len, array_new, expr_decl, unit_lit, var, ArrayBuilder, ArrayIdxBuilder, BinaryBuilder,
-    BlockBuilder, CallBuilder, FuncBuilder, IfBuilder, IntrinsicBuilder, LetBuilder,
-    SetArrayBuilder, SetBuilder, StructBuilder, StructIdxBuilder, WhileBuilder,
+    array_len, array_new, expr_decl, unit_lit, var, var_pat, ArrayBuilder, ArrayIdxBuilder,
+    BinaryBuilder, BlockBuilder, CallBuilder, FuncBuilder, IfBuilder, IntrinsicBuilder, LetBuilder,
+    MatchBuilder, PatVariantBuilder, SetArrayBuilder, SetBuilder, StructBuilder, StructIdxBuilder,
+    WhileBuilder,
 };
 use super::names::{Name, NameSupply};
 use super::{
@@ -37,6 +38,12 @@ struct StructDef {
 struct VariantDef {
     name: Name,
     alternatives: HashMap<String, Name>,
+}
+
+impl VariantDef {
+    pub fn lookup_alternative(&self, name: &str) -> Option<Name> {
+        self.alternatives.get(name).copied()
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -115,26 +122,17 @@ impl Ctx {
         }
     }
 
+    fn lookup_struct_name(&self, name: Name) -> Rc<StructDef> {
+        self.struct_defs
+            .get(&name)
+            .expect("inferred unknown struct name")
+            .clone()
+    }
+
     fn lookup_variant(&self, ty: &str) -> Option<Rc<VariantDef>> {
         let def = self.lookup_type(ty)?;
         match def {
             TypeDef::Variant(s) => Some(s),
-            _ => None,
-        }
-    }
-
-    fn lookup_alternative(&self, ty: &str, alt: &str) -> Option<Rc<StructDef>> {
-        let def = self.lookup_type(ty)?;
-        match def {
-            TypeDef::Variant(var_def) => {
-                let struct_name = var_def.alternatives.get(alt)?;
-                Some(
-                    self.struct_defs
-                        .get(&struct_name)
-                        .expect("variant def references unknown struct")
-                        .clone(),
-                )
-            }
             _ => None,
         }
     }
@@ -256,7 +254,7 @@ impl Typechecker {
 
         Some(ir::Program {
             imports: imports?,
-            structs: types?,
+            types: types?,
             globals,
             funcs: functions?,
             start_fn: self.name_supply.start_idx(),
@@ -310,9 +308,10 @@ impl Typechecker {
         })
     }
 
-    fn check_type_definitions(&mut self, root: &Root) -> Option<Vec<ir::Struct>> {
+    fn check_type_definitions(&mut self, root: &Root) -> Option<Vec<ir::TypeDef>> {
         // Because types can be mutually recursive we need two passes:
         // - 1. Forward declare all types
+        let mut type_defs = vec![];
         let mut alt_struct_defs = vec![];
         for top_level in root.top_levels() {
             match top_level {
@@ -325,6 +324,7 @@ impl Typechecker {
                     }
                 }
                 TopLevel::TopVariant(v) => {
+                    let span = v.syntax().text_range();
                     if let Some(tkn) = v.upper_ident_token() {
                         let name = self.name_supply.type_idx(&tkn);
                         self.record_def(&tkn, name);
@@ -333,16 +333,25 @@ impl Typechecker {
                             name,
                             alternatives: HashMap::new(),
                         };
+                        let mut alternatives = vec![];
                         for alt in v.top_structs() {
-                            if let Some(tkn) = alt.upper_ident_token() {
-                                let alt_name = self.name_supply.type_idx(&tkn);
-                                self.record_def(&tkn, alt_name);
-                                self.context.declare_type(tkn.text(), alt_name);
-                                def.alternatives.insert(tkn.text().to_string(), alt_name);
+                            if let Some(alt_tkn) = alt.upper_ident_token() {
+                                let alt_name = self.name_supply.type_idx(&alt_tkn);
+                                alternatives.push(alt_name);
+                                self.record_def(&alt_tkn, alt_name);
+                                let qualified_name = format!("{}::{}", tkn.text(), alt_tkn.text());
+                                self.context.declare_type(&qualified_name, alt_name);
+                                def.alternatives
+                                    .insert(alt_tkn.text().to_string(), alt_name);
+                                alt_struct_defs.push((alt, Some(name), Some(qualified_name)))
                             }
-                            alt_struct_defs.push((alt, Some(name)))
                         }
-                        self.context.declare_alternatives(name, def)
+                        self.context.declare_alternatives(name, def);
+                        type_defs.push(ir::TypeDef::Variant(ir::Variant {
+                            span,
+                            name,
+                            alternatives,
+                        }))
                     }
                 }
                 _ => {}
@@ -350,19 +359,19 @@ impl Typechecker {
         }
 
         // - 2. Actually check their definitions
-        let mut structs = Some(vec![]);
         let top_structs = root.top_levels().filter_map(|tl| {
             if let TopLevel::TopStruct(s) = tl {
-                Some((s, None))
+                let text_name = s.upper_ident_token().map(|t| t.text().to_string());
+                Some((s, None, text_name))
             } else {
                 None
             }
         });
-        for (s, variant) in top_structs.chain(alt_struct_defs.into_iter()) {
-            if let Some(struct_name_tkn) = s.upper_ident_token() {
+        for (s, variant, text_name) in top_structs.chain(alt_struct_defs.into_iter()) {
+            if let Some(text_name) = text_name {
                 let name = self
                     .context
-                    .lookup_type_name(struct_name_tkn.text())
+                    .lookup_type_name(&text_name)
                     .expect("non-forward declared struct");
                 let mut def = StructDef {
                     name,
@@ -371,15 +380,11 @@ impl Typechecker {
                 };
                 for field in s.struct_fields() {
                     let Some(field_name) = field.ident_token() else {
-                        structs = None;
                         continue;
                     };
                     let ty = match field.ty() {
                         Some(field_ty) => self.check_ty(&field_ty),
-                        None => {
-                            structs = None;
-                            Ty::Any
-                        }
+                        None => Ty::Any,
                     };
                     let name = self.name_supply.field_idx(&field_name);
                     self.record_def(&field_name, name);
@@ -387,21 +392,20 @@ impl Typechecker {
                     def.fields.insert(field_name.text().to_string(), (ty, name));
                 }
 
-                if let Some(structs) = &mut structs {
-                    structs.push(ir::Struct {
-                        span: s.syntax().text_range(),
-                        name,
-                        fields: def
-                            .fields
-                            .iter()
-                            .map(|(_, (ty, name))| (*name, ty.clone()))
-                            .collect(),
-                    })
-                }
+                type_defs.push(ir::TypeDef::Struct(ir::Struct {
+                    span: s.syntax().text_range(),
+                    name,
+                    fields: def
+                        .fields
+                        .iter()
+                        .map(|(_, (ty, name))| (*name, ty.clone()))
+                        .collect(),
+                    variant,
+                }));
                 self.context.declare_struct_fields(name, def)
             }
         }
-        structs
+        Some(type_defs)
     }
 
     fn check_function_headers(&mut self, root: &Root) {
@@ -669,9 +673,12 @@ impl Typechecker {
                     .map(|q| q.upper_ident_token().unwrap())
                 {
                     let alt = struct_expr.upper_ident_token()?;
-                    // TODO record reference for variant
-                    // self.record_ref(&ty, NAME_GOES_HERE)
-                    (self.context.lookup_alternative(ty.text(), alt.text()), alt)
+                    let struct_def = self.context.lookup_variant(ty.text()).and_then(|def| {
+                        self.record_ref(&ty, def.name);
+                        def.lookup_alternative(alt.text())
+                            .map(|alt_name| self.context.lookup_struct_name(alt_name))
+                    });
+                    (struct_def, alt)
                 } else {
                     let tkn = struct_expr.upper_ident_token()?;
                     (self.context.lookup_struct(tkn.text()), tkn)
@@ -811,33 +818,7 @@ impl Typechecker {
                     (Ty::Any, None)
                 }
             }
-            Expr::EMatch(match_expr) => {
-                let Some(scrutinee) = match_expr.scrutinee() else {
-                    return None;
-                };
-
-                let (ty_scrutinee, ir_scrutinee) = self.infer_expr(&scrutinee);
-                let mut ty = None;
-                for branch in match_expr.e_match_branchs() {
-                    let (Some(pattern), Some(body)) = (branch.pattern(), branch.body()) else {
-                        continue;
-                    };
-                    self.context.enter_block();
-                    // TODO handle return value
-                    self.check_pattern(&pattern, &ty_scrutinee);
-                    let body_ir = if let Some(expected) = &ty {
-                        self.check_expr(&body.into(), expected)
-                    } else {
-                        let (ty_body, ir) = self.infer_expr(&body.into());
-                        if ty_body != Ty::Any {
-                            ty = Some(ty_body);
-                        }
-                        ir
-                    };
-                    self.context.leave_block();
-                }
-                (ty.unwrap_or(Ty::Any), None)
-            }
+            Expr::EMatch(match_expr) => self.check_match(match_expr, None),
             Expr::EArrayIdx(idx_expr) => {
                 let mut builder = ArrayIdxBuilder::new();
                 let arr_expr = idx_expr.expr().unwrap();
@@ -904,33 +885,18 @@ impl Typechecker {
                 }
             }
             Expr::EBlock(block_expr) => {
-                let mut builder = BlockBuilder::new();
-                let declarations: Vec<Declaration> = block_expr.declarations().collect();
-                if let Some((last, declarations)) = declarations.split_last() {
-                    self.context.enter_block();
-                    for decl in declarations {
-                        let (_, ir) = self.infer_decl(decl);
-                        builder.declaration(ir);
-                    }
-                    let ty = match last {
-                        Declaration::DExpr(expr) => {
-                            let (new_ty, ir) = self.infer_expr(&expr.expr().unwrap());
-                            builder.expr(ir);
-                            new_ty
-                        }
-                        decl => {
-                            let (_, ir) = self.infer_decl(decl);
-                            builder.declaration(ir);
-                            builder.expr(unit_lit(decl.syntax().text_range()));
-                            Ty::Unit
-                        }
-                    };
-                    self.context.leave_block();
-                    (ty, builder.build())
+                self.context.enter_block();
+                let (last_expr, mut builder) = self.infer_block(block_expr);
+                let ty = if let Some(last_expr) = last_expr {
+                    let (ty, ir) = self.infer_expr(&last_expr);
+                    builder.expr(ir);
+                    ty
                 } else {
                     builder.expr(unit_lit(block_expr.syntax().text_range()));
-                    (Ty::Unit, builder.build())
-                }
+                    Ty::Unit
+                };
+                self.context.leave_block();
+                (ty, builder.build())
             }
         };
 
@@ -944,7 +910,71 @@ impl Typechecker {
         Some((ty, ir_expr))
     }
 
-    // TODO: Could add a check case for blocks, passing down the check to the trailing Expr
+    fn check_match(
+        &mut self,
+        match_expr: &EMatch,
+        expected: Option<Ty>,
+    ) -> (Ty, Option<ir::ExprData>) {
+        let mut builder = MatchBuilder::new();
+        let Some(scrutinee) = match_expr.scrutinee() else {
+            return (Ty::Any, None);
+        };
+
+        let (ty_scrutinee, ir_scrutinee) = self.infer_expr(&scrutinee);
+        builder.scrutinee(ir_scrutinee);
+        let mut ty = expected;
+        for branch in match_expr.e_match_branchs() {
+            let (Some(pattern), Some(body)) = (branch.pattern(), branch.body()) else {
+                continue;
+            };
+            self.context.enter_block();
+            let pattern_ir = self.check_pattern(&pattern, &ty_scrutinee);
+            let body_ir = if let Some(expected) = &ty {
+                self.check_expr(&body.into(), expected)
+            } else {
+                let (ty_body, ir) = self.infer_expr(&body.into());
+                if ty_body != Ty::Any {
+                    ty = Some(ty_body);
+                }
+                ir
+            };
+
+            if let (Some(pattern_ir), Some(body_ir)) = (pattern_ir, body_ir) {
+                builder.branch(Some(ir::MatchBranch {
+                    at: branch.syntax().text_range(),
+                    pattern: pattern_ir,
+                    body: body_ir,
+                }));
+            }
+            self.context.leave_block();
+        }
+        (ty.unwrap_or(Ty::Any), builder.build())
+    }
+
+    // Infers all declarations in the given block, and returns the trailing expression iff it exists
+    fn infer_block(&mut self, block_expr: &EBlock) -> (Option<Expr>, BlockBuilder) {
+        let mut builder = BlockBuilder::new();
+        let declarations: Vec<Declaration> = block_expr.declarations().collect();
+        let last_expr = if let Some((last, declarations)) = declarations.split_last() {
+            for decl in declarations {
+                let (_, ir) = self.infer_decl(decl);
+                builder.declaration(ir);
+            }
+            match last {
+                Declaration::DExpr(expr) => Some(expr.expr().unwrap()),
+                decl => {
+                    let (_, ir) = self.infer_decl(decl);
+                    builder.declaration(ir);
+                    None
+                }
+            }
+        } else {
+            None
+        };
+        (last_expr, builder)
+    }
+
+    // TODO: Should add a check case for EMatch
     fn check_expr(&mut self, expr: &Expr, expected: &Ty) -> Option<ir::Expr> {
         let ir = match (expr, expected) {
             (Expr::EArray(expr), Ty::Array(elem_ty)) => {
@@ -980,16 +1010,37 @@ impl Typechecker {
                 .expr()
                 .and_then(|expr| self.check_expr(&expr, expected))
                 .map(|ir| *ir.it),
+            (Expr::EBlock(block_expr), _) => {
+                self.context.enter_block();
+                let (last_expr, mut builder) = self.infer_block(block_expr);
+                if let Some(last_expr) = last_expr {
+                    builder.expr(self.check_expr(&last_expr, expected));
+                } else {
+                    builder.expr(unit_lit(block_expr.syntax().text_range()));
+                    if !matches!(expected, Ty::Unit | Ty::Any) {
+                        self.report_error(
+                            block_expr,
+                            TypeMismatch {
+                                expected: expected.clone(),
+                                actual: Ty::Unit,
+                            },
+                        )
+                    }
+                };
+                self.context.leave_block();
+                builder.build()
+            }
+            (Expr::EMatch(match_expr), _) => self.check_match(match_expr, Some(expected.clone())).1,
             _ => {
                 let (ty, ir) = self.infer_expr(expr);
                 if *expected != Ty::Any && ty != Ty::Any && ty != *expected {
-                    self.errors.push(TyError {
-                        at: expr.syntax().text_range(),
-                        it: TypeMismatch {
+                    self.report_error(
+                        expr,
+                        TypeMismatch {
                             expected: expected.clone(),
                             actual: ty,
                         },
-                    })
+                    );
                 }
                 return ir;
             }
@@ -1181,29 +1232,33 @@ impl Typechecker {
         (ty, ir)
     }
 
-    fn check_pattern(&mut self, pattern: &Pattern, expected: &Ty) -> Option<()> {
-        match pattern {
+    fn check_pattern(&mut self, pattern: &Pattern, expected: &Ty) -> Option<ir::Pattern> {
+        let ir = match pattern {
             Pattern::PatVariant(pat) => {
                 let ty = pat.qualifier()?.upper_ident_token()?;
                 let ctor = pat.upper_ident_token()?;
                 let var = pat.ident_token()?;
+                let mut builder = PatVariantBuilder::new();
                 let Some(def) = self.context.lookup_variant(ty.text()) else {
                     self.report_error_token(&ty, UnknownType(ty.text().to_string()));
                     return None;
                 };
                 self.record_ref(&ty, def.name);
+                builder.variant(def.name);
                 match expected {
                     Ty::Struct(s) if def.name == *s => {
                         if let Some(struct_name) = def.alternatives.get(ctor.text()) {
                             self.record_ref(&ctor, *struct_name);
+                            builder.alternative(*struct_name);
                             let name = self.name_supply.local_idx(&var);
                             self.context.add_var(
                                 var.text().to_string(),
                                 Ty::Struct(*struct_name),
                                 name,
                             );
+                            builder.binder(name);
                             self.record_def(&var, name);
-                            Some(())
+                            builder.build()
                         } else {
                             self.report_error_token(
                                 &ctor,
@@ -1233,9 +1288,14 @@ impl Typechecker {
                 self.context
                     .add_var(ident_tkn.text().to_string(), expected.clone(), name);
                 self.record_def(&ident_tkn, name);
-                Some(())
+                var_pat(name)
             }
-        }
+        };
+        Some(ir::Pattern {
+            it: Box::new(ir?),
+            ty: expected.clone(),
+            at: pattern.syntax().text_range(),
+        })
     }
 }
 

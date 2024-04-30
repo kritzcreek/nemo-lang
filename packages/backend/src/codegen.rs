@@ -5,7 +5,7 @@ use wasm_encoder::{BlockType, ConstExpr, HeapType, Instruction, RefType, ValType
 use crate::{
     ir::{
         Callee, Declaration, DeclarationData, Expr, ExprData, Id, IntrinsicData, Lit, LitData,
-        Name, Op, OpData, Pattern, PatternData, Program, SetTarget, SetTargetData, Ty,
+        Name, Op, OpData, Pattern, PatternData, Program, SetTarget, SetTargetData, Ty, TypeDef,
     },
     wasm_builder::{BodyBuilder, Builder},
 };
@@ -53,8 +53,8 @@ impl<'a> Codegen<'a> {
                 ConstExpr::ref_null(HeapType::Concrete(ty_idx))
             }
             Ty::Struct(s) => {
-                let (ty_idx, _) = self.builder.struct_type(*s);
-                ConstExpr::ref_null(HeapType::Concrete(*ty_idx))
+                let s = self.builder.struct_type(*s);
+                ConstExpr::ref_null(HeapType::Concrete(s.type_idx))
             }
             Ty::Func(ty) => {
                 let ty_idx = self.builder.func_type(ty);
@@ -220,30 +220,33 @@ impl<'a> Codegen<'a> {
 
                     bodies.extend(setup);
                     bodies.extend(self.compile_expr(body, branch.body));
-                    bodies.push(Instruction::Br(branch_count + 2 - depth));
+                    bodies.push(Instruction::Br(branch_count - depth));
                     bodies.push(Instruction::End)
                 }
                 instrs.extend(checks);
+                instrs.push(Instruction::Br(branch_count));
                 instrs.push(Instruction::End);
                 instrs.extend(bodies);
-                instrs.push(Instruction::End);
+                instrs.push(Instruction::Unreachable);
                 instrs.push(Instruction::End);
                 instrs
             }
             ExprData::Struct { name, mut fields } => {
                 let mut instrs = vec![];
-                let struct_ty = {
-                    let (struct_ty, field_order) = self.builder.struct_type(name);
-                    // Sort fields according to field_order
-                    fields.sort_by_cached_key(|(name, _)| {
-                        field_order.iter().position(|f| name == f).unwrap()
-                    });
-                    *struct_ty
-                };
+                let struct_info = self.builder.struct_type(name);
+                let type_idx = struct_info.type_idx;
+                // Sort fields according to field_order
+                fields.sort_by_cached_key(|(name, _)| {
+                    struct_info.fields.iter().position(|f| name == f).unwrap()
+                });
+                if let Some(tag) = struct_info.variant_tag {
+                    instrs.push(Instruction::I32Const(tag))
+                }
+
                 for (_, expr) in fields {
                     instrs.extend(self.compile_expr(body, expr));
                 }
-                instrs.push(Instruction::StructNew(struct_ty));
+                instrs.push(Instruction::StructNew(type_idx));
                 instrs
             }
             ExprData::StructIdx { expr, index } => {
@@ -297,34 +300,28 @@ impl<'a> Codegen<'a> {
                 variant,
                 alternative,
                 binder,
-                struct_ty,
             } => {
-                let Ty::Struct(name) = pattern.ty else {
-                    return (
-                        vec![Instruction::Unreachable],
-                        vec![Instruction::Unreachable],
-                    );
-                };
-                let (struct_idx, _) = self.builder.struct_type(name);
+                let variant_info = self.builder.variant_type(variant);
                 let check = vec![
                     Instruction::LocalGet(scrutinee_idx),
                     Instruction::StructGet {
-                        struct_type_index: *struct_idx,
-                        // The tag field is always 0
+                        struct_type_index: variant_info.type_idx,
+                        // The tag field is always field 0
                         field_index: 0,
                     },
                     Instruction::I32Const(self.builder.variant_tag(variant, alternative)),
                     Instruction::I32Eq,
                 ];
-                let (ty_idx, _) = self.builder.struct_type(struct_ty);
+
+                let struct_info = self.builder.struct_type(alternative);
                 let val_ty = ValType::Ref(RefType {
                     nullable: false,
-                    heap_type: HeapType::Concrete(*ty_idx),
+                    heap_type: HeapType::Concrete(struct_info.type_idx),
                 });
 
                 let setup = vec![
                     Instruction::LocalGet(scrutinee_idx),
-                    Instruction::RefCastNonNull(HeapType::Concrete(*ty_idx)),
+                    Instruction::RefCastNonNull(HeapType::Concrete(struct_info.type_idx)),
                     Instruction::LocalSet(body.new_local(binder, val_ty)),
                 ];
                 (check, setup)
@@ -424,8 +421,19 @@ impl<'a> Codegen<'a> {
             self.builder.declare_import(import);
         }
 
-        for struct_ in program.structs {
-            self.builder.declare_struct(struct_)
+        // TODO clean this up
+        for type_def in program.types.iter() {
+            match type_def {
+                TypeDef::Variant(v) => self.builder.declare_variant(v.clone()),
+                _ => {}
+            }
+        }
+
+        for type_def in program.types {
+            match type_def {
+                TypeDef::Struct(s) => self.builder.declare_struct(s),
+                _ => {}
+            }
         }
 
         for func in program.funcs.iter() {

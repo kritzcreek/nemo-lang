@@ -237,7 +237,6 @@ pub enum PatternData {
         variant: Name,
         alternative: Name,
         binder: Name,
-        struct_ty: Name,
     },
 }
 
@@ -363,9 +362,23 @@ pub struct Import {
 }
 
 #[derive(Debug, PartialEq, Clone)]
+pub enum TypeDef {
+    Struct(Struct),
+    Variant(Variant),
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct Variant {
+    pub span: TextRange,
+    pub name: Name,
+    pub alternatives: Vec<Name>,
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub struct Struct {
     pub span: TextRange,
     pub name: Name,
+    pub variant: Option<Name>,
     pub fields: Vec<(Name, Ty)>,
 }
 
@@ -396,7 +409,7 @@ impl Func {
 #[derive(Debug, PartialEq, Clone)]
 pub struct Program {
     pub imports: Vec<Import>,
-    pub structs: Vec<Struct>,
+    pub types: Vec<TypeDef>,
     pub globals: Vec<Global>,
     pub funcs: Vec<Func>,
     pub start_fn: Name,
