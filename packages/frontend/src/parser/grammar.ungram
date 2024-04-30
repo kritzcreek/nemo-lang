@@ -5,6 +5,7 @@ TopLevel
   = TopImport
   | TopGlobal
   | TopStruct
+  | TopVariant
   | TopFn
 
 TopImport = 'import' ImpInternal ':' Type 'from' ImpExternal
@@ -15,6 +16,8 @@ TopGlobal = 'global' 'ident' ':' Type '=' Expr
 
 TopStruct = 'struct' 'upper_ident' '{' StructField* '}'
 StructField = 'ident' ':' Type
+
+TopVariant = 'variant' 'upper_ident' '{' TopStruct* '}'
 
 TopFn = 'fn' 'ident' '(' Param* ')' (':' Type)? '=' body:EBlock
 Param = 'ident' ':' Type
@@ -34,7 +37,9 @@ TyFloat = 'f32'
 TyBool = 'bool'
 TyUnit = 'unit'
 TyArray = '[' elem:Type ']'
-TyCons = 'upper_ident'
+TyCons = Qualifier? 'upper_ident'
+
+Qualifier = 'upper_ident' '::'
 
 TyFn = 'fn' TyArgList '->' result:Type
 TyArgList = '(' Type* ')'
@@ -58,6 +63,7 @@ Expr
   | EArrayIdx
   | EStructIdx
   | EIf
+  | EMatch
   | EBlock
   | EIntrinsic
 
@@ -72,11 +78,15 @@ EArgList = '(' Expr* ')'
 
 EBinary = lhs:Expr op:('+' | '-') rhs:Expr
 
-EStruct = 'upper_ident' '{' EStructField* '}'
+EStruct = Qualifier? 'upper_ident' '{' EStructField* '}'
 EStructField = 'ident' '=' Expr
 
 EStructIdx = Expr '.' 'ident'
 EIf = 'if' condition:Expr then_branch:EBlock 'else' else_branch:EBlock
+
+EMatch = 'match' scrutinee:Expr '{' EMatchBranch* '}'
+EMatchBranch = Pattern '=>' body:EBlock
+
 EBlock = '{' Declaration* '}'
 
 EIntrinsic = 'at_ident' EArgList
@@ -95,3 +105,10 @@ DExpr = Expr
 
 SetTarget = SetTargetExpr
 SetTargetExpr = EVar | EArrayIdx | EStructIdx
+
+Pattern
+  = PatVariant
+  | PatVar
+
+PatVariant = Qualifier 'upper_ident' 'ident'
+PatVar = 'ident'

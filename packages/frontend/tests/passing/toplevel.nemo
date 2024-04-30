@@ -129,3 +129,27 @@ fn add_particle(p : Particle) = {
   set particles.watermark =
     i32_rem_s(particles.watermark + 1, @array_len(particles.buffer))
 }
+
+
+// ---
+
+variant Rope {
+  struct Leaf { char : i32 },
+  struct Node {
+    children : [Rope],
+    len : i32
+  },
+}
+
+global _ = Rope::Leaf { char = 2 }
+global rope = Rope::Node { children = [], len = 10 }
+global _ = Rope::Node { children = [], len = 10 }
+
+global _ = match rope {
+  Rope::Leaf leaf => { leaf.char },
+  Rope::Node node => { @array_len(node.children) + node.len },
+}
+
+global _ = match 10 {
+  x => { x }
+}

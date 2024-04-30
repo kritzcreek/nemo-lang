@@ -592,3 +592,114 @@ fn add(x : i32, y : i32) : i32 = {
             (lower_ident))
           (var_e
             (lower_ident)))))))
+
+================================================================================
+Variants
+================================================================================
+
+variant Rope {
+  struct Leaf { char : i32 },
+  struct Node {
+    children : [Rope],
+    len : i32
+  },
+}
+
+global _ = Rope::Leaf { char = 2 }
+global rope = Rope::Node { children = [], len = 10 }
+global _ = Rope::Node { children = [], len = 10 }
+
+global _ = match rope {
+  Rope::Leaf leaf => { leaf.char },
+  Rope::Node node => { @array_len(node.children) + node.len },
+}
+--------------------------------------------------------------------------------
+
+(source_file
+  (top_variant
+    (upper_ident)
+    (top_struct
+      (upper_ident)
+      (struct_field_top
+        (lower_ident)
+        (ty_i32)))
+    (top_struct
+      (upper_ident)
+      (struct_field_top
+        (lower_ident)
+        (ty_array
+          (ty_struct
+            (upper_ident))))
+      (struct_field_top
+        (lower_ident)
+        (ty_i32))))
+  (top_global
+    (lower_ident)
+    (struct_e
+      (qualifier
+        (upper_ident))
+      (upper_ident)
+      (struct_field_e
+        (lower_ident)
+        (int_lit))))
+  (top_global
+    (lower_ident)
+    (struct_e
+      (qualifier
+        (upper_ident))
+      (upper_ident)
+      (struct_field_e
+        (lower_ident)
+        (array_e))
+      (struct_field_e
+        (lower_ident)
+        (int_lit))))
+  (top_global
+    (lower_ident)
+    (struct_e
+      (qualifier
+        (upper_ident))
+      (upper_ident)
+      (struct_field_e
+        (lower_ident)
+        (array_e))
+      (struct_field_e
+        (lower_ident)
+        (int_lit))))
+  (top_global
+    (lower_ident)
+    (match_e
+      (var_e
+        (lower_ident))
+      (match_branch
+        (variant_pat
+          (qualifier
+            (upper_ident))
+          (upper_ident)
+          (lower_ident))
+        (block_e
+          (expr_decl
+            (struct_idx_e
+              (var_e
+                (lower_ident))
+              (lower_ident)))))
+      (match_branch
+        (variant_pat
+          (qualifier
+            (upper_ident))
+          (upper_ident)
+          (lower_ident))
+        (block_e
+          (expr_decl
+            (binary_e
+              (intrinsic_e
+                (intrinsic_ident)
+                (call_args
+                  (struct_idx_e
+                    (var_e
+                      (lower_ident))
+                    (lower_ident))))
+              (struct_idx_e
+                (var_e
+                  (lower_ident))
+                (lower_ident)))))))))

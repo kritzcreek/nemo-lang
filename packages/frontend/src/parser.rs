@@ -1,11 +1,10 @@
 use crate::lexer::{Lexer, SyntaxKind, TToken};
 use crate::syntax::{NemoLanguage, SyntaxNode};
-use ariadne::{Config, Label, Report, ReportKind, Source};
+use ariadne::{Color, Config, Label, Report, ReportKind, Source};
 use line_index::{LineCol, LineIndex};
 use rowan::{Checkpoint, GreenNode, GreenNodeBuilder, Language};
 use std::{fmt, str};
 use text_size::{TextRange, TextSize};
-use yansi::Color;
 
 mod grammar;
 
@@ -16,10 +15,15 @@ pub struct ParseError {
 }
 
 impl ParseError {
-    pub fn display<'err, 'src>(&'err self, source: &'src str) -> ParseErrorDisplay<'src, 'err> {
+    pub fn display<'err, 'src>(
+        &'err self,
+        source: &'src str,
+        colors: bool,
+    ) -> ParseErrorDisplay<'src, 'err> {
         ParseErrorDisplay {
             source,
             parse_error: self,
+            colors,
         }
     }
 
@@ -33,11 +37,12 @@ impl ParseError {
 pub struct ParseErrorDisplay<'src, 'err> {
     source: &'src str,
     parse_error: &'err ParseError,
+    colors: bool,
 }
 
 impl fmt::Display for ParseErrorDisplay<'_, '_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        render_parse_error(self.source, self.parse_error, true, f);
+        render_parse_error(self.source, self.parse_error, self.colors, f);
         Ok(())
     }
 }

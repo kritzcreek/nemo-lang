@@ -1,0 +1,307 @@
+---
+source: packages/frontend/tests/parser.rs
+expression: output
+input_file: packages/frontend/tests/passing/toplevel.nemo
+---
+variant Rope {
+  struct Leaf { char : i32 },
+  struct Node {
+    children : [Rope],
+    len : i32
+  },
+}
+
+global _ = Rope::Leaf { char = 2 }
+global rope = Rope::Node { children = [], len = 10 }
+global _ = Rope::Node { children = [], len = 10 }
+
+global _ = match rope {
+  Rope::Leaf leaf => { leaf.char },
+  Rope::Node node => { @array_len(node.children) + node.len },
+}
+
+global _ = match 10 {
+  x => { x }
+}
+
+// ---
+Root@0..408
+  TopVariant@0..105
+    LINEFEED@0..1 "\n"
+    VARIANT_KW@1..8 "variant"
+    SPACE@8..9 " "
+    UPPER_IDENT@9..13 "Rope"
+    SPACE@13..14 " "
+    L_BRACE@14..15 "{"
+    TopStruct@15..44
+      LINEFEED@15..16 "\n"
+      SPACE@16..18 "  "
+      STRUCT_KW@18..24 "struct"
+      SPACE@24..25 " "
+      UPPER_IDENT@25..29 "Leaf"
+      SPACE@29..30 " "
+      L_BRACE@30..31 "{"
+      SPACE@31..32 " "
+      StructField@32..43
+        IDENT@32..36 "char"
+        SPACE@36..37 " "
+        COLON@37..38 ":"
+        SPACE@38..39 " "
+        TyInt@39..43
+          I32_BUILTIN@39..42 "i32"
+          SPACE@42..43 " "
+      R_BRACE@43..44 "}"
+    COMMA@44..45 ","
+    TopStruct@45..102
+      LINEFEED@45..46 "\n"
+      SPACE@46..48 "  "
+      STRUCT_KW@48..54 "struct"
+      SPACE@54..55 " "
+      UPPER_IDENT@55..59 "Node"
+      SPACE@59..60 " "
+      L_BRACE@60..61 "{"
+      StructField@61..83
+        LINEFEED@61..62 "\n"
+        SPACE@62..66 "    "
+        IDENT@66..74 "children"
+        SPACE@74..75 " "
+        COLON@75..76 ":"
+        SPACE@76..77 " "
+        TyArray@77..83
+          L_BRACKET@77..78 "["
+          TyCons@78..82
+            UPPER_IDENT@78..82 "Rope"
+          R_BRACKET@82..83 "]"
+      COMMA@83..84 ","
+      StructField@84..98
+        LINEFEED@84..85 "\n"
+        SPACE@85..89 "    "
+        IDENT@89..92 "len"
+        SPACE@92..93 " "
+        COLON@93..94 ":"
+        SPACE@94..95 " "
+        TyInt@95..98
+          I32_BUILTIN@95..98 "i32"
+      LINEFEED@98..99 "\n"
+      SPACE@99..101 "  "
+      R_BRACE@101..102 "}"
+    COMMA@102..103 ","
+    LINEFEED@103..104 "\n"
+    R_BRACE@104..105 "}"
+  TopGlobal@105..141
+    LINEFEED@105..106 "\n"
+    LINEFEED@106..107 "\n"
+    GLOBAL_KW@107..113 "global"
+    SPACE@113..114 " "
+    IDENT@114..115 "_"
+    SPACE@115..116 " "
+    EQUALS@116..117 "="
+    SPACE@117..118 " "
+    EStruct@118..141
+      Qualifier@118..124
+        UPPER_IDENT@118..122 "Rope"
+        DOUBLE_COLON@122..124 "::"
+      UPPER_IDENT@124..128 "Leaf"
+      SPACE@128..129 " "
+      L_BRACE@129..130 "{"
+      SPACE@130..131 " "
+      EStructField@131..140
+        IDENT@131..135 "char"
+        SPACE@135..136 " "
+        EQUALS@136..137 "="
+        SPACE@137..138 " "
+        ELit@138..140
+          LitInt@138..140
+            INT_LIT@138..139 "2"
+            SPACE@139..140 " "
+      R_BRACE@140..141 "}"
+  TopGlobal@141..194
+    LINEFEED@141..142 "\n"
+    GLOBAL_KW@142..148 "global"
+    SPACE@148..149 " "
+    IDENT@149..153 "rope"
+    SPACE@153..154 " "
+    EQUALS@154..155 "="
+    SPACE@155..156 " "
+    EStruct@156..194
+      Qualifier@156..162
+        UPPER_IDENT@156..160 "Rope"
+        DOUBLE_COLON@160..162 "::"
+      UPPER_IDENT@162..166 "Node"
+      SPACE@166..167 " "
+      L_BRACE@167..168 "{"
+      SPACE@168..169 " "
+      EStructField@169..182
+        IDENT@169..177 "children"
+        SPACE@177..178 " "
+        EQUALS@178..179 "="
+        SPACE@179..180 " "
+        EArray@180..182
+          L_BRACKET@180..181 "["
+          R_BRACKET@181..182 "]"
+      COMMA@182..183 ","
+      SPACE@183..184 " "
+      EStructField@184..193
+        IDENT@184..187 "len"
+        SPACE@187..188 " "
+        EQUALS@188..189 "="
+        SPACE@189..190 " "
+        ELit@190..193
+          LitInt@190..193
+            INT_LIT@190..192 "10"
+            SPACE@192..193 " "
+      R_BRACE@193..194 "}"
+  TopGlobal@194..244
+    LINEFEED@194..195 "\n"
+    GLOBAL_KW@195..201 "global"
+    SPACE@201..202 " "
+    IDENT@202..203 "_"
+    SPACE@203..204 " "
+    EQUALS@204..205 "="
+    SPACE@205..206 " "
+    EStruct@206..244
+      Qualifier@206..212
+        UPPER_IDENT@206..210 "Rope"
+        DOUBLE_COLON@210..212 "::"
+      UPPER_IDENT@212..216 "Node"
+      SPACE@216..217 " "
+      L_BRACE@217..218 "{"
+      SPACE@218..219 " "
+      EStructField@219..232
+        IDENT@219..227 "children"
+        SPACE@227..228 " "
+        EQUALS@228..229 "="
+        SPACE@229..230 " "
+        EArray@230..232
+          L_BRACKET@230..231 "["
+          R_BRACKET@231..232 "]"
+      COMMA@232..233 ","
+      SPACE@233..234 " "
+      EStructField@234..243
+        IDENT@234..237 "len"
+        SPACE@237..238 " "
+        EQUALS@238..239 "="
+        SPACE@239..240 " "
+        ELit@240..243
+          LitInt@240..243
+            INT_LIT@240..242 "10"
+            SPACE@242..243 " "
+      R_BRACE@243..244 "}"
+  TopGlobal@244..370
+    LINEFEED@244..245 "\n"
+    LINEFEED@245..246 "\n"
+    GLOBAL_KW@246..252 "global"
+    SPACE@252..253 " "
+    IDENT@253..254 "_"
+    SPACE@254..255 " "
+    EQUALS@255..256 "="
+    SPACE@256..257 " "
+    EMatch@257..370
+      MATCH_KW@257..262 "match"
+      SPACE@262..263 " "
+      EVar@263..268
+        IDENT@263..267 "rope"
+        SPACE@267..268 " "
+      L_BRACE@268..269 "{"
+      EMatchBranch@269..304
+        PatVariant@269..288
+          Qualifier@269..278
+            LINEFEED@269..270 "\n"
+            SPACE@270..272 "  "
+            UPPER_IDENT@272..276 "Rope"
+            DOUBLE_COLON@276..278 "::"
+          UPPER_IDENT@278..282 "Leaf"
+          SPACE@282..283 " "
+          IDENT@283..287 "leaf"
+          SPACE@287..288 " "
+        FAT_ARROW@288..290 "=>"
+        SPACE@290..291 " "
+        EBlock@291..304
+          L_BRACE@291..292 "{"
+          SPACE@292..293 " "
+          DExpr@293..303
+            EStructIdx@293..303
+              EVar@293..297
+                IDENT@293..297 "leaf"
+              DOT@297..298 "."
+              IDENT@298..302 "char"
+              SPACE@302..303 " "
+          R_BRACE@303..304 "}"
+      COMMA@304..305 ","
+      EMatchBranch@305..367
+        PatVariant@305..324
+          Qualifier@305..314
+            LINEFEED@305..306 "\n"
+            SPACE@306..308 "  "
+            UPPER_IDENT@308..312 "Rope"
+            DOUBLE_COLON@312..314 "::"
+          UPPER_IDENT@314..318 "Node"
+          SPACE@318..319 " "
+          IDENT@319..323 "node"
+          SPACE@323..324 " "
+        FAT_ARROW@324..326 "=>"
+        SPACE@326..327 " "
+        EBlock@327..367
+          L_BRACE@327..328 "{"
+          SPACE@328..329 " "
+          DExpr@329..366
+            EBinary@329..366
+              EIntrinsic@329..355
+                AT_IDENT@329..339 "@array_len"
+                EArgList@339..355
+                  L_PAREN@339..340 "("
+                  EStructIdx@340..353
+                    EVar@340..344
+                      IDENT@340..344 "node"
+                    DOT@344..345 "."
+                    IDENT@345..353 "children"
+                  R_PAREN@353..354 ")"
+                  SPACE@354..355 " "
+              BinOp@355..357
+                PLUS@355..356 "+"
+                SPACE@356..357 " "
+              EStructIdx@357..366
+                EVar@357..361
+                  IDENT@357..361 "node"
+                DOT@361..362 "."
+                IDENT@362..365 "len"
+                SPACE@365..366 " "
+          R_BRACE@366..367 "}"
+      COMMA@367..368 ","
+      LINEFEED@368..369 "\n"
+      R_BRACE@369..370 "}"
+  TopGlobal@370..408
+    LINEFEED@370..371 "\n"
+    LINEFEED@371..372 "\n"
+    GLOBAL_KW@372..378 "global"
+    SPACE@378..379 " "
+    IDENT@379..380 "_"
+    SPACE@380..381 " "
+    EQUALS@381..382 "="
+    SPACE@382..383 " "
+    EMatch@383..408
+      MATCH_KW@383..388 "match"
+      SPACE@388..389 " "
+      ELit@389..392
+        LitInt@389..392
+          INT_LIT@389..391 "10"
+          SPACE@391..392 " "
+      L_BRACE@392..393 "{"
+      EMatchBranch@393..406
+        PatVar@393..398
+          LINEFEED@393..394 "\n"
+          SPACE@394..396 "  "
+          IDENT@396..397 "x"
+          SPACE@397..398 " "
+        FAT_ARROW@398..400 "=>"
+        SPACE@400..401 " "
+        EBlock@401..406
+          L_BRACE@401..402 "{"
+          SPACE@402..403 " "
+          DExpr@403..405
+            EVar@403..405
+              IDENT@403..404 "x"
+              SPACE@404..405 " "
+          R_BRACE@405..406 "}"
+      LINEFEED@406..407 "\n"
+      R_BRACE@407..408 "}"

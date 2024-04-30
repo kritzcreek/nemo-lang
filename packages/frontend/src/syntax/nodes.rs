@@ -83,6 +83,27 @@ impl TopStruct {
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct TopVariant {
+    pub(crate) syntax: SyntaxNode,
+}
+impl TopVariant {
+    pub fn variant_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![variant])
+    }
+    pub fn upper_ident_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![upper_ident])
+    }
+    pub fn l_brace_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T!['{'])
+    }
+    pub fn top_structs(&self) -> AstChildren<TopStruct> {
+        support::children(&self.syntax)
+    }
+    pub fn r_brace_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T!['}'])
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TopFn {
     pub(crate) syntax: SyntaxNode,
 }
@@ -234,6 +255,9 @@ pub struct TyCons {
     pub(crate) syntax: SyntaxNode,
 }
 impl TyCons {
+    pub fn qualifier(&self) -> Option<Qualifier> {
+        support::child(&self.syntax)
+    }
     pub fn upper_ident_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T![upper_ident])
     }
@@ -254,6 +278,18 @@ impl TyFn {
     }
     pub fn result(&self) -> Option<Type> {
         support::child(&self.syntax)
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Qualifier {
+    pub(crate) syntax: SyntaxNode,
+}
+impl Qualifier {
+    pub fn upper_ident_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![upper_ident])
+    }
+    pub fn coloncolon_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![::])
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -339,6 +375,9 @@ pub struct EStruct {
     pub(crate) syntax: SyntaxNode,
 }
 impl EStruct {
+    pub fn qualifier(&self) -> Option<Qualifier> {
+        support::child(&self.syntax)
+    }
     pub fn upper_ident_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T![upper_ident])
     }
@@ -430,6 +469,27 @@ impl EIf {
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct EMatch {
+    pub(crate) syntax: SyntaxNode,
+}
+impl EMatch {
+    pub fn match_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![match])
+    }
+    pub fn scrutinee(&self) -> Option<Expr> {
+        support::child(&self.syntax)
+    }
+    pub fn l_brace_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T!['{'])
+    }
+    pub fn e_match_branchs(&self) -> AstChildren<EMatchBranch> {
+        support::children(&self.syntax)
+    }
+    pub fn r_brace_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T!['}'])
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EIntrinsic {
     pub(crate) syntax: SyntaxNode,
 }
@@ -468,6 +528,21 @@ impl EStructField {
         support::token(&self.syntax, T![=])
     }
     pub fn expr(&self) -> Option<Expr> {
+        support::child(&self.syntax)
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct EMatchBranch {
+    pub(crate) syntax: SyntaxNode,
+}
+impl EMatchBranch {
+    pub fn pattern(&self) -> Option<Pattern> {
+        support::child(&self.syntax)
+    }
+    pub fn fat_arrow_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![=>])
+    }
+    pub fn body(&self) -> Option<EBlock> {
         support::child(&self.syntax)
     }
 }
@@ -547,10 +622,35 @@ impl SetTarget {
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct PatVariant {
+    pub(crate) syntax: SyntaxNode,
+}
+impl PatVariant {
+    pub fn qualifier(&self) -> Option<Qualifier> {
+        support::child(&self.syntax)
+    }
+    pub fn upper_ident_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![upper_ident])
+    }
+    pub fn ident_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![ident])
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct PatVar {
+    pub(crate) syntax: SyntaxNode,
+}
+impl PatVar {
+    pub fn ident_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![ident])
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum TopLevel {
     TopImport(TopImport),
     TopGlobal(TopGlobal),
     TopStruct(TopStruct),
+    TopVariant(TopVariant),
     TopFn(TopFn),
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -575,6 +675,7 @@ pub enum Expr {
     EArrayIdx(EArrayIdx),
     EStructIdx(EStructIdx),
     EIf(EIf),
+    EMatch(EMatch),
     EBlock(EBlock),
     EIntrinsic(EIntrinsic),
 }
@@ -583,6 +684,11 @@ pub enum Literal {
     LitBool(LitBool),
     LitFloat(LitFloat),
     LitInt(LitInt),
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum Pattern {
+    PatVariant(PatVariant),
+    PatVar(PatVar),
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Declaration {
@@ -645,6 +751,21 @@ impl AstNode for TopGlobal {
 impl AstNode for TopStruct {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == TopStruct
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+impl AstNode for TopVariant {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == TopVariant
     }
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         if Self::can_cast(syntax.kind()) {
@@ -840,6 +961,21 @@ impl AstNode for TyCons {
 impl AstNode for TyFn {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == TyFn
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+impl AstNode for Qualifier {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == Qualifier
     }
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         if Self::can_cast(syntax.kind()) {
@@ -1062,6 +1198,21 @@ impl AstNode for EIf {
         &self.syntax
     }
 }
+impl AstNode for EMatch {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == EMatch
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
 impl AstNode for EIntrinsic {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == EIntrinsic
@@ -1095,6 +1246,21 @@ impl AstNode for EArgList {
 impl AstNode for EStructField {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == EStructField
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+impl AstNode for EMatchBranch {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == EMatchBranch
     }
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         if Self::can_cast(syntax.kind()) {
@@ -1182,6 +1348,36 @@ impl AstNode for SetTarget {
         &self.syntax
     }
 }
+impl AstNode for PatVariant {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == PatVariant
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+impl AstNode for PatVar {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == PatVar
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
 impl From<TopImport> for TopLevel {
     fn from(node: TopImport) -> TopLevel {
         TopLevel::TopImport(node)
@@ -1197,6 +1393,11 @@ impl From<TopStruct> for TopLevel {
         TopLevel::TopStruct(node)
     }
 }
+impl From<TopVariant> for TopLevel {
+    fn from(node: TopVariant) -> TopLevel {
+        TopLevel::TopVariant(node)
+    }
+}
 impl From<TopFn> for TopLevel {
     fn from(node: TopFn) -> TopLevel {
         TopLevel::TopFn(node)
@@ -1205,7 +1406,7 @@ impl From<TopFn> for TopLevel {
 impl AstNode for TopLevel {
     fn can_cast(kind: SyntaxKind) -> bool {
         match kind {
-            TopImport | TopGlobal | TopStruct | TopFn => true,
+            TopImport | TopGlobal | TopStruct | TopVariant | TopFn => true,
             _ => false,
         }
     }
@@ -1214,6 +1415,7 @@ impl AstNode for TopLevel {
             TopImport => TopLevel::TopImport(TopImport { syntax }),
             TopGlobal => TopLevel::TopGlobal(TopGlobal { syntax }),
             TopStruct => TopLevel::TopStruct(TopStruct { syntax }),
+            TopVariant => TopLevel::TopVariant(TopVariant { syntax }),
             TopFn => TopLevel::TopFn(TopFn { syntax }),
             _ => return None,
         };
@@ -1224,6 +1426,7 @@ impl AstNode for TopLevel {
             TopLevel::TopImport(it) => &it.syntax,
             TopLevel::TopGlobal(it) => &it.syntax,
             TopLevel::TopStruct(it) => &it.syntax,
+            TopLevel::TopVariant(it) => &it.syntax,
             TopLevel::TopFn(it) => &it.syntax,
         }
     }
@@ -1345,6 +1548,11 @@ impl From<EIf> for Expr {
         Expr::EIf(node)
     }
 }
+impl From<EMatch> for Expr {
+    fn from(node: EMatch) -> Expr {
+        Expr::EMatch(node)
+    }
+}
 impl From<EBlock> for Expr {
     fn from(node: EBlock) -> Expr {
         Expr::EBlock(node)
@@ -1359,7 +1567,7 @@ impl AstNode for Expr {
     fn can_cast(kind: SyntaxKind) -> bool {
         match kind {
             ELit | EVar | EArray | EStruct | ECall | EParen | EBinary | EArrayIdx | EStructIdx
-            | EIf | EBlock | EIntrinsic => true,
+            | EIf | EMatch | EBlock | EIntrinsic => true,
             _ => false,
         }
     }
@@ -1375,6 +1583,7 @@ impl AstNode for Expr {
             EArrayIdx => Expr::EArrayIdx(EArrayIdx { syntax }),
             EStructIdx => Expr::EStructIdx(EStructIdx { syntax }),
             EIf => Expr::EIf(EIf { syntax }),
+            EMatch => Expr::EMatch(EMatch { syntax }),
             EBlock => Expr::EBlock(EBlock { syntax }),
             EIntrinsic => Expr::EIntrinsic(EIntrinsic { syntax }),
             _ => return None,
@@ -1393,6 +1602,7 @@ impl AstNode for Expr {
             Expr::EArrayIdx(it) => &it.syntax,
             Expr::EStructIdx(it) => &it.syntax,
             Expr::EIf(it) => &it.syntax,
+            Expr::EMatch(it) => &it.syntax,
             Expr::EBlock(it) => &it.syntax,
             Expr::EIntrinsic(it) => &it.syntax,
         }
@@ -1434,6 +1644,38 @@ impl AstNode for Literal {
             Literal::LitBool(it) => &it.syntax,
             Literal::LitFloat(it) => &it.syntax,
             Literal::LitInt(it) => &it.syntax,
+        }
+    }
+}
+impl From<PatVariant> for Pattern {
+    fn from(node: PatVariant) -> Pattern {
+        Pattern::PatVariant(node)
+    }
+}
+impl From<PatVar> for Pattern {
+    fn from(node: PatVar) -> Pattern {
+        Pattern::PatVar(node)
+    }
+}
+impl AstNode for Pattern {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        match kind {
+            PatVariant | PatVar => true,
+            _ => false,
+        }
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        let res = match syntax.kind() {
+            PatVariant => Pattern::PatVariant(PatVariant { syntax }),
+            PatVar => Pattern::PatVar(PatVar { syntax }),
+            _ => return None,
+        };
+        Some(res)
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        match self {
+            Pattern::PatVariant(it) => &it.syntax,
+            Pattern::PatVar(it) => &it.syntax,
         }
     }
 }
@@ -1542,6 +1784,11 @@ impl std::fmt::Display for Literal {
         std::fmt::Display::fmt(self.syntax(), f)
     }
 }
+impl std::fmt::Display for Pattern {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
 impl std::fmt::Display for Declaration {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
@@ -1568,6 +1815,11 @@ impl std::fmt::Display for TopGlobal {
     }
 }
 impl std::fmt::Display for TopStruct {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for TopVariant {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
     }
@@ -1633,6 +1885,11 @@ impl std::fmt::Display for TyCons {
     }
 }
 impl std::fmt::Display for TyFn {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for Qualifier {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
     }
@@ -1707,6 +1964,11 @@ impl std::fmt::Display for EIf {
         std::fmt::Display::fmt(self.syntax(), f)
     }
 }
+impl std::fmt::Display for EMatch {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
 impl std::fmt::Display for EIntrinsic {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
@@ -1718,6 +1980,11 @@ impl std::fmt::Display for EArgList {
     }
 }
 impl std::fmt::Display for EStructField {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for EMatchBranch {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
     }
@@ -1743,6 +2010,16 @@ impl std::fmt::Display for DExpr {
     }
 }
 impl std::fmt::Display for SetTarget {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for PatVariant {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for PatVar {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
     }
