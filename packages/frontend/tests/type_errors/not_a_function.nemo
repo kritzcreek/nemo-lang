@@ -1,4 +1,4 @@
-fn main() = {
+fn main() {
   let x = 0;
   x(0)
 }

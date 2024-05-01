@@ -1544,7 +1544,7 @@
               "members": [
                 {
                   "type": "STRING",
-                  "value": ":"
+                  "value": "->"
                 },
                 {
                   "type": "FIELD",
@@ -1560,10 +1560,6 @@
               "type": "BLANK"
             }
           ]
-        },
-        {
-          "type": "STRING",
-          "value": "="
         },
         {
           "type": "FIELD",

@@ -130,8 +130,9 @@ fn top_fn(p: &mut Parser) {
         p.error("expected a function name")
     }
     param_list(p);
-    typ_annot(p);
-    p.expect(T![=]);
+    if p.eat(T![->]) && !typ(p).made_progress() {
+        p.error("expected a return type")
+    }
     if !block_expr(p).made_progress() {
         p.error("expected a function body")
     }

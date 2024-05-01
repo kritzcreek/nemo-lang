@@ -6,7 +6,7 @@ input_file: packages/frontend/tests/type_errors/unknown_type.nemo
 [07] Error: Unknown type Unknown
    ╭─[source:1:13]
    │
- 1 │ fn main() : Unknown = {}
-   │             ───┬───  
-   │                ╰───── Unknown type Unknown
+ 1 │ fn main() -> Unknown {}
+   │              ───┬───  
+   │                 ╰───── Unknown type Unknown
 ───╯

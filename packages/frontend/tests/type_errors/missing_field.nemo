@@ -2,6 +2,6 @@ struct F {
   x : i32
 }
 
-fn main() : F = {
+fn main() -> F {
   F { }
 }

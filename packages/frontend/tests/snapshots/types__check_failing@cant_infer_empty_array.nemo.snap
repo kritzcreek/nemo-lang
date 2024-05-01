@@ -4,7 +4,7 @@ expression: err_buf
 input_file: packages/frontend/tests/type_errors/cant_infer_empty_array.nemo
 ---
 [17] Error: Can't infer type of an empty array
-   ╭─[source:1:13]
+   ╭─[source:2:1]
    │
  2 │   let x = []
    │           ─┬  

@@ -123,14 +123,11 @@ impl TopFn {
     pub fn r_paren_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T![')'])
     }
-    pub fn colon_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T![:])
+    pub fn arrow_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![->])
     }
     pub fn ty(&self) -> Option<Type> {
         support::child(&self.syntax)
-    }
-    pub fn eq_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T![=])
     }
     pub fn body(&self) -> Option<EBlock> {
         support::child(&self.syntax)

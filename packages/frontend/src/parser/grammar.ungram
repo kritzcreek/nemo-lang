@@ -19,7 +19,7 @@ StructField = 'ident' ':' Type
 
 TopVariant = 'variant' 'upper_ident' '{' TopStruct* '}'
 
-TopFn = 'fn' 'ident' '(' Param* ')' (':' Type)? '=' body:EBlock
+TopFn = 'fn' 'ident' '(' Param* ')' ('->' Type)? body:EBlock
 Param = 'ident' ':' Type
 
 // Types

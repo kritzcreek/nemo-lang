@@ -4,7 +4,7 @@ expression: err_buf
 input_file: packages/frontend/tests/type_errors/unknown_intrinsic.nemo
 ---
 [08] Error: Unknown intrinsic @unknown with argcount: 0
-   ╭─[source:1:13]
+   ╭─[source:2:1]
    │
  2 │   @unknown()
    │   ────┬───  

@@ -233,8 +233,7 @@ module.exports = grammar({
         "fn",
         field("name", $.lower_ident),
         field("params", $.func_params),
-        optional(seq(":", field("result", $._type))),
-        "=",
+        optional(seq("->", field("result", $._type))),
         field("body", $.block_e),
       ),
 

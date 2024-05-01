@@ -38,11 +38,11 @@ global cubes = [
   Cube { x = 400.0, y = 0.0, vx = 0.0, vy = 12.0, size = 20.0, color = blue }
 ]
 
-fn clamp(min : f32, val : f32, max : f32) : f32 = {
+fn clamp(min : f32, val : f32, max : f32) -> f32 {
   f32_min(max, f32_max(min, val))
 }
 
-fn draw_cube(cube : Cube) : f32 = {
+fn draw_cube(cube : Cube) -> f32 {
   let x = cube.x;
   let y = cube.y;
   let size = cube.size;
@@ -56,7 +56,7 @@ fn draw_cube(cube : Cube) : f32 = {
   stroke(0.0)
 }
 
-fn tick_cube(cube : Cube, elapsed_time_ms : f32) = {
+fn tick_cube(cube : Cube, elapsed_time_ms : f32) {
   let elapsed_factor = elapsed_time_ms / 48.0;
 
   set cube.x = cube.x + cube.vx * elapsed_factor;
@@ -73,7 +73,7 @@ fn tick_cube(cube : Cube, elapsed_time_ms : f32) = {
   } else {}
 }
 
-fn tick(elapsed_time_ms : f32) = {
+fn tick(elapsed_time_ms : f32) {
   clear();
 
   let idx = 0;

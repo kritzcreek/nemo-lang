@@ -1,1 +1,1 @@
-fn main() : Unknown = {}
+fn main() -> Unknown {}

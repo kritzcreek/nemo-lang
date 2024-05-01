@@ -2,7 +2,7 @@ struct F {
   x : i32
 }
 
-fn main() = {
+fn main() {
   F { x = 10, y = 20 }.y;
   let f = F { x = 10 };
   set f.y = 20;
