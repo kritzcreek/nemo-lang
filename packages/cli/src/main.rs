@@ -1,7 +1,7 @@
-use std::{error::Error, fs, path::PathBuf};
+use std::{error::Error, fs, path::PathBuf, process};
 
 use clap::{Parser, Subcommand};
-use frontend::compile_program;
+use frontend::{compile_program, render_errors};
 use language_server::start_language_server;
 use playground::run_playground;
 
@@ -22,7 +22,8 @@ enum Commands {
         /// The *.nemo file to check
         input_file: PathBuf,
         /// When provided generates the Wasm with the given filename
-        output_file: Option<PathBuf>,
+        #[arg(long)]
+        output: Option<PathBuf>,
     },
     /// Checks Nemo programs and reports any errors. Does not generate Wasm.
     #[command(arg_required_else_help = true)]
@@ -45,15 +46,23 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
     match args.command {
         Commands::Compile {
             input_file,
-            output_file,
+            output,
         } => {
             let source = fs::read_to_string(&input_file)?;
-            let (_, compiled) = compile_program(&source);
-            fs::write(
-                output_file.unwrap_or_else(|| input_file.with_extension("wasm")),
-                compiled.unwrap(),
-            )?;
-            Ok(())
+            let (name_map, compiled) = compile_program(&source);
+            match compiled {
+                Ok(bytes) => {
+                    fs::write(
+                        output.unwrap_or_else(|| input_file.with_extension("wasm")),
+                        bytes
+                    )?;
+                    Ok(())
+                },
+                Err(e) => {
+                    eprint!("{}", render_errors(&e, &source, &name_map));
+                    process::exit(1)
+                }
+            }
         }
         Commands::Check { input_file } => {
             let source = fs::read_to_string(input_file)?;
