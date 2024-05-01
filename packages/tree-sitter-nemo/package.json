@@ -43,7 +43,7 @@
   "scripts": {
     "test": "tree-sitter generate && tree-sitter test",
     "test:update": "tree-sitter generate && tree-sitter test -u",
-    "play": "tree-sitter build-wasm && tree-sitter playground",
+    "play": "tree-sitter build --wasm && tree-sitter playground",
     "install": "node-gyp-build",
     "prebuildify": "prebuildify --napi --strip"
   }

@@ -13,17 +13,17 @@ struct Vec {
 global x = 10
 global y : f32 = 10.0
 
-fn main() = {
+fn main() {
 
 }
 
-fn add(x : i32, y : i32) : i32 = {
+fn add(x : i32, y : i32) -> i32 {
     x + y
 }
 
 
 // ---
-Root@0..194
+Root@0..191
   TopImport@0..53
     LINEFEED@0..1 "\n"
     IMPORT_KW@1..7 "import"
@@ -113,7 +113,7 @@ Root@0..194
     ELit@124..128
       LitFloat@124..128
         FLOAT_LIT@124..128 "10.0"
-  TopFn@128..146
+  TopFn@128..144
     LINEFEED@128..129 "\n"
     LINEFEED@129..130 "\n"
     FN_KW@130..132 "fn"
@@ -122,58 +122,54 @@ Root@0..194
     L_PAREN@137..138 "("
     R_PAREN@138..139 ")"
     SPACE@139..140 " "
-    EQUALS@140..141 "="
-    SPACE@141..142 " "
-    EBlock@142..146
-      L_BRACE@142..143 "{"
-      LINEFEED@143..144 "\n"
-      LINEFEED@144..145 "\n"
-      R_BRACE@145..146 "}"
-  TopFn@146..194
-    LINEFEED@146..147 "\n"
-    LINEFEED@147..148 "\n"
-    FN_KW@148..150 "fn"
-    SPACE@150..151 " "
-    IDENT@151..154 "add"
-    L_PAREN@154..155 "("
-    Param@155..164
-      IDENT@155..156 "x"
+    EBlock@140..144
+      L_BRACE@140..141 "{"
+      LINEFEED@141..142 "\n"
+      LINEFEED@142..143 "\n"
+      R_BRACE@143..144 "}"
+  TopFn@144..191
+    LINEFEED@144..145 "\n"
+    LINEFEED@145..146 "\n"
+    FN_KW@146..148 "fn"
+    SPACE@148..149 " "
+    IDENT@149..152 "add"
+    L_PAREN@152..153 "("
+    Param@153..162
+      IDENT@153..154 "x"
+      SPACE@154..155 " "
+      COLON@155..156 ":"
       SPACE@156..157 " "
-      COLON@157..158 ":"
-      SPACE@158..159 " "
-      TyInt@159..162
-        I32_BUILTIN@159..162 "i32"
-      COMMA@162..163 ","
+      TyInt@157..160
+        I32_BUILTIN@157..160 "i32"
+      COMMA@160..161 ","
+      SPACE@161..162 " "
+    Param@162..169
+      IDENT@162..163 "y"
       SPACE@163..164 " "
-    Param@164..171
-      IDENT@164..165 "y"
+      COLON@164..165 ":"
       SPACE@165..166 " "
-      COLON@166..167 ":"
-      SPACE@167..168 " "
-      TyInt@168..171
-        I32_BUILTIN@168..171 "i32"
-    R_PAREN@171..172 ")"
-    SPACE@172..173 " "
-    COLON@173..174 ":"
-    SPACE@174..175 " "
-    TyInt@175..179
-      I32_BUILTIN@175..178 "i32"
-      SPACE@178..179 " "
-    EQUALS@179..180 "="
-    SPACE@180..181 " "
-    EBlock@181..194
-      L_BRACE@181..182 "{"
-      DExpr@182..192
-        EBinary@182..192
-          EVar@182..189
-            LINEFEED@182..183 "\n"
-            SPACE@183..187 "    "
-            IDENT@187..188 "x"
-            SPACE@188..189 " "
-          BinOp@189..191
-            PLUS@189..190 "+"
-            SPACE@190..191 " "
-          EVar@191..192
-            IDENT@191..192 "y"
-      LINEFEED@192..193 "\n"
-      R_BRACE@193..194 "}"
+      TyInt@166..169
+        I32_BUILTIN@166..169 "i32"
+    R_PAREN@169..170 ")"
+    SPACE@170..171 " "
+    ARROW@171..173 "->"
+    SPACE@173..174 " "
+    TyInt@174..178
+      I32_BUILTIN@174..177 "i32"
+      SPACE@177..178 " "
+    EBlock@178..191
+      L_BRACE@178..179 "{"
+      DExpr@179..189
+        EBinary@179..189
+          EVar@179..186
+            LINEFEED@179..180 "\n"
+            SPACE@180..184 "    "
+            IDENT@184..185 "x"
+            SPACE@185..186 " "
+          BinOp@186..188
+            PLUS@186..187 "+"
+            SPACE@187..188 " "
+          EVar@188..189
+            IDENT@188..189 "y"
+      LINEFEED@189..190 "\n"
+      R_BRACE@190..191 "}"

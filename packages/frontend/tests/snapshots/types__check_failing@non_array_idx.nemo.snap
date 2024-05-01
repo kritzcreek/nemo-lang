@@ -4,7 +4,7 @@ expression: err_buf
 input_file: packages/frontend/tests/type_errors/non_array_idx.nemo
 ---
 [09] Error: Tried to index into a non-array type i32
-   ╭─[source:1:13]
+   ╭─[source:2:1]
    │
  2 │   let x = 10[4]
    │           ─┬  

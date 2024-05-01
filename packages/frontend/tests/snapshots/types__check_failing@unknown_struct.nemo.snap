@@ -4,7 +4,7 @@ expression: err_buf
 input_file: packages/frontend/tests/type_errors/unknown_struct.nemo
 ---
 [07] Error: Unknown type Unknown
-   ╭─[source:1:13]
+   ╭─[source:2:1]
    │
  2 │   let x = Unknown {}
    │           ───┬───  

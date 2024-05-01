@@ -4,7 +4,7 @@ expression: err_buf
 input_file: packages/frontend/tests/type_errors/unknown_function.nemo
 ---
 [05] Error: Unknown variable unknown
-   ╭─[source:1:13]
+   ╭─[source:2:1]
    │
  2 │   unknown()
    │   ───┬───  
