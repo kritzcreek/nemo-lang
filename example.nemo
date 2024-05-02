@@ -91,7 +91,8 @@ fn draw_body(x : f32, y : f32, body : Body) {
         line_to(x + c.size, y);
     },
     Body::Circle c => {
-      arc(x, y, c.radius, 0.0, two_pi);
+      let half_radius = c.radius / 2.0;
+      arc(x + half_radius, y + half_radius, c.radius, 0.0, two_pi);
     }
   }
 }
