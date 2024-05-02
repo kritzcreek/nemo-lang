@@ -11,5 +11,4 @@ path = "src/main.rs"
 clap = { version = "4.4.12", features = ["derive"] }
 backend = { path = "../backend" }
 frontend = { path = "../frontend" }
-playground = { path = "../playground" }
 language-server = { path = "../language-server" }
