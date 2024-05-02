@@ -9,6 +9,5 @@ path = "src/main.rs"
 
 [dependencies]
 clap = { version = "4.4.12", features = ["derive"] }
-backend = { path = "../backend" }
 frontend = { path = "../frontend" }
 language-server = { path = "../language-server" }
