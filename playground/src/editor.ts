@@ -27,39 +27,98 @@ import { clearConsoleBuffer, getConsoleBuffer } from "./wasm_imports.js";
 // Hacky
 let imports_cell: { it: WebAssembly.Imports } = { it: { env: {} } };
 
+const base_theme = EditorView.baseTheme({
+  ".cm-literal": { color: "#3548cf" },
+  ".cm-keyword": { color: "#5317ac" },
+  ".cm-property": { color: "#00538b" },
+  ".cm-type": { color: "#721045" },
+  ".cm-local": { color: "black" },
+  ".cm-global": { fontStyle: "italic" },
+  ".cm-func": { color: "#00538b" },
+  ".cm-comment": { color: "#999999" },
+});
+
+const literal_decoration = Decoration.mark({
+  class: "cm-literal",
+});
+const keyword_decoration = Decoration.mark({
+  class: "cm-keyword",
+});
+const property_decoration = Decoration.mark({
+  class: "cm-property",
+});
+const type_decoration = Decoration.mark({
+  class: "cm-type",
+});
+const func_decoration = Decoration.mark({
+  class: "cm-func",
+});
+const local_decoration = Decoration.mark({
+  class: "cm-local",
+});
+const global_decoration = Decoration.mark({
+  class: "cm-global",
+});
+const comment_decoration = Decoration.mark({
+  class: "cm-comment",
+});
+
 function highlight_view(view: EditorView) {
   let builder = new RangeSetBuilder<Decoration>();
-  // let { root } = run_parse(input, 10000);
-  // if (!root) {
-  //   return builder.finish();
-  // }
-  // let highlights = highlight(root);
-  // for (const { range, token_type } of highlights) {
-  //   let decoration: Decoration;
-  //   switch (token_type) {
-  //     case Highlight.Literal:
-  //       decoration = literal_decoration;
-  //       break;
-  //     case Highlight.Keyword:
-  //       decoration = keyword_decoration;
-  //       break;
-  //     case Highlight.Column:
-  //       decoration = column_decoration;
-  //       break;
-  //     case Highlight.Table:
-  //       decoration = table_decoration;
-  //       break;
-  //     case Highlight.Func:
-  //       decoration = func_decoration;
-  //       break;
-  //     case Highlight.Recover:
-  //       decoration = recover_decoration;
-  //       break;
-  //   }
-  //   decoration &&
-  //     builder.add(range.offset, range.offset + range.length, decoration);
-  // }
+  let result = view.state.field(compile_result);
+  for (const hl of result.highlights) {
+    let decoration: Decoration | undefined;
+    switch (hl.kind) {
+      case "Keyword":
+        decoration = keyword_decoration;
+        break;
+      case "Literal":
+        decoration = literal_decoration;
+        break;
+      case "Function":
+        decoration = func_decoration;
+        break;
+      case "Property":
+        decoration = property_decoration;
+        break;
+      case "Type":
+        decoration = type_decoration;
+        break;
+      case "Local":
+        decoration = local_decoration;
+        break;
+      case "Global":
+        decoration = global_decoration;
+        break;
+      case "Comment":
+        decoration = comment_decoration;
+        break;
+    }
+    decoration &&
+      builder.add(hl.start, hl.end, decoration);
+  }
   return builder.finish();
+}
+
+const highlight_plugin = ViewPlugin.fromClass(
+  class {
+    decorations: DecorationSet;
+
+    constructor(view: EditorView) {
+      this.decorations = highlight_view(view);
+    }
+
+    update(update: ViewUpdate) {
+      if (update.docChanged) this.decorations = highlight_view(update.view);
+    }
+  },
+  {
+    decorations: (v) => v.decorations,
+  }
+);
+
+function nemo_highlighter(): Extension {
+  return [base_theme, highlight_plugin];
 }
 
 const nemoLinter = linter((view) => {
@@ -76,35 +135,16 @@ const nemoLinter = linter((view) => {
   return diagnostics;
 }, { delay: 0});
 
-const highlight_plugin = ViewPlugin.fromClass(
-  class {
-    decorations: DecorationSet;
-
-    constructor(view: EditorView) {
-      this.decorations = highlight_view(view);
-    }
-
-    update(update: ViewUpdate) {
-      if (update.docChanged) this.decorations = highlight_view(update.view);
-    }
-  },
-  {
-    decorations: (v) => v.decorations,
-  },
-);
-
-function highlight_nemo(): Extension {
-  return [highlight_plugin];
-}
-
 type CompileState = {
   diagnostics: compiler.Diagnostic[];
+  highlights: compiler.Highlight[];
   instance: WebAssembly.Instance | undefined;
 };
 
 function compile(input: string, imports: WebAssembly.Imports): CompileState {
   const result = compiler.compile(input);
   const diagnostics = result.errors;
+  const highlights = result.highlights;
   let instance;
   if (diagnostics.length === 0) {
     try {
@@ -116,7 +156,7 @@ function compile(input: string, imports: WebAssembly.Imports): CompileState {
       console.error(e);
     }
   }
-  return { diagnostics, instance };
+  return { diagnostics, highlights, instance };
 }
 
 const compile_result = StateField.define<CompileState>({
@@ -254,7 +294,7 @@ export function setupEditor(imports: WebAssembly.Imports) {
       lineNumbers(),
       compile_result,
       actions,
-      highlight_nemo(),
+      nemo_highlighter(),
       closeBrackets(),
       nemoLinter,
     ],
