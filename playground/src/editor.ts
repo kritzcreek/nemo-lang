@@ -138,13 +138,22 @@ function actions_panel(view: EditorView): Panel {
     instance: WebAssembly.Instance | undefined,
   ) {
     let active = instance != null;
-    let button_bar = html`<button
-      id="runBtn"
-      ?disabled=${!active}
-      @click=${() => console.log((instance?.exports as any).main())}
-    >
-      Run
-    </button>`;
+    let button_bar = html`
+      <button
+        id="runBtn"
+        ?disabled=${!active}
+        @click=${() => console.log((instance?.exports as any).main())}
+      >
+        Run
+      </button>
+      <button
+        id="renderButn"
+        ?disabled=${!active}
+        @click=${() => start_render(view)}
+      >
+        Start Render
+      </button>
+    `;
     render(button_bar, element);
   }
   const dom = document.createElement("div");
@@ -171,6 +180,21 @@ fn main() -> i32 {
   log(13);
   20 * 2 + 2
 }`;
+
+function start_render(editorView: EditorView) {
+  let previousTimeStamp: number | undefined;
+  function render(timeStamp: number) {
+    const elapsed = timeStamp - (previousTimeStamp ?? timeStamp);
+    previousTimeStamp = timeStamp;
+    let tick = editorView.state.field(compile_result).instance?.exports
+      .tick as any;
+    if (tick) {
+      tick(elapsed);
+      requestAnimationFrame(render);
+    }
+  }
+  requestAnimationFrame(render);
+}
 
 export function setupEditor(imports: WebAssembly.Imports) {
   imports_cell.it = imports;
