@@ -1,0 +1,10 @@
+import log : fn (i32) -> unit from log
+  
+fn main() -> i32 {
+  let i = 0;
+  while i < 100 {
+    log(i);
+    set i = i + 1;
+  };
+  i * 2 + 3
+}

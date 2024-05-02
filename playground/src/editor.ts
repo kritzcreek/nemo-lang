@@ -1,6 +1,7 @@
 import "./style.css";
 
 import { html, render } from "lit-html";
+import { examples } from "./examples";
 import { EditorView, minimalSetup } from "codemirror";
 import { closeBrackets } from "@codemirror/autocomplete";
 import {
@@ -12,7 +13,7 @@ import {
   showPanel,
   Panel,
 } from "@codemirror/view";
-import { linter, Diagnostic } from "@codemirror/lint";
+import { linter, Diagnostic, openLintPanel } from "@codemirror/lint";
 import {
   EditorState,
   Extension,
@@ -73,7 +74,7 @@ const nemoLinter = linter((view) => {
     });
   }
   return diagnostics;
-});
+}, { delay: 0});
 
 const highlight_plugin = ViewPlugin.fromClass(
   class {
@@ -133,6 +134,10 @@ const compile_result = StateField.define<CompileState>({
 });
 
 function runConsoleApplication(instance: WebAssembly.Instance) {
+  const toggle_console = document.getElementById("toggle-console")! as HTMLInputElement;
+  if (toggle_console.checked) {
+    toggle_console.click();
+  }
   const main = instance.exports.main as () => void;
   clearConsoleBuffer();
   const result = main();
@@ -146,6 +151,12 @@ function runConsoleApplication(instance: WebAssembly.Instance) {
   render(output_console, document.getElementById("output-console")! as HTMLElement)
 }
 
+function pick_example(view: EditorView, name: string) {
+  view.dispatch({
+    changes: { from: 0, to: view.state.doc.length, insert: examples[name] },
+  });
+}
+
 function actions_panel(view: EditorView): Panel {
   function render_buttons(
     element: HTMLElement,
@@ -153,25 +164,35 @@ function actions_panel(view: EditorView): Panel {
   ) {
     let can_run = instance != null && instance.exports.main != null;
     let can_render = instance != null && instance.exports.tick != null;
+    let example_picker = html`
+      <select id="example-picker" @change=${(e : Event) => pick_example(view, (e.target as HTMLInputElement).value)}>
+        <option value="">Pick an example...</option>
+        ${Object.keys(examples).map((name) => html`<option value=${name}>${name}</option>`)}
+      </select>
+    `;
     let button_bar = html`
-      <button
-        id="runBtn"
-        ?disabled=${!can_run}
-        @click=${() => runConsoleApplication(instance!)}
-      >
-        Run
-      </button>
-      <button
-        id="renderButn"
-        ?disabled=${!can_render}
-        @click=${() => start_render(view)}
-      >
-        Render
-      </button>
+      <div id="button-bar">
+        <button
+          id="runBtn"
+          ?disabled=${!can_run}
+          @click=${() => runConsoleApplication(instance!)}
+        >
+          Run
+        </button>
+        <button
+          id="renderButn"
+          ?disabled=${!can_render}
+          @click=${() => start_render(view)}
+        >
+          Render
+        </button>
+      </div>
+      ${example_picker}
     `;
     render(button_bar, element);
   }
   const dom = document.createElement("div");
+  dom.id = "actions-panel";
   render_buttons(dom, view.state.field(compile_result).instance);
   return {
     dom,
@@ -187,21 +208,11 @@ function actions_panel(view: EditorView): Panel {
 
 const actions = showPanel.of(actions_panel);
 
-const initial_code =
-  JSON.parse(localStorage.getItem("code") ?? '""') ||
-  `// Hello
-import log : fn (i32) -> unit from "log"
-  
-fn main() -> i32 {
-  let i = 0;
-  while i < 100 {
-    set i = i + 1;
-    log(i)
-  };
-  20 * 2 + 2
-}`;
-
 function start_render(editorView: EditorView) {
+  const toggle_console = document.getElementById("toggle-console")! as HTMLInputElement;
+  if (!toggle_console.checked) {
+    toggle_console.click();
+  }
   clearConsoleBuffer();
   let previousTimeStamp: number | undefined;
   function render_canvas(timeStamp: number) {
@@ -231,14 +242,13 @@ function setupOutputToggle() {
     outputConsole.classList.toggle("hidden");
     outputCanvas.classList.toggle("hidden");
   });
-
 }
 
 export function setupEditor(imports: WebAssembly.Imports) {
   imports_cell.it = imports;
   setupOutputToggle();
   new EditorView({
-    doc: initial_code,
+    doc: examples.bouncy_cubes,
     extensions: [
       minimalSetup,
       lineNumbers(),
