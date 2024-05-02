@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nemo playground</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <header>
+      <h2>Nemo playground</h2>
+    </header>
+    <main id="container">
+      <div id="editor-container"></div>
+      <div id="output-container">
+        <div class="output-header">
+          <div>Result</div>
+          <div class="slider-container">
+            <div class="slider-label-left">Console</div>
+            <label class="switch" for="toggle-console">
+              <input type="checkbox" id="toggle-console" />
+              <div class="slider round"></div>
+            </label>
+            <div class="slider-label-right">Canvas</div>
+          </div>
+        </div>
+        <div id="output-console"></div>
+        <canvas id="output-canvas" width="500" height="500" class="hidden"></canvas>
+      </div>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

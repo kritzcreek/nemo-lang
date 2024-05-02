@@ -103,6 +103,7 @@ Most features can be directly mapped to Wasm GC constructs. I'm just listing the
 
 Features we implement "on-top"
 
+- Variants
 - Lazy initialization for non-const globals
 - Type directed operator resolution (+ can mean both i32.add and f32.add)
 - Type directed field resolution for struct access
