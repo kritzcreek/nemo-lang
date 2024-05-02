@@ -11,7 +11,6 @@ import {
   lineNumbers,
   showPanel,
   Panel,
-  panels,
 } from "@codemirror/view";
 import { linter, Diagnostic } from "@codemirror/lint";
 import {
@@ -22,6 +21,7 @@ import {
   Transaction,
 } from "@codemirror/state";
 import * as compiler from "../wasm-lib/wasm_lib.js";
+import { clearConsoleBuffer, getConsoleBuffer } from "./wasm_imports.js";
 
 // Hacky
 let imports_cell: { it: WebAssembly.Imports } = { it: { env: {} } };
@@ -132,26 +132,41 @@ const compile_result = StateField.define<CompileState>({
   },
 });
 
+function runConsoleApplication(instance: WebAssembly.Instance) {
+  const main = instance.exports.main as () => void;
+  clearConsoleBuffer();
+  const result = main();
+  const output = getConsoleBuffer();
+  const output_console = html`
+    <h3>Return value</h3>
+    <pre>${result}</pre>
+    <h3>Console output</h3>
+    <pre>${output}</pre>
+    `;
+  render(output_console, document.getElementById("output-console")! as HTMLElement)
+}
+
 function actions_panel(view: EditorView): Panel {
   function render_buttons(
     element: HTMLElement,
     instance: WebAssembly.Instance | undefined,
   ) {
-    let active = instance != null;
+    let can_run = instance != null && instance.exports.main != null;
+    let can_render = instance != null && instance.exports.tick != null;
     let button_bar = html`
       <button
         id="runBtn"
-        ?disabled=${!active}
-        @click=${() => console.log((instance?.exports as any).main())}
+        ?disabled=${!can_run}
+        @click=${() => runConsoleApplication(instance!)}
       >
         Run
       </button>
       <button
         id="renderButn"
-        ?disabled=${!active}
+        ?disabled=${!can_render}
         @click=${() => start_render(view)}
       >
-        Start Render
+        Render
       </button>
     `;
     render(button_bar, element);
@@ -166,6 +181,7 @@ function actions_panel(view: EditorView): Panel {
         render_buttons(dom, result.instance);
       }
     },
+    top: true,
   };
 }
 
@@ -175,29 +191,52 @@ const initial_code =
   JSON.parse(localStorage.getItem("code") ?? '""') ||
   `// Hello
 import log : fn (i32) -> unit from "log"
-
+  
 fn main() -> i32 {
-  log(13);
+  let i = 0;
+  while i < 100 {
+    set i = i + 1;
+    log(i)
+  };
   20 * 2 + 2
 }`;
 
 function start_render(editorView: EditorView) {
+  clearConsoleBuffer();
   let previousTimeStamp: number | undefined;
-  function render(timeStamp: number) {
+  function render_canvas(timeStamp: number) {
     const elapsed = timeStamp - (previousTimeStamp ?? timeStamp);
     previousTimeStamp = timeStamp;
     let tick = editorView.state.field(compile_result).instance?.exports
       .tick as any;
     if (tick) {
       tick(elapsed);
-      requestAnimationFrame(render);
+      const output = getConsoleBuffer();
+      const output_console = html`
+        <h3>Console output</h3>
+        <pre>${output}</pre>
+        `;
+      render(output_console, document.getElementById("output-console")! as HTMLElement)
+      requestAnimationFrame(render_canvas);
     }
   }
-  requestAnimationFrame(render);
+  requestAnimationFrame(render_canvas);
+}
+
+function setupOutputToggle() {
+  const outputToggle = document.querySelector("#toggle-console")!;
+  const outputConsole = document.querySelector("#output-console")!;
+  const outputCanvas = document.querySelector("#output-canvas")!;
+  outputToggle.addEventListener("change", () => {
+    outputConsole.classList.toggle("hidden");
+    outputCanvas.classList.toggle("hidden");
+  });
+
 }
 
 export function setupEditor(imports: WebAssembly.Imports) {
   imports_cell.it = imports;
+  setupOutputToggle();
   new EditorView({
     doc: initial_code,
     extensions: [

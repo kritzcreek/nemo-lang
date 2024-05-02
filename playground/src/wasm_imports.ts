@@ -1,5 +1,15 @@
+let consoleBuffer = "";
+
+export function getConsoleBuffer(): string {
+  return consoleBuffer
+}
+
+export function clearConsoleBuffer(): void {
+  consoleBuffer = ""
+}
+
 export function setupWasmImports(): WebAssembly.Imports {
-  const canvas = document.getElementById("canvas")! as HTMLCanvasElement;
+  const canvas = document.getElementById("output-canvas")! as HTMLCanvasElement;
   const ctx = canvas.getContext("2d")!;
   ctx.lineWidth = 3.0;
 
@@ -36,6 +46,7 @@ export function setupWasmImports(): WebAssembly.Imports {
   }
 
   function log(x: any) {
+    consoleBuffer += x + "\n";
     console.log(x);
   }
 

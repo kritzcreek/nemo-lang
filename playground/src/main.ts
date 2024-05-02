@@ -1,3 +1,4 @@
+import "./reset.css";
 import "./style.css";
 import { setupEditor } from "./editor.ts";
 import { setupWasmImports } from "./wasm_imports.ts";

@@ -1,55 +1,133 @@
 :root {
-    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-    line-height: 1.5;
-    font-weight: 400;
-    font-size: 16px;
-
-    font-synthesis: none;
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+  font-family: Roboto, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  font-size: 10px;
 }
 
-* {
-    box-sizing: border-box;
+body {
+  font-size: 1.6rem;
 }
 
-body,
-main {
-    margin: 0;
-    padding: 0;
-}
-
-div {
-    margin: 0;
-    padding: 0;
+header {
+  background-color: #0081a7;
+  color: #fdfcdc;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid #e0e0e0;
 }
 
 #container {
-    display: flex;
-    height: 600px;
+  display: flex;
+  height: 600px;
 }
 
 #editor-container {
-    width: 100%;
-    height: 100%;
+  width: 100%;
+  height: 100%;
+  border: 1px solid #e0e0e0;
+  border-top: none;
 }
 
-#canvas-container {
-    width: 100%;
-    height: 100%;
+#output-container {
+  width: 100%;
+  height: 100%;
+  border: 1px solid #e0e0e0;
+  border-top: none;
+  overflow-y: auto;
+  max-height: 600px;
+}
+
+.output-header {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  font-size: 1.8rem;
+  background-color: #f5f5f5;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
 }
 
 #canvas {
-    height: 500px;
-    width: 500px;
+  height: 500px;
+  width: 500px;
 }
 
 .cm-editor {
-    height: 100%;
+  height: 100%;
+}
+
+.cm-editor.cm-focused {
+     outline: none;
 }
 
 .cm-panels-top {
-    background-color: white !important;
-    border-bottom: none !important;
+    padding: 0.4rem 0;
+}
+
+.hidden {
+    display: none;
+}
+
+/* Slider from https://codepen.io/AllThingsSmitty/pen/MmxxOz/*/
+
+.switch {
+  display: inline-block;
+  height: 28px;
+  position: relative;
+  width: 48px;
+}
+
+.switch input {
+  display: none;
+}
+
+.slider {
+  background-color: #ccc;
+  bottom: 0;
+  cursor: pointer;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  transition: 0.4s;
+}
+
+.slider:before {
+  background-color: #fff;
+  bottom: 4px;
+  content: "";
+  height: 20px;
+  left: 4px;
+  position: absolute;
+  transition: 0.4s;
+  width: 20px;
+}
+
+input:checked + .slider {
+  background-color: #66bb6a;
+}
+
+input:checked + .slider:before {
+  transform: translateX(20px);
+}
+
+.slider.round {
+  border-radius: 28px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+.slider-container {
+  display: flex;
+}
+
+.slider-label-left {
+  margin-right: 1rem;
+}
+.slider-label-right {
+  margin-left: 1rem;
 }

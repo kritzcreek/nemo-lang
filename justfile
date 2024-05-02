@@ -15,3 +15,7 @@ build-wasm-lib:
 
 dev FILE: build-cli
     watchexec --quiet -e nemo just run-wasm {{ FILE }}
+
+playground: build-wasm-lib
+    cd playground && npm i && npm run dev
+    
