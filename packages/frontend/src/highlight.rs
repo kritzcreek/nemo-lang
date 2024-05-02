@@ -30,7 +30,18 @@ pub fn highlight(root: &Root, occurrences: &OccurenceMap) -> Vec<Highlight> {
     let mut highlights = Vec::new();
     for node in root.syntax().descendants_with_tokens() {
         match node.kind() {
-            T![let] | T![set] | T![global] | T![match] | T![if] | T![else] | T![while] | T![fn] | T![variant] | T![struct] | T![import] | T![from] => {
+            T![let]
+            | T![set]
+            | T![global]
+            | T![match]
+            | T![if]
+            | T![else]
+            | T![while]
+            | T![fn]
+            | T![variant]
+            | T![struct]
+            | T![import]
+            | T![from] => {
                 highlights.push(Highlight {
                     range: node.text_range(),
                     kind: HighlightKind::Keyword,
