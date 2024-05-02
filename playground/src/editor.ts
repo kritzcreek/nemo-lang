@@ -24,7 +24,7 @@ import {
 import * as compiler from "../wasm-lib/wasm_lib.js";
 
 // Hacky
-let imports: WebAssembly.Imports = undefined as any;
+let imports_cell: { it: WebAssembly.Imports } = { it: { env: {} } };
 
 function highlight_view(view: EditorView) {
   let builder = new RangeSetBuilder<Decoration>();
@@ -120,19 +120,19 @@ function compile(input: string, imports: WebAssembly.Imports): CompileState {
 
 const compile_result = StateField.define<CompileState>({
   create: function (state: EditorState): CompileState {
-    return compile(state.doc.toString(), imports);
+    return compile(state.doc.toString(), imports_cell.it);
   },
   update: function (
     prev: CompileState,
     transaction: Transaction,
   ): CompileState {
     return transaction.docChanged
-      ? compile(transaction.newDoc.toString(), imports)
+      ? compile(transaction.newDoc.toString(), imports_cell.it)
       : prev;
   },
 });
 
-function actions_panel(_view: EditorView): Panel {
+function actions_panel(view: EditorView): Panel {
   function render_buttons(
     element: HTMLElement,
     instance: WebAssembly.Instance | undefined,
@@ -148,7 +148,7 @@ function actions_panel(_view: EditorView): Panel {
     render(button_bar, element);
   }
   const dom = document.createElement("div");
-  render_buttons(dom, undefined);
+  render_buttons(dom, view.state.field(compile_result).instance);
   return {
     dom,
     update(view_update) {
@@ -160,40 +160,26 @@ function actions_panel(_view: EditorView): Panel {
   };
 }
 
-function canvas_panel(view: EditorView): Panel {
-  function render_canvas(element: HTMLElement) {
-    const canvas = html`<canvas id="canvas" width="500" height="500"></canvas>`;
-    render(canvas, element);
-  }
-
-  let dom = document.createElement("div");
-  render_canvas(dom);
-  return {
-    dom,
-    async update(view_update) {},
-    top: true,
-  };
-}
-
 const actions = showPanel.of(actions_panel);
-const canvas = showPanel.of(canvas_panel);
 
 const initial_code =
   JSON.parse(localStorage.getItem("code") ?? '""') ||
-  "fn main() : i32 = {\n  20 * 2 + 2\n}";
+  `// Hello
+import log : fn (i32) -> unit from "log"
+
+fn main() -> i32 {
+  log(13);
+  20 * 2 + 2
+}`;
 
 export function setupEditor(imports: WebAssembly.Imports) {
-  imports = imports;
+  imports_cell.it = imports;
   new EditorView({
     doc: initial_code,
     extensions: [
       minimalSetup,
-      panels({
-        topContainer: document.getElementById("canvas-container") ?? undefined,
-      }),
       lineNumbers(),
       compile_result,
-      canvas,
       actions,
       highlight_nemo(),
       closeBrackets(),
