@@ -19,11 +19,12 @@ pub struct CheckResult<E> {
     pub typed_nodes: HashMap<SyntaxNodePtr, Ty>,
     pub name_map: NameMap,
     pub ir: Option<Program>,
+    pub parse: Root,
 }
 
 pub fn check_prog(prog: Root) -> CheckResult<TyError> {
     let mut checker = Typechecker::new();
-    let ir = checker.infer_program(prog);
+    let ir = checker.infer_program(&prog);
     let name_map = checker.name_supply.name_map;
     CheckResult {
         errors: checker.errors,
@@ -31,5 +32,6 @@ pub fn check_prog(prog: Root) -> CheckResult<TyError> {
         name_map,
         typed_nodes: checker.typed_nodes,
         ir,
+        parse: prog,
     }
 }

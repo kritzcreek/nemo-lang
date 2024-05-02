@@ -3,7 +3,6 @@ use std::{error::Error, fs, path::PathBuf, process};
 use clap::{Parser, Subcommand};
 use frontend::{compile_program, render_errors};
 use language_server::start_language_server;
-use playground::run_playground;
 
 /// The nemo language
 #[derive(Debug, Parser)]
@@ -36,9 +35,6 @@ enum Commands {
         #[arg(long)]
         stdio: bool,
     },
-    /// Runs the Nemo playground where you can write Nemo programs
-    /// that interact with the HTML5 canvas
-    Playground,
 }
 
 fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
@@ -67,9 +63,5 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
             Ok(())
         }
         Commands::LanguageServer { .. } => start_language_server(),
-        Commands::Playground => {
-            run_playground();
-            Ok(())
-        }
     }
 }

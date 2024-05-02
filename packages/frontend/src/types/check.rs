@@ -161,9 +161,11 @@ impl<N> Occurrence<N> {
     }
 }
 
+pub type OccurenceMap = HashMap<SyntaxTokenPtr, Occurrence<Name>>;
+
 pub struct Typechecker {
     pub typed_nodes: HashMap<SyntaxNodePtr, Ty>,
-    pub names: HashMap<SyntaxTokenPtr, Occurrence<Name>>,
+    pub names: OccurenceMap,
     pub errors: Vec<TyError>,
 
     pub name_supply: NameSupply,
@@ -240,15 +242,15 @@ impl Typechecker {
         })
     }
 
-    pub fn infer_program(&mut self, root: Root) -> Option<ir::Program> {
+    pub fn infer_program(&mut self, root: &Root) -> Option<ir::Program> {
         self.context.enter_block();
 
-        let types = self.check_type_definitions(&root);
-        let imports = self.check_imports(&root);
-        self.check_function_headers(&root);
+        let types = self.check_type_definitions(root);
+        let imports = self.check_imports(root);
+        self.check_function_headers(root);
 
-        let globals = self.check_globals(&root);
-        let functions = self.check_function_bodies(&root);
+        let globals = self.check_globals(root);
+        let functions = self.check_function_bodies(root);
 
         self.context.leave_block();
 

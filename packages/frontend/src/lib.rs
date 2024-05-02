@@ -1,4 +1,5 @@
 pub mod builtins;
+pub mod highlight;
 pub mod lexer;
 pub mod parser;
 pub mod syntax;
@@ -111,6 +112,7 @@ pub fn run_frontend(source: &str) -> CheckResult<CheckError> {
         typed_nodes: check_result.typed_nodes,
         names: check_result.names,
         ir: check_result.ir,
+        parse: check_result.parse,
     }
 }
 
