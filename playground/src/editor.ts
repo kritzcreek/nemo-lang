@@ -248,7 +248,7 @@ export function setupEditor(imports: WebAssembly.Imports) {
   imports_cell.it = imports;
   setupOutputToggle();
   new EditorView({
-    doc: examples.bouncy_cubes,
+    doc: examples.bouncy_shapes,
     extensions: [
       minimalSetup,
       lineNumbers(),
