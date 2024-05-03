@@ -211,6 +211,7 @@ function actions_panel(view: EditorView): Panel {
       </select>
     `;
     let button_bar = html`
+      <h3 class="header">Nemo playground</h3>
       <div id="button-bar">
         <button
           id="runBtn"
@@ -245,8 +246,6 @@ function actions_panel(view: EditorView): Panel {
     top: true,
   };
 }
-
-const actions = showPanel.of(actions_panel);
 
 function start_render(editorView: EditorView) {
   showOutput("canvas");
@@ -313,7 +312,7 @@ export function setupEditor(imports: WebAssembly.Imports) {
       lineNumbers(),
       keymap.of([indentWithTab]),
       compile_result,
-      actions,
+      showPanel.of(actions_panel),
       nemo_highlighter(),
       closeBrackets(),
       nemoLinter,
