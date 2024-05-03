@@ -1,3 +1,5 @@
 /target
 /*.wasm
 /build/
+# Worktree for managing gh-pages branch
+gh-pages/
