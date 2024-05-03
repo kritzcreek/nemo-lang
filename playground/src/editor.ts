@@ -150,7 +150,7 @@ function compile(input: string, imports: WebAssembly.Imports): CompileState {
   let instance;
   if (diagnostics.length === 0) {
     try {
-      document.getElementById("wast")!.textContent = result.wast;
+      document.getElementById("output-wast")!.textContent = result.wast;
       // Using synchronous module instantiation
       // (not recommended, but makes working with the Codemirror API much simpler)
       const mod = new WebAssembly.Module(result.wasm);
@@ -177,12 +177,9 @@ const compile_result = StateField.define<CompileState>({
 });
 
 function runConsoleApplication(instance: WebAssembly.Instance) {
-  const toggle_console = document.getElementById("toggle-console")! as HTMLInputElement;
-  if (toggle_console.checked) {
-    toggle_console.click();
-  }
   const main = instance.exports.main as () => void;
   clearConsoleBuffer();
+  showOutput("console");
   const result = main();
   const output = getConsoleBuffer();
   const output_console = html`
@@ -252,10 +249,7 @@ function actions_panel(view: EditorView): Panel {
 const actions = showPanel.of(actions_panel);
 
 function start_render(editorView: EditorView) {
-  const toggle_console = document.getElementById("toggle-console")! as HTMLInputElement;
-  if (!toggle_console.checked) {
-    toggle_console.click();
-  }
+  showOutput("canvas");
   clearConsoleBuffer();
   let previousTimeStamp: number | undefined;
   function render_canvas(timeStamp: number) {
@@ -277,19 +271,41 @@ function start_render(editorView: EditorView) {
   requestAnimationFrame(render_canvas);
 }
 
-function setupOutputToggle() {
-  const outputToggle = document.querySelector("#toggle-console")!;
-  const outputConsole = document.querySelector("#output-console")!;
-  const outputCanvas = document.querySelector("#output-canvas")!;
-  outputToggle.addEventListener("change", () => {
-    outputConsole.classList.toggle("hidden");
-    outputCanvas.classList.toggle("hidden");
-  });
+type Output = { id: string, pane: HTMLElement, button: HTMLButtonElement };
+let outputs: Output[] = [];
+
+function showOutput(id: string) {
+  for (const o of outputs) {
+    o.button.classList.remove("active");
+    o.pane.classList.add('hidden');
+  }
+  const o = outputs.find(o => o.pane.id === `output-${id}`);
+  if (o) {
+    o.button.classList.add("active")
+    o.pane.classList.remove("hidden");
+  }
+}
+
+function setupOutputs() {
+  const mk_output = (id: string) => {
+    return {
+      id,
+      pane: document.getElementById(`output-${id}`)!,
+      button: document.getElementById(`output-${id}-btn`)! as HTMLButtonElement,
+    };
+  };
+  outputs = ["console", "canvas", "wast"].map(mk_output);
+
+  for (const o of outputs) {
+    o.button.onclick = () => {
+      showOutput(o.id);
+    };
+  }
 }
 
 export function setupEditor(imports: WebAssembly.Imports) {
   imports_cell.it = imports;
-  setupOutputToggle();
+  setupOutputs();
   new EditorView({
     doc: examples.bouncy_shapes,
     extensions: [
