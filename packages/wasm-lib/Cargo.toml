@@ -10,3 +10,4 @@ crate-type = ["cdylib"]
 frontend = { path = "../frontend" }
 backend = { path = "../backend" }
 wasm-bindgen = "0.2.92"
+wasmprinter = "0.206.0"

@@ -17,8 +17,7 @@ header {
 }
 
 #actions-panel {
-    width: 100%;
-    position: static;
+    margin: 0 1rem;
     display: flex;
     justify-content: space-between;
 }
