@@ -21,17 +21,15 @@
       <div id="output-container">
         <div class="output-header">
           <div>Result</div>
-          <div class="slider-container">
-            <div class="slider-label-left">Console</div>
-            <label class="switch" for="toggle-console">
-              <input type="checkbox" id="toggle-console" />
-              <div class="slider round"></div>
-            </label>
-            <div class="slider-label-right">Canvas</div>
+          <div class="output-selector">
+            <button id="output-console-btn">Console</button>
+            <button id="output-canvas-btn" class="active">Canvas</button>
+            <button id="output-wast-btn">Wast</button>
           </div>
         </div>
-        <div id="output-console"></div>
-        <canvas id="output-canvas" width="500" height="500" class="hidden"></canvas>
+        <div id="output-console" class="hidden"></div>
+        <canvas id="output-canvas" width="500" height="500"></canvas>
+        <pre id="output-wast" class="hidden"></pre>
       </div>
     </main>
     <pre id="wast"></pre>
