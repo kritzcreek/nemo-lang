@@ -12,6 +12,7 @@ import {
   lineNumbers,
   showPanel,
   Panel,
+  keymap,
 } from "@codemirror/view";
 import { linter, Diagnostic, openLintPanel } from "@codemirror/lint";
 import {
@@ -23,6 +24,7 @@ import {
 } from "@codemirror/state";
 import * as compiler from "../wasm-lib/wasm_lib.js";
 import { clearConsoleBuffer, getConsoleBuffer } from "./wasm_imports.js";
+import { indentWithTab } from "@codemirror/commands";
 
 // Hacky
 let imports_cell: { it: WebAssembly.Imports } = { it: { env: {} } };
@@ -292,6 +294,7 @@ export function setupEditor(imports: WebAssembly.Imports) {
     extensions: [
       minimalSetup,
       lineNumbers(),
+      keymap.of([indentWithTab]),
       compile_result,
       actions,
       nemo_highlighter(),

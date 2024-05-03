@@ -61,9 +61,12 @@ header {
   justify-content: space-between;
 }
 
-#canvas {
+#output-canvas {
   height: 500px;
   width: 500px;
+  margin: 3rem auto 0 auto;
+
+  border: 1px solid #e0e0e0;
 }
 
 .cm-editor {
