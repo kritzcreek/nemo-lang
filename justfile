@@ -21,4 +21,6 @@ playground: build-wasm-lib
     cd playground && npm i && npm run dev
     
 update-gh-pages: build-wasm-lib
-    cd playground && npm i && npm run build && cp -r dist/* ../gh-pages
+    cd playground && npm i && npm run build
+    rm -r gh-pages/*
+    cp -r playground/dist/* gh-pages/
