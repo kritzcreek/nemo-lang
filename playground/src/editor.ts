@@ -150,6 +150,7 @@ function compile(input: string, imports: WebAssembly.Imports): CompileState {
   let instance;
   if (diagnostics.length === 0) {
     try {
+      document.getElementById("wast")!.textContent = result.wast;
       // Using synchronous module instantiation
       // (not recommended, but makes working with the Codemirror API much simpler)
       const mod = new WebAssembly.Module(result.wasm);

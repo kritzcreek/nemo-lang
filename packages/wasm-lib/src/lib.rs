@@ -1,6 +1,7 @@
 use backend::codegen::codegen;
 use frontend::highlight;
 use wasm_bindgen::prelude::*;
+use wasmprinter;
 
 #[wasm_bindgen(getter_with_clone)]
 #[derive(Clone)]
@@ -32,6 +33,7 @@ impl Highlight {
 #[wasm_bindgen(getter_with_clone)]
 pub struct CompileResult {
     pub wasm: Vec<u8>,
+    pub wast: String,
     pub errors: Vec<Diagnostic>,
     pub highlights: Vec<Highlight>,
 }
@@ -52,13 +54,19 @@ pub fn compile(input: &str) -> CompileResult {
     };
 
     match result {
-        Ok(wasm) => CompileResult {
-            wasm,
-            highlights,
-            errors: vec![],
-        },
+        Ok(wasm) => {
+            let wast =
+                wasmprinter::print_bytes(&wasm).unwrap_or_else(|e| format!("internal error: {e}"));
+            CompileResult {
+                wasm,
+                wast,
+                highlights,
+                errors: vec![],
+            }
+        }
         Err(errors) => CompileResult {
             wasm: vec![],
+            wast: "".to_string(),
             highlights,
             errors: errors
                 .into_iter()
