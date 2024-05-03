@@ -4,6 +4,7 @@ build-cli:
 build-wasm-lib:
     cd packages/wasm-lib && cargo rustc  --crate-type cdylib --target wasm32-unknown-unknown --release
     wasm-bindgen target/wasm32-unknown-unknown/release/wasm_lib.wasm --out-dir playground/wasm-lib/ --target web
+    wasm-opt -Os playground/wasm-lib/wasm_lib_bg.wasm -o playground/wasm-lib/wasm_lib_bg.wasm
 
 @run-wasm FILE:
     mkdir -p build
@@ -19,3 +20,5 @@ dev FILE: build-cli
 playground: build-wasm-lib
     cd playground && npm i && npm run dev
     
+update-gh-pages: build-wasm-lib
+    cd playground && npm i && npm run build && cp -r dist/* ../gh-pages
