@@ -14,7 +14,7 @@ import {
   Panel,
   keymap,
 } from "@codemirror/view";
-import { linter, Diagnostic, openLintPanel } from "@codemirror/lint";
+import { linter, Diagnostic } from "@codemirror/lint";
 import {
   EditorState,
   Extension,
@@ -23,11 +23,8 @@ import {
   Transaction,
 } from "@codemirror/state";
 import * as compiler from "../wasm-lib/wasm_lib.js";
-import { clearConsoleBuffer, getConsoleBuffer } from "./wasm_imports.js";
+import { clearConsoleBuffer, getConsoleBuffer, getWasmImports } from "./wasm_imports.js";
 import { indentWithTab } from "@codemirror/commands";
-
-// Hacky
-let imports_cell: { it: WebAssembly.Imports } = { it: { env: {} } };
 
 const base_theme = EditorView.baseTheme({
   ".cm-literal": { color: "#3548cf" },
@@ -164,14 +161,14 @@ function compile(input: string, imports: WebAssembly.Imports): CompileState {
 
 const compile_result = StateField.define<CompileState>({
   create: function (state: EditorState): CompileState {
-    return compile(state.doc.toString(), imports_cell.it);
+    return compile(state.doc.toString(), getWasmImports());
   },
   update: function (
     prev: CompileState,
     transaction: Transaction,
   ): CompileState {
     return transaction.docChanged
-      ? compile(transaction.newDoc.toString(), imports_cell.it)
+      ? compile(transaction.newDoc.toString(), getWasmImports())
       : prev;
   },
 });
@@ -302,8 +299,7 @@ function setupOutputs() {
   }
 }
 
-export function setupEditor(imports: WebAssembly.Imports) {
-  imports_cell.it = imports;
+export function setupEditor() {
   setupOutputs();
   new EditorView({
     doc: examples.bouncy_shapes,

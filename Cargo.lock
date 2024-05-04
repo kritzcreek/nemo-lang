@@ -357,9 +357,6 @@ dependencies = [
  "lsp-types",
  "serde",
  "serde_json",
- "tree-sitter",
- "tree-sitter-highlight",
- "tree-sitter-nemo",
 ]
 
 [[package]]
@@ -672,26 +669,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f18aa187839b2bdb1ad2fa35ead8c4c2976b64e4363c386d45ac0f7ee85c9233"
 
 [[package]]
-name = "thiserror"
-version = "1.0.59"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f0126ad08bff79f29fc3ae6a55cc72352056dfff61e3ff8bb7129476d44b23aa"
-dependencies = [
- "thiserror-impl",
-]
-
-[[package]]
-name = "thiserror-impl"
-version = "1.0.59"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d1cd413b5d558b4c5bf3680e324a6fa5014e7b7c067a51e69dbdf47eb7148b66"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
 name = "tinyvec"
 version = "1.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -714,18 +691,6 @@ checksum = "688200d842c76dd88f9a7719ecb0483f79f5a766fb1c100756d5d8a059abc71b"
 dependencies = [
  "cc",
  "regex",
-]
-
-[[package]]
-name = "tree-sitter-highlight"
-version = "0.22.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9442daef896b114ed618a5e11c9ba9663796ab3600e544d57f2dc980fa0d2d78"
-dependencies = [
- "lazy_static",
- "regex",
- "thiserror",
- "tree-sitter",
 ]
 
 [[package]]

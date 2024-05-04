@@ -1,9 +1,8 @@
-mod highlight;
 pub mod vfs;
 
+use frontend::highlight::HighlightKind;
 use frontend::types::NameMap;
 use frontend::CheckError;
-use highlight::{highlight, HIGHLIGHT_NAMES};
 use line_index::{LineCol, LineIndex, TextRange};
 use lsp_server::{Connection, ExtractError, Message, Notification, Request, RequestId, Response};
 use lsp_types::notification::{DidChangeTextDocument, DidCloseTextDocument, DidOpenTextDocument};
@@ -21,7 +20,6 @@ use lsp_types::{
 };
 use serde_json::json;
 use std::error::Error;
-use tree_sitter_highlight::{Highlight, HighlightEvent};
 use vfs::FileData;
 
 use crate::vfs::Vfs;
@@ -94,17 +92,16 @@ fn main_loop(
                         eprintln!("Attempting to read {uri} as file {}", file_path.display());
 
                         let program = match vfs.read_file(&file_path) {
-                            Some(program) => program.content.as_str(),
+                            Some(program) => program,
                             None => {
                                 vfs.open_file(file_path.clone()).unwrap();
-                                vfs.read_file(&file_path).unwrap().content.as_str()
+                                vfs.read_file(&file_path).unwrap()
                             }
                         };
 
-                        let events = highlight(program);
                         let result = SemanticTokens {
                             result_id: None,
-                            data: semantic_tokens(program, events),
+                            data: semantic_tokens_new(program),
                         };
                         let result = serde_json::to_value(&result).unwrap();
 
@@ -302,43 +299,45 @@ fn make_diagnostic(error: &CheckError, name_map: &NameMap, line_index: &LineInde
     }
 }
 
-fn semantic_tokens(content: &str, events: Vec<HighlightEvent>) -> Vec<SemanticToken> {
+pub const HIGHLIGHT_NAMES: [&str; 7] = [
+    "keyword", "type", "function", "operator", "property", "number", "comment",
+];
+
+fn semantic_tokens_new(file_data: &FileData) -> Vec<SemanticToken> {
+    let hls = frontend::highlight::highlight(
+        &file_data.check_result.parse,
+        &file_data.check_result.names,
+    );
     let mut tokens = vec![];
-    let mut highlight: Option<Highlight> = None;
-    let mut prev_token_start = 0;
+    let mut prev_token_line_col: LineCol = LineCol { line: 0, col: 0 };
 
-    for event in events {
-        match event {
-            HighlightEvent::Source { start, end } => {
-                // As long as no highlight type is set we 'concat' all
-                // event sources
-                let token_type = match highlight {
-                    None => continue,
-                    Some(Highlight(token_type)) => token_type as u32,
-                };
-
-                let skipped = &content[prev_token_start..start];
-                let mut delta_line = 0;
-                let mut delta_start = 0;
-                for line in skipped.split('\n') {
-                    delta_line += 1;
-                    delta_start = line.chars().count() as u32;
-                }
-                delta_line -= 1;
-
-                let length = content[start..end].chars().count() as u32;
-                tokens.push(SemanticToken {
-                    delta_line,
-                    delta_start,
-                    length,
-                    token_type,
-                    token_modifiers_bitset: 0,
-                });
-                prev_token_start = start;
-            }
-            HighlightEvent::HighlightStart(h) => highlight = Some(h),
-            HighlightEvent::HighlightEnd => highlight = None,
-        }
+    for hl in hls {
+        let line_col = file_data.line_index.line_col(hl.range.start());
+        let delta_line = line_col.line - prev_token_line_col.line;
+        let delta_start = if delta_line == 0 {
+            line_col.col - prev_token_line_col.col
+        } else {
+            line_col.col
+        };
+        let length = hl.range.len().into();
+        let token_type = match hl.kind {
+            HighlightKind::Keyword => 0,
+            HighlightKind::Type => 1,
+            HighlightKind::Function => 2,
+            HighlightKind::Operator => 3,
+            HighlightKind::Property => 4,
+            HighlightKind::Literal => 5,
+            HighlightKind::Comment => 6,
+            HighlightKind::Local | HighlightKind::Global => continue,
+        };
+        tokens.push(SemanticToken {
+            delta_line,
+            delta_start,
+            length,
+            token_type,
+            token_modifiers_bitset: 0,
+        });
+        prev_token_line_col = line_col;
     }
 
     tokens
