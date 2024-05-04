@@ -8,7 +8,9 @@ export function clearConsoleBuffer(): void {
   consoleBuffer = ""
 }
 
-export function setupWasmImports(): WebAssembly.Imports {
+let cachedImports : WebAssembly.Imports | undefined = undefined;
+
+function setupWasmImports(): WebAssembly.Imports {
   const canvas = document.getElementById("output-canvas")! as HTMLCanvasElement;
   const ctx = canvas.getContext("2d")!;
   ctx.lineWidth = 3.0;
@@ -69,4 +71,11 @@ export function setupWasmImports(): WebAssembly.Imports {
     },
   };
   return imports;
+}
+
+export function getWasmImports(): WebAssembly.Imports {
+  if (cachedImports === undefined) {
+    cachedImports = setupWasmImports();
+  }
+  return cachedImports;
 }

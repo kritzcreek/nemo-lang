@@ -1,7 +1,6 @@
 use backend::codegen::codegen;
 use frontend::highlight;
 use wasm_bindgen::prelude::*;
-use wasmprinter;
 
 #[wasm_bindgen(getter_with_clone)]
 #[derive(Clone)]
