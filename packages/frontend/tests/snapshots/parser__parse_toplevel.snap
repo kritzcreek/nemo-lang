@@ -5,6 +5,7 @@ input_file: packages/frontend/tests/passing/toplevel.nemo
 ---
 global _ = 0
 global _ = 4242
+global _ = 0b01010101
 global _ = true
 global _ = false
 global _ = 0.0
@@ -13,7 +14,7 @@ global _ = 1234.1234
 
 
 // ---
-Root@0..115
+Root@0..137
   TopGlobal@0..12
     GLOBAL_KW@0..6 "global"
     SPACE@6..7 " "
@@ -35,7 +36,7 @@ Root@0..115
     ELit@24..28
       LitInt@24..28
         INT_LIT@24..28 "4242"
-  TopGlobal@28..44
+  TopGlobal@28..50
     LINEFEED@28..29 "\n"
     GLOBAL_KW@29..35 "global"
     SPACE@35..36 " "
@@ -43,50 +44,61 @@ Root@0..115
     SPACE@37..38 " "
     EQUALS@38..39 "="
     SPACE@39..40 " "
-    ELit@40..44
-      LitBool@40..44
-        TRUE_KW@40..44 "true"
-  TopGlobal@44..61
-    LINEFEED@44..45 "\n"
-    GLOBAL_KW@45..51 "global"
-    SPACE@51..52 " "
-    IDENT@52..53 "_"
-    SPACE@53..54 " "
-    EQUALS@54..55 "="
-    SPACE@55..56 " "
-    ELit@56..61
-      LitBool@56..61
-        FALSE_KW@56..61 "false"
-  TopGlobal@61..76
-    LINEFEED@61..62 "\n"
-    GLOBAL_KW@62..68 "global"
-    SPACE@68..69 " "
-    IDENT@69..70 "_"
-    SPACE@70..71 " "
-    EQUALS@71..72 "="
-    SPACE@72..73 " "
-    ELit@73..76
-      LitFloat@73..76
-        FLOAT_LIT@73..76 "0.0"
-  TopGlobal@76..94
-    LINEFEED@76..77 "\n"
-    GLOBAL_KW@77..83 "global"
-    SPACE@83..84 " "
-    IDENT@84..85 "_"
-    SPACE@85..86 " "
-    EQUALS@86..87 "="
-    SPACE@87..88 " "
-    ELit@88..94
-      LitFloat@88..94
-        FLOAT_LIT@88..94 "0.1234"
-  TopGlobal@94..115
-    LINEFEED@94..95 "\n"
-    GLOBAL_KW@95..101 "global"
-    SPACE@101..102 " "
-    IDENT@102..103 "_"
-    SPACE@103..104 " "
-    EQUALS@104..105 "="
+    ELit@40..50
+      LitInt@40..50
+        BINARY_LIT@40..50 "0b01010101"
+  TopGlobal@50..66
+    LINEFEED@50..51 "\n"
+    GLOBAL_KW@51..57 "global"
+    SPACE@57..58 " "
+    IDENT@58..59 "_"
+    SPACE@59..60 " "
+    EQUALS@60..61 "="
+    SPACE@61..62 " "
+    ELit@62..66
+      LitBool@62..66
+        TRUE_KW@62..66 "true"
+  TopGlobal@66..83
+    LINEFEED@66..67 "\n"
+    GLOBAL_KW@67..73 "global"
+    SPACE@73..74 " "
+    IDENT@74..75 "_"
+    SPACE@75..76 " "
+    EQUALS@76..77 "="
+    SPACE@77..78 " "
+    ELit@78..83
+      LitBool@78..83
+        FALSE_KW@78..83 "false"
+  TopGlobal@83..98
+    LINEFEED@83..84 "\n"
+    GLOBAL_KW@84..90 "global"
+    SPACE@90..91 " "
+    IDENT@91..92 "_"
+    SPACE@92..93 " "
+    EQUALS@93..94 "="
+    SPACE@94..95 " "
+    ELit@95..98
+      LitFloat@95..98
+        FLOAT_LIT@95..98 "0.0"
+  TopGlobal@98..116
+    LINEFEED@98..99 "\n"
+    GLOBAL_KW@99..105 "global"
     SPACE@105..106 " "
-    ELit@106..115
-      LitFloat@106..115
-        FLOAT_LIT@106..115 "1234.1234"
+    IDENT@106..107 "_"
+    SPACE@107..108 " "
+    EQUALS@108..109 "="
+    SPACE@109..110 " "
+    ELit@110..116
+      LitFloat@110..116
+        FLOAT_LIT@110..116 "0.1234"
+  TopGlobal@116..137
+    LINEFEED@116..117 "\n"
+    GLOBAL_KW@117..123 "global"
+    SPACE@123..124 " "
+    IDENT@124..125 "_"
+    SPACE@125..126 " "
+    EQUALS@126..127 "="
+    SPACE@127..128 " "
+    ELit@128..137
+      LitFloat@128..137
+        FLOAT_LIT@128..137 "1234.1234"
