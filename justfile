@@ -19,8 +19,16 @@ dev FILE: build-cli
 
 playground: build-wasm-lib
     cd playground && npm i && npm run dev
-    
+
 update-gh-pages: build-wasm-lib
     cd playground && npm i && npm run build
     rm -r gh-pages/*
     cp -r playground/dist/* gh-pages/
+
+@run-wast FILE:
+    wasm-tools parse {{ FILE }}.wast -o build/{{ FILE }}.wasm
+    wasm-tools validate -f gc build/{{ FILE }}.wasm
+    node dev/run-wasm.mjs build/{{ FILE }}.wasm
+
+dev-wast FILE:
+    watchexec --quiet -e wast just run-wast {{ FILE }}

@@ -200,6 +200,9 @@ pub enum SyntaxKind {
     #[regex("0b[0-1]+")]
     BINARY_LIT,
 
+    #[regex("0x[0-9a-fA-f]+")]
+    HEX_LIT,
+
     #[token(".")]
     DOT,
 
@@ -407,6 +410,7 @@ macro_rules ! T {
     [import] => { SyntaxKind::IMPORT_KW };
     [int_lit] => { SyntaxKind::INT_LIT };
     [binary_lit] => { SyntaxKind::BINARY_LIT };
+    [hex_lit] => { SyntaxKind::HEX_LIT };
     [float_lit] => { SyntaxKind::FLOAT_LIT };
     [ident] => { SyntaxKind::IDENT };
     [upper_ident] => { SyntaxKind::UPPER_IDENT };

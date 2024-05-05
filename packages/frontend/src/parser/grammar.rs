@@ -258,7 +258,7 @@ fn lit(p: &mut Parser) -> Progress {
             p.bump_any();
             p.finish_at(c, SyntaxKind::LitBool)
         }
-        T![int_lit] | T![binary_lit] => {
+        T![int_lit] | T![binary_lit] | T![hex_lit] => {
             p.bump_any();
             p.finish_at(c, SyntaxKind::LitInt)
         }

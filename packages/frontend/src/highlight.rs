@@ -47,7 +47,7 @@ pub fn highlight(root: &Root, occurrences: &OccurenceMap) -> Vec<Highlight> {
                     kind: HighlightKind::Keyword,
                 });
             }
-            T![true] | T![false] | T![int_lit] | T![float_lit] => {
+            T![true] | T![false] | T![int_lit] | T![binary_lit] | T![hex_lit] | T![float_lit] => {
                 highlights.push(Highlight {
                     range: node.text_range(),
                     kind: HighlightKind::Literal,
