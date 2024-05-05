@@ -6,6 +6,8 @@ input_file: packages/frontend/tests/passing/toplevel.nemo
 global _ = 0
 global _ = 4242
 global _ = 0b01010101
+global _ = OxDEADBeef
+global _ = Ox1aAbB2cC
 global _ = true
 global _ = false
 global _ = 0.0
@@ -14,7 +16,7 @@ global _ = 1234.1234
 
 
 // ---
-Root@0..137
+Root@0..181
   TopGlobal@0..12
     GLOBAL_KW@0..6 "global"
     SPACE@6..7 " "
@@ -47,7 +49,7 @@ Root@0..137
     ELit@40..50
       LitInt@40..50
         BINARY_LIT@40..50 "0b01010101"
-  TopGlobal@50..66
+  TopGlobal@50..72
     LINEFEED@50..51 "\n"
     GLOBAL_KW@51..57 "global"
     SPACE@57..58 " "
@@ -55,50 +57,68 @@ Root@0..137
     SPACE@59..60 " "
     EQUALS@60..61 "="
     SPACE@61..62 " "
-    ELit@62..66
-      LitBool@62..66
-        TRUE_KW@62..66 "true"
-  TopGlobal@66..83
-    LINEFEED@66..67 "\n"
-    GLOBAL_KW@67..73 "global"
-    SPACE@73..74 " "
-    IDENT@74..75 "_"
-    SPACE@75..76 " "
-    EQUALS@76..77 "="
-    SPACE@77..78 " "
-    ELit@78..83
-      LitBool@78..83
-        FALSE_KW@78..83 "false"
-  TopGlobal@83..98
-    LINEFEED@83..84 "\n"
-    GLOBAL_KW@84..90 "global"
-    SPACE@90..91 " "
-    IDENT@91..92 "_"
-    SPACE@92..93 " "
-    EQUALS@93..94 "="
-    SPACE@94..95 " "
-    ELit@95..98
-      LitFloat@95..98
-        FLOAT_LIT@95..98 "0.0"
-  TopGlobal@98..116
-    LINEFEED@98..99 "\n"
-    GLOBAL_KW@99..105 "global"
+    UPPER_IDENT@62..72 "OxDEADBeef"
+  TopGlobal@72..94
+    LINEFEED@72..73 "\n"
+    GLOBAL_KW@73..79 "global"
+    SPACE@79..80 " "
+    IDENT@80..81 "_"
+    SPACE@81..82 " "
+    EQUALS@82..83 "="
+    SPACE@83..84 " "
+    UPPER_IDENT@84..94 "Ox1aAbB2cC"
+  TopGlobal@94..110
+    LINEFEED@94..95 "\n"
+    GLOBAL_KW@95..101 "global"
+    SPACE@101..102 " "
+    IDENT@102..103 "_"
+    SPACE@103..104 " "
+    EQUALS@104..105 "="
     SPACE@105..106 " "
-    IDENT@106..107 "_"
-    SPACE@107..108 " "
-    EQUALS@108..109 "="
-    SPACE@109..110 " "
-    ELit@110..116
-      LitFloat@110..116
-        FLOAT_LIT@110..116 "0.1234"
-  TopGlobal@116..137
-    LINEFEED@116..117 "\n"
-    GLOBAL_KW@117..123 "global"
-    SPACE@123..124 " "
-    IDENT@124..125 "_"
-    SPACE@125..126 " "
-    EQUALS@126..127 "="
-    SPACE@127..128 " "
-    ELit@128..137
-      LitFloat@128..137
-        FLOAT_LIT@128..137 "1234.1234"
+    ELit@106..110
+      LitBool@106..110
+        TRUE_KW@106..110 "true"
+  TopGlobal@110..127
+    LINEFEED@110..111 "\n"
+    GLOBAL_KW@111..117 "global"
+    SPACE@117..118 " "
+    IDENT@118..119 "_"
+    SPACE@119..120 " "
+    EQUALS@120..121 "="
+    SPACE@121..122 " "
+    ELit@122..127
+      LitBool@122..127
+        FALSE_KW@122..127 "false"
+  TopGlobal@127..142
+    LINEFEED@127..128 "\n"
+    GLOBAL_KW@128..134 "global"
+    SPACE@134..135 " "
+    IDENT@135..136 "_"
+    SPACE@136..137 " "
+    EQUALS@137..138 "="
+    SPACE@138..139 " "
+    ELit@139..142
+      LitFloat@139..142
+        FLOAT_LIT@139..142 "0.0"
+  TopGlobal@142..160
+    LINEFEED@142..143 "\n"
+    GLOBAL_KW@143..149 "global"
+    SPACE@149..150 " "
+    IDENT@150..151 "_"
+    SPACE@151..152 " "
+    EQUALS@152..153 "="
+    SPACE@153..154 " "
+    ELit@154..160
+      LitFloat@154..160
+        FLOAT_LIT@154..160 "0.1234"
+  TopGlobal@160..181
+    LINEFEED@160..161 "\n"
+    GLOBAL_KW@161..167 "global"
+    SPACE@167..168 " "
+    IDENT@168..169 "_"
+    SPACE@169..170 " "
+    EQUALS@170..171 "="
+    SPACE@171..172 " "
+    ELit@172..181
+      LitFloat@172..181
+        FLOAT_LIT@172..181 "1234.1234"

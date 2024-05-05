@@ -336,6 +336,9 @@ impl LitInt {
     pub fn binary_lit_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T![binary_lit])
     }
+    pub fn hex_lit_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![hex_lit])
+    }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ELit {
