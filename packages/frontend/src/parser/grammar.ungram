@@ -47,7 +47,7 @@ TyArgList = '(' Type* ')'
 // Literals
 Literal = LitBool | LitFloat | LitInt
 
-LitInt = 'int_lit'
+LitInt = 'int_lit' | 'binary_lit'
 LitBool = 'true' | 'false'
 LitFloat = 'float_lit'
 

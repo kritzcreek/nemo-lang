@@ -588,11 +588,17 @@ impl Typechecker {
                 }
             }
             Literal::LitInt(l) => {
-                let int_tkn = l.int_lit_token().unwrap();
-                if let Ok(int) = int_tkn.text().parse::<i32>() {
+                let int = if let Some(tkn) = l.int_lit_token() {
+                    i32::from_str_radix(tkn.text(), 10)
+                } else if let Some(tkn) = l.binary_lit_token() {
+                    i32::from_str_radix(tkn.text().strip_prefix("0b").unwrap(), 2)
+                } else {
+                    panic!("No token for int literal");
+                };
+                if let Ok(int) = int {
                     (Ty::I32, Some(ir::LitData::I32(int)))
                 } else {
-                    self.report_error_token(&int_tkn, InvalidLiteral);
+                    self.report_error(l, InvalidLiteral);
                     (Ty::I32, None)
                 }
             }

@@ -197,6 +197,9 @@ pub enum SyntaxKind {
     #[regex("[0-9]+")]
     INT_LIT,
 
+    #[regex("0b[0-1]+")]
+    BINARY_LIT,
+
     #[token(".")]
     DOT,
 
@@ -403,6 +406,7 @@ macro_rules ! T {
     [while] => { SyntaxKind::WHILE_KW };
     [import] => { SyntaxKind::IMPORT_KW };
     [int_lit] => { SyntaxKind::INT_LIT };
+    [binary_lit] => { SyntaxKind::BINARY_LIT };
     [float_lit] => { SyntaxKind::FLOAT_LIT };
     [ident] => { SyntaxKind::IDENT };
     [upper_ident] => { SyntaxKind::UPPER_IDENT };
