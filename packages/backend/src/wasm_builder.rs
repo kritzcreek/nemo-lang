@@ -396,7 +396,8 @@ impl<'a> Builder<'a> {
         match self.arrays.get(&elem_val_ty) {
             Some(ix) => *ix,
             None => {
-                let ix = self.types.len();
+                let ix = self.types.len() as u32;
+                self.arrays.insert(elem_val_ty, ix);
                 self.types.push(SubType {
                     is_final: true,
                     supertype_idx: None,
@@ -405,7 +406,7 @@ impl<'a> Builder<'a> {
                         mutable: true,
                     })),
                 });
-                ix as u32
+                ix
             }
         }
     }
