@@ -1,5 +1,6 @@
 (module
   (type $bytes (array i8))
+  ;; Need to forward declare types that I want to `ref.func` when they're not exported
   (elem declare func $next_char)
 
   (rec 
