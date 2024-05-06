@@ -203,6 +203,9 @@ pub enum SyntaxKind {
     #[regex("0x[0-9a-fA-f]+")]
     HEX_LIT,
 
+    #[regex("\"[^\"]*\"")]
+    STRING_LIT,
+
     #[token(".")]
     DOT,
 
@@ -295,6 +298,7 @@ pub enum SyntaxKind {
     TyFloat,
     TyBool,
     TyUnit,
+    TyString,
     TyArray,
     TyFn,
     TyCons,
@@ -318,6 +322,7 @@ pub enum SyntaxKind {
     LitBool,
     LitInt,
     LitFloat,
+    LitString,
 
     // Expressions
     ELit,
@@ -412,6 +417,7 @@ macro_rules ! T {
     [binary_lit] => { SyntaxKind::BINARY_LIT };
     [hex_lit] => { SyntaxKind::HEX_LIT };
     [float_lit] => { SyntaxKind::FLOAT_LIT };
+    [string_lit] => { SyntaxKind::STRING_LIT };
     [ident] => { SyntaxKind::IDENT };
     [upper_ident] => { SyntaxKind::UPPER_IDENT };
     [at_ident] => { SyntaxKind::AT_IDENT };

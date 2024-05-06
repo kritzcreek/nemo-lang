@@ -438,6 +438,7 @@ impl Typechecker {
             Type::TyInt(_) => Ty::I32,
             Type::TyFloat(_) => Ty::F32,
             Type::TyBool(_) => Ty::Bool,
+            Type::TyString(_) => Ty::String,
             Type::TyUnit(_) => Ty::Unit,
             Type::TyArray(t) => match t.elem().map(|e| self.check_ty(&e)) {
                 Some(elem_ty) => Ty::Array(Box::new(elem_ty)),
@@ -577,6 +578,18 @@ impl Typechecker {
 
     fn infer_literal(&mut self, lit: &Literal) -> (Ty, Option<ir::Lit>) {
         let (ty, it) = match lit {
+            Literal::LitString(s) => {
+                let tkn = s.string_lit_token().unwrap();
+                let without_quotes = tkn
+                    .text()
+                    .strip_prefix('"')
+                    .and_then(|t| t.strip_suffix('"'))
+                    .unwrap();
+                (
+                    Ty::String,
+                    Some(LitData::String(without_quotes.to_string())),
+                )
+            }
             Literal::LitBool(b) => (Ty::Bool, Some(LitData::Bool(b.true_token().is_some()))),
             Literal::LitFloat(l) => {
                 let float_tkn = l.float_lit_token().unwrap();

@@ -3,10 +3,10 @@ use std::iter;
 
 use crate::ir::{FuncTy, Id, Import, Name, NameMap, Struct, Ty, Variant};
 use wasm_encoder::{
-    self, ArrayType, CodeSection, CompositeType, ConstExpr, EntityType, ExportKind, ExportSection,
-    FieldType, FuncType, Function, FunctionSection, GlobalSection, GlobalType, HeapType,
-    ImportSection, IndirectNameMap, Instruction, Module, NameMap as WasmNameMap, NameSection,
-    RefType, StartSection, StorageType, StructType, SubType, TypeSection, ValType,
+    self, ArrayType, CodeSection, CompositeType, ConstExpr, DataSection, EntityType, ExportKind,
+    ExportSection, FieldType, FuncType, Function, FunctionSection, GlobalSection, GlobalType,
+    HeapType, ImportSection, IndirectNameMap, Instruction, Module, NameMap as WasmNameMap,
+    NameSection, RefType, StartSection, StorageType, StructType, SubType, TypeSection, ValType,
 };
 
 type FuncIdx = u32;
@@ -14,6 +14,7 @@ type TypeIdx = u32;
 type FieldIdx = u32;
 type GlobalIdx = u32;
 type LocalIdx = u32;
+type DataIdx = u32;
 
 pub struct FuncData<'a> {
     index: FuncIdx,
@@ -68,9 +69,11 @@ pub struct Builder<'a> {
     funcs: HashMap<Name, FuncData<'a>>,
     globals: HashMap<Name, GlobalData>,
     types: Vec<SubType>,
+    datas: Vec<Vec<u8>>,
     imports: HashMap<Name, ImportData>,
     exports: Vec<Export>,
     start_fn: Option<FuncIdx>,
+    string_ty: Option<TypeIdx>,
     // Stores the type index for all array types we've declared so far.
     // Uses the arrays _ELEM TYPE_ as the key
     arrays: HashMap<ValType, TypeIdx>,
@@ -92,9 +95,11 @@ impl<'a> Builder<'a> {
             structs: HashMap::new(),
             variants: HashMap::new(),
             fields: HashMap::new(),
+            datas: vec![],
             imports: HashMap::new(),
             exports: vec![],
             start_fn: None,
+            string_ty: None,
         }
     }
 
@@ -205,6 +210,10 @@ impl<'a> Builder<'a> {
             all_local_names.append(ix, &local_names);
         }
         // data_section
+        let mut data_section = DataSection::new();
+        for data in self.datas {
+            data_section.passive(data);
+        }
 
         // name section
         let mut name_section = NameSection::new();
@@ -221,6 +230,7 @@ impl<'a> Builder<'a> {
         module.section(&export_section);
         start_section.map(|s| module.section(&s));
         module.section(&code_section);
+        module.section(&data_section);
         module.section(&name_section);
         module.finish()
     }
@@ -350,10 +360,36 @@ impl<'a> Builder<'a> {
             .expect("Tried to get struct type before declaring it")
     }
 
+    pub fn string_ty(&mut self) -> TypeIdx {
+        match self.string_ty {
+            Some(idx) => idx,
+            None => {
+                let idx = self.types.len() as TypeIdx;
+                self.types.push(SubType {
+                    is_final: true,
+                    supertype_idx: None,
+                    composite_type: CompositeType::Array(ArrayType(FieldType {
+                        element_type: StorageType::I8,
+                        mutable: true,
+                    })),
+                });
+                self.string_ty = Some(idx);
+                idx
+            }
+        }
+    }
+
     pub fn val_ty(&mut self, ty: &Ty) -> ValType {
         match ty {
             Ty::F32 => ValType::F32,
             Ty::I32 | Ty::Unit | Ty::Bool => ValType::I32,
+            Ty::String => {
+                let idx = self.string_ty();
+                ValType::Ref(RefType {
+                    nullable: true,
+                    heap_type: HeapType::Concrete(idx),
+                })
+            }
             Ty::Struct(s) => {
                 let idx = self.heap_type(*s);
                 // Could make these non-nullable, but then we'd need separate
@@ -408,6 +444,12 @@ impl<'a> Builder<'a> {
                 ix as u32
             }
         }
+    }
+
+    pub fn data(&mut self, data: Vec<u8>) -> DataIdx {
+        let idx = self.datas.len() as u32;
+        self.datas.push(data);
+        idx
     }
 
     pub fn lookup_field(&self, name: &Name) -> (TypeIdx, FieldIdx) {

@@ -57,6 +57,7 @@ pub enum Ty {
     F32,
     Unit,
     Bool,
+    String,
     Array(Box<Ty>),
     Struct(Name),
     Func(Box<FuncTy>),
@@ -82,6 +83,7 @@ impl fmt::Display for TyDisplay<'_> {
             Ty::I32 => write!(f, "i32"),
             Ty::F32 => write!(f, "f32"),
             Ty::Bool => write!(f, "bool"),
+            Ty::String => write!(f, "string"),
             Ty::Unit => write!(f, "unit"),
             Ty::Array(t) => write!(f, "[{}]", t.display(self.name_map)),
             Ty::Struct(t) => write!(f, "{}", self.name_map.get(t).unwrap().it),
@@ -202,6 +204,7 @@ pub enum LitData {
     I32(i32),
     F32(f32),
     Bool(bool),
+    String(String),
     Unit,
 }
 

@@ -38,3 +38,38 @@ Rope {
 ```
 
 An iterator would need to remember size(ucs) until Leaf currently iterating + byte offset inside that Leaf. That way we can omit storing byte size on all Rope nodes.
+
+```
+(type $rope (sub (struct (field $size i32))))
+(type $leaf (sub $rope
+  (struct
+    (field $size i32)
+    (field $bytes (ref $bytes)))))
+(type $concat (sub $rope
+  (struct
+    (field $size i32)
+    (field $left (ref $rope))
+    (field $right (ref $rope)))))
+
+(func $leaf (param $bytes (ref $bytes)) (result (ref $rope))
+  local.get $bytes
+  call $utf8_len
+  local.get $bytes
+  struct.new $leaf)
+
+(func $concat (param $l (ref $rope)) (param $r (ref $rope)) (result (ref $rope))
+  local.get $l
+  call $size
+  local.get $r
+  call $size
+  i32.add
+
+  ;; TODO Balancing
+  local.get $l
+  local.get $r
+  struct.new $concat)
+
+(func $size (param (ref $rope)) (result i32)
+  local.get 0
+  struct.get $rope $size)
+```

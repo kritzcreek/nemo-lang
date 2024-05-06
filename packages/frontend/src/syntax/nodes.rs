@@ -224,6 +224,11 @@ impl TyBool {
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct TyString {
+    pub(crate) syntax: SyntaxNode,
+}
+impl TyString {}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TyUnit {
     pub(crate) syntax: SyntaxNode,
 }
@@ -338,6 +343,15 @@ impl LitInt {
     }
     pub fn hex_lit_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T![hex_lit])
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct LitString {
+    pub(crate) syntax: SyntaxNode,
+}
+impl LitString {
+    pub fn string_lit_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![string_lit])
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -661,6 +675,7 @@ pub enum Type {
     TyInt(TyInt),
     TyFloat(TyFloat),
     TyBool(TyBool),
+    TyString(TyString),
     TyUnit(TyUnit),
     TyArray(TyArray),
     TyCons(TyCons),
@@ -687,6 +702,7 @@ pub enum Literal {
     LitBool(LitBool),
     LitFloat(LitFloat),
     LitInt(LitInt),
+    LitString(LitString),
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Pattern {
@@ -916,6 +932,21 @@ impl AstNode for TyBool {
         &self.syntax
     }
 }
+impl AstNode for TyString {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == TyString
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
 impl AstNode for TyUnit {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == TyUnit
@@ -1039,6 +1070,21 @@ impl AstNode for LitFloat {
 impl AstNode for LitInt {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == LitInt
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+impl AstNode for LitString {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == LitString
     }
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         if Self::can_cast(syntax.kind()) {
@@ -1449,6 +1495,11 @@ impl From<TyBool> for Type {
         Type::TyBool(node)
     }
 }
+impl From<TyString> for Type {
+    fn from(node: TyString) -> Type {
+        Type::TyString(node)
+    }
+}
 impl From<TyUnit> for Type {
     fn from(node: TyUnit) -> Type {
         Type::TyUnit(node)
@@ -1472,7 +1523,7 @@ impl From<TyFn> for Type {
 impl AstNode for Type {
     fn can_cast(kind: SyntaxKind) -> bool {
         match kind {
-            TyInt | TyFloat | TyBool | TyUnit | TyArray | TyCons | TyFn => true,
+            TyInt | TyFloat | TyBool | TyString | TyUnit | TyArray | TyCons | TyFn => true,
             _ => false,
         }
     }
@@ -1481,6 +1532,7 @@ impl AstNode for Type {
             TyInt => Type::TyInt(TyInt { syntax }),
             TyFloat => Type::TyFloat(TyFloat { syntax }),
             TyBool => Type::TyBool(TyBool { syntax }),
+            TyString => Type::TyString(TyString { syntax }),
             TyUnit => Type::TyUnit(TyUnit { syntax }),
             TyArray => Type::TyArray(TyArray { syntax }),
             TyCons => Type::TyCons(TyCons { syntax }),
@@ -1494,6 +1546,7 @@ impl AstNode for Type {
             Type::TyInt(it) => &it.syntax,
             Type::TyFloat(it) => &it.syntax,
             Type::TyBool(it) => &it.syntax,
+            Type::TyString(it) => &it.syntax,
             Type::TyUnit(it) => &it.syntax,
             Type::TyArray(it) => &it.syntax,
             Type::TyCons(it) => &it.syntax,
@@ -1626,10 +1679,15 @@ impl From<LitInt> for Literal {
         Literal::LitInt(node)
     }
 }
+impl From<LitString> for Literal {
+    fn from(node: LitString) -> Literal {
+        Literal::LitString(node)
+    }
+}
 impl AstNode for Literal {
     fn can_cast(kind: SyntaxKind) -> bool {
         match kind {
-            LitBool | LitFloat | LitInt => true,
+            LitBool | LitFloat | LitInt | LitString => true,
             _ => false,
         }
     }
@@ -1638,6 +1696,7 @@ impl AstNode for Literal {
             LitBool => Literal::LitBool(LitBool { syntax }),
             LitFloat => Literal::LitFloat(LitFloat { syntax }),
             LitInt => Literal::LitInt(LitInt { syntax }),
+            LitString => Literal::LitString(LitString { syntax }),
             _ => return None,
         };
         Some(res)
@@ -1647,6 +1706,7 @@ impl AstNode for Literal {
             Literal::LitBool(it) => &it.syntax,
             Literal::LitFloat(it) => &it.syntax,
             Literal::LitInt(it) => &it.syntax,
+            Literal::LitString(it) => &it.syntax,
         }
     }
 }
@@ -1872,6 +1932,11 @@ impl std::fmt::Display for TyBool {
         std::fmt::Display::fmt(self.syntax(), f)
     }
 }
+impl std::fmt::Display for TyString {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
 impl std::fmt::Display for TyUnit {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
@@ -1913,6 +1978,11 @@ impl std::fmt::Display for LitFloat {
     }
 }
 impl std::fmt::Display for LitInt {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for LitString {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
     }
