@@ -1,5 +1,25 @@
 # String implementation for Nemo
 
+Do flat strings first. (array i8), assuming/ensuring well formed unicode.
+Strings are immutable.
+Iterators/Slice (same thing?):
+
+```
+// If funcref is part of iter, we can use same interface for reverse iterator
+struct StringIter {
+  bytes: Option<[i8]> <- reference to string (optional so we can drop once exhausted)
+  offset: i32         <- byte offset
+  next: fn (self) -> Option<i32>
+}
+
+struct Slice {
+  start: StringIter,
+  length: Option<i32> <- remaining codepoint count. None means until end of string
+}
+```
+
+## Future
+
 Idea: Use a rope data structure to enable high-level immutable string operations (maybe a mutable builder subset?)
 
 Requirements:

@@ -27,7 +27,7 @@ update-gh-pages: build-wasm-lib
 
 @run-wast FILE:
     wasm-tools parse {{ FILE }}.wast -o build/{{ FILE }}.wasm
-    wasm-tools validate -f gc build/{{ FILE }}.wasm
+    wasm-tools validate -f gc,function-references build/{{ FILE }}.wasm
     node dev/run-wasm.mjs build/{{ FILE }}.wasm
 
 dev-wast FILE:

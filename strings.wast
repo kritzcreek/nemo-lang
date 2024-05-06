@@ -1,5 +1,22 @@
 (module
   (type $bytes (array i8))
+  (elem declare func $next_char)
+
+  (rec 
+    (type $next_fn (func (param (ref $iter)) (result i32)))
+
+    (type $iter (sub
+      (struct
+        (field $string (ref $bytes))
+        (field $offset (mut i32))
+        (field $next (ref $next_fn)))))
+
+    (type $slice (sub $iter
+      (struct
+        (field $string (ref $bytes))
+        (field $offset (mut i32))
+        (field $next (ref $next_fn))
+        (field $end (mut i32))))))
 
   (data $violin "\f0\9d\84\9e\f0\9d\84\9e")
   (func $mk_bytes (result (ref $bytes))
@@ -187,18 +204,40 @@
     i32.const 4
   )
 
-  (func $main (result i32 i32)
+  (func $next_char (type $next_fn) (param $iter (ref $iter)) (result i32)
     (local $offset i32)
-    (local $bytes (ref $bytes))
-    i32.const 0
-    call $mk_bytes
-    local.tee $bytes
-    call $codepoint_at_byte
+    (call $codepoint_at_byte
+      (struct.get $iter $offset (local.get $iter))
+      (struct.get $iter $string (local.get $iter)))
+    local.set $offset
+    local.get $iter
     local.get $offset
+    (struct.get $iter $offset (local.get $iter))
     i32.add
-    local.get $bytes
-    call $codepoint_at_byte
-    drop)
+    struct.set $iter $offset)
+
+  (func $mk_iter (param $string (ref $bytes)) (result (ref $iter))
+    local.get $string
+    i32.const 0
+    ref.func $next_char
+    struct.new $iter)
+
+  (func $main (result i32 i32)
+    (local $iter (ref $iter))
+    call $mk_bytes
+    call $mk_iter
+    local.set $iter
+
+    ;; iter.next(iter)
+    local.get $iter
+    local.get $iter
+    struct.get $iter $next
+    call_ref $next_fn
+
+    local.get $iter
+    local.get $iter
+    struct.get $iter $next
+    call_ref $next_fn)
 
   (export "main" (func $main))
 )
