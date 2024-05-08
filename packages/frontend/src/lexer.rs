@@ -251,6 +251,9 @@ pub enum SyntaxKind {
     #[token("}")]
     R_BRACE,
 
+    #[token("|")]
+    PIPE,
+
     #[token("<")]
     L_ANGLE,
 
@@ -285,9 +288,11 @@ pub enum SyntaxKind {
 
     // Composite nodes
     Param,
+    ParamTy,
     BinOp,
     TyArgList,
     EArgList,
+    ETyArgList,
     Qualifier,
 
     // Types
@@ -298,6 +303,7 @@ pub enum SyntaxKind {
     TyArray,
     TyFn,
     TyCons,
+    TyVar,
 
     // Top level
     TopGlobal,
@@ -371,6 +377,7 @@ macro_rules ! T {
     ['}'] => { SyntaxKind::R_BRACE };
     ['['] => { SyntaxKind::L_BRACKET };
     [']'] => { SyntaxKind::R_BRACKET };
+    [|] => { SyntaxKind::PIPE };
     [<] => { SyntaxKind::L_ANGLE };
     [>] => { SyntaxKind::R_ANGLE };
     [<=] => { SyntaxKind::L_ANGLE_EQ };

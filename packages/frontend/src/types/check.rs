@@ -57,6 +57,7 @@ enum TypeDef {
 #[derive(Debug)]
 struct Ctx {
     values: Vec<HashMap<String, (Ty, Name)>>,
+    type_vars: HashMap<String, Name>,
     types_names: HashMap<String, Name>,
     struct_defs: HashMap<Name, Rc<StructDef>>,
     variant_defs: HashMap<Name, Rc<VariantDef>>,
@@ -66,6 +67,7 @@ impl Ctx {
     fn new() -> Ctx {
         Ctx {
             values: vec![],
+            type_vars: HashMap::new(),
             types_names: HashMap::new(),
             struct_defs: HashMap::new(),
             variant_defs: HashMap::new(),
@@ -78,6 +80,18 @@ impl Ctx {
 
     fn lookup_var(&self, v: &str) -> Option<&(Ty, Name)> {
         self.values.iter().rev().find_map(|scope| scope.get(v))
+    }
+
+    fn add_type_var(&mut self, v: String, name: Name) {
+        self.type_vars.insert(v, name);
+    }
+
+    fn lookup_type_var(&self, v: &str) -> Option<Name> {
+        self.type_vars.get(v).copied()
+    }
+
+    fn clear_type_vars(&mut self) {
+        self.type_vars.clear()
     }
 
     fn declare_type(&mut self, v: &str, name: Name) {
@@ -471,6 +485,15 @@ impl Typechecker {
                     };
                     self.record_ref(&ty_name, name);
                     Ty::Struct(name)
+                }
+            }
+            Type::TyVar(v) => {
+                let tkn = v.ident_token().unwrap();
+                if let Some(name) = self.context.lookup_type_var(tkn.text()) {
+                    Ty::Var(name)
+                } else {
+                    // TODO report error
+                    return Ty::Any;
                 }
             }
             Type::TyFn(t) => {

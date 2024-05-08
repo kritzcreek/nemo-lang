@@ -377,6 +377,9 @@ impl<'a> Builder<'a> {
                     heap_type: HeapType::Concrete(ty_idx),
                 })
             }
+            Ty::Var(_) => {
+                unreachable!("VAR shouldn't make it into codegen")
+            }
             Ty::Any => {
                 unreachable!("ANY shouldn't make it into codegen")
             }

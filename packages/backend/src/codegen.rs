@@ -60,6 +60,9 @@ impl<'a> Codegen<'a> {
                 let ty_idx = self.builder.func_type(ty);
                 ConstExpr::ref_null(HeapType::Concrete(ty_idx))
             }
+            Ty::Var(_) => {
+                unreachable!("Globals can't be var-typed")
+            }
             Ty::Any => {
                 unreachable!("ANY shouldn't make it into codegen")
             }

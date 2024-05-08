@@ -129,6 +129,7 @@ fn top_fn(p: &mut Parser) {
     if !p.eat(SyntaxKind::IDENT) {
         p.error("expected a function name")
     }
+    typ_param_list(p);
     param_list(p);
     if p.eat(T![->]) && !typ(p).made_progress() {
         p.error("expected a return type")
@@ -137,6 +138,23 @@ fn top_fn(p: &mut Parser) {
         p.error("expected a function body")
     }
     p.finish_at(c, SyntaxKind::TopFn)
+}
+
+fn typ_param_list(p: &mut Parser) -> Progress {
+    if !p.eat(SyntaxKind::PIPE) {
+        return Progress::None;
+    }
+    while !p.at(SyntaxKind::EOF) && !p.at(SyntaxKind::PIPE) {
+        let c = p.checkpoint();
+        p.bump(SyntaxKind::IDENT);
+        p.eat(SyntaxKind::COMMA);
+        p.finish_at(c, SyntaxKind::ParamTy)
+    }
+    if !p.eat(SyntaxKind::PIPE) {
+        // TODO recover
+        p.error("expected a closing pipe");
+    }
+    Progress::Made
 }
 
 fn param_list(p: &mut Parser) {
@@ -199,6 +217,10 @@ fn typ(p: &mut Parser) -> Progress {
         T![unit] => {
             p.bump(T![unit]);
             p.finish_at(c, SyntaxKind::TyUnit)
+        }
+        T![ident] => {
+            p.bump(T![ident]);
+            p.finish_at(c, SyntaxKind::TyVar)
         }
         T![upper_ident] => {
             qualifier(p);
@@ -411,6 +433,22 @@ fn pattern(p: &mut Parser) -> Progress {
     }
 }
 
+fn call_ty_arg_list(p: &mut Parser) {
+    let c = p.checkpoint();
+    p.bump(T![|]);
+    while !p.at(SyntaxKind::EOF) && !p.at(T![|]) {
+        if !typ(p).made_progress() {
+            break;
+        }
+
+        if !p.at(T![|]) && !p.expect(T![,]) {
+            break;
+        }
+    }
+    p.expect(T![|]);
+    p.finish_at(c, SyntaxKind::ETyArgList);
+}
+
 fn call_arg_list(p: &mut Parser) {
     let c = p.checkpoint();
     p.bump(T!['(']);
@@ -430,6 +468,11 @@ fn call_arg_list(p: &mut Parser) {
 fn postfix_expr(p: &mut Parser, c: Checkpoint) {
     loop {
         match p.current() {
+            T![|] => {
+                call_ty_arg_list(p);
+                call_arg_list(p);
+                p.finish_at(c, SyntaxKind::ECall)
+            }
             T!['('] => {
                 call_arg_list(p);
                 p.finish_at(c, SyntaxKind::ECall)
