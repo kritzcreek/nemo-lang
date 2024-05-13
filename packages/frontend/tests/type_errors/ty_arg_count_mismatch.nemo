@@ -1,7 +1,7 @@
-fn func|a, b|(x : a) -> a {
+fn func[a, b](x : a) -> a {
   x
 }
 
 fn main() -> i32 {
-  func|i32|(3);
+  func#[i32](3);
 }

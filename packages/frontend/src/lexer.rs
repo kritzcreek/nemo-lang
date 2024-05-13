@@ -254,6 +254,9 @@ pub enum SyntaxKind {
     #[token("|")]
     PIPE,
 
+    #[token("#")]
+    HASH,
+
     #[token("<")]
     L_ANGLE,
 
@@ -378,6 +381,7 @@ macro_rules ! T {
     ['['] => { SyntaxKind::L_BRACKET };
     [']'] => { SyntaxKind::R_BRACKET };
     [|] => { SyntaxKind::PIPE };
+    [#] => { SyntaxKind::HASH };
     [<] => { SyntaxKind::L_ANGLE };
     [>] => { SyntaxKind::R_ANGLE };
     [<=] => { SyntaxKind::L_ANGLE_EQ };

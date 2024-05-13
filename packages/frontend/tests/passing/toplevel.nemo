@@ -159,6 +159,6 @@ global _ = match 10 {
 
 // ---
 
-fn poly|a, b|(a : a, other : b) {
-  poly|i32, bool|(1, true)
+fn poly[a, b](a : a, other : b) {
+  poly#[i32, bool](1, true)
 }

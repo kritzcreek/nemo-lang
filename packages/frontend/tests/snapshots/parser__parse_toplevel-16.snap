@@ -3,25 +3,25 @@ source: packages/frontend/tests/parser.rs
 expression: output
 input_file: packages/frontend/tests/passing/toplevel.nemo
 ---
-fn poly|a, b|(a : a, other : b) {
-  poly|i32, bool|(1, true)
+fn poly[a, b](a : a, other : b) {
+  poly#[i32, bool](1, true)
 }
 
 // ---
-Root@0..63
-  TopFn@0..63
+Root@0..64
+  TopFn@0..64
     LINEFEED@0..1 "\n"
     FN_KW@1..3 "fn"
     SPACE@3..4 " "
     IDENT@4..8 "poly"
-    PIPE@8..9 "|"
+    L_BRACKET@8..9 "["
     ParamTy@9..12
       IDENT@9..10 "a"
       COMMA@10..11 ","
       SPACE@11..12 " "
     ParamTy@12..13
       IDENT@12..13 "b"
-    PIPE@13..14 "|"
+    R_BRACKET@13..14 "]"
     L_PAREN@14..15 "("
     Param@15..22
       IDENT@15..16 "a"
@@ -41,33 +41,34 @@ Root@0..63
         IDENT@30..31 "b"
     R_PAREN@31..32 ")"
     SPACE@32..33 " "
-    EBlock@33..63
+    EBlock@33..64
       L_BRACE@33..34 "{"
-      DExpr@34..61
-        ECall@34..61
+      DExpr@34..62
+        ECall@34..62
           EVar@34..41
             LINEFEED@34..35 "\n"
             SPACE@35..37 "  "
             IDENT@37..41 "poly"
-          ETyArgList@41..52
-            PIPE@41..42 "|"
-            TyInt@42..45
-              I32_BUILTIN@42..45 "i32"
-            COMMA@45..46 ","
-            SPACE@46..47 " "
-            TyBool@47..51
-              BOOL_BUILTIN@47..51 "bool"
-            PIPE@51..52 "|"
-          EArgList@52..61
-            L_PAREN@52..53 "("
-            ELit@53..54
-              LitInt@53..54
-                INT_LIT@53..54 "1"
-            COMMA@54..55 ","
-            SPACE@55..56 " "
-            ELit@56..60
-              LitBool@56..60
-                TRUE_KW@56..60 "true"
-            R_PAREN@60..61 ")"
-      LINEFEED@61..62 "\n"
-      R_BRACE@62..63 "}"
+          ETyArgList@41..53
+            HASH@41..42 "#"
+            L_BRACKET@42..43 "["
+            TyInt@43..46
+              I32_BUILTIN@43..46 "i32"
+            COMMA@46..47 ","
+            SPACE@47..48 " "
+            TyBool@48..52
+              BOOL_BUILTIN@48..52 "bool"
+            R_BRACKET@52..53 "]"
+          EArgList@53..62
+            L_PAREN@53..54 "("
+            ELit@54..55
+              LitInt@54..55
+                INT_LIT@54..55 "1"
+            COMMA@55..56 ","
+            SPACE@56..57 " "
+            ELit@57..61
+              LitBool@57..61
+                TRUE_KW@57..61 "true"
+            R_PAREN@61..62 ")"
+      LINEFEED@62..63 "\n"
+      R_BRACE@63..64 "}"

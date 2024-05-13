@@ -141,21 +141,20 @@ fn top_fn(p: &mut Parser) {
 }
 
 fn typ_param_list(p: &mut Parser) -> Progress {
-    if !p.eat(SyntaxKind::PIPE) {
+    if !p.eat(T!['[']) {
         return Progress::None;
     }
-    while !p.at(SyntaxKind::EOF) && !p.at(SyntaxKind::PIPE) {
+    while !p.at(SyntaxKind::EOF) && !p.at(T![']']) {
         let c = p.checkpoint();
         if !p.eat(SyntaxKind::IDENT) {
             break;
         }
-        p.eat(SyntaxKind::COMMA);
+        if !p.at(T![']']) && !p.expect(T![,]) {
+            break;
+        }
         p.finish_at(c, SyntaxKind::ParamTy)
     }
-    if !p.eat(SyntaxKind::PIPE) {
-        // TODO recover
-        p.error("expected a closing pipe");
-    }
+    p.expect(T![']']);
     Progress::Made
 }
 
@@ -437,17 +436,18 @@ fn pattern(p: &mut Parser) -> Progress {
 
 fn call_ty_arg_list(p: &mut Parser) {
     let c = p.checkpoint();
-    p.bump(T![|]);
-    while !p.at(SyntaxKind::EOF) && !p.at(T![|]) {
+    p.bump(T![#]);
+    p.expect(T!['[']);
+    while !p.at(SyntaxKind::EOF) && !p.at(T![']']) {
         if !typ(p).made_progress() {
             break;
         }
 
-        if !p.at(T![|]) && !p.expect(T![,]) {
+        if !p.at(T![']']) && !p.expect(T![,]) {
             break;
         }
     }
-    p.expect(T![|]);
+    p.expect(T![']']);
     p.finish_at(c, SyntaxKind::ETyArgList);
 }
 
@@ -470,7 +470,7 @@ fn call_arg_list(p: &mut Parser) {
 fn postfix_expr(p: &mut Parser, c: Checkpoint) {
     loop {
         match p.current() {
-            T![|] => {
+            T![#] => {
                 call_ty_arg_list(p);
                 call_arg_list(p);
                 p.finish_at(c, SyntaxKind::ECall)

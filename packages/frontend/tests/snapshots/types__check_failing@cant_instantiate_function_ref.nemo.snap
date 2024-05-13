@@ -14,7 +14,7 @@ input_file: packages/frontend/tests/type_errors/cant_instantiate_function_ref.ne
 [21] Error: Can't instantiate function reference. Only top-level functions may be polymorphic at this time.
    ╭─[source:1:13]
    │
- 7 │   my_id|i32|(10)
+ 7 │   my_id#[i32](10)
    │   ──┬──  
    │     ╰──── Can't instantiate function reference. Only top-level functions may be polymorphic at this time.
 ───╯
