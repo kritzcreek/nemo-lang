@@ -96,7 +96,7 @@ pub fn highlight(root: &Root, occurrences: &OccurenceMap) -> Vec<Highlight> {
                     kind: HighlightKind::Function,
                 });
             }
-            Name::Type(_) => {
+            Name::Type(_) | Name::TypeVar(_) => {
                 highlights.push(Highlight {
                     range: ptr.0,
                     kind: HighlightKind::Type,

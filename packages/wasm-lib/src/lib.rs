@@ -39,14 +39,14 @@ pub struct CompileResult {
 
 #[wasm_bindgen]
 pub fn compile(input: &str) -> CompileResult {
-    let check_result = frontend::run_frontend(input);
+    let mut check_result = frontend::run_frontend(input);
     let highlights = highlight::highlight(&check_result.parse, &check_result.names)
         .into_iter()
         .map(Highlight::new)
         .collect();
     let (name_map, result) = match check_result.ir {
         Some(ir) if check_result.errors.is_empty() => {
-            let wasm = codegen(ir, &check_result.name_map);
+            let wasm = codegen(ir, &mut check_result.name_map);
             (check_result.name_map, Ok(wasm))
         }
         _ => (check_result.name_map, Err(check_result.errors)),

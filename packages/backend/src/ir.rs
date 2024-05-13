@@ -25,6 +25,7 @@ pub enum Name {
     Local(u32),
     Func(u32),
     Type(u32),
+    TypeVar(u32),
     Field(u32),
     Gen(u32),
 }
@@ -126,6 +127,41 @@ impl fmt::Display for FuncTyDisplay<'_> {
                 .join(", "),
             self.func_ty.result.display(self.name_map)
         )
+    }
+}
+
+pub struct Substitution(HashMap<Name, Ty>);
+impl Substitution {
+    pub fn new(names: &[Name], tys: &[Ty]) -> Self {
+        let mut mappings = HashMap::new();
+        for (name, ty) in names.iter().zip(tys.iter()) {
+            mappings.insert(*name, ty.clone());
+        }
+        Substitution(mappings)
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    pub fn lookup(&self, var: Name) -> Option<&Ty> {
+        self.0.get(&var)
+    }
+
+    pub fn apply(&self, ty: Ty) -> Ty {
+        match ty {
+            Ty::Var(n) => self.0.get(&n).cloned().unwrap_or(ty),
+            Ty::I32 | Ty::F32 | Ty::Unit | Ty::Bool | Ty::Struct(_) | Ty::Any => ty,
+            Ty::Array(t) => Ty::Array(Box::new(self.apply(*t))),
+            Ty::Func(f) => Ty::Func(Box::new(self.apply_func(*f))),
+        }
+    }
+
+    pub fn apply_func(&self, ty: FuncTy) -> FuncTy {
+        FuncTy {
+            arguments: ty.arguments.into_iter().map(|t| self.apply(t)).collect(),
+            result: self.apply(ty.result),
+        }
     }
 }
 
@@ -264,6 +300,7 @@ impl Spanned for Expr {
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Callee {
+    Func { name: Name, type_args: Vec<Ty> },
     FuncRef(Expr),
     Builtin(&'static str),
 }
@@ -394,6 +431,7 @@ pub struct Global {
 #[derive(Debug, PartialEq, Clone)]
 pub struct Func {
     pub name: Name,
+    pub ty_params: Vec<Name>,
     pub params: Vec<(Name, Ty)>,
     pub return_ty: Ty,
     pub body: Expr,
@@ -405,6 +443,13 @@ impl Func {
             arguments: self.params.iter().map(|(_, t)| t.clone()).collect(),
             result: self.return_ty.clone(),
         }
+    }
+    pub fn is_monomorphic(&self) -> bool {
+        self.ty_params.is_empty()
+    }
+
+    pub fn is_polymorphic(&self) -> bool {
+        !self.is_monomorphic()
     }
 }
 

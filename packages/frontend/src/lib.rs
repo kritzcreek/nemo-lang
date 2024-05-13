@@ -122,10 +122,10 @@ pub fn check_program(source: &str) -> (NameMap, Vec<CheckError>) {
 }
 
 pub fn compile_program(source: &str) -> (NameMap, Result<Vec<u8>, Vec<CheckError>>) {
-    let check_result = run_frontend(source);
+    let mut check_result = run_frontend(source);
     match check_result.ir {
         Some(ir) if check_result.errors.is_empty() => {
-            let wasm = codegen(ir, &check_result.name_map);
+            let wasm = codegen(ir, &mut check_result.name_map);
             (check_result.name_map, Ok(wasm))
         }
         _ => (check_result.name_map, Err(check_result.errors)),

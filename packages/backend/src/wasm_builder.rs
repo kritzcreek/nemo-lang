@@ -1,7 +1,8 @@
-use std::collections::HashMap;
 use std::iter;
+use std::{collections::HashMap, mem};
 
-use crate::ir::{FuncTy, Id, Import, Name, NameMap, Struct, Ty, Variant};
+use crate::ir::{FuncTy, Id, Import, Name, NameMap, Struct, Substitution, Ty, Variant};
+use text_size::TextRange;
 use wasm_encoder::{
     self, ArrayType, CodeSection, CompositeType, ConstExpr, EntityType, ExportKind, ExportSection,
     FieldType, FuncType, Function, FunctionSection, GlobalSection, GlobalType, HeapType,
@@ -64,13 +65,14 @@ impl VariantInfo {
 }
 
 pub struct Builder<'a> {
-    name_map: &'a NameMap,
+    name_map: &'a mut NameMap,
     funcs: HashMap<Name, FuncData<'a>>,
     globals: HashMap<Name, GlobalData>,
     types: Vec<SubType>,
     imports: HashMap<Name, ImportData>,
     exports: Vec<Export>,
     start_fn: Option<FuncIdx>,
+    substitution: Substitution,
     // Stores the type index for all array types we've declared so far.
     // Uses the arrays _ELEM TYPE_ as the key
     arrays: HashMap<ValType, TypeIdx>,
@@ -81,7 +83,7 @@ pub struct Builder<'a> {
 }
 
 impl<'a> Builder<'a> {
-    pub fn new(name_map: &'a HashMap<Name, Id>) -> Builder<'a> {
+    pub fn new(name_map: &'a mut HashMap<Name, Id>) -> Builder<'a> {
         Builder {
             name_map,
             funcs: HashMap::new(),
@@ -95,11 +97,12 @@ impl<'a> Builder<'a> {
             imports: HashMap::new(),
             exports: vec![],
             start_fn: None,
+            substitution: Substitution::new(&[], &[]),
         }
     }
 
     fn _print_funcs(&self) {
-        for (name, id) in self.name_map {
+        for (name, id) in self.name_map.iter() {
             if let Name::Func(n) = name {
                 eprintln!("$fn:{n} = {id:?}")
             }
@@ -314,6 +317,7 @@ impl<'a> Builder<'a> {
             Some(idx) => *idx,
             None => {
                 let idx = self.types.len() as TypeIdx;
+                self.func_tys.insert(func_type.clone(), idx);
                 self.types.push(SubType {
                     is_final: true,
                     supertype_idx: None,
@@ -377,8 +381,11 @@ impl<'a> Builder<'a> {
                     heap_type: HeapType::Concrete(ty_idx),
                 })
             }
-            Ty::Var(_) => {
-                unreachable!("VAR shouldn't make it into codegen")
+            Ty::Var(v) => {
+                let Some(ty) = self.substitution.lookup(*v) else {
+                    panic!("Tried to compile a VAR with no matching substitution")
+                };
+                self.val_ty(&ty.clone())
             }
             Ty::Any => {
                 unreachable!("ANY shouldn't make it into codegen")
@@ -523,6 +530,22 @@ impl<'a> Builder<'a> {
                 self.resolve_name(*name)
             ),
         }
+    }
+
+    pub(crate) fn substitution(&mut self) -> &Substitution {
+        &self.substitution
+    }
+
+    pub(crate) fn set_substitution(&mut self, subst: Substitution) -> Substitution {
+        mem::replace(&mut self.substitution, subst)
+    }
+
+    pub(crate) fn restore_substitution(&mut self, subst: Substitution) {
+        self.substitution = subst
+    }
+
+    pub(crate) fn declare_gen_name(&mut self, name: Name, it: String, at: TextRange) {
+        self.name_map.insert(name, Id { it, at });
     }
 }
 

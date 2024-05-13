@@ -4,21 +4,46 @@ use wasm_encoder::{BlockType, ConstExpr, HeapType, Instruction, RefType, ValType
 
 use crate::{
     ir::{
-        Callee, Declaration, DeclarationData, Expr, ExprData, Id, IntrinsicData, Lit, LitData,
-        Name, Op, OpData, Pattern, PatternData, Program, SetTarget, SetTargetData, Ty, TypeDef,
+        Callee, Declaration, DeclarationData, Expr, ExprData, Func, Id, IntrinsicData, Lit,
+        LitData, Name, Op, OpData, Pattern, PatternData, Program, SetTarget, SetTargetData,
+        Substitution, Ty, TypeDef,
     },
     wasm_builder::{BodyBuilder, Builder},
 };
 
-pub fn codegen(program: Program, name_map: &HashMap<Name, Id>) -> Vec<u8> {
+pub fn codegen(program: Program, name_map: &mut HashMap<Name, Id>) -> Vec<u8> {
+    // TODO clean this up
+    let func_gen = name_map
+        .iter()
+        .filter_map(|(n, _)| {
+            if let Name::Func(i) = n {
+                Some(*i)
+            } else {
+                None
+            }
+        })
+        .max()
+        .unwrap_or_default();
     let builder = Builder::new(name_map);
-    let mut codegen = Codegen { builder };
+    let mut codegen = Codegen {
+        builder,
+        func_gen,
+        poly_funcs: HashMap::new(),
+    };
     codegen.compile_program(program);
     codegen.finish()
 }
 
+struct PolyFunc {
+    func: Func,
+    // TODO: Should use ValType, but for now Ty gives us more predictable output
+    instances: HashMap<Vec<Ty>, Name>,
+}
+
 struct Codegen<'a> {
     builder: Builder<'a>,
+    func_gen: u32,
+    poly_funcs: HashMap<Name, PolyFunc>,
 }
 
 impl<'a> Codegen<'a> {
@@ -124,21 +149,26 @@ impl<'a> Codegen<'a> {
                 }
 
                 match func {
+                    Callee::Func { name, type_args } => {
+                        let name = if !type_args.is_empty() {
+                            let type_args: Vec<Ty> = type_args
+                                .into_iter()
+                                .map(|t| self.builder.substitution().apply(t))
+                                .collect();
+                            self.instantiate_polyfunc(name, &type_args)
+                        } else {
+                            name
+                        };
+                        let func_idx = self.builder.lookup_func(&name);
+                        instrs.push(Instruction::Call(func_idx));
+                    }
                     Callee::FuncRef(callee) => {
                         let Ty::Func(ty) = &callee.ty else {
                             unreachable!("Non-function type for callee")
                         };
-                        match *callee.it {
-                            ExprData::Var(name @ Name::Func(_)) => {
-                                let func_idx = self.builder.lookup_func(&name);
-                                instrs.push(Instruction::Call(func_idx));
-                            }
-                            _ => {
-                                let ty_idx = self.builder.func_type(ty);
-                                instrs.extend(self.compile_expr(body, callee));
-                                instrs.push(Instruction::CallRef(ty_idx))
-                            }
-                        }
+                        let ty_idx = self.builder.func_type(ty);
+                        instrs.extend(self.compile_expr(body, callee));
+                        instrs.push(Instruction::CallRef(ty_idx))
                     }
                     Callee::Builtin(builtin) => instrs.push(builtin_instruction(builtin)),
                 }
@@ -410,13 +440,57 @@ impl<'a> Codegen<'a> {
                     Name::Local(_) => {
                         instrs.push(Instruction::LocalSet(body.lookup_local(&name).unwrap()));
                     }
-                    Name::Func(_) | Name::Type(_) | Name::Field(_) | Name::Gen(_) => {
+                    Name::Func(_)
+                    | Name::Type(_)
+                    | Name::TypeVar(_)
+                    | Name::Field(_)
+                    | Name::Gen(_) => {
                         unreachable!("can't set a non local/global variable")
                     }
                 };
                 instrs
             }
         }
+    }
+
+    fn instantiate_polyfunc(&mut self, name: Name, ty_params: &[Ty]) -> Name {
+        let new_name = {
+            let poly_func = self.poly_funcs.get_mut(&name).expect("Unknown polyfunc");
+            if let Some(existing) = poly_func.instances.get(ty_params) {
+                return *existing;
+            }
+            self.func_gen = self.func_gen + 1;
+            let new_name = Name::Func(self.func_gen);
+            poly_func.instances.insert(ty_params.to_vec(), new_name);
+
+            let definition = self.builder.resolve_name(name);
+            // TODO
+            let it = format!("{}|{ty_params:?}|", definition.it);
+            self.builder.declare_gen_name(new_name, it, definition.at);
+
+            new_name
+        };
+
+        let poly_func = self.poly_funcs.get(&name).expect("Unknown polyfunc");
+        let subst = Substitution::new(&poly_func.func.ty_params, ty_params);
+        let previous_subst = self.builder.set_substitution(subst);
+        self.builder
+            .declare_func(new_name, poly_func.func.func_ty());
+
+        let params = poly_func
+            .func
+            .clone()
+            .params
+            .into_iter()
+            .map(|(name, ty)| (name, self.builder.val_ty(&ty)))
+            .collect();
+        let mut body_builder = BodyBuilder::new(params);
+        let body = self.compile_expr(&mut body_builder, poly_func.func.clone().body);
+        let locals = body_builder.get_locals();
+        self.builder.fill_func(new_name, locals, body);
+        self.builder.restore_substitution(previous_subst);
+
+        new_name
     }
 
     pub fn compile_program(&mut self, program: Program) {
@@ -438,7 +512,18 @@ impl<'a> Codegen<'a> {
         }
 
         for func in program.funcs.iter() {
-            self.builder.declare_func(func.name, func.func_ty());
+            if func.is_monomorphic() {
+                dbg!(func);
+                self.builder.declare_func(func.name, func.func_ty());
+            } else {
+                self.poly_funcs.insert(
+                    func.name,
+                    PolyFunc {
+                        func: func.clone(),
+                        instances: HashMap::new(),
+                    },
+                );
+            }
         }
 
         {
@@ -468,6 +553,9 @@ impl<'a> Codegen<'a> {
         }
 
         for func in program.funcs {
+            if func.is_polymorphic() {
+                continue;
+            }
             let params = func
                 .params
                 .into_iter()

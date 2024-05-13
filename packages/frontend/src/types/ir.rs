@@ -84,6 +84,7 @@ impl PatVariantBuilder {
 #[derive(Debug)]
 pub(crate) struct FuncBuilder {
     name: Option<Name>,
+    ty_params: Vec<Name>,
     params: Option<Vec<(Name, Ty)>>,
     return_ty: Option<Ty>,
     body: Option<Expr>,
@@ -93,6 +94,7 @@ impl FuncBuilder {
     pub(crate) fn new() -> Self {
         FuncBuilder {
             name: None,
+            ty_params: vec![],
             params: Some(vec![]),
             return_ty: None,
             body: None,
@@ -106,6 +108,11 @@ impl FuncBuilder {
 
     pub(crate) fn return_ty(&mut self, return_ty: Option<Ty>) -> &mut Self {
         self.return_ty = return_ty;
+        self
+    }
+
+    pub(crate) fn ty_param(&mut self, name: Name) -> &mut Self {
+        self.ty_params.push(name);
         self
     }
 
@@ -128,6 +135,7 @@ impl FuncBuilder {
     pub(crate) fn build(self) -> Option<ir::Func> {
         Some(Func {
             name: self.name?,
+            ty_params: self.ty_params,
             params: self.params?,
             return_ty: self.return_ty?,
             body: self.body?,

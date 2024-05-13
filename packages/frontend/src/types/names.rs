@@ -11,6 +11,7 @@ pub struct NameSupply {
     global: u32,
     func: u32,
     typ: u32,
+    typ_var: u32,
     field: u32,
     pub name_map: HashMap<Name, Id>,
 }
@@ -52,6 +53,13 @@ impl NameSupply {
         self.typ += 1;
         let name = Name::Type(self.typ);
         self.name_map.insert(name, token_into_id(typ));
+        name
+    }
+
+    pub fn type_var(&mut self, typ_var: &SyntaxToken) -> Name {
+        self.typ_var += 1;
+        let name = Name::TypeVar(self.typ_var);
+        self.name_map.insert(name, token_into_id(typ_var));
         name
     }
 
