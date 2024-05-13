@@ -1,4 +1,5 @@
 use backend::codegen::codegen;
+use console_error_panic_hook;
 use frontend::highlight;
 use wasm_bindgen::prelude::*;
 
@@ -39,6 +40,7 @@ pub struct CompileResult {
 
 #[wasm_bindgen]
 pub fn compile(input: &str) -> CompileResult {
+    console_error_panic_hook::set_once();
     let mut check_result = frontend::run_frontend(input);
     let highlights = highlight::highlight(&check_result.parse, &check_result.names)
         .into_iter()

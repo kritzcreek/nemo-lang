@@ -1,0 +1,8 @@
+fn id|a|(x : a) -> a {
+  x
+}
+
+fn main() -> i32 {
+  let my_id = id;
+  my_id|i32|(10)
+}

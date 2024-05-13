@@ -706,14 +706,18 @@ impl Typechecker {
             let var_tkn = v.ident_token().unwrap();
             if let Some(_) = self.context.lookup_var(var_tkn.text()) {
                 if ty_args.is_some() {
-                    // TODO report error
-                    eprintln!("No instantiate on function refs")
+                    self.report_error_token(&var_tkn, CantInstantiateFunctionRef);
+                    return (Ty::Any, None);
                 }
                 let (ty, ir) = self.infer_expr(expr);
                 (ty, ir.map(ir::Callee::FuncRef))
             } else if let Some(def) = self.context.lookup_func(var_tkn.text()) {
                 let ty = if let Some(ty_args) = ty_args {
                     let params: Vec<Name> = def.ty_params.iter().map(|(_, name)| *name).collect();
+                    if params.len() != ty_args.len() {
+                        self.report_error(expr, TyArgCountMismatch(params.len(), ty_args.len()));
+                        return (Ty::Any, None);
+                    }
                     let subst = Substitution::new(&params, ty_args);
                     subst.apply_func(def.ty.clone())
                 } else {
@@ -733,9 +737,8 @@ impl Typechecker {
                     Some(ir::Callee::Builtin(builtin.name)),
                 )
             } else {
-                // TODO report error
-                let (ty, ir) = self.infer_expr(expr);
-                (ty, ir.map(ir::Callee::FuncRef))
+                self.report_error(expr, UnknownVar(var_tkn.text().to_string()));
+                return (Ty::Any, None);
             }
         } else {
             let (ty, ir) = self.infer_expr(expr);
@@ -855,7 +858,6 @@ impl Typechecker {
                 }
             }
             Expr::ECall(call_expr) => {
-                // TODO instantiate type params
                 let func_expr = call_expr.expr()?;
                 let ty_arg_list: Option<Vec<Ty>> = call_expr
                     .e_ty_arg_list()

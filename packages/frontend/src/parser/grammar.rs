@@ -146,7 +146,9 @@ fn typ_param_list(p: &mut Parser) -> Progress {
     }
     while !p.at(SyntaxKind::EOF) && !p.at(SyntaxKind::PIPE) {
         let c = p.checkpoint();
-        p.bump(SyntaxKind::IDENT);
+        if !p.eat(SyntaxKind::IDENT) {
+            break;
+        }
         p.eat(SyntaxKind::COMMA);
         p.finish_at(c, SyntaxKind::ParamTy)
     }

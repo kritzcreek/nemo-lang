@@ -1,0 +1,20 @@
+---
+source: packages/frontend/tests/types.rs
+expression: err_buf
+input_file: packages/frontend/tests/type_errors/cant_instantiate_function_ref.nemo
+---
+[05] Error: Unknown variable id
+   ╭─[source:1:13]
+   │
+ 6 │   let my_id = id;
+   │               ─┬  
+   │                ╰── Unknown variable id
+───╯
+
+[21] Error: Can't instantiate function reference. Only top-level functions may be polymorphic at this time.
+   ╭─[source:1:13]
+   │
+ 7 │   my_id|i32|(10)
+   │   ──┬──  
+   │     ╰──── Can't instantiate function reference. Only top-level functions may be polymorphic at this time.
+───╯
