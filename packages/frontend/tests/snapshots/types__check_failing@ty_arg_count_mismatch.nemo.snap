@@ -1,0 +1,12 @@
+---
+source: packages/frontend/tests/types.rs
+expression: err_buf
+input_file: packages/frontend/tests/type_errors/ty_arg_count_mismatch.nemo
+---
+[22] Error: Mismatched type arg count. Expected 2 arguments, but got 1
+   ╭─[source:1:13]
+   │
+ 6 │   func#[i32](3);
+   │   ──┬─  
+   │     ╰─── Mismatched type arg count. Expected 2 arguments, but got 1
+───╯

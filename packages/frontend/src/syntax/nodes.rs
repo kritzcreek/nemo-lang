@@ -114,6 +114,9 @@ impl TopFn {
     pub fn ident_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T![ident])
     }
+    pub fn param_tys(&self) -> AstChildren<ParamTy> {
+        support::children(&self.syntax)
+    }
     pub fn l_paren_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T!['('])
     }
@@ -164,6 +167,15 @@ impl StructField {
     }
     pub fn ty(&self) -> Option<Type> {
         support::child(&self.syntax)
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ParamTy {
+    pub(crate) syntax: SyntaxNode,
+}
+impl ParamTy {
+    pub fn ident_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![ident])
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -245,6 +257,15 @@ impl TyArray {
     }
     pub fn r_brack_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T![']'])
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct TyVar {
+    pub(crate) syntax: SyntaxNode,
+}
+impl TyVar {
+    pub fn ident_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![ident])
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -402,6 +423,9 @@ impl ECall {
     pub fn expr(&self) -> Option<Expr> {
         support::child(&self.syntax)
     }
+    pub fn e_ty_arg_list(&self) -> Option<ETyArgList> {
+        support::child(&self.syntax)
+    }
     pub fn e_arg_list(&self) -> Option<EArgList> {
         support::child(&self.syntax)
     }
@@ -502,6 +526,15 @@ impl EIntrinsic {
     }
     pub fn e_arg_list(&self) -> Option<EArgList> {
         support::child(&self.syntax)
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ETyArgList {
+    pub(crate) syntax: SyntaxNode,
+}
+impl ETyArgList {
+    pub fn types(&self) -> AstChildren<Type> {
+        support::children(&self.syntax)
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -663,6 +696,7 @@ pub enum Type {
     TyBool(TyBool),
     TyUnit(TyUnit),
     TyArray(TyArray),
+    TyVar(TyVar),
     TyCons(TyCons),
     TyFn(TyFn),
 }
@@ -841,6 +875,21 @@ impl AstNode for StructField {
         &self.syntax
     }
 }
+impl AstNode for ParamTy {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == ParamTy
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
 impl AstNode for Param {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == Param
@@ -934,6 +983,21 @@ impl AstNode for TyUnit {
 impl AstNode for TyArray {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == TyArray
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+impl AstNode for TyVar {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == TyVar
     }
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         if Self::can_cast(syntax.kind()) {
@@ -1231,6 +1295,21 @@ impl AstNode for EIntrinsic {
         &self.syntax
     }
 }
+impl AstNode for ETyArgList {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == ETyArgList
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
 impl AstNode for EArgList {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == EArgList
@@ -1459,6 +1538,11 @@ impl From<TyArray> for Type {
         Type::TyArray(node)
     }
 }
+impl From<TyVar> for Type {
+    fn from(node: TyVar) -> Type {
+        Type::TyVar(node)
+    }
+}
 impl From<TyCons> for Type {
     fn from(node: TyCons) -> Type {
         Type::TyCons(node)
@@ -1472,7 +1556,7 @@ impl From<TyFn> for Type {
 impl AstNode for Type {
     fn can_cast(kind: SyntaxKind) -> bool {
         match kind {
-            TyInt | TyFloat | TyBool | TyUnit | TyArray | TyCons | TyFn => true,
+            TyInt | TyFloat | TyBool | TyUnit | TyArray | TyVar | TyCons | TyFn => true,
             _ => false,
         }
     }
@@ -1483,6 +1567,7 @@ impl AstNode for Type {
             TyBool => Type::TyBool(TyBool { syntax }),
             TyUnit => Type::TyUnit(TyUnit { syntax }),
             TyArray => Type::TyArray(TyArray { syntax }),
+            TyVar => Type::TyVar(TyVar { syntax }),
             TyCons => Type::TyCons(TyCons { syntax }),
             TyFn => Type::TyFn(TyFn { syntax }),
             _ => return None,
@@ -1496,6 +1581,7 @@ impl AstNode for Type {
             Type::TyBool(it) => &it.syntax,
             Type::TyUnit(it) => &it.syntax,
             Type::TyArray(it) => &it.syntax,
+            Type::TyVar(it) => &it.syntax,
             Type::TyCons(it) => &it.syntax,
             Type::TyFn(it) => &it.syntax,
         }
@@ -1847,6 +1933,11 @@ impl std::fmt::Display for StructField {
         std::fmt::Display::fmt(self.syntax(), f)
     }
 }
+impl std::fmt::Display for ParamTy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
 impl std::fmt::Display for Param {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
@@ -1878,6 +1969,11 @@ impl std::fmt::Display for TyUnit {
     }
 }
 impl std::fmt::Display for TyArray {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for TyVar {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
     }
@@ -1973,6 +2069,11 @@ impl std::fmt::Display for EMatch {
     }
 }
 impl std::fmt::Display for EIntrinsic {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for ETyArgList {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
     }

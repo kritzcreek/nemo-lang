@@ -141,7 +141,7 @@ fn main_loop(
                                         .map(|e| {
                                             make_diagnostic(
                                                 e,
-                                                &file_data.check_result.name_map,
+                                                &file_data.check_result.names.name_map,
                                                 &file_data.line_index,
                                             )
                                         })
@@ -306,7 +306,7 @@ pub const HIGHLIGHT_NAMES: [&str; 7] = [
 fn semantic_tokens_new(file_data: &FileData) -> Vec<SemanticToken> {
     let hls = frontend::highlight::highlight(
         &file_data.check_result.parse,
-        &file_data.check_result.names,
+        &file_data.check_result.occurrences,
     );
     let mut tokens = vec![];
     let mut prev_token_line_col: LineCol = LineCol { line: 0, col: 0 };
@@ -365,12 +365,13 @@ fn find_definition(file_data: &FileData, position: &Position) -> Option<Range> {
     })?;
     let (_, occurrence) = file_data
         .check_result
-        .names
+        .occurrences
         .iter()
         .find(|(node_ptr, _)| node_ptr.0.contains(offset))?;
     let name = occurrence.name();
     file_data
         .check_result
+        .names
         .name_map
         .get(name)
         .and_then(|def| resolve_text_range(&def.at, &file_data.line_index))
@@ -405,7 +406,9 @@ fn hover(file_data: &FileData, position: &Position) -> Option<Hover> {
             kind: MarkupKind::Markdown,
             value: format!(
                 "{}",
-                narrowest_match.1.display(&file_data.check_result.name_map)
+                narrowest_match
+                    .1
+                    .display(&file_data.check_result.names.name_map)
             ),
         }),
         range: resolve_text_range(&narrowest_match.0.text_range(), &file_data.line_index),

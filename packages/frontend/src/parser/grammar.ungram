@@ -19,8 +19,9 @@ StructField = 'ident' ':' Type
 
 TopVariant = 'variant' 'upper_ident' '{' TopStruct* '}'
 
-TopFn = 'fn' 'ident' '(' Param* ')' ('->' Type)? body:EBlock
+TopFn = 'fn' 'ident' ParamTy* '(' Param* ')' ('->' Type)? body:EBlock
 Param = 'ident' ':' Type
+ParamTy = 'ident'
 
 // Types
 Type
@@ -29,6 +30,7 @@ Type
   | TyBool
   | TyUnit
   | TyArray
+  | TyVar
   | TyCons
   | TyFn
 
@@ -38,6 +40,7 @@ TyBool = 'bool'
 TyUnit = 'unit'
 TyArray = '[' elem:Type ']'
 TyCons = Qualifier? 'upper_ident'
+TyVar = 'ident'
 
 Qualifier = 'upper_ident' '::'
 
@@ -73,8 +76,9 @@ EArray = '[' Expr* ']'
 EParen = '(' Expr ')'
 EArrayIdx = Expr '[' index:Expr ']'
 
-ECall = Expr EArgList
+ECall = Expr ETyArgList? EArgList
 EArgList = '(' Expr* ')'
+ETyArgList = Type*
 
 EBinary = lhs:Expr op:('+' | '-') rhs:Expr
 

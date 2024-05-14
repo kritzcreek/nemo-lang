@@ -498,6 +498,7 @@ impl Field {
                     "')'" => "r_paren",
                     "'['" => "l_brack",
                     "']'" => "r_brack",
+                    "|" => "pipe",
                     "<" => "l_angle",
                     ">" => "r_angle",
                     "=" => "eq",

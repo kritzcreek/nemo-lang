@@ -31,6 +31,7 @@ Most features can be directly mapped to Wasm GC constructs. I'm just listing the
 
 Features we implement "on-top"
 
+- First order parametric polymorphism (Generics) via monomorphization
 - Variants & Pattern matching
 - Lazy initialization for non-const globals
 - Type directed operator resolution (+ can mean both i32.add and f32.add)

@@ -58,6 +58,7 @@ pub enum TyErrorData {
     InvalidLiteral,
     InvalidOperator,
     CantInferEmptyArray,
+    CantInstantiateFunctionRef,
     Message(String),
     UnknownVar(String),
     UnknownFunction(String),
@@ -71,6 +72,7 @@ pub enum TyErrorData {
         ty: Ty,
     },
     ArgCountMismatch(usize, usize),
+    TyArgCountMismatch(usize, usize),
     FieldTypeMismatch {
         struct_name: Name,
         field_name: Name,
@@ -120,6 +122,8 @@ fn code_for_error(err_data: &TyErrorData) -> i32 {
         TyErrorData::NonFunctionImport { .. } => 18,
         TyErrorData::UnknownAlternative { .. } => 19,
         TyErrorData::PatternTypeMismatch { .. } => 20,
+        TyErrorData::CantInstantiateFunctionRef => 21,
+        TyErrorData::TyArgCountMismatch(_, _) => 22,
     }
 }
 
@@ -129,6 +133,7 @@ fn error_label(err_data: &TyErrorData, name_map: &NameMap) -> String {
         TyErrorData::InvalidLiteral => "Invalid literal couldn't be parsed".to_string(),
         TyErrorData::InvalidOperator => "The impossible happened! An invalid operator".to_string(),
         TyErrorData::CantInferEmptyArray => "Can't infer type of an empty array".to_string(),
+        TyErrorData::CantInstantiateFunctionRef => "Can't instantiate function reference. Only top-level functions may be polymorphic at this time.".to_string(),
         TyErrorData::Message(m) => m.clone(),
         TyErrorData::UnknownVar(v) => format!("Unknown variable {v}"),
         TyErrorData::UnknownFunction(f) => format!("Unknown function {f}"),
@@ -155,6 +160,14 @@ fn error_label(err_data: &TyErrorData, name_map: &NameMap) -> String {
         ),
         TyErrorData::ArgCountMismatch(expected, actual) => format!(
             "Mismatched arg count. Expected {expected} {}, but got {actual}",
+            if *expected == 1 {
+                "argument"
+            } else {
+                "arguments"
+            }
+        ),
+        TyErrorData::TyArgCountMismatch(expected, actual) => format!(
+            "Mismatched type arg count. Expected {expected} {}, but got {actual}",
             if *expected == 1 {
                 "argument"
             } else {

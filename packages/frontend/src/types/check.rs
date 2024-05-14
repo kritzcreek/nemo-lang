@@ -22,7 +22,7 @@ use crate::{
     builtins::lookup_builtin,
     lexer::{is_whitespace, SyntaxKind},
 };
-use backend::ir::{self, LitData, OpData};
+use backend::ir::{self, LitData, OpData, Substitution};
 use rowan::TextRange;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -52,11 +52,20 @@ enum TypeDef {
     Variant(Rc<VariantDef>),
 }
 
+#[derive(Debug, Clone)]
+struct FuncDef {
+    name: Name,
+    ty_params: Vec<(String, Name)>,
+    ty: FuncTy,
+}
+
 // NOTE: We could consider passing an explicit Ctx around,
 // but we'd need to make it immutable and persistent
 #[derive(Debug)]
 struct Ctx {
     values: Vec<HashMap<String, (Ty, Name)>>,
+    functions: HashMap<String, Rc<FuncDef>>,
+    type_vars: HashMap<String, Name>,
     types_names: HashMap<String, Name>,
     struct_defs: HashMap<Name, Rc<StructDef>>,
     variant_defs: HashMap<Name, Rc<VariantDef>>,
@@ -66,6 +75,8 @@ impl Ctx {
     fn new() -> Ctx {
         Ctx {
             values: vec![],
+            functions: HashMap::new(),
+            type_vars: HashMap::new(),
             types_names: HashMap::new(),
             struct_defs: HashMap::new(),
             variant_defs: HashMap::new(),
@@ -76,8 +87,52 @@ impl Ctx {
         self.values.last_mut().unwrap().insert(v, (ty, name));
     }
 
-    fn lookup_var(&self, v: &str) -> Option<&(Ty, Name)> {
-        self.values.iter().rev().find_map(|scope| scope.get(v))
+    fn lookup_var(&self, v: &str) -> Option<(Ty, Name)> {
+        if let Some((ty, name)) = self.values.iter().rev().find_map(|scope| scope.get(v)) {
+            Some((ty.clone(), *name))
+        } else {
+            None
+        }
+    }
+
+    fn lookup_var_or_func(&self, v: &str) -> Option<(Ty, Name)> {
+        self.lookup_var(v).or_else(|| {
+            let def = self.lookup_func(v)?;
+            if !def.ty_params.is_empty() {
+                eprintln!(
+                    "No func refs for polymorphic functions yet. Allow instantiate in the future?"
+                );
+                return None;
+            }
+            Some((Ty::Func(Box::new(def.ty.clone())), def.name))
+        })
+    }
+
+    fn add_type_var(&mut self, v: String, name: Name) {
+        self.type_vars.insert(v, name);
+    }
+
+    fn lookup_type_var(&self, v: &str) -> Option<Name> {
+        self.type_vars.get(v).copied()
+    }
+
+    fn clear_type_vars(&mut self) {
+        self.type_vars.clear()
+    }
+
+    fn add_func(&mut self, v: String, name: Name, ty_params: Vec<(String, Name)>, ty: FuncTy) {
+        self.functions.insert(
+            v,
+            Rc::new(FuncDef {
+                name,
+                ty_params,
+                ty,
+            }),
+        );
+    }
+
+    fn lookup_func(&self, name: &str) -> Option<Rc<FuncDef>> {
+        self.functions.get(name).cloned()
     }
 
     fn declare_type(&mut self, v: &str, name: Name) {
@@ -275,18 +330,26 @@ impl Typechecker {
 
                 let ty = if let Some(ty_node) = i.ty() {
                     match self.check_ty(&ty_node) {
-                        ty @ (Ty::Func(_) | Ty::Any) => ty,
+                        Ty::Func(t) => *t,
                         ty => {
-                            self.report_error(&ty_node, NonFunctionImport { name, ty });
-                            Ty::Any
+                            if ty != Ty::Any {
+                                self.report_error(&ty_node, NonFunctionImport { name, ty });
+                            }
+                            FuncTy {
+                                arguments: vec![],
+                                result: Ty::Any,
+                            }
                         }
                     }
                 } else {
-                    Ty::Any
+                    FuncTy {
+                        arguments: vec![],
+                        result: Ty::Any,
+                    }
                 };
                 imports.push(self.build_import_ir(&i, name, &ty));
                 self.context
-                    .add_var(internal_name_tkn.text().to_string(), ty, name);
+                    .add_func(internal_name_tkn.text().to_string(), name, vec![], ty);
             }
         }
         imports.into_iter().collect()
@@ -296,16 +359,13 @@ impl Typechecker {
         &mut self,
         import: &TopImport,
         internal: Name,
-        ty: &Ty,
+        ty: &FuncTy,
     ) -> Option<ir::Import> {
-        let Ty::Func(func_ty) = ty else {
-            return None;
-        };
         let external_name_tkn = import.imp_external()?.ident_token()?;
         Some(ir::Import {
             span: import.syntax().text_range(),
             internal,
-            func_ty: *func_ty.clone(),
+            func_ty: (*ty).clone(),
             external: external_name_tkn.text().to_string(),
         })
     }
@@ -416,6 +476,17 @@ impl Typechecker {
                 let Some(fn_name_tkn) = top_fn.ident_token() else {
                     continue;
                 };
+
+                let mut ty_args = vec![];
+                for ty_arg in top_fn.param_tys() {
+                    let Some(tkn) = ty_arg.ident_token() else {
+                        continue;
+                    };
+                    let name = self.name_supply.type_var(&tkn);
+                    self.context.add_type_var(tkn.to_string(), name);
+                    ty_args.push((tkn.to_string(), name))
+                }
+
                 let mut arguments = vec![];
                 for param in top_fn.params() {
                     let ty = param.ty().map(|t| self.check_ty(&t)).unwrap_or(Ty::Any);
@@ -424,11 +495,13 @@ impl Typechecker {
                 let name = self.name_supply.func_idx(&fn_name_tkn);
                 self.record_def(&fn_name_tkn, name);
                 let result = top_fn.ty().map(|t| self.check_ty(&t)).unwrap_or(Ty::Unit);
-                self.context.add_var(
+                self.context.add_func(
                     fn_name_tkn.text().to_string(),
-                    Ty::Func(Box::new(FuncTy { arguments, result })),
                     name,
-                )
+                    ty_args,
+                    FuncTy { arguments, result },
+                );
+                self.context.clear_type_vars()
             }
         }
     }
@@ -471,6 +544,15 @@ impl Typechecker {
                     };
                     self.record_ref(&ty_name, name);
                     Ty::Struct(name)
+                }
+            }
+            Type::TyVar(v) => {
+                let tkn = v.ident_token().unwrap();
+                if let Some(name) = self.context.lookup_type_var(tkn.text()) {
+                    Ty::Var(name)
+                } else {
+                    self.report_error_token(&tkn, UnknownType(tkn.to_string()));
+                    Ty::Any
                 }
             }
             Type::TyFn(t) => {
@@ -532,17 +614,20 @@ impl Typechecker {
                     funcs = None;
                     continue;
                 };
-                let Some((Ty::Func(func_ty), name)) = self.context.lookup_var(func_name.text())
-                else {
+                let Some(def) = self.context.lookup_func(func_name.text()) else {
                     panic!("didn't pre-declare function, {}", func_name.text())
                 };
 
-                builder.name(*name);
+                builder.name(def.name);
 
-                // Use Rc for Tys in the context?
-                let func_ty = func_ty.clone();
-
+                let func_ty = def.ty.clone();
                 self.context.enter_block();
+                for (v, name) in def.ty_params.iter() {
+                    builder.ty_param(*name);
+                    // TODO ideally we shouldn't need to clone here
+                    self.context.add_type_var(v.clone(), *name);
+                }
+
                 for (param, ty) in top_fn.params().zip(func_ty.arguments.into_iter()) {
                     let Some(ident_tkn) = param.ident_token() else {
                         funcs = None;
@@ -561,6 +646,7 @@ impl Typechecker {
                     builder.body(self.check_expr(&body.into(), &func_ty.result));
                 }
 
+                self.context.clear_type_vars();
                 self.context.leave_block();
 
                 if let Some(fs) = &mut funcs {
@@ -615,20 +701,49 @@ impl Typechecker {
         )
     }
 
-    fn infer_callee(&mut self, expr: &Expr) -> (Ty, Option<ir::Callee>) {
+    fn infer_callee(&mut self, expr: &Expr, ty_args: &Option<Vec<Ty>>) -> (Ty, Option<ir::Callee>) {
         if let Expr::EVar(v) = expr {
             let var_tkn = v.ident_token().unwrap();
-            if self.context.lookup_var(var_tkn.text()).is_none() {
-                if let Some(builtin) = lookup_builtin(var_tkn.text()) {
-                    return (
-                        Ty::Func(Box::new(builtin.ty.clone())),
-                        Some(ir::Callee::Builtin(builtin.name)),
-                    );
+            if self.context.lookup_var(var_tkn.text()).is_some() {
+                if ty_args.is_some() {
+                    self.report_error_token(&var_tkn, CantInstantiateFunctionRef);
+                    return (Ty::Any, None);
                 }
+                let (ty, ir) = self.infer_expr(expr);
+                (ty, ir.map(ir::Callee::FuncRef))
+            } else if let Some(def) = self.context.lookup_func(var_tkn.text()) {
+                let ty = if let Some(ty_args) = ty_args {
+                    let params: Vec<Name> = def.ty_params.iter().map(|(_, name)| *name).collect();
+                    if params.len() != ty_args.len() {
+                        self.report_error(expr, TyArgCountMismatch(params.len(), ty_args.len()));
+                        return (Ty::Any, None);
+                    }
+                    let subst = Substitution::new(&params, ty_args);
+                    subst.apply_func(def.ty.clone())
+                } else {
+                    def.ty.clone()
+                };
+                (
+                    Ty::Func(Box::new(ty)),
+                    Some(ir::Callee::Func {
+                        name: def.name,
+                        // TODO can we consume ty_args here?
+                        type_args: ty_args.clone().unwrap_or_default(),
+                    }),
+                )
+            } else if let Some(builtin) = lookup_builtin(var_tkn.text()) {
+                (
+                    Ty::Func(Box::new(builtin.ty.clone())),
+                    Some(ir::Callee::Builtin(builtin.name)),
+                )
+            } else {
+                self.report_error(expr, UnknownVar(var_tkn.text().to_string()));
+                return (Ty::Any, None);
             }
+        } else {
+            let (ty, ir) = self.infer_expr(expr);
+            (ty, ir.map(ir::Callee::FuncRef))
         }
-        let (ty, ir) = self.infer_expr(expr);
-        (ty, ir.map(ir::Callee::FuncRef))
     }
 
     fn infer_expr(&mut self, expr: &Expr) -> (Ty, Option<ir::Expr>) {
@@ -664,16 +779,15 @@ impl Typechecker {
             }
             Expr::EVar(v) => {
                 let var_tkn = v.ident_token().unwrap();
-                match self.context.lookup_var(var_tkn.text()) {
+                match self.context.lookup_var_or_func(var_tkn.text()) {
                     None => {
                         self.report_error_token(&var_tkn, UnknownVar(var_tkn.text().to_string()));
                         return None;
                     }
                     Some((ty, name)) => {
-                        let return_ty = ty.clone();
-                        let ir = var(*name);
-                        self.record_ref(&var_tkn, *name);
-                        (return_ty, ir)
+                        let ir = var(name);
+                        self.record_ref(&var_tkn, name);
+                        (ty, ir)
                     }
                 }
             }
@@ -745,7 +859,10 @@ impl Typechecker {
             }
             Expr::ECall(call_expr) => {
                 let func_expr = call_expr.expr()?;
-                match self.infer_callee(&func_expr) {
+                let ty_arg_list: Option<Vec<Ty>> = call_expr
+                    .e_ty_arg_list()
+                    .map(|tas| tas.types().map(|t| self.check_ty(&t)).collect());
+                match self.infer_callee(&func_expr, &ty_arg_list) {
                     (Ty::Func(func_ty), callee) => {
                         let mut builder = CallBuilder::new();
                         builder.func(callee);
@@ -878,8 +995,8 @@ impl Typechecker {
                             Message(format!(
                                 "Invalid operator {} for lhs of type {} and rhs of type {}",
                                 op_tkn.text(),
-                                lhs_ty.display(&self.name_supply.name_map),
-                                rhs_ty.display(&self.name_supply.name_map)
+                                lhs_ty.display(self.name_supply.name_map()),
+                                rhs_ty.display(self.name_supply.name_map())
                             )),
                         );
                         return None;
@@ -1182,10 +1299,9 @@ impl Typechecker {
         let (ty, ir_data) = match expr {
             SetTargetExpr::EVar(var) => {
                 let ident_tkn = var.ident_token().unwrap();
-                if let Some((ty, name)) = self.context.lookup_var(ident_tkn.text()) {
-                    let ir = ir::SetTargetData::Var { name: *name };
-                    let ty = ty.clone();
-                    self.record_ref(&ident_tkn, *name);
+                if let Some((ty, name)) = self.context.lookup_var_or_func(ident_tkn.text()) {
+                    let ir = ir::SetTargetData::Var { name };
+                    self.record_ref(&ident_tkn, name);
                     (ty, Some(ir))
                 } else {
                     self.report_error_token(&ident_tkn, UnknownVar(ident_tkn.text().to_string()));

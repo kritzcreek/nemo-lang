@@ -5,7 +5,11 @@ import init from "../wasm-lib/wasm_lib.js";
 
 async function main() {
   await init();
-  setupEditor();
+  let initialExample;
+  if (window.location.hash.startsWith("#")) {
+    initialExample = window.location.hash.slice(1);
+  }
+  setupEditor(initialExample ?? "");
 }
 
 main();

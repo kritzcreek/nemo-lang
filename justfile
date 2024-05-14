@@ -6,16 +6,17 @@ build-wasm-lib:
     wasm-bindgen target/wasm32-unknown-unknown/release/wasm_lib.wasm --out-dir playground/wasm-lib/ --target web
     wasm-opt -Os playground/wasm-lib/wasm_lib_bg.wasm -o playground/wasm-lib/wasm_lib_bg.wasm
 
-@run-wasm FILE:
+run-wasm FILE:
     mkdir -p build
-    ./target/release/nemo compile {{ FILE }} --output build/{{ without_extension(FILE) }}.wasm
+    cargo run --bin nemo compile {{ FILE }} --output build/{{ without_extension(FILE) }}.wasm
+    # ./target/release/nemo compile {{ FILE }} --output build/{{ without_extension(FILE) }}.wasm
     wasm-opt --enable-reference-types --enable-gc -O3 build/{{ without_extension(FILE) }}.wasm -o build/{{ without_extension(FILE) }}_opt.wasm
     wasm-tools print build/{{ without_extension(FILE) }}.wasm -o build/{{ without_extension(FILE) }}.wast
     wasm-tools print build/{{ without_extension(FILE) }}_opt.wasm -o build/{{ without_extension(FILE) }}_opt.wast
     node dev/run-wasm.mjs build/{{ without_extension(FILE) }}.wasm
 
 dev FILE: build-cli
-    watchexec --quiet -e nemo just run-wasm {{ FILE }}
+    watchexec --quiet -e nemo,rs just run-wasm {{ FILE }}
 
 playground: build-wasm-lib
     cd playground && npm i && npm run dev

@@ -39,17 +39,18 @@ pub struct CompileResult {
 
 #[wasm_bindgen]
 pub fn compile(input: &str) -> CompileResult {
+    console_error_panic_hook::set_once();
     let check_result = frontend::run_frontend(input);
-    let highlights = highlight::highlight(&check_result.parse, &check_result.names)
+    let highlights = highlight::highlight(&check_result.parse, &check_result.occurrences)
         .into_iter()
         .map(Highlight::new)
         .collect();
     let (name_map, result) = match check_result.ir {
         Some(ir) if check_result.errors.is_empty() => {
-            let wasm = codegen(ir, &check_result.name_map);
-            (check_result.name_map, Ok(wasm))
+            let (wasm, names) = codegen(ir, check_result.names);
+            (names.name_map, Ok(wasm))
         }
-        _ => (check_result.name_map, Err(check_result.errors)),
+        _ => (check_result.names.name_map, Err(check_result.errors)),
     };
 
     match result {
