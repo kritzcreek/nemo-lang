@@ -156,3 +156,9 @@ global _ = match rope {
 global _ = match 10 {
   x => { x }
 }
+
+// ---
+
+fn poly[a, b](a : a, other : b) {
+  poly#[i32, bool](1, true)
+}

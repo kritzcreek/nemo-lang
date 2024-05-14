@@ -1,55 +1,11 @@
+pub use crate::names::{Id, Name, NameMap, NameSupply};
 use core::fmt;
 use std::{collections::HashMap, fmt::Debug};
 use text_size::TextRange;
 
-trait Spanned {
+pub(crate) trait Spanned {
     fn at(&self) -> &TextRange;
 }
-
-#[derive(Debug, Eq, PartialEq, Clone, Hash)]
-pub struct Id {
-    pub it: String,
-    pub at: TextRange,
-}
-
-impl Spanned for Id {
-    fn at(&self) -> &TextRange {
-        &self.at
-    }
-}
-
-// Should we have spanned names as well?
-#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
-pub enum Name {
-    Global(u32),
-    Local(u32),
-    Func(u32),
-    Type(u32),
-    Field(u32),
-    Gen(u32),
-}
-
-impl Name {
-    pub fn display<'a>(&'a self, name_map: &'a NameMap) -> NameDisplay<'a> {
-        NameDisplay {
-            name: self,
-            name_map,
-        }
-    }
-}
-
-pub struct NameDisplay<'a> {
-    name: &'a Name,
-    name_map: &'a NameMap,
-}
-
-impl fmt::Display for NameDisplay<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.name_map.get(self.name).unwrap().it)
-    }
-}
-
-pub type NameMap = HashMap<Name, Id>;
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub enum Ty {
@@ -59,6 +15,7 @@ pub enum Ty {
     Bool,
     Array(Box<Ty>),
     Struct(Name),
+    Var(Name),
     Func(Box<FuncTy>),
 
     // Typechecking internal used for error recovery
@@ -85,6 +42,7 @@ impl fmt::Display for TyDisplay<'_> {
             Ty::Unit => write!(f, "unit"),
             Ty::Array(t) => write!(f, "[{}]", t.display(self.name_map)),
             Ty::Struct(t) => write!(f, "{}", self.name_map.get(t).unwrap().it),
+            Ty::Var(v) => write!(f, "{}", self.name_map.get(v).unwrap().it),
             Ty::Func(func_ty) => func_ty.display(self.name_map).fmt(f),
             Ty::Any => write!(f, "ANY"),
         }
@@ -124,6 +82,41 @@ impl fmt::Display for FuncTyDisplay<'_> {
                 .join(", "),
             self.func_ty.result.display(self.name_map)
         )
+    }
+}
+
+pub struct Substitution(HashMap<Name, Ty>);
+impl Substitution {
+    pub fn new(names: &[Name], tys: &[Ty]) -> Self {
+        let mut mappings = HashMap::new();
+        for (name, ty) in names.iter().zip(tys.iter()) {
+            mappings.insert(*name, ty.clone());
+        }
+        Substitution(mappings)
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    pub fn lookup(&self, var: Name) -> Option<&Ty> {
+        self.0.get(&var)
+    }
+
+    pub fn apply(&self, ty: Ty) -> Ty {
+        match ty {
+            Ty::Var(n) => self.0.get(&n).cloned().unwrap_or(ty),
+            Ty::I32 | Ty::F32 | Ty::Unit | Ty::Bool | Ty::Struct(_) | Ty::Any => ty,
+            Ty::Array(t) => Ty::Array(Box::new(self.apply(*t))),
+            Ty::Func(f) => Ty::Func(Box::new(self.apply_func(*f))),
+        }
+    }
+
+    pub fn apply_func(&self, ty: FuncTy) -> FuncTy {
+        FuncTy {
+            arguments: ty.arguments.into_iter().map(|t| self.apply(t)).collect(),
+            result: self.apply(ty.result),
+        }
     }
 }
 
@@ -262,6 +255,7 @@ impl Spanned for Expr {
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Callee {
+    Func { name: Name, type_args: Vec<Ty> },
     FuncRef(Expr),
     Builtin(&'static str),
 }
@@ -392,6 +386,7 @@ pub struct Global {
 #[derive(Debug, PartialEq, Clone)]
 pub struct Func {
     pub name: Name,
+    pub ty_params: Vec<Name>,
     pub params: Vec<(Name, Ty)>,
     pub return_ty: Ty,
     pub body: Expr,
@@ -403,6 +398,13 @@ impl Func {
             arguments: self.params.iter().map(|(_, t)| t.clone()).collect(),
             result: self.return_ty.clone(),
         }
+    }
+    pub fn is_monomorphic(&self) -> bool {
+        self.ty_params.is_empty()
+    }
+
+    pub fn is_polymorphic(&self) -> bool {
+        !self.is_monomorphic()
     }
 }
 

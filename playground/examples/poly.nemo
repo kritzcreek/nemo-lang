@@ -1,0 +1,18 @@
+import log : fn (i32) -> unit from log
+import log_f32 : fn (f32) -> unit from log
+
+fn for_each[a](f : fn (a) -> unit, as : [a]) {
+  let i = 0;
+  while i < @array_len(as) {
+    f(as[i]);
+    set i = i + 1;
+  };
+}
+
+fn main() {
+  let xs = [1, 2, 3, 5];
+  for_each#[i32](log, xs);
+
+  let fs = [1.1, 2.2, 3.3, 5.5];
+  for_each#[f32](log_f32, fs);
+}
