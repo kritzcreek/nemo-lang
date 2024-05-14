@@ -5,7 +5,10 @@ pub mod parser;
 pub mod syntax;
 pub mod types;
 
-use backend::{codegen::codegen, ir::NameMap};
+use backend::{
+    codegen::codegen,
+    ir::{NameMap, NameSupply},
+};
 use line_index::{LineCol, LineIndex};
 use parser::{parse_prog, ParseError};
 use rowan::TextRange;
@@ -108,26 +111,26 @@ pub fn run_frontend(source: &str) -> CheckResult<CheckError> {
 
     CheckResult {
         errors,
-        name_map: check_result.name_map,
-        typed_nodes: check_result.typed_nodes,
         names: check_result.names,
+        typed_nodes: check_result.typed_nodes,
+        occurrences: check_result.occurrences,
         ir: check_result.ir,
         parse: check_result.parse,
     }
 }
 
-pub fn check_program(source: &str) -> (NameMap, Vec<CheckError>) {
+pub fn check_program(source: &str) -> (NameSupply, Vec<CheckError>) {
     let check_result = run_frontend(source);
-    (check_result.name_map, check_result.errors)
+    (check_result.names, check_result.errors)
 }
 
-pub fn compile_program(source: &str) -> (NameMap, Result<Vec<u8>, Vec<CheckError>>) {
-    let mut check_result = run_frontend(source);
+pub fn compile_program(source: &str) -> (NameSupply, Result<Vec<u8>, Vec<CheckError>>) {
+    let check_result = run_frontend(source);
     match check_result.ir {
         Some(ir) if check_result.errors.is_empty() => {
-            let wasm = codegen(ir, &mut check_result.name_map);
-            (check_result.name_map, Ok(wasm))
+            let (wasm, names) = codegen(ir, check_result.names);
+            (names, Ok(wasm))
         }
-        _ => (check_result.name_map, Err(check_result.errors)),
+        _ => (check_result.names, Err(check_result.errors)),
     }
 }

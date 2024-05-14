@@ -4,30 +4,18 @@ use wasm_encoder::{BlockType, ConstExpr, HeapType, Instruction, RefType, ValType
 
 use crate::{
     ir::{
-        Callee, Declaration, DeclarationData, Expr, ExprData, Func, Id, IntrinsicData, Lit,
-        LitData, Name, Op, OpData, Pattern, PatternData, Program, SetTarget, SetTargetData,
-        Substitution, Ty, TypeDef,
+        Callee, Declaration, DeclarationData, Expr, ExprData, Func, IntrinsicData, Lit, LitData,
+        Name, Op, OpData, Pattern, PatternData, Program, SetTarget, SetTargetData, Substitution,
+        Ty, TypeDef,
     },
+    names::{Id, NameSupply},
     wasm_builder::{BodyBuilder, Builder},
 };
 
-pub fn codegen(program: Program, name_map: &mut HashMap<Name, Id>) -> Vec<u8> {
-    // TODO clean this up
-    let func_gen = name_map
-        .iter()
-        .filter_map(|(n, _)| {
-            if let Name::Func(i) = n {
-                Some(*i)
-            } else {
-                None
-            }
-        })
-        .max()
-        .unwrap_or_default();
-    let builder = Builder::new(name_map);
+pub fn codegen(program: Program, name_supply: NameSupply) -> (Vec<u8>, NameSupply) {
+    let builder = Builder::new(name_supply);
     let mut codegen = Codegen {
         builder,
-        func_gen,
         poly_funcs: HashMap::new(),
     };
     codegen.compile_program(program);
@@ -42,7 +30,6 @@ struct PolyFunc {
 
 struct Codegen<'a> {
     builder: Builder<'a>,
-    func_gen: u32,
     poly_funcs: HashMap<Name, PolyFunc>,
 }
 
@@ -232,6 +219,7 @@ impl<'a> Codegen<'a> {
                 let scrutinee_ty = self.builder.val_ty(&scrutinee.ty);
                 instrs.extend(self.compile_expr(body, scrutinee));
 
+                // TODO: Could use name_supply to gen a proper named local here?
                 let scrutinee_local = body.fresh_local(scrutinee_ty);
                 instrs.push(Instruction::LocalSet(scrutinee_local));
 
@@ -459,15 +447,16 @@ impl<'a> Codegen<'a> {
             if let Some(existing) = poly_func.instances.get(ty_params) {
                 return *existing;
             }
-            self.func_gen = self.func_gen + 1;
-            let new_name = Name::Func(self.func_gen);
+            let definition = self
+                .builder
+                .name_supply
+                .lookup(name)
+                .expect("Unknown polyfunc");
+            let new_name = self.builder.name_supply.func_idx(Id {
+                it: format!("{}|{ty_params:?}|", definition.it),
+                at: definition.at,
+            });
             poly_func.instances.insert(ty_params.to_vec(), new_name);
-
-            let definition = self.builder.resolve_name(name);
-            // TODO
-            let it = format!("{}|{ty_params:?}|", definition.it);
-            self.builder.declare_gen_name(new_name, it, definition.at);
-
             new_name
         };
 
@@ -572,7 +561,7 @@ impl<'a> Codegen<'a> {
         }
     }
 
-    pub fn finish(self) -> Vec<u8> {
+    pub fn finish(self) -> (Vec<u8>, NameSupply) {
         self.builder.finish()
     }
 }

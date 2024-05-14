@@ -1,56 +1,11 @@
+pub use crate::names::{Id, Name, NameMap, NameSupply};
 use core::fmt;
 use std::{collections::HashMap, fmt::Debug};
 use text_size::TextRange;
 
-trait Spanned {
+pub(crate) trait Spanned {
     fn at(&self) -> &TextRange;
 }
-
-#[derive(Debug, Eq, PartialEq, Clone, Hash)]
-pub struct Id {
-    pub it: String,
-    pub at: TextRange,
-}
-
-impl Spanned for Id {
-    fn at(&self) -> &TextRange {
-        &self.at
-    }
-}
-
-// Should we have spanned names as well?
-#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
-pub enum Name {
-    Global(u32),
-    Local(u32),
-    Func(u32),
-    Type(u32),
-    TypeVar(u32),
-    Field(u32),
-    Gen(u32),
-}
-
-impl Name {
-    pub fn display<'a>(&'a self, name_map: &'a NameMap) -> NameDisplay<'a> {
-        NameDisplay {
-            name: self,
-            name_map,
-        }
-    }
-}
-
-pub struct NameDisplay<'a> {
-    name: &'a Name,
-    name_map: &'a NameMap,
-}
-
-impl fmt::Display for NameDisplay<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.name_map.get(self.name).unwrap().it)
-    }
-}
-
-pub type NameMap = HashMap<Name, Id>;
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub enum Ty {

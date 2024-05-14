@@ -552,7 +552,7 @@ impl Typechecker {
                     Ty::Var(name)
                 } else {
                     self.report_error_token(&tkn, UnknownType(tkn.to_string()));
-                    return Ty::Any;
+                    Ty::Any
                 }
             }
             Type::TyFn(t) => {
@@ -704,7 +704,7 @@ impl Typechecker {
     fn infer_callee(&mut self, expr: &Expr, ty_args: &Option<Vec<Ty>>) -> (Ty, Option<ir::Callee>) {
         if let Expr::EVar(v) = expr {
             let var_tkn = v.ident_token().unwrap();
-            if let Some(_) = self.context.lookup_var(var_tkn.text()) {
+            if self.context.lookup_var(var_tkn.text()).is_some() {
                 if ty_args.is_some() {
                     self.report_error_token(&var_tkn, CantInstantiateFunctionRef);
                     return (Ty::Any, None);
@@ -995,8 +995,8 @@ impl Typechecker {
                             Message(format!(
                                 "Invalid operator {} for lhs of type {} and rhs of type {}",
                                 op_tkn.text(),
-                                lhs_ty.display(&self.name_supply.name_map),
-                                rhs_ty.display(&self.name_supply.name_map)
+                                lhs_ty.display(self.name_supply.name_map()),
+                                rhs_ty.display(self.name_supply.name_map())
                             )),
                         );
                         return None;

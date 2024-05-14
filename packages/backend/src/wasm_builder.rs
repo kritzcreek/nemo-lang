@@ -1,8 +1,8 @@
 use std::iter;
 use std::{collections::HashMap, mem};
 
-use crate::ir::{FuncTy, Id, Import, Name, NameMap, Struct, Substitution, Ty, Variant};
-use text_size::TextRange;
+use crate::ir::{FuncTy, Id, Import, Name, Struct, Substitution, Ty, Variant};
+use crate::names::NameSupply;
 use wasm_encoder::{
     self, ArrayType, CodeSection, CompositeType, ConstExpr, ElementSection, Elements, EntityType,
     ExportKind, ExportSection, FieldType, FuncType, Function, FunctionSection, GlobalSection,
@@ -66,7 +66,7 @@ impl VariantInfo {
 }
 
 pub struct Builder<'a> {
-    name_map: &'a mut NameMap,
+    pub(crate) name_supply: NameSupply,
     funcs: HashMap<Name, FuncData<'a>>,
     globals: HashMap<Name, GlobalData>,
     types: Vec<SubType>,
@@ -84,9 +84,9 @@ pub struct Builder<'a> {
 }
 
 impl<'a> Builder<'a> {
-    pub fn new(name_map: &'a mut HashMap<Name, Id>) -> Builder<'a> {
+    pub fn new(name_supply: NameSupply) -> Builder<'a> {
         Builder {
-            name_map,
+            name_supply,
             funcs: HashMap::new(),
             globals: HashMap::new(),
             types: vec![],
@@ -103,15 +103,16 @@ impl<'a> Builder<'a> {
     }
 
     fn _print_funcs(&self) {
-        for (name, id) in self.name_map.iter() {
+        for (name, id) in self.name_supply.name_map.iter() {
             if let Name::Func(n) = name {
                 eprintln!("$fn:{n} = {id:?}")
             }
         }
     }
 
-    pub fn finish(self) -> Vec<u8> {
+    pub fn finish(self) -> (Vec<u8>, NameSupply) {
         let mut module = Module::new();
+        let names = self.name_supply;
         // self._print_funcs();
 
         // type_section
@@ -122,11 +123,11 @@ impl<'a> Builder<'a> {
         }
 
         for (name, info) in self.structs {
-            type_names.append(info.type_idx, &self.name_map.get(&name).unwrap().it);
+            type_names.append(info.type_idx, &names.lookup(name).unwrap().it);
         }
 
         for (name, info) in self.variants {
-            type_names.append(info.type_idx, &self.name_map.get(&name).unwrap().it);
+            type_names.append(info.type_idx, &names.lookup(name).unwrap().it);
         }
 
         let mut field_names = HashMap::new();
@@ -134,7 +135,7 @@ impl<'a> Builder<'a> {
             field_names
                 .entry(ty_idx)
                 .or_insert(WasmNameMap::new())
-                .append(field_idx, &self.name_map.get(&name).unwrap().it);
+                .append(field_idx, &names.lookup(name).unwrap().it);
         }
         let mut all_field_names = IndirectNameMap::new();
         for (ty_idx, names) in field_names {
@@ -151,7 +152,7 @@ impl<'a> Builder<'a> {
         let mut import_indices = vec![];
         for (name, data) in imports {
             import_section.import(&data.ns, &data.func, EntityType::Function(data.ty_idx));
-            function_names.append(data.index, &self.name_map.get(&name).unwrap().it);
+            function_names.append(data.index, &names.lookup(name).unwrap().it);
             import_indices.push(data.index);
         }
         // function_section
@@ -160,7 +161,7 @@ impl<'a> Builder<'a> {
         let mut function_indices = vec![];
         funcs.sort_by_key(|(_, v)| v.index);
         for (name, func) in funcs.iter() {
-            function_names.append(func.index, &self.name_map.get(name).unwrap().it);
+            function_names.append(func.index, &names.lookup(*name).unwrap().it);
             function_section.function(func.ty);
             function_indices.push(func.index);
         }
@@ -174,7 +175,7 @@ impl<'a> Builder<'a> {
         let mut global_names = WasmNameMap::new();
         for data in globals {
             global_section.global(data.ty, &data.init);
-            global_names.append(data.index, &self.name_map.get(&data.name).unwrap().it)
+            global_names.append(data.index, &names.lookup(data.name).unwrap().it)
         }
         // export_section
         let mut export_section = ExportSection::new();
@@ -194,12 +195,13 @@ impl<'a> Builder<'a> {
         // code_section
         let mut code_section = CodeSection::new();
         let mut all_local_names = IndirectNameMap::new();
-        for (_ix, (_name, func)) in funcs.into_iter().enumerate() {
-            let Some(FnLocals { locals, names }) = func.locals else {
-                panic!(
-                    "No locals for function {}",
-                    self.name_map.get(&_name).unwrap().it
-                )
+        for (_ix, (name, func)) in funcs.into_iter().enumerate() {
+            let Some(FnLocals {
+                locals,
+                names: local_names,
+            }) = func.locals
+            else {
+                panic!("No locals for function {}", names.lookup(name).unwrap().it)
             };
             let mut func_body = Function::new_with_locals_types(locals);
             for instr in func.body.unwrap() {
@@ -208,13 +210,13 @@ impl<'a> Builder<'a> {
             func_body.instruction(&Instruction::End);
             code_section.function(&func_body);
 
-            let mut local_names = WasmNameMap::new();
-            for (index, name) in names {
-                local_names.append(index, &self.name_map.get(&name).unwrap().it);
+            let mut local_names_map = WasmNameMap::new();
+            for (index, name) in local_names {
+                local_names_map.append(index, &names.lookup(name).unwrap().it);
             }
 
             let ix = (_ix + _import_count) as u32;
-            all_local_names.append(ix, &local_names);
+            all_local_names.append(ix, &local_names_map);
         }
         // data_section
 
@@ -235,12 +237,12 @@ impl<'a> Builder<'a> {
         module.section(&elem_section);
         module.section(&code_section);
         module.section(&name_section);
-        module.finish()
+        (module.finish(), names)
     }
 
     pub fn resolve_name(&self, name: Name) -> Id {
-        self.name_map
-            .get(&name)
+        self.name_supply
+            .lookup(name)
             .cloned()
             .unwrap_or_else(|| panic!("Failed to resolve: {name:?}"))
     }
@@ -552,10 +554,6 @@ impl<'a> Builder<'a> {
 
     pub(crate) fn restore_substitution(&mut self, subst: Substitution) {
         self.substitution = subst
-    }
-
-    pub(crate) fn declare_gen_name(&mut self, name: Name, it: String, at: TextRange) {
-        self.name_map.insert(name, Id { it, at });
     }
 }
 

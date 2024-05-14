@@ -42,7 +42,7 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
     match args.command {
         Commands::Compile { input_file, output } => {
             let source = fs::read_to_string(&input_file)?;
-            let (name_map, compiled) = compile_program(&source);
+            let (names, compiled) = compile_program(&source);
             match compiled {
                 Ok(bytes) => {
                     fs::write(
@@ -52,7 +52,7 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
                     Ok(())
                 }
                 Err(e) => {
-                    eprint!("{}", render_errors(&e, &source, &name_map));
+                    eprint!("{}", render_errors(&e, &source, &names.name_map));
                     process::exit(1)
                 }
             }

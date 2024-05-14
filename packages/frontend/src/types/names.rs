@@ -1,20 +1,11 @@
-use std::collections::HashMap;
-
-pub use backend::ir::{Id, Name};
+use backend::ir::NameMap;
+pub use backend::ir::{self, Id, Name};
 use rowan::TextRange;
 
 use crate::syntax::SyntaxToken;
 
 #[derive(Debug, Clone, Default)]
-pub struct NameSupply {
-    local: u32,
-    global: u32,
-    func: u32,
-    typ: u32,
-    typ_var: u32,
-    field: u32,
-    pub name_map: HashMap<Name, Id>,
-}
+pub struct NameSupply(ir::NameSupply);
 
 fn token_into_id(tkn: &SyntaxToken) -> Id {
     Id {
@@ -28,62 +19,46 @@ impl NameSupply {
         Self::default()
     }
 
+    pub fn take(self) -> ir::NameSupply {
+        self.0
+    }
+
     pub fn local_idx(&mut self, local: &SyntaxToken) -> Name {
-        self.local += 1;
-        let name = Name::Local(self.local);
-        self.name_map.insert(name, token_into_id(local));
-        name
+        self.0.local_idx(token_into_id(local))
     }
 
     pub fn global_idx(&mut self, global: &SyntaxToken) -> Name {
-        self.global += 1;
-        let name = Name::Global(self.global);
-        self.name_map.insert(name, token_into_id(global));
-        name
+        self.0.global_idx(token_into_id(global))
     }
 
     pub fn func_idx(&mut self, func: &SyntaxToken) -> Name {
-        self.func += 1;
-        let name = Name::Func(self.func);
-        self.name_map.insert(name, token_into_id(func));
-        name
+        self.0.func_idx(token_into_id(func))
     }
 
     pub fn type_idx(&mut self, typ: &SyntaxToken) -> Name {
-        self.typ += 1;
-        let name = Name::Type(self.typ);
-        self.name_map.insert(name, token_into_id(typ));
-        name
+        self.0.type_idx(token_into_id(typ))
     }
 
     pub fn type_var(&mut self, typ_var: &SyntaxToken) -> Name {
-        self.typ_var += 1;
-        let name = Name::TypeVar(self.typ_var);
-        self.name_map.insert(name, token_into_id(typ_var));
-        name
+        self.0.type_var(token_into_id(typ_var))
     }
 
     pub fn field_idx(&mut self, field: &SyntaxToken) -> Name {
-        self.field += 1;
-        let name = Name::Field(self.field);
-        self.name_map.insert(name, token_into_id(field));
-        name
+        self.0.field_idx(token_into_id(field))
     }
 
     pub fn start_idx(&mut self) -> Name {
-        self.func += 1;
-        let name = Name::Func(self.func);
-        self.name_map.insert(
-            name,
-            Id {
-                it: "$start".to_string(),
-                at: TextRange::default(),
-            },
-        );
-        name
+        self.0.func_idx(Id {
+            it: "$start".to_string(),
+            at: TextRange::default(),
+        })
     }
 
     pub fn lookup(&self, name: Name) -> Option<&Id> {
-        self.name_map.get(&name)
+        self.0.lookup(name)
+    }
+
+    pub fn name_map(&self) -> &NameMap {
+        &self.0.name_map
     }
 }

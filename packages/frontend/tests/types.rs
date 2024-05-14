@@ -6,7 +6,7 @@ use std::path::Path;
 use std::str;
 
 fn check_failing(path: &Path, source: String) {
-    let (name_map, errors) = check_program(&source);
+    let (names, errors) = check_program(&source);
     if errors
         .iter()
         .any(|e| matches!(e, CheckError::ParseError(_)))
@@ -22,7 +22,12 @@ fn check_failing(path: &Path, source: String) {
 
     let mut err_buf = String::new();
     for error in errors {
-        write!(&mut err_buf, "{}", error.display(&source, &name_map, false)).unwrap();
+        write!(
+            &mut err_buf,
+            "{}",
+            error.display(&source, &names.name_map, false)
+        )
+        .unwrap();
     }
     assert_snapshot!(err_buf)
 }
