@@ -317,10 +317,10 @@ function setupOutputs() {
   }
 }
 
-export function setupEditor() {
+export function setupEditor(initialExample: string) {
   setupOutputs();
   new EditorView({
-    doc: examples.bouncy_shapes,
+    doc: examples[initialExample] ?? examples.bouncy_shapes,
     extensions: [
       minimalSetup,
       lineNumbers(),
