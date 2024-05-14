@@ -195,8 +195,8 @@ fn main() -> i32 {
     set i = i + 1;
   };
   i * 2 + 3
-}`,fc=`import log : fn (i32) -> unit from "log"
-import log_f32 : fn (f32) -> unit from "log"
+}`,fc=`import log : fn (i32) -> unit from log
+import log_f32 : fn (f32) -> unit from log
 
 fn for_each[a](f : fn (a) -> unit, as : [a]) {
   let i = 0;
