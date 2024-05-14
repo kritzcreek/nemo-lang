@@ -320,7 +320,7 @@ function setupOutputs() {
 export function setupEditor() {
   setupOutputs();
   new EditorView({
-    doc: examples.poly,
+    doc: examples.bouncy_shapes,
     extensions: [
       minimalSetup,
       lineNumbers(),
