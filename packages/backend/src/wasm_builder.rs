@@ -4,10 +4,11 @@ use std::{collections::HashMap, mem};
 use crate::ir::{FuncTy, Id, Import, Name, NameMap, Struct, Substitution, Ty, Variant};
 use text_size::TextRange;
 use wasm_encoder::{
-    self, ArrayType, CodeSection, CompositeType, ConstExpr, EntityType, ExportKind, ExportSection,
-    FieldType, FuncType, Function, FunctionSection, GlobalSection, GlobalType, HeapType,
-    ImportSection, IndirectNameMap, Instruction, Module, NameMap as WasmNameMap, NameSection,
-    RefType, StartSection, StorageType, StructType, SubType, TypeSection, ValType,
+    self, ArrayType, CodeSection, CompositeType, ConstExpr, ElementSection, Elements, EntityType,
+    ExportKind, ExportSection, FieldType, FuncType, Function, FunctionSection, GlobalSection,
+    GlobalType, HeapType, ImportSection, IndirectNameMap, Instruction, Module,
+    NameMap as WasmNameMap, NameSection, RefType, StartSection, StorageType, StructType, SubType,
+    TypeSection, ValType,
 };
 
 type FuncIdx = u32;
@@ -147,17 +148,21 @@ impl<'a> Builder<'a> {
         let _import_count = self.imports.len();
         let mut imports: Vec<_> = self.imports.into_iter().collect();
         imports.sort_by_key(|(_, v)| v.index);
+        let mut import_indices = vec![];
         for (name, data) in imports {
             import_section.import(&data.ns, &data.func, EntityType::Function(data.ty_idx));
             function_names.append(data.index, &self.name_map.get(&name).unwrap().it);
+            import_indices.push(data.index);
         }
         // function_section
         let mut function_section = FunctionSection::new();
         let mut funcs: Vec<_> = self.funcs.into_iter().collect();
+        let mut function_indices = vec![];
         funcs.sort_by_key(|(_, v)| v.index);
         for (name, func) in funcs.iter() {
             function_names.append(func.index, &self.name_map.get(name).unwrap().it);
             function_section.function(func.ty);
+            function_indices.push(func.index);
         }
 
         // table_section
@@ -182,6 +187,10 @@ impl<'a> Builder<'a> {
             .start_fn
             .map(|function_index| StartSection { function_index });
         // elem_section
+        let mut elem_section = ElementSection::new();
+        elem_section.declared(Elements::Functions(&import_indices));
+        elem_section.declared(Elements::Functions(&function_indices));
+
         // code_section
         let mut code_section = CodeSection::new();
         let mut all_local_names = IndirectNameMap::new();
@@ -223,6 +232,7 @@ impl<'a> Builder<'a> {
         module.section(&global_section);
         module.section(&export_section);
         start_section.map(|s| module.section(&s));
+        module.section(&elem_section);
         module.section(&code_section);
         module.section(&name_section);
         module.finish()

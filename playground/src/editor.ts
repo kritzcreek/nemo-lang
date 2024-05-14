@@ -23,7 +23,11 @@ import {
   Transaction,
 } from "@codemirror/state";
 import * as compiler from "../wasm-lib/wasm_lib.js";
-import { clearConsoleBuffer, getConsoleBuffer, getWasmImports } from "./wasm_imports.js";
+import {
+  clearConsoleBuffer,
+  getConsoleBuffer,
+  getWasmImports,
+} from "./wasm_imports.js";
 import { indentWithTab } from "@codemirror/commands";
 
 const base_theme = EditorView.baseTheme({
@@ -93,8 +97,7 @@ function highlight_view(view: EditorView) {
         decoration = comment_decoration;
         break;
     }
-    decoration &&
-      builder.add(hl.start, hl.end, decoration);
+    decoration && builder.add(hl.start, hl.end, decoration);
   }
   return builder.finish();
 }
@@ -113,26 +116,29 @@ const highlight_plugin = ViewPlugin.fromClass(
   },
   {
     decorations: (v) => v.decorations,
-  }
+  },
 );
 
 function nemo_highlighter(): Extension {
   return [base_theme, highlight_plugin];
 }
 
-const nemoLinter = linter((view) => {
-  let diagnostics: Diagnostic[] = [];
-  let result = view.state.field(compile_result);
-  for (const error of result.diagnostics) {
-    diagnostics.push({
-      from: error.start,
-      to: error.end,
-      severity: "error",
-      message: error.message,
-    });
-  }
-  return diagnostics;
-}, { delay: 0});
+const nemoLinter = linter(
+  (view) => {
+    let diagnostics: Diagnostic[] = [];
+    let result = view.state.field(compile_result);
+    for (const error of result.diagnostics) {
+      diagnostics.push({
+        from: error.start,
+        to: error.end,
+        severity: "error",
+        message: error.message,
+      });
+    }
+    return diagnostics;
+  },
+  { delay: 0 },
+);
 
 type CompileState = {
   diagnostics: compiler.Diagnostic[];
@@ -184,8 +190,11 @@ function runConsoleApplication(instance: WebAssembly.Instance) {
     <pre>${result}</pre>
     <h3>Console output</h3>
     <pre>${output}</pre>
-    `;
-  render(output_console, document.getElementById("output-console")! as HTMLElement)
+  `;
+  render(
+    output_console,
+    document.getElementById("output-console")! as HTMLElement,
+  );
 }
 
 function pick_example(view: EditorView, name: string) {
@@ -202,9 +211,15 @@ function actions_panel(view: EditorView): Panel {
     let can_run = instance != null && instance.exports.main != null;
     let can_render = instance != null && instance.exports.tick != null;
     let example_picker = html`
-      <select id="example-picker" @change=${(e : Event) => pick_example(view, (e.target as HTMLInputElement).value)}>
+      <select
+        id="example-picker"
+        @change=${(e: Event) =>
+          pick_example(view, (e.target as HTMLInputElement).value)}
+      >
         <option value="">Pick an example...</option>
-        ${Object.keys(examples).map((name) => html`<option value=${name}>${name}</option>`)}
+        ${Object.keys(examples).map(
+          (name) => html`<option value=${name}>${name}</option>`,
+        )}
       </select>
     `;
     let button_bar = html`
@@ -259,25 +274,28 @@ function start_render(editorView: EditorView) {
       const output_console = html`
         <h3>Console output</h3>
         <pre>${output}</pre>
-        `;
-      render(output_console, document.getElementById("output-console")! as HTMLElement)
+      `;
+      render(
+        output_console,
+        document.getElementById("output-console")! as HTMLElement,
+      );
       requestAnimationFrame(render_canvas);
     }
   }
   requestAnimationFrame(render_canvas);
 }
 
-type Output = { id: string, pane: HTMLElement, button: HTMLButtonElement };
+type Output = { id: string; pane: HTMLElement; button: HTMLButtonElement };
 let outputs: Output[] = [];
 
 function showOutput(id: string) {
   for (const o of outputs) {
     o.button.classList.remove("active");
-    o.pane.classList.add('hidden');
+    o.pane.classList.add("hidden");
   }
-  const o = outputs.find(o => o.pane.id === `output-${id}`);
+  const o = outputs.find((o) => o.pane.id === `output-${id}`);
   if (o) {
-    o.button.classList.add("active")
+    o.button.classList.add("active");
     o.pane.classList.remove("hidden");
   }
 }
@@ -302,7 +320,7 @@ function setupOutputs() {
 export function setupEditor() {
   setupOutputs();
   new EditorView({
-    doc: examples.bouncy_shapes,
+    doc: examples.poly,
     extensions: [
       minimalSetup,
       lineNumbers(),
