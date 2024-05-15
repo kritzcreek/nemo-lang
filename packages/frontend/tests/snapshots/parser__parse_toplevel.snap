@@ -6,8 +6,8 @@ input_file: packages/frontend/tests/passing/toplevel.nemo
 global _ = 0
 global _ = 4242
 global _ = 0b01010101
-global _ = OxDEADBeef
-global _ = Ox1aAbB2cC
+global _ = 0xDeAdBeE
+global _ = 0x1aAbB2cC
 global _ = true
 global _ = false
 global _ = 0.0
@@ -16,7 +16,7 @@ global _ = 1234.1234
 
 
 // ---
-Root@0..181
+Root@0..180
   TopGlobal@0..12
     GLOBAL_KW@0..6 "global"
     SPACE@6..7 " "
@@ -49,7 +49,7 @@ Root@0..181
     ELit@40..50
       LitInt@40..50
         BINARY_LIT@40..50 "0b01010101"
-  TopGlobal@50..72
+  TopGlobal@50..71
     LINEFEED@50..51 "\n"
     GLOBAL_KW@51..57 "global"
     SPACE@57..58 " "
@@ -57,68 +57,72 @@ Root@0..181
     SPACE@59..60 " "
     EQUALS@60..61 "="
     SPACE@61..62 " "
-    UPPER_IDENT@62..72 "OxDEADBeef"
-  TopGlobal@72..94
-    LINEFEED@72..73 "\n"
-    GLOBAL_KW@73..79 "global"
-    SPACE@79..80 " "
-    IDENT@80..81 "_"
-    SPACE@81..82 " "
-    EQUALS@82..83 "="
-    SPACE@83..84 " "
-    UPPER_IDENT@84..94 "Ox1aAbB2cC"
-  TopGlobal@94..110
-    LINEFEED@94..95 "\n"
-    GLOBAL_KW@95..101 "global"
-    SPACE@101..102 " "
-    IDENT@102..103 "_"
-    SPACE@103..104 " "
-    EQUALS@104..105 "="
-    SPACE@105..106 " "
-    ELit@106..110
-      LitBool@106..110
-        TRUE_KW@106..110 "true"
-  TopGlobal@110..127
-    LINEFEED@110..111 "\n"
-    GLOBAL_KW@111..117 "global"
-    SPACE@117..118 " "
-    IDENT@118..119 "_"
-    SPACE@119..120 " "
-    EQUALS@120..121 "="
-    SPACE@121..122 " "
-    ELit@122..127
-      LitBool@122..127
-        FALSE_KW@122..127 "false"
-  TopGlobal@127..142
-    LINEFEED@127..128 "\n"
-    GLOBAL_KW@128..134 "global"
-    SPACE@134..135 " "
-    IDENT@135..136 "_"
-    SPACE@136..137 " "
-    EQUALS@137..138 "="
-    SPACE@138..139 " "
-    ELit@139..142
-      LitFloat@139..142
-        FLOAT_LIT@139..142 "0.0"
-  TopGlobal@142..160
-    LINEFEED@142..143 "\n"
-    GLOBAL_KW@143..149 "global"
-    SPACE@149..150 " "
-    IDENT@150..151 "_"
-    SPACE@151..152 " "
-    EQUALS@152..153 "="
-    SPACE@153..154 " "
-    ELit@154..160
-      LitFloat@154..160
-        FLOAT_LIT@154..160 "0.1234"
-  TopGlobal@160..181
-    LINEFEED@160..161 "\n"
-    GLOBAL_KW@161..167 "global"
-    SPACE@167..168 " "
-    IDENT@168..169 "_"
-    SPACE@169..170 " "
-    EQUALS@170..171 "="
-    SPACE@171..172 " "
-    ELit@172..181
-      LitFloat@172..181
-        FLOAT_LIT@172..181 "1234.1234"
+    ELit@62..71
+      LitInt@62..71
+        HEX_LIT@62..71 "0xDeAdBeE"
+  TopGlobal@71..93
+    LINEFEED@71..72 "\n"
+    GLOBAL_KW@72..78 "global"
+    SPACE@78..79 " "
+    IDENT@79..80 "_"
+    SPACE@80..81 " "
+    EQUALS@81..82 "="
+    SPACE@82..83 " "
+    ELit@83..93
+      LitInt@83..93
+        HEX_LIT@83..93 "0x1aAbB2cC"
+  TopGlobal@93..109
+    LINEFEED@93..94 "\n"
+    GLOBAL_KW@94..100 "global"
+    SPACE@100..101 " "
+    IDENT@101..102 "_"
+    SPACE@102..103 " "
+    EQUALS@103..104 "="
+    SPACE@104..105 " "
+    ELit@105..109
+      LitBool@105..109
+        TRUE_KW@105..109 "true"
+  TopGlobal@109..126
+    LINEFEED@109..110 "\n"
+    GLOBAL_KW@110..116 "global"
+    SPACE@116..117 " "
+    IDENT@117..118 "_"
+    SPACE@118..119 " "
+    EQUALS@119..120 "="
+    SPACE@120..121 " "
+    ELit@121..126
+      LitBool@121..126
+        FALSE_KW@121..126 "false"
+  TopGlobal@126..141
+    LINEFEED@126..127 "\n"
+    GLOBAL_KW@127..133 "global"
+    SPACE@133..134 " "
+    IDENT@134..135 "_"
+    SPACE@135..136 " "
+    EQUALS@136..137 "="
+    SPACE@137..138 " "
+    ELit@138..141
+      LitFloat@138..141
+        FLOAT_LIT@138..141 "0.0"
+  TopGlobal@141..159
+    LINEFEED@141..142 "\n"
+    GLOBAL_KW@142..148 "global"
+    SPACE@148..149 " "
+    IDENT@149..150 "_"
+    SPACE@150..151 " "
+    EQUALS@151..152 "="
+    SPACE@152..153 " "
+    ELit@153..159
+      LitFloat@153..159
+        FLOAT_LIT@153..159 "0.1234"
+  TopGlobal@159..180
+    LINEFEED@159..160 "\n"
+    GLOBAL_KW@160..166 "global"
+    SPACE@166..167 " "
+    IDENT@167..168 "_"
+    SPACE@168..169 " "
+    EQUALS@169..170 "="
+    SPACE@170..171 " "
+    ELit@171..180
+      LitFloat@171..180
+        FLOAT_LIT@171..180 "1234.1234"
