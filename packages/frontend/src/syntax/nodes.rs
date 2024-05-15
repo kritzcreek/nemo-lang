@@ -72,6 +72,9 @@ impl TopStruct {
     pub fn upper_ident_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T![upper_ident])
     }
+    pub fn type_params(&self) -> AstChildren<ParamTy> {
+        support::children(&self.syntax)
+    }
     pub fn l_brace_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T!['{'])
     }
@@ -92,6 +95,9 @@ impl TopVariant {
     }
     pub fn upper_ident_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T![upper_ident])
+    }
+    pub fn type_params(&self) -> AstChildren<ParamTy> {
+        support::children(&self.syntax)
     }
     pub fn l_brace_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T!['{'])
@@ -155,6 +161,15 @@ impl ImpExternal {
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ParamTy {
+    pub(crate) syntax: SyntaxNode,
+}
+impl ParamTy {
+    pub fn ident_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![ident])
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct StructField {
     pub(crate) syntax: SyntaxNode,
 }
@@ -167,15 +182,6 @@ impl StructField {
     }
     pub fn ty(&self) -> Option<Type> {
         support::child(&self.syntax)
-    }
-}
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct ParamTy {
-    pub(crate) syntax: SyntaxNode,
-}
-impl ParamTy {
-    pub fn ident_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T![ident])
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -404,6 +410,9 @@ impl EStruct {
     }
     pub fn upper_ident_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T![upper_ident])
+    }
+    pub fn e_ty_arg_list(&self) -> Option<ETyArgList> {
+        support::child(&self.syntax)
     }
     pub fn l_brace_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T!['{'])
@@ -860,9 +869,9 @@ impl AstNode for ImpExternal {
         &self.syntax
     }
 }
-impl AstNode for StructField {
+impl AstNode for ParamTy {
     fn can_cast(kind: SyntaxKind) -> bool {
-        kind == StructField
+        kind == ParamTy
     }
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         if Self::can_cast(syntax.kind()) {
@@ -875,9 +884,9 @@ impl AstNode for StructField {
         &self.syntax
     }
 }
-impl AstNode for ParamTy {
+impl AstNode for StructField {
     fn can_cast(kind: SyntaxKind) -> bool {
-        kind == ParamTy
+        kind == StructField
     }
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         if Self::can_cast(syntax.kind()) {
@@ -1928,12 +1937,12 @@ impl std::fmt::Display for ImpExternal {
         std::fmt::Display::fmt(self.syntax(), f)
     }
 }
-impl std::fmt::Display for StructField {
+impl std::fmt::Display for ParamTy {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
     }
 }
-impl std::fmt::Display for ParamTy {
+impl std::fmt::Display for StructField {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
     }

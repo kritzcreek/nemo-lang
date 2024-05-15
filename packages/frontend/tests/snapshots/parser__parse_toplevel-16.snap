@@ -7,6 +7,7 @@ fn poly[a, b](a : a, other : b) {
   poly#[i32, bool](1, true)
 }
 
+
 // ---
 Root@0..64
   TopFn@0..64
