@@ -8,6 +8,6 @@ fn id[a](elem : a) -> a {
 
 fn main() -> i32 {
   let i = 0;
-  let xs : [i32] = singleton[#i32](10);
+  let xs : [i32] = singleton#[i32](10);
   xs[0]
 }

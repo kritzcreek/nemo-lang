@@ -451,9 +451,11 @@ fn call_ty_arg_list(p: &mut Parser) {
     p.finish_at(c, SyntaxKind::ETyArgList);
 }
 
-fn call_arg_list(p: &mut Parser) {
+fn call_arg_list(p: &mut Parser) -> Progress {
     let c = p.checkpoint();
-    p.bump(T!['(']);
+    if !p.eat(T!['(']) {
+        return Progress::None;
+    }
     while !p.at(SyntaxKind::EOF) && !p.at(T![')']) {
         if !expr(p).made_progress() {
             break;
@@ -465,6 +467,7 @@ fn call_arg_list(p: &mut Parser) {
     }
     p.expect(T![')']);
     p.finish_at(c, SyntaxKind::EArgList);
+    Progress::Made
 }
 
 fn postfix_expr(p: &mut Parser, c: Checkpoint) {
@@ -472,7 +475,9 @@ fn postfix_expr(p: &mut Parser, c: Checkpoint) {
         match p.current() {
             T![#] => {
                 call_ty_arg_list(p);
-                call_arg_list(p);
+                if !call_arg_list(p).made_progress() {
+                    p.error("expected a call argument list")
+                }
                 p.finish_at(c, SyntaxKind::ECall)
             }
             T!['('] => {
