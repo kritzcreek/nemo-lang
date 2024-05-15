@@ -512,7 +512,6 @@ impl<'a> Codegen<'a> {
 
         for func in program.funcs.iter() {
             if func.is_monomorphic() {
-                dbg!(func);
                 self.builder.declare_func(func.name, func.func_ty());
             } else {
                 self.poly_funcs.insert(

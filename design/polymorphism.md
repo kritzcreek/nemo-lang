@@ -23,8 +23,8 @@ fn main() -> i32 {
 }
 
 variant List[a] {
-  struct Nil {},
-  struct Cons {
+  struct Nil[a] {},
+  struct Cons[a] {
     head: a,
     tail: List[a]
   }
