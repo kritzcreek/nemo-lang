@@ -64,7 +64,7 @@ impl<'a> Lexer<'a> {
                     text: self.inner.slice(),
                     span: self.inner.span(),
                 });
-                self.lookahead = next_token.clone();
+                self.lookahead.clone_from(&next_token);
                 next_token
             }
         }
