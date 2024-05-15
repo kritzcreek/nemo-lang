@@ -95,6 +95,15 @@ impl<'a> Parser<'a> {
         } = self.tokens.pop().unwrap();
 
         for tkn in leading {
+            if tkn.kind == SyntaxKind::LEX_ERROR {
+                self.errors.push(ParseError {
+                    it: "lexing error".to_string(),
+                    at: TextRange::new(
+                        TextSize::from(tkn.span.start as u32),
+                        TextSize::from(tkn.span.end as u32),
+                    ),
+                })
+            }
             self.builder
                 .token(NemoLanguage::kind_to_raw(tkn.kind), tkn.text);
         }
@@ -103,6 +112,15 @@ impl<'a> Parser<'a> {
             .token(NemoLanguage::kind_to_raw(token.kind), token.text);
 
         for tkn in trailing {
+            if tkn.kind == SyntaxKind::LEX_ERROR {
+                self.errors.push(ParseError {
+                    it: "lexing error".to_string(),
+                    at: TextRange::new(
+                        TextSize::from(tkn.span.start as u32),
+                        TextSize::from(tkn.span.end as u32),
+                    ),
+                })
+            }
             self.builder
                 .token(NemoLanguage::kind_to_raw(tkn.kind), tkn.text);
         }

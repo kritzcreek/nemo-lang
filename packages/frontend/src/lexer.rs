@@ -50,7 +50,7 @@ fn is_trailing(kind: SyntaxKind) -> bool {
 pub fn is_whitespace(kind: SyntaxKind) -> bool {
     matches!(
         kind,
-        SyntaxKind::SPACE | SyntaxKind::LINEFEED | SyntaxKind::LINE_COMMENT
+        SyntaxKind::SPACE | SyntaxKind::LINEFEED | SyntaxKind::LINE_COMMENT | SyntaxKind::LEX_ERROR
     )
 }
 
@@ -60,7 +60,7 @@ impl<'a> Lexer<'a> {
             Some(i) => Some(i.clone()),
             None => {
                 let next_token = Some(Token {
-                    kind: self.inner.next()?.ok()?,
+                    kind: self.inner.next()?.unwrap_or(SyntaxKind::LEX_ERROR),
                     text: self.inner.slice(),
                     span: self.inner.span(),
                 });
@@ -73,7 +73,7 @@ impl<'a> Lexer<'a> {
     fn inner_next(&mut self) -> Option<Token<'a>> {
         self.lookahead.take().or_else(|| {
             Some(Token {
-                kind: self.inner.next()?.ok()?,
+                kind: self.inner.next()?.unwrap_or(SyntaxKind::LEX_ERROR),
                 text: self.inner.slice(),
                 span: self.inner.span(),
             })
@@ -287,6 +287,7 @@ pub enum SyntaxKind {
     #[token("=>")]
     FAT_ARROW,
 
+    LEX_ERROR,
     EOF,
 
     // Composite nodes

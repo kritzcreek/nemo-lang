@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fmt::Write;
 
 use wasm_encoder::{BlockType, ConstExpr, HeapType, Instruction, RefType, ValType};
 
@@ -452,8 +453,17 @@ impl<'a> Codegen<'a> {
                 .name_supply
                 .lookup(name)
                 .expect("Unknown polyfunc");
+            let mut it = format!("{}#", definition.it);
+            for param in ty_params {
+                write!(
+                    &mut it,
+                    "_{}",
+                    param.display(&self.builder.name_supply.name_map)
+                )
+                .unwrap()
+            }
             let new_name = self.builder.name_supply.func_idx(Id {
-                it: format!("{}|{ty_params:?}|", definition.it),
+                it,
                 at: definition.at,
             });
             poly_func.instances.insert(ty_params.to_vec(), new_name);
