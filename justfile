@@ -1,3 +1,6 @@
+install:
+    cargo install --path packages/cli
+
 build-cli:
     cargo build --release --bin nemo
 
