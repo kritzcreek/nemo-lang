@@ -550,15 +550,23 @@ impl Typechecker {
                         return Ty::Any;
                     };
                     self.record_ref(&alt, *name);
-                    Ty::Struct(*name, ty_args)
+                    // TODO ty_args: None
+                    Ty::Struct { name: *name, ty_args: None }
                 } else {
                     let ty_name = t.upper_ident_token().unwrap();
-                    let Some(name) = self.context.lookup_type_name(ty_name.text()) else {
+                    let Some(TypeDef::Struct(def)) = self.context.lookup_type(ty_name.text()) else {
                         self.report_error_token(&ty_name, UnknownType(ty_name.text().to_string()));
                         return Ty::Any;
                     };
-                    self.record_ref(&ty_name, name);
-                    Ty::Struct(name, ty_args)
+                    self.record_ref(&ty_name, def.name);
+
+                    let subst = if !ty_args.is_empty() {
+                        let ty_param_names: Vec<Name> = def.ty_params.iter().map(|(_, n)| *n).collect();
+                        Some(Substitution::new(&ty_param_names, &ty_args))
+                    } else {
+                        None
+                    };
+                    Ty::Struct { name: def.name, ty_args: subst }
                 }
             }
             Type::TyVar(v) => {
@@ -892,7 +900,7 @@ impl Typechecker {
                                 );
                             }
                         }
-                        (Ty::Struct(def.variant.unwrap_or(name)), builder.build())
+                        (Ty::Struct { name: def.variant.unwrap_or(name), ty_args: subst }, builder.build())
                     }
                 }
             }
@@ -1224,14 +1232,14 @@ impl Typechecker {
         receiver: &Ty,
         field_name_tkn: &SyntaxToken,
     ) -> Option<(Name, Ty)> {
-        let def = match receiver {
-            Ty::Struct(name) => {
+        let (def, ty_args) = match receiver {
+            Ty::Struct { name, ty_args } => {
                 let type_def = self
                     .context
                     .lookup_type_def(*name)
                     .expect("inferred a type that wasn't defined");
                 match type_def {
-                    TypeDef::Struct(s) => s,
+                    TypeDef::Struct(s) => (s, ty_args),
                     TypeDef::Variant(_) => {
                         self.report_error_token(field_name_tkn, NonStructIdx(receiver.clone()));
                         return None;
@@ -1258,7 +1266,12 @@ impl Typechecker {
             }
             Some((t, n)) => {
                 self.record_ref(field_name_tkn, *n);
-                Some((*n, t.clone()))
+                let t = if let Some(subst) = ty_args {
+                    subst.apply(t.clone())
+                } else {
+                    t.clone()
+                };
+                Some((*n, t))
             }
         }
     }
@@ -1411,14 +1424,15 @@ impl Typechecker {
                 self.record_ref(&ty, def.name);
                 builder.variant(def.name);
                 match expected {
-                    Ty::Struct(s) if def.name == *s => {
+                    Ty::Struct { name: s, ty_args } if def.name == *s => {
                         if let Some(struct_name) = def.alternatives.get(ctor.text()) {
                             self.record_ref(&ctor, *struct_name);
                             builder.alternative(*struct_name);
                             let name = self.name_supply.local_idx(&var);
                             self.context.add_var(
                                 var.text().to_string(),
-                                Ty::Struct(*struct_name),
+                                // TODO Think about this clone
+                                Ty::Struct { name: *struct_name, ty_args: ty_args.clone() },
                                 name,
                             );
                             builder.binder(name);

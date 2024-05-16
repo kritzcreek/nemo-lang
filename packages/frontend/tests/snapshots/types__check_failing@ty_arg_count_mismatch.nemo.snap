@@ -4,9 +4,33 @@ expression: err_buf
 input_file: packages/frontend/tests/type_errors/ty_arg_count_mismatch.nemo
 ---
 [22] Error: Mismatched type arg count. Expected 2 arguments, but got 1
-   ╭─[source:1:13]
-   │
- 6 │   func#[i32](3);
-   │   ──┬─  
-   │     ╰─── Mismatched type arg count. Expected 2 arguments, but got 1
-───╯
+    ╭─[source:1:13]
+    │
+ 11 │   func#[i32](3);
+    │   ──┬─  
+    │     ╰─── Mismatched type arg count. Expected 2 arguments, but got 1
+────╯
+
+[22] Error: Mismatched type arg count. Expected 2 arguments, but got 1
+    ╭─[source:1:13]
+    │
+ 12 │   Box#[i32] { a = 1, b = 2 };
+    │      ───┬──  
+    │         ╰──── Mismatched type arg count. Expected 2 arguments, but got 1
+────╯
+
+[15] Error: Type mismatch. Expected b, but got i32
+    ╭─[source:1:13]
+    │
+ 12 │   Box#[i32] { a = 1, b = 2 };
+    │                          ─┬  
+    │                           ╰── Type mismatch. Expected b, but got i32
+────╯
+
+[15] Error: Type mismatch. Expected i32, but got Box[i32]
+    ╭─[source:1:13]
+    │
+ 12 │   Box#[i32] { a = 1, b = 2 };
+    │   ─────────────┬────────────  
+    │                ╰────────────── Type mismatch. Expected i32, but got Box[i32]
+────╯

@@ -1,6 +1,6 @@
 pub use crate::names::{Id, Name, NameMap, NameSupply};
 use core::fmt;
-use std::{collections::HashMap, fmt::Debug};
+use std::{collections::BTreeMap, fmt::Debug};
 use text_size::TextRange;
 
 pub(crate) trait Spanned {
@@ -14,7 +14,7 @@ pub enum Ty {
     Unit,
     Bool,
     Array(Box<Ty>),
-    Struct(Name, Vec<Ty>),
+    Struct { name: Name, ty_args: Option<Substitution> },
     Var(Name),
     Func(Box<FuncTy>),
 
@@ -41,11 +41,11 @@ impl fmt::Display for TyDisplay<'_> {
             Ty::Bool => write!(f, "bool"),
             Ty::Unit => write!(f, "unit"),
             Ty::Array(t) => write!(f, "[{}]", t.display(self.name_map)),
-            Ty::Struct(t, args) => {
+            Ty::Struct { name: t, ty_args: args } => {
                 write!(f, "{}", self.name_map.get(t).unwrap().it)?;
-                if !args.is_empty() {
+                if let Some(subst) = args {
                     write!(f, "[")?;
-                    for (idx, arg) in args.into_iter().enumerate() {
+                    for (idx, arg) in subst.tys().into_iter().enumerate() {
                         if idx != 0 {
                             write!(f, ", ")?
                         }
@@ -98,10 +98,11 @@ impl fmt::Display for FuncTyDisplay<'_> {
     }
 }
 
-pub struct Substitution(HashMap<Name, Ty>);
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
+pub struct Substitution(BTreeMap<Name, Ty>);
 impl Substitution {
     pub fn new(names: &[Name], tys: &[Ty]) -> Self {
-        let mut mappings = HashMap::new();
+        let mut mappings = BTreeMap::new();
         for (name, ty) in names.iter().zip(tys.iter()) {
             mappings.insert(*name, ty.clone());
         }
@@ -119,9 +120,10 @@ impl Substitution {
     pub fn apply(&self, ty: Ty) -> Ty {
         match ty {
             Ty::Var(n) => self.0.get(&n).cloned().unwrap_or(ty),
-            Ty::I32 | Ty::F32 | Ty::Unit | Ty::Bool | Ty::Struct(_, _) | Ty::Any => ty,
+            Ty::I32 | Ty::F32 | Ty::Unit | Ty::Bool | Ty::Any => ty,
             Ty::Array(t) => Ty::Array(Box::new(self.apply(*t))),
             Ty::Func(f) => Ty::Func(Box::new(self.apply_func(*f))),
+            Ty::Struct { name, ty_args } => Ty::Struct { name, ty_args: ty_args.map(|s| self.apply_subst(s)) }
         }
     }
 
@@ -131,6 +133,28 @@ impl Substitution {
             result: self.apply(ty.result),
         }
     }
+
+    pub fn apply_subst(&self, subst: Substitution) -> Substitution {
+        let mut subst = subst;
+        for (_, v) in subst.0.iter_mut() {
+            let ty = std::mem::replace(v, Ty::Any);
+            *v = self.apply(ty);
+        }
+        subst
+    }
+
+    pub fn names(&self) -> Vec<Name> {
+        let mut keys: Vec<Name> = self.0.keys().copied().collect();
+        keys.sort();
+        keys
+    }
+
+    pub fn tys(&self) -> Vec<&Ty> {
+        let mut keys: Vec<(&Name, &Ty)> = self.0.iter().collect();
+        keys.sort_by_key(|(n, _)| **n);
+        keys.into_iter().map(|(_, t)| t).collect()
+    }
+
 }
 
 // Our backend ast is very similar to our syntax ast.

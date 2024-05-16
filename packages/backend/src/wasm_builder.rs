@@ -370,7 +370,7 @@ impl<'a> Builder<'a> {
         match ty {
             Ty::F32 => ValType::F32,
             Ty::I32 | Ty::Unit | Ty::Bool => ValType::I32,
-            Ty::Struct(s, ty_args) => {
+            Ty::Struct { name: s, ty_args } => {
                 let idx = self.heap_type(*s);
                 // Could make these non-nullable, but then we'd need separate
                 // nullable types for lazily initialized globals

@@ -65,7 +65,7 @@ impl<'a> Codegen<'a> {
                 let ty_idx = self.builder.array_type_elem(t);
                 ConstExpr::ref_null(HeapType::Concrete(ty_idx))
             }
-            Ty::Struct(s, ty_args) => {
+            Ty::Struct { name: s, ty_args } => {
                 let s = self.builder.struct_type(*s);
                 ConstExpr::ref_null(HeapType::Concrete(s.type_idx))
             }
