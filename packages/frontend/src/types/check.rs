@@ -31,6 +31,7 @@ use std::rc::Rc;
 struct StructDef {
     name: Name,
     variant: Option<Name>,
+    ty_params: Vec<(String, Name)>,
     fields: HashMap<String, (Ty, Name)>,
 }
 
@@ -438,8 +439,21 @@ impl Typechecker {
                 let mut def = StructDef {
                     name,
                     variant,
+                    ty_params: vec![],
                     fields: HashMap::new(),
                 };
+
+                self.context.clear_type_vars();
+                for ty_param in s.type_params() {
+                    let Some(tkn) = ty_param.ident_token() else {
+                        continue;
+                    };
+                    let name = self.name_supply.type_var(&tkn);
+                    self.record_def(&tkn, name);
+                    def.ty_params.push((tkn.text().to_string(), name));
+                    self.context.add_type_var(tkn.text().to_string(), name);
+                }
+
                 for field in s.struct_fields() {
                     let Some(field_name) = field.ident_token() else {
                         continue;
@@ -517,6 +531,7 @@ impl Typechecker {
                 None => Ty::Array(Box::new(Ty::Any)),
             },
             Type::TyCons(t) => {
+                let ty_args: Vec<Ty> = t.type_args().map(|t| self.check_ty(&t)).collect();
                 if let Some(ty) = t.qualifier().map(|q| q.upper_ident_token().unwrap()) {
                     let Some(TypeDef::Variant(ty_def)) = self.context.lookup_type(ty.text()) else {
                         self.report_error_token(&ty, UnknownType(ty.text().to_string()));
@@ -535,7 +550,7 @@ impl Typechecker {
                         return Ty::Any;
                     };
                     self.record_ref(&alt, *name);
-                    Ty::Struct(*name)
+                    Ty::Struct(*name, ty_args)
                 } else {
                     let ty_name = t.upper_ident_token().unwrap();
                     let Some(name) = self.context.lookup_type_name(ty_name.text()) else {
@@ -543,7 +558,7 @@ impl Typechecker {
                         return Ty::Any;
                     };
                     self.record_ref(&ty_name, name);
-                    Ty::Struct(name)
+                    Ty::Struct(name, ty_args)
                 }
             }
             Type::TyVar(v) => {
@@ -820,6 +835,23 @@ impl Typechecker {
                         self.record_ref(&struct_name_tkn, name);
                         let mut builder = StructBuilder::new();
                         builder.name(Some(name));
+
+                        let subst = if let Some(ty_arg_list) = struct_expr.e_ty_arg_list() {
+                            let ty_arg_names: Vec<Name> =
+                                def.ty_params.iter().map(|(_, name)| *name).collect();
+                            let tys: Vec<Ty> =
+                                ty_arg_list.types().map(|t| self.check_ty(&t)).collect();
+                            if ty_arg_names.len() != tys.len() {
+                                self.report_error(
+                                    &ty_arg_list,
+                                    TyArgCountMismatch(ty_arg_names.len(), tys.len()),
+                                )
+                            }
+                            Some(Substitution::new(&ty_arg_names, &tys))
+                        } else {
+                            None
+                        };
+
                         let mut seen = vec![];
                         for field in struct_expr.e_struct_fields() {
                             let Some(field_tkn) = field.ident_token() else {
@@ -838,7 +870,14 @@ impl Typechecker {
                             self.record_ref(&field_tkn, *field_name);
                             seen.push(*field_name);
                             if let Some(field_expr) = field.expr() {
-                                builder.field(*field_name, self.check_expr(&field_expr, ty));
+                                if let Some(subst) = &subst {
+                                    builder.field(
+                                        *field_name,
+                                        self.check_expr(&field_expr, &subst.apply(ty.clone())),
+                                    );
+                                } else {
+                                    builder.field(*field_name, self.check_expr(&field_expr, ty));
+                                }
                             }
                         }
                         // TODO report all missing fields at once

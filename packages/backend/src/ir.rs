@@ -14,7 +14,7 @@ pub enum Ty {
     Unit,
     Bool,
     Array(Box<Ty>),
-    Struct(Name),
+    Struct(Name, Vec<Ty>),
     Var(Name),
     Func(Box<FuncTy>),
 
@@ -41,7 +41,20 @@ impl fmt::Display for TyDisplay<'_> {
             Ty::Bool => write!(f, "bool"),
             Ty::Unit => write!(f, "unit"),
             Ty::Array(t) => write!(f, "[{}]", t.display(self.name_map)),
-            Ty::Struct(t) => write!(f, "{}", self.name_map.get(t).unwrap().it),
+            Ty::Struct(t, args) => {
+                write!(f, "{}", self.name_map.get(t).unwrap().it)?;
+                if !args.is_empty() {
+                    write!(f, "[")?;
+                    for (idx, arg) in args.into_iter().enumerate() {
+                        if idx != 0 {
+                            write!(f, ", ")?
+                        }
+                        write!(f, "{}", arg.display(self.name_map))?;
+                    }
+                    write!(f, "]")?;
+                };
+                Ok(())
+            }
             Ty::Var(v) => write!(f, "{}", self.name_map.get(v).unwrap().it),
             Ty::Func(func_ty) => func_ty.display(self.name_map).fmt(f),
             Ty::Any => write!(f, "ANY"),
@@ -106,7 +119,7 @@ impl Substitution {
     pub fn apply(&self, ty: Ty) -> Ty {
         match ty {
             Ty::Var(n) => self.0.get(&n).cloned().unwrap_or(ty),
-            Ty::I32 | Ty::F32 | Ty::Unit | Ty::Bool | Ty::Struct(_) | Ty::Any => ty,
+            Ty::I32 | Ty::F32 | Ty::Unit | Ty::Bool | Ty::Struct(_, _) | Ty::Any => ty,
             Ty::Array(t) => Ty::Array(Box::new(self.apply(*t))),
             Ty::Func(f) => Ty::Func(Box::new(self.apply_func(*f))),
         }

@@ -39,7 +39,7 @@ TyFloat = 'f32'
 TyBool = 'bool'
 TyUnit = 'unit'
 TyArray = '[' elem:Type ']'
-TyCons = Qualifier? 'upper_ident'
+TyCons = Qualifier? 'upper_ident' type_args:Type*
 TyVar = 'ident'
 
 Qualifier = 'upper_ident' '::'

@@ -1,13 +1,9 @@
-fn singleton[a](elem : a) -> [a] {
-  [id#[a](elem)]
+struct Box[a] {
+  content : a
 }
 
-fn id[a](elem : a) -> a {
-  elem
-}
 
 fn main() -> i32 {
-  let i = 0;
-  let xs : [i32] = singleton#[i32](10);
-  xs[0]
+  let box = Box #[i32] { content = 10 };
+  box.content
 }

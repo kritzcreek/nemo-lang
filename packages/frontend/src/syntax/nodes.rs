@@ -285,6 +285,9 @@ impl TyCons {
     pub fn upper_ident_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T![upper_ident])
     }
+    pub fn type_args(&self) -> AstChildren<Type> {
+        support::children(&self.syntax)
+    }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TyFn {
