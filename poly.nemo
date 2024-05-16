@@ -2,7 +2,6 @@ struct Box[a] {
   content : a
 }
 
-
 fn main() -> i32 {
   let box = Box #[i32] { content = 10 };
   box.content

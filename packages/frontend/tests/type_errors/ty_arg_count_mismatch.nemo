@@ -7,7 +7,13 @@ struct Box[a, b] {
   b : b
 }
 
+variant List[a] {
+  struct Nil[a] {}
+}
+
 fn main() -> i32 {
   func#[i32](3);
   Box#[i32] { a = 1, b = 2 };
+  List::Nil#[i32, f32] {};
+  10
 }

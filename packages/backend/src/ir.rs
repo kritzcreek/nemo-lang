@@ -14,7 +14,10 @@ pub enum Ty {
     Unit,
     Bool,
     Array(Box<Ty>),
-    Struct { name: Name, ty_args: Option<Substitution> },
+    Struct {
+        name: Name,
+        ty_args: Option<Substitution>,
+    },
     Var(Name),
     Func(Box<FuncTy>),
 
@@ -41,7 +44,10 @@ impl fmt::Display for TyDisplay<'_> {
             Ty::Bool => write!(f, "bool"),
             Ty::Unit => write!(f, "unit"),
             Ty::Array(t) => write!(f, "[{}]", t.display(self.name_map)),
-            Ty::Struct { name: t, ty_args: args } => {
+            Ty::Struct {
+                name: t,
+                ty_args: args,
+            } => {
                 write!(f, "{}", self.name_map.get(t).unwrap().it)?;
                 if let Some(subst) = args {
                     write!(f, "[")?;
@@ -123,7 +129,10 @@ impl Substitution {
             Ty::I32 | Ty::F32 | Ty::Unit | Ty::Bool | Ty::Any => ty,
             Ty::Array(t) => Ty::Array(Box::new(self.apply(*t))),
             Ty::Func(f) => Ty::Func(Box::new(self.apply_func(*f))),
-            Ty::Struct { name, ty_args } => Ty::Struct { name, ty_args: ty_args.map(|s| self.apply_subst(s)) }
+            Ty::Struct { name, ty_args } => Ty::Struct {
+                name,
+                ty_args: ty_args.map(|s| self.apply_subst(s)),
+            },
         }
     }
 
@@ -154,7 +163,6 @@ impl Substitution {
         keys.sort_by_key(|(n, _)| **n);
         keys.into_iter().map(|(_, t)| t).collect()
     }
-
 }
 
 // Our backend ast is very similar to our syntax ast.
