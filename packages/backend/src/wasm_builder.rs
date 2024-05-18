@@ -43,16 +43,32 @@ pub struct Export {
     desc: (ExportKind, u32),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct StructInfo {
-    pub type_idx: TypeIdx,
-    pub fields: Vec<Name>,
-    pub variant_tag: Option<i32>,
+    // TODO Vec<ValTy>
+    pub instances: HashMap<Vec<Ty>, TypeIdx>,
+    pub definition: Struct,
 }
 
-#[derive(Debug)]
+impl StructInfo {
+    pub fn field_idx(&self, name: Name) -> FieldIdx {
+        let offset = if self.definition.variant.is_some() {
+            1
+        } else {
+            0
+        };
+        self.definition
+            .fields
+            .iter()
+            .position(|(f, _)| *f == name)
+            .unwrap() as u32
+            + offset
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct VariantInfo {
-    pub type_idx: TypeIdx,
+    pub instances: HashMap<Vec<Ty>, TypeIdx>,
     pub alternatives: Vec<Name>,
 }
 
@@ -76,11 +92,10 @@ pub struct Builder<'a> {
     substitution: Substitution,
     // Stores the type index for all array types we've declared so far.
     // Uses the arrays _ELEM TYPE_ as the key
-    arrays: HashMap<ValType, TypeIdx>,
     func_tys: HashMap<FuncType, TypeIdx>,
+    arrays: HashMap<ValType, TypeIdx>,
     structs: HashMap<Name, StructInfo>,
     variants: HashMap<Name, VariantInfo>,
-    fields: HashMap<Name, (TypeIdx, FieldIdx)>,
 }
 
 impl<'a> Builder<'a> {
@@ -94,7 +109,6 @@ impl<'a> Builder<'a> {
             func_tys: HashMap::new(),
             structs: HashMap::new(),
             variants: HashMap::new(),
-            fields: HashMap::new(),
             imports: HashMap::new(),
             exports: vec![],
             start_fn: None,
@@ -118,28 +132,28 @@ impl<'a> Builder<'a> {
         // type_section
         let mut type_names = WasmNameMap::new();
         let mut type_section = TypeSection::new();
+        let mut all_field_names = IndirectNameMap::new();
         for ty in self.types {
             type_section.subtype(&ty);
         }
 
         for (name, info) in self.structs {
-            type_names.append(info.type_idx, &names.lookup(name).unwrap().it);
+            for type_idx in info.instances.values() {
+                // TODO: Poly postfix
+                type_names.append(*type_idx, &names.lookup(name).unwrap().it);
+                let mut field_names = WasmNameMap::new();
+                for (field, _) in info.definition.fields.iter() {
+                    field_names.append(info.field_idx(*field), &names.lookup(name).unwrap().it)
+                }
+                all_field_names.append(*type_idx, &field_names);
+            }
         }
 
         for (name, info) in self.variants {
-            type_names.append(info.type_idx, &names.lookup(name).unwrap().it);
-        }
-
-        let mut field_names = HashMap::new();
-        for (name, (ty_idx, field_idx)) in self.fields {
-            field_names
-                .entry(ty_idx)
-                .or_insert(WasmNameMap::new())
-                .append(field_idx, &names.lookup(name).unwrap().it);
-        }
-        let mut all_field_names = IndirectNameMap::new();
-        for (ty_idx, names) in field_names {
-            all_field_names.append(ty_idx, &names);
+            for (_tys, type_idx) in info.instances {
+                // TODO: Poly postfix
+                type_names.append(type_idx, &names.lookup(name).unwrap().it);
+            }
         }
 
         // import_section
@@ -248,77 +262,22 @@ impl<'a> Builder<'a> {
     }
 
     pub fn declare_variant(&mut self, ty: Variant) {
-        let idx = self.types.len() as u32;
-        self.types.push(SubType {
-            is_final: false,
-            supertype_idx: None,
-            composite_type: CompositeType::Struct(StructType {
-                fields: vec![FieldType {
-                    element_type: StorageType::Val(ValType::I32),
-                    mutable: false,
-                }]
-                .into_boxed_slice(),
-            }),
-        });
         self.variants.insert(
             ty.name,
             VariantInfo {
-                type_idx: idx,
+                instances: HashMap::new(),
                 alternatives: ty.alternatives,
             },
         );
     }
 
     pub fn declare_struct(&mut self, ty: Struct) {
-        let mut supertype_idx = None;
-        let mut variant_tag = None;
-        let mut fields = if let Some(v) = ty.variant {
-            supertype_idx = Some(self.variant_type(v).type_idx);
-            variant_tag = Some(self.variant_tag(v, ty.name));
-
-            let mut fields = Vec::with_capacity(ty.fields.len() + 1);
-            fields.push(FieldType {
-                element_type: StorageType::Val(ValType::I32),
-                mutable: false,
-            });
-            fields
-        } else {
-            Vec::with_capacity(ty.fields.len())
-        };
-        let mut field_names = vec![];
-        for (name, ty) in ty.fields {
-            field_names.push(name);
-            let val_ty = self.val_ty(&ty);
-            fields.push(FieldType {
-                element_type: StorageType::Val(val_ty),
-                mutable: true,
-            })
-        }
-        let index = self.types.len() as u32;
-
-        for (field_idx, field_name) in field_names.iter().enumerate() {
-            let mut idx = field_idx;
-            if ty.variant.is_some() {
-                idx += 1
-            };
-            self.fields.insert(*field_name, (index, idx as u32));
-        }
-
-        self.types.push(SubType {
-            is_final: true,
-            supertype_idx,
-            composite_type: CompositeType::Struct(StructType {
-                fields: fields.into_boxed_slice(),
-            }),
-        });
-
         let struct_info = StructInfo {
-            type_idx: index,
-            fields: field_names,
-            variant_tag,
+            instances: HashMap::new(),
+            definition: ty,
         };
-
-        self.structs.insert(ty.name, struct_info);
+        self.structs
+            .insert(struct_info.definition.name, struct_info);
     }
 
     pub fn func_type(&mut self, ty: &FuncTy) -> TypeIdx {
@@ -344,26 +303,99 @@ impl<'a> Builder<'a> {
         self.variant_type(variant).tag(alternative)
     }
 
-    pub fn heap_type(&'a self, name: Name) -> TypeIdx {
-        if let Some(v) = self.variants.get(&name) {
-            v.type_idx
-        } else if let Some(str) = self.structs.get(&name) {
-            str.type_idx
+    pub fn heap_type(&mut self, name: Name, ty_params: &Option<Substitution>) -> TypeIdx {
+        if let Some(v) = self.variants.get_mut(&name) {
+            let tys = ty_params
+                .as_ref()
+                .map(|s| s.tys_owned())
+                .unwrap_or_default();
+            if let Some(type_idx) = v.instances.get(&tys) {
+                return *type_idx;
+            }
+
+            let idx = self.types.len() as u32;
+            v.instances.insert(tys, idx);
+            self.types.push(SubType {
+                is_final: false,
+                supertype_idx: None,
+                composite_type: CompositeType::Struct(StructType {
+                    fields: vec![FieldType {
+                        element_type: StorageType::Val(ValType::I32),
+                        mutable: false,
+                    }]
+                    .into_boxed_slice(),
+                }),
+            });
+            idx
+        } else if let Some(str) = self.structs.get_mut(&name).cloned() {
+            let tys = ty_params
+                .as_ref()
+                .map(|s| s.tys_owned())
+                .unwrap_or_default();
+            if let Some(type_idx) = str.instances.get(&tys) {
+                return *type_idx;
+            }
+
+            let idx = self.types.len() as u32;
+            self.structs
+                .get_mut(&name)
+                .unwrap()
+                .instances
+                .insert(tys, idx);
+
+            let mut fields = vec![];
+            let mut supertype_idx = None;
+
+            let definition = &str.definition;
+            if let Some(variant) = definition.variant {
+                supertype_idx = Some(self.heap_type(variant, ty_params));
+                fields.push(FieldType {
+                    element_type: StorageType::Val(ValType::I32),
+                    mutable: false,
+                });
+            };
+            for (_name, ty) in &definition.fields {
+                let ty = if let Some(subst) = ty_params {
+                    subst.apply(ty.clone())
+                } else {
+                    ty.clone()
+                };
+                let val_ty = self.val_ty(&ty);
+                fields.push(FieldType {
+                    element_type: StorageType::Val(val_ty),
+                    mutable: true,
+                })
+            }
+
+            self.types.push(SubType {
+                is_final: true,
+                supertype_idx,
+                composite_type: CompositeType::Struct(StructType {
+                    fields: fields.into_boxed_slice(),
+                }),
+            });
+            idx
         } else {
-            panic!("tried to get heap type before declaring it")
+            panic!(
+                "tried to get heap type {} before declaring it",
+                self.resolve_name(name).it
+            )
         }
     }
 
-    pub fn variant_type(&'a self, name: Name) -> &'a VariantInfo {
+    pub fn variant_type(&self, name: Name) -> &VariantInfo {
         self.variants
             .get(&name)
             .expect("Tried to get variant type before declaring it")
     }
 
-    pub fn struct_type(&'a self, name: Name) -> &'a StructInfo {
-        self.structs
-            .get(&name)
-            .expect("Tried to get struct type before declaring it")
+    pub fn struct_type(&self, name: Name) -> &StructInfo {
+        self.structs.get(&name).unwrap_or_else(|| {
+            panic!(
+                "Tried to get struct type before declaring it: {}",
+                self.resolve_name(name).it
+            )
+        })
     }
 
     pub fn val_ty(&mut self, ty: &Ty) -> ValType {
@@ -371,7 +403,7 @@ impl<'a> Builder<'a> {
             Ty::F32 => ValType::F32,
             Ty::I32 | Ty::Unit | Ty::Bool => ValType::I32,
             Ty::Struct { name: s, ty_args } => {
-                let idx = self.heap_type(*s);
+                let idx = self.heap_type(*s, ty_args);
                 // Could make these non-nullable, but then we'd need separate
                 // nullable types for lazily initialized globals
                 ValType::Ref(RefType {
@@ -430,13 +462,6 @@ impl<'a> Builder<'a> {
                 });
                 ix
             }
-        }
-    }
-
-    pub fn lookup_field(&self, name: &Name) -> (TypeIdx, FieldIdx) {
-        match self.fields.get(name) {
-            Some(f) => *f,
-            None => panic!("{}", self.resolve_name(*name).it),
         }
     }
 

@@ -163,6 +163,12 @@ impl Substitution {
         keys.sort_by_key(|(n, _)| **n);
         keys.into_iter().map(|(_, t)| t).collect()
     }
+
+    pub fn tys_owned(&self) -> Vec<Ty> {
+        let mut keys: Vec<(&Name, &Ty)> = self.0.iter().collect();
+        keys.sort_by_key(|(n, _)| **n);
+        keys.into_iter().map(|(_, t)| t.clone()).collect()
+    }
 }
 
 // Our backend ast is very similar to our syntax ast.
@@ -417,6 +423,7 @@ pub struct Variant {
 pub struct Struct {
     pub span: TextRange,
     pub name: Name,
+    pub ty_params: Vec<Name>,
     pub variant: Option<Name>,
     pub fields: Vec<(Name, Ty)>,
 }

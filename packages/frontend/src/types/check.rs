@@ -53,12 +53,18 @@ enum TypeDef {
     Struct(Rc<StructDef>),
     Variant(Rc<VariantDef>),
 }
-
 impl TypeDef {
-    fn ty_params(&self) -> &[(String, Name)] {
+    fn name(&self) -> Name {
         match self {
-            TypeDef::Struct(s) => &s.ty_params,
-            TypeDef::Variant(v) => &v.ty_params,
+            TypeDef::Struct(x) => x.name,
+            TypeDef::Variant(x) => x.name,
+        }
+    }
+
+    fn ty_params(&self) -> &[(String, backend::ir::Name)] {
+        match self {
+            TypeDef::Struct(x) => &x.ty_params,
+            TypeDef::Variant(x) => &x.ty_params,
         }
     }
 }
@@ -201,6 +207,13 @@ impl Ctx {
             TypeDef::Variant(s) => Some(s),
             _ => None,
         }
+    }
+
+    fn lookup_variant_name(&self, name: Name) -> Rc<VariantDef> {
+        self.variant_defs
+            .get(&name)
+            .expect("inferred unknown variant name")
+            .clone()
     }
 
     fn enter_block(&mut self) {
@@ -470,13 +483,40 @@ impl Typechecker {
                     let Some(tkn) = ty_param.ident_token() else {
                         continue;
                     };
-                    let name = self.name_supply.type_var(&tkn);
-                    self.record_def(&tkn, name);
+                    // TODO: Check that structs within a variant have matching ty_params
+                    let name = if let Some(variant) = variant {
+                        let ty_var = self
+                            .context
+                            .lookup_variant_name(variant)
+                            .ty_params
+                            .iter()
+                            .find_map(|(s, n)| {
+                                if s.as_str() == tkn.text() {
+                                    Some(*n)
+                                } else {
+                                    None
+                                }
+                            });
+                        match ty_var {
+                            None => {
+                                // TODO: report a better error
+                                self.report_error_token(&tkn, UnknownVar(tkn.to_string()));
+                                continue;
+                            }
+                            Some(n) => {
+                                self.record_ref(&tkn, n);
+                                n
+                            }
+                        }
+                    } else {
+                        let name = self.name_supply.type_var(&tkn);
+                        self.record_def(&tkn, name);
+                        name
+                    };
                     def.ty_params.push((tkn.text().to_string(), name));
                     self.context.add_type_var(tkn.text().to_string(), name);
                 }
 
-                // TODO: Check that structs within a variant have matching ty_params
                 for field in s.struct_fields() {
                     let Some(field_name) = field.ident_token() else {
                         continue;
@@ -494,6 +534,7 @@ impl Typechecker {
                 type_defs.push(ir::TypeDef::Struct(ir::Struct {
                     span: s.syntax().text_range(),
                     name,
+                    ty_params: def.ty_params.iter().map(|(_, name)| *name).collect(),
                     fields: def
                         .fields
                         .iter()
@@ -588,22 +629,21 @@ impl Typechecker {
                     }
                 } else {
                     let ty_name = t.upper_ident_token().unwrap();
-                    let Some(TypeDef::Struct(def)) = self.context.lookup_type(ty_name.text())
-                    else {
+                    let Some(def) = self.context.lookup_type(ty_name.text()) else {
                         self.report_error_token(&ty_name, UnknownType(ty_name.text().to_string()));
                         return Ty::Any;
                     };
-                    self.record_ref(&ty_name, def.name);
+                    self.record_ref(&ty_name, def.name());
 
                     let subst = if !ty_args.is_empty() {
                         let ty_param_names: Vec<Name> =
-                            def.ty_params.iter().map(|(_, n)| *n).collect();
+                            def.ty_params().iter().map(|(_, n)| *n).collect();
                         Some(Substitution::new(&ty_param_names, &ty_args))
                     } else {
                         None
                     };
                     Ty::Struct {
-                        name: def.name,
+                        name: def.name(),
                         ty_args: subst,
                     }
                 }
@@ -1252,7 +1292,8 @@ impl Typechecker {
             (Expr::EMatch(match_expr), _) => self.check_match(match_expr, Some(expected.clone())).1,
             _ => {
                 let (ty, ir) = self.infer_expr(expr);
-                if *expected != Ty::Any && ty != Ty::Any && ty != *expected {
+                if *expected != Ty::Any && ty != Ty::Any && ty.ne(expected) {
+                    println!("{ty:?} {expected:?}");
                     self.report_error(
                         expr,
                         TypeMismatch {
