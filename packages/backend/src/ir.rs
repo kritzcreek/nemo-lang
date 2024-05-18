@@ -423,7 +423,6 @@ pub struct Variant {
 pub struct Struct {
     pub span: TextRange,
     pub name: Name,
-    pub ty_params: Vec<Name>,
     pub variant: Option<Name>,
     pub fields: Vec<(Name, Ty)>,
 }

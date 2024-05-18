@@ -534,7 +534,6 @@ impl Typechecker {
                 type_defs.push(ir::TypeDef::Struct(ir::Struct {
                     span: s.syntax().text_range(),
                     name,
-                    ty_params: def.ty_params.iter().map(|(_, name)| *name).collect(),
                     fields: def
                         .fields
                         .iter()
