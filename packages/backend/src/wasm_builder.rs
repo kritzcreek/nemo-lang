@@ -1,3 +1,4 @@
+use std::fmt::Write;
 use std::iter;
 use std::{collections::HashMap, mem};
 
@@ -138,9 +139,12 @@ impl<'a> Builder<'a> {
         }
 
         for (name, info) in self.structs {
-            for type_idx in info.instances.values() {
-                // TODO: Poly postfix
-                type_names.append(*type_idx, &names.lookup(name).unwrap().it);
+            for (tys, type_idx) in &info.instances {
+                let mut it = format!("{}#", names.lookup(name).unwrap().it);
+                for param in tys {
+                    write!(&mut it, "_{}", param.display(&names.name_map)).unwrap()
+                }
+                type_names.append(*type_idx, &it);
                 let mut field_names = WasmNameMap::new();
                 for (field, _) in info.definition.fields.iter() {
                     field_names.append(info.field_idx(*field), &names.lookup(name).unwrap().it)
@@ -150,9 +154,12 @@ impl<'a> Builder<'a> {
         }
 
         for (name, info) in self.variants {
-            for (_tys, type_idx) in info.instances {
-                // TODO: Poly postfix
-                type_names.append(type_idx, &names.lookup(name).unwrap().it);
+            for (tys, type_idx) in info.instances {
+                let mut it = format!("{}#", names.lookup(name).unwrap().it);
+                for param in tys {
+                    write!(&mut it, "_{}", param.display(&names.name_map)).unwrap()
+                }
+                type_names.append(type_idx, &it);
             }
         }
 
@@ -304,11 +311,11 @@ impl<'a> Builder<'a> {
     }
 
     pub fn heap_type(&mut self, name: Name, ty_params: &Option<Substitution>) -> TypeIdx {
+        let tys = ty_params
+            .as_ref()
+            .map(|s| self.substitution().apply_subst(s.clone()).tys_owned())
+            .unwrap_or_default();
         if let Some(v) = self.variants.get_mut(&name) {
-            let tys = ty_params
-                .as_ref()
-                .map(|s| s.tys_owned())
-                .unwrap_or_default();
             if let Some(type_idx) = v.instances.get(&tys) {
                 return *type_idx;
             }
@@ -328,10 +335,6 @@ impl<'a> Builder<'a> {
             });
             idx
         } else if let Some(str) = self.structs.get_mut(&name).cloned() {
-            let tys = ty_params
-                .as_ref()
-                .map(|s| s.tys_owned())
-                .unwrap_or_default();
             if let Some(type_idx) = str.instances.get(&tys) {
                 return *type_idx;
             }
