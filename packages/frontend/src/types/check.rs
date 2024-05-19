@@ -173,9 +173,7 @@ impl Ctx {
     fn declare_type_def(&mut self, v: &str, name: Name, def: TypeDef) {
         let mut is_sub_struct = false;
         if let TypeDef::Struct(struct_def) = &def {
-            if struct_def.variant.is_some() {
-                is_sub_struct = true;
-            }
+            is_sub_struct = struct_def.variant.is_some()
         }
         // We don't record String -> Name mapping for variant structs
         // as those are looked up via their Variant name
@@ -457,6 +455,10 @@ impl Typechecker {
                         let alt_name = self.name_supply.type_idx(&tkn);
                         self.record_def(&tkn, alt_name);
 
+                        if s.type_params().next().is_some() {
+                            self.report_error_token(&tkn, TypeParamInVariantStruct);
+                        }
+
                         self.context.declare_type_def(
                             tkn.text(),
                             alt_name,
@@ -550,6 +552,7 @@ impl Typechecker {
                         continue;
                     };
                     let name = self.name_supply.type_var(&tkn);
+                    self.record_def(&tkn, name);
                     self.context.add_type_var(tkn.to_string(), name);
                     ty_args.push((tkn.to_string(), name))
                 }
@@ -631,6 +634,7 @@ impl Typechecker {
             Type::TyVar(v) => {
                 let tkn = v.ident_token().unwrap();
                 if let Some(name) = self.context.lookup_type_var(tkn.text()) {
+                    self.record_ref(&tkn, name);
                     Ty::Var(name)
                 } else {
                     self.report_error_token(&tkn, UnknownType(tkn.to_string()));
@@ -794,6 +798,7 @@ impl Typechecker {
                 let (ty, ir) = self.infer_expr(expr);
                 (ty, ir.map(ir::Callee::FuncRef))
             } else if let Some(def) = self.context.lookup_func(var_tkn.text()) {
+                self.record_ref(&var_tkn, def.name);
                 let ty = if let Some(ty_args) = ty_args {
                     let params: Vec<Name> = def.ty_params.iter().map(|(_, name)| *name).collect();
                     if params.len() != ty_args.len() {

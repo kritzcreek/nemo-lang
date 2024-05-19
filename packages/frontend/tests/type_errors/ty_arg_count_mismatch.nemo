@@ -8,7 +8,7 @@ struct Box[a, b] {
 }
 
 variant List[a] {
-  struct Nil[a] {}
+  struct Nil {}
 }
 
 fn main() -> i32 {
