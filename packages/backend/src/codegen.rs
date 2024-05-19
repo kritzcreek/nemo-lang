@@ -217,11 +217,15 @@ impl<'a> Codegen<'a> {
                 branches,
             } => {
                 let mut instrs = vec![];
+
+                let gen_name = self.builder.name_supply.local_idx(Id {
+                    it: "$match_scrutinee".to_string(),
+                    at: scrutinee.at,
+                });
                 let scrutinee_ty = self.builder.val_ty(&scrutinee.ty);
+                let scrutinee_local = body.new_local(gen_name, scrutinee_ty);
                 instrs.extend(self.compile_expr(body, scrutinee));
 
-                // TODO: Could use name_supply to gen a proper named local here?
-                let scrutinee_local = body.fresh_local(scrutinee_ty);
                 instrs.push(Instruction::LocalSet(scrutinee_local));
 
                 let ret_ty = self.builder.val_ty(&expr.ty);

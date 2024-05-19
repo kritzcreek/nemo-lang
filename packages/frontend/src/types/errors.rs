@@ -220,7 +220,7 @@ fn error_label(err_data: &TyErrorData, name_map: &NameMap) -> String {
             expected.display(name_map),
         ),
         TyErrorData::TypeParamInVariantStruct => {
-            format!("Can't declare type parameters for structs in a variant.")
+            "Can't declare type parameters for structs in a variant.".to_string()
         }
     }
 }
