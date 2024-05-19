@@ -1203,7 +1203,7 @@ impl Typechecker {
                 builder.declaration(ir);
             }
             match last {
-                Declaration::DExpr(expr) => Some(expr.expr().unwrap()),
+                Declaration::DExpr(expr) => expr.expr(),
                 decl => {
                     let (_, ir) = self.infer_decl(decl);
                     builder.declaration(ir);
