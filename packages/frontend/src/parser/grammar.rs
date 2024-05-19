@@ -86,6 +86,7 @@ fn top_struct(p: &mut Parser) {
     let c = p.checkpoint();
     p.bump(T![struct]);
     p.expect(T![upper_ident]);
+    typ_param_list(p);
     p.expect(T!['{']);
     while !p.at(SyntaxKind::EOF) && !p.at(T!['}']) {
         let c = p.checkpoint();
@@ -108,6 +109,7 @@ fn top_variant(p: &mut Parser) {
     let c = p.checkpoint();
     p.bump(T![variant]);
     p.expect(T![upper_ident]);
+    typ_param_list(p);
     p.expect(T!['{']);
     while !p.at(SyntaxKind::EOF) && !p.at(T!['}']) {
         if !p.at(T![struct]) {
@@ -226,6 +228,7 @@ fn typ(p: &mut Parser) -> Progress {
         T![upper_ident] => {
             qualifier(p);
             p.expect(T![upper_ident]);
+            ty_arg_list(p);
             p.finish_at(c, SyntaxKind::TyCons)
         }
         T!['['] => {
@@ -434,10 +437,10 @@ fn pattern(p: &mut Parser) -> Progress {
     }
 }
 
-fn call_ty_arg_list(p: &mut Parser) {
-    let c = p.checkpoint();
-    p.bump(T![#]);
-    p.expect(T!['[']);
+fn ty_arg_list(p: &mut Parser) -> Progress {
+    if !p.eat(T!['[']) {
+        return Progress::None;
+    }
     while !p.at(SyntaxKind::EOF) && !p.at(T![']']) {
         if !typ(p).made_progress() {
             break;
@@ -448,7 +451,16 @@ fn call_ty_arg_list(p: &mut Parser) {
         }
     }
     p.expect(T![']']);
-    p.finish_at(c, SyntaxKind::ETyArgList);
+    Progress::Made
+}
+
+fn call_ty_arg_list(p: &mut Parser) {
+    let c = p.checkpoint();
+    p.bump(T![#]);
+    if !ty_arg_list(p).made_progress() {
+        p.error("expected a type argument list")
+    }
+    p.finish_at(c, SyntaxKind::ETyArgList)
 }
 
 fn call_arg_list(p: &mut Parser) -> Progress {
@@ -537,6 +549,9 @@ fn atom(p: &mut Parser) -> Progress {
         T![upper_ident] => {
             qualifier(p);
             p.expect(T![upper_ident]);
+            if p.at(T![#]) {
+                call_ty_arg_list(p)
+            }
             if p.expect(T!['{']) {
                 while !p.at(SyntaxKind::EOF) && !p.at(T!['}']) {
                     let c = p.checkpoint();

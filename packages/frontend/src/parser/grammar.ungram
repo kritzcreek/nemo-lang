@@ -14,10 +14,10 @@ ImpExternal = 'ident'
 
 TopGlobal = 'global' 'ident' ':' Type '=' Expr
 
-TopStruct = 'struct' 'upper_ident' '{' StructField* '}'
+TopStruct = 'struct' 'upper_ident' type_params:ParamTy* '{' StructField* '}'
 StructField = 'ident' ':' Type
 
-TopVariant = 'variant' 'upper_ident' '{' TopStruct* '}'
+TopVariant = 'variant' 'upper_ident' type_params:ParamTy* '{' TopStruct* '}'
 
 TopFn = 'fn' 'ident' ParamTy* '(' Param* ')' ('->' Type)? body:EBlock
 Param = 'ident' ':' Type
@@ -39,7 +39,7 @@ TyFloat = 'f32'
 TyBool = 'bool'
 TyUnit = 'unit'
 TyArray = '[' elem:Type ']'
-TyCons = Qualifier? 'upper_ident'
+TyCons = Qualifier? 'upper_ident' type_args:Type*
 TyVar = 'ident'
 
 Qualifier = 'upper_ident' '::'
@@ -82,7 +82,7 @@ ETyArgList = Type*
 
 EBinary = lhs:Expr op:('+' | '-') rhs:Expr
 
-EStruct = Qualifier? 'upper_ident' '{' EStructField* '}'
+EStruct = Qualifier? 'upper_ident' ETyArgList? '{' EStructField* '}'
 EStructField = 'ident' '=' Expr
 
 EStructIdx = Expr '.' 'ident'

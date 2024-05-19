@@ -2,6 +2,18 @@ fn func[a, b](x : a) -> a {
   x
 }
 
+struct Box[a, b] {
+  a : a,
+  b : b
+}
+
+variant List[a] {
+  struct Nil {}
+}
+
 fn main() -> i32 {
   func#[i32](3);
+  Box#[i32] { a = 1, b = 2 };
+  List::Nil#[i32, f32] {};
+  10
 }

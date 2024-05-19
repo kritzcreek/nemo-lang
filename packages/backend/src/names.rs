@@ -16,7 +16,7 @@ impl Spanned for Id {
 }
 
 // Should we have spanned names as well?
-#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
 pub enum Name {
     Global(u32),
     Local(u32),
