@@ -310,11 +310,11 @@ impl<'a> Builder<'a> {
         self.variant_type(variant).tag(alternative)
     }
 
-    pub fn heap_type(&mut self, name: Name, ty_params: &Option<Substitution>) -> TypeIdx {
-        let tys = ty_params
-            .as_ref()
-            .map(|s| self.substitution().apply_subst(s.clone()).tys_owned())
-            .unwrap_or_default();
+    pub fn heap_type(&mut self, name: Name, ty_params: &Substitution) -> TypeIdx {
+        let tys = self
+            .substitution()
+            .apply_subst(ty_params.clone())
+            .tys_owned();
         if let Some(v) = self.variants.get_mut(&name) {
             if let Some(type_idx) = v.instances.get(&tys) {
                 return *type_idx;
@@ -339,13 +339,6 @@ impl<'a> Builder<'a> {
                 return *type_idx;
             }
 
-            let idx = self.types.len() as u32;
-            self.structs
-                .get_mut(&name)
-                .unwrap()
-                .instances
-                .insert(tys, idx);
-
             let mut fields = vec![];
             let mut supertype_idx = None;
 
@@ -358,17 +351,20 @@ impl<'a> Builder<'a> {
                 });
             };
             for (_name, ty) in &definition.fields {
-                let ty = if let Some(subst) = ty_params {
-                    subst.apply(ty.clone())
-                } else {
-                    ty.clone()
-                };
+                let ty = ty_params.apply(ty.clone());
                 let val_ty = self.val_ty(&ty);
                 fields.push(FieldType {
                     element_type: StorageType::Val(val_ty),
                     mutable: true,
                 })
             }
+
+            let idx = self.types.len() as u32;
+            self.structs
+                .get_mut(&name)
+                .unwrap()
+                .instances
+                .insert(tys, idx);
 
             self.types.push(SubType {
                 is_final: true,
@@ -405,7 +401,7 @@ impl<'a> Builder<'a> {
         match ty {
             Ty::F32 => ValType::F32,
             Ty::I32 | Ty::Unit | Ty::Bool => ValType::I32,
-            Ty::Struct { name: s, ty_args } => {
+            Ty::Cons { name: s, ty_args } => {
                 let idx = self.heap_type(*s, ty_args);
                 // Could make these non-nullable, but then we'd need separate
                 // nullable types for lazily initialized globals

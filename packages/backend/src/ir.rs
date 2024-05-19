@@ -14,10 +14,7 @@ pub enum Ty {
     Unit,
     Bool,
     Array(Box<Ty>),
-    Struct {
-        name: Name,
-        ty_args: Option<Substitution>,
-    },
+    Cons { name: Name, ty_args: Substitution },
     Var(Name),
     Func(Box<FuncTy>),
 
@@ -44,14 +41,14 @@ impl fmt::Display for TyDisplay<'_> {
             Ty::Bool => write!(f, "bool"),
             Ty::Unit => write!(f, "unit"),
             Ty::Array(t) => write!(f, "[{}]", t.display(self.name_map)),
-            Ty::Struct {
+            Ty::Cons {
                 name: t,
                 ty_args: args,
             } => {
                 write!(f, "{}", self.name_map.get(t).unwrap().it)?;
-                if let Some(subst) = args {
+                if !args.is_empty() {
                     write!(f, "[")?;
-                    for (idx, arg) in subst.tys().into_iter().enumerate() {
+                    for (idx, arg) in args.tys().into_iter().enumerate() {
                         if idx != 0 {
                             write!(f, ", ")?
                         }
@@ -104,9 +101,13 @@ impl fmt::Display for FuncTyDisplay<'_> {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Hash)]
+#[derive(Debug, Default, PartialEq, Eq, Clone, Hash)]
 pub struct Substitution(BTreeMap<Name, Ty>);
 impl Substitution {
+    pub fn empty() -> Self {
+        Substitution(BTreeMap::new())
+    }
+
     pub fn new(names: &[Name], tys: &[Ty]) -> Self {
         let mut mappings = BTreeMap::new();
         for (name, ty) in names.iter().zip(tys.iter()) {
@@ -124,19 +125,25 @@ impl Substitution {
     }
 
     pub fn apply(&self, ty: Ty) -> Ty {
+        if self.is_empty() {
+            return ty;
+        }
         match ty {
             Ty::Var(n) => self.0.get(&n).cloned().unwrap_or(ty),
             Ty::I32 | Ty::F32 | Ty::Unit | Ty::Bool | Ty::Any => ty,
             Ty::Array(t) => Ty::Array(Box::new(self.apply(*t))),
             Ty::Func(f) => Ty::Func(Box::new(self.apply_func(*f))),
-            Ty::Struct { name, ty_args } => Ty::Struct {
+            Ty::Cons { name, ty_args } => Ty::Cons {
                 name,
-                ty_args: ty_args.map(|s| self.apply_subst(s)),
+                ty_args: self.apply_subst(ty_args),
             },
         }
     }
 
     pub fn apply_func(&self, ty: FuncTy) -> FuncTy {
+        if self.is_empty() {
+            return ty;
+        }
         FuncTy {
             arguments: ty.arguments.into_iter().map(|t| self.apply(t)).collect(),
             result: self.apply(ty.result),
@@ -144,6 +151,9 @@ impl Substitution {
     }
 
     pub fn apply_subst(&self, subst: Substitution) -> Substitution {
+        if self.is_empty() {
+            return subst;
+        }
         let mut subst = subst;
         for (_, v) in subst.0.iter_mut() {
             let ty = std::mem::replace(v, Ty::Any);
@@ -170,21 +180,6 @@ impl Substitution {
         keys.into_iter().map(|(_, t)| t.clone()).collect()
     }
 }
-
-// Our backend ast is very similar to our syntax ast.
-//
-// The main differences at this point in time are:
-// 1. All names are replaced with unique numeric identifiers the `Name` type in this module
-// 2. All syntactic type annotations are omitted, as we only care about the infered/semantic ones
-// 3. All type-based resolution is done during lowering -> + becomes f32.+ or i32.+ and all struct indexes are
-//    unique based on their type
-// 4. The only desugarings we do at this point in time:
-//    a) Transform set_targets to expr + index pairs, which which makes it easier to generate
-//       code for these eventually
-//    b) Transform all blocks into a list of declarations and a trailing expression, inserting
-//       a dummy Unit expression if the last declaration is not a Declaration::Expr
-//
-// We also try to keep as many Spans around as possible, mostly to help us when debugging our compiler
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Op {

@@ -65,7 +65,7 @@ impl<'a> Codegen<'a> {
                 let ty_idx = self.builder.array_type_elem(t);
                 ConstExpr::ref_null(HeapType::Concrete(ty_idx))
             }
-            Ty::Struct { name: s, ty_args } => {
+            Ty::Cons { name: s, ty_args } => {
                 let idx = self.builder.heap_type(*s, ty_args);
                 ConstExpr::ref_null(HeapType::Concrete(idx))
             }
@@ -255,7 +255,7 @@ impl<'a> Codegen<'a> {
             }
             ExprData::Struct { name, mut fields } => {
                 let mut instrs = vec![];
-                let Ty::Struct { name: _, ty_args } = &expr.ty else {
+                let Ty::Cons { name: _, ty_args } = &expr.ty else {
                     panic!("Can't create a non-struct ty from a struct expr")
                 };
 
@@ -275,7 +275,7 @@ impl<'a> Codegen<'a> {
                 instrs
             }
             ExprData::StructIdx { expr, index } => {
-                let Ty::Struct { name, ty_args } = &expr.ty else {
+                let Ty::Cons { name, ty_args } = &expr.ty else {
                     panic!("Can't index a non-struct type")
                 };
                 let struct_type_index = self.builder.heap_type(*name, ty_args);
@@ -332,14 +332,10 @@ impl<'a> Codegen<'a> {
                 alternative,
                 binder,
             } => {
-                let Ty::Struct { name: _, ty_args } = &pattern.ty else {
+                let Ty::Cons { name: _, ty_args } = &pattern.ty else {
                     panic!("Can't pattern match a non-struct type")
                 };
-                let subst = if let Some(s) = ty_args {
-                    Some(self.builder.substitution().apply_subst(s.clone()))
-                } else {
-                    None
-                };
+                let subst = self.builder.substitution().apply_subst(ty_args.clone());
 
                 let variant_type_idx = self.builder.heap_type(variant, &subst);
                 let check = vec![
@@ -427,7 +423,7 @@ impl<'a> Codegen<'a> {
                 instrs
             }
             SetTargetData::Struct { target, index } => {
-                let Ty::Struct { name, ty_args } = &target.ty else {
+                let Ty::Cons { name, ty_args } = &target.ty else {
                     panic!("Can't index a non-struct type")
                 };
                 let struct_type_index = self.builder.heap_type(*name, ty_args);
