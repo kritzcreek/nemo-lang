@@ -1,13 +1,37 @@
-fn singleton[a](elem : a) -> [a] {
-  [id#[a](elem)]
+import log : fn (i32) -> i32 from log
+
+variant List[a] {
+  struct Nil[a] {},
+  struct Cons[a] {
+    head : a,
+    tail : List[a]
+  }
 }
 
-fn id[a](elem : a) -> a {
-  elem
+fn map[a, b](f : fn (a) -> b, as : List[a]) -> List[b] {
+  match as {
+    List::Nil l => { List::Nil#[b] {} },
+    List::Cons l => {
+      let new_head = f(l.head);
+      List::Cons#[b] {
+        head = new_head,
+        tail = map#[a, b](f, l.tail)
+      }
+    }
+  }
+}
+
+fn range(lo : i32, hi : i32) -> List[i32] {
+   let result = List::Nil#[i32]{};
+   while lo < hi {
+     set result = List::Cons#[i32] { head = hi, tail = result };
+     set hi = hi - 1
+   };
+   result
 }
 
 fn main() -> i32 {
-  let i = 0;
-  let xs : [i32] = singleton#[i32](10);
-  xs[0]
+  let list = range(0, 10);
+  map#[i32, i32](log, list);
+  42
 }

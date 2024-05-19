@@ -1,6 +1,6 @@
 pub use crate::names::{Id, Name, NameMap, NameSupply};
 use core::fmt;
-use std::{collections::HashMap, fmt::Debug};
+use std::{collections::BTreeMap, fmt::Debug};
 use text_size::TextRange;
 
 pub(crate) trait Spanned {
@@ -14,7 +14,7 @@ pub enum Ty {
     Unit,
     Bool,
     Array(Box<Ty>),
-    Struct(Name),
+    Cons { name: Name, ty_args: Substitution },
     Var(Name),
     Func(Box<FuncTy>),
 
@@ -41,7 +41,23 @@ impl fmt::Display for TyDisplay<'_> {
             Ty::Bool => write!(f, "bool"),
             Ty::Unit => write!(f, "unit"),
             Ty::Array(t) => write!(f, "[{}]", t.display(self.name_map)),
-            Ty::Struct(t) => write!(f, "{}", self.name_map.get(t).unwrap().it),
+            Ty::Cons {
+                name: t,
+                ty_args: args,
+            } => {
+                write!(f, "{}", self.name_map.get(t).unwrap().it)?;
+                if !args.is_empty() {
+                    write!(f, "[")?;
+                    for (idx, arg) in args.tys().into_iter().enumerate() {
+                        if idx != 0 {
+                            write!(f, ", ")?
+                        }
+                        write!(f, "{}", arg.display(self.name_map))?;
+                    }
+                    write!(f, "]")?;
+                };
+                Ok(())
+            }
             Ty::Var(v) => write!(f, "{}", self.name_map.get(v).unwrap().it),
             Ty::Func(func_ty) => func_ty.display(self.name_map).fmt(f),
             Ty::Any => write!(f, "ANY"),
@@ -85,10 +101,15 @@ impl fmt::Display for FuncTyDisplay<'_> {
     }
 }
 
-pub struct Substitution(HashMap<Name, Ty>);
+#[derive(Debug, Default, PartialEq, Eq, Clone, Hash)]
+pub struct Substitution(BTreeMap<Name, Ty>);
 impl Substitution {
+    pub fn empty() -> Self {
+        Substitution(BTreeMap::new())
+    }
+
     pub fn new(names: &[Name], tys: &[Ty]) -> Self {
-        let mut mappings = HashMap::new();
+        let mut mappings = BTreeMap::new();
         for (name, ty) in names.iter().zip(tys.iter()) {
             mappings.insert(*name, ty.clone());
         }
@@ -104,36 +125,61 @@ impl Substitution {
     }
 
     pub fn apply(&self, ty: Ty) -> Ty {
+        if self.is_empty() {
+            return ty;
+        }
         match ty {
             Ty::Var(n) => self.0.get(&n).cloned().unwrap_or(ty),
-            Ty::I32 | Ty::F32 | Ty::Unit | Ty::Bool | Ty::Struct(_) | Ty::Any => ty,
+            Ty::I32 | Ty::F32 | Ty::Unit | Ty::Bool | Ty::Any => ty,
             Ty::Array(t) => Ty::Array(Box::new(self.apply(*t))),
             Ty::Func(f) => Ty::Func(Box::new(self.apply_func(*f))),
+            Ty::Cons { name, ty_args } => Ty::Cons {
+                name,
+                ty_args: self.apply_subst(ty_args),
+            },
         }
     }
 
     pub fn apply_func(&self, ty: FuncTy) -> FuncTy {
+        if self.is_empty() {
+            return ty;
+        }
         FuncTy {
             arguments: ty.arguments.into_iter().map(|t| self.apply(t)).collect(),
             result: self.apply(ty.result),
         }
     }
-}
 
-// Our backend ast is very similar to our syntax ast.
-//
-// The main differences at this point in time are:
-// 1. All names are replaced with unique numeric identifiers the `Name` type in this module
-// 2. All syntactic type annotations are omitted, as we only care about the infered/semantic ones
-// 3. All type-based resolution is done during lowering -> + becomes f32.+ or i32.+ and all struct indexes are
-//    unique based on their type
-// 4. The only desugarings we do at this point in time:
-//    a) Transform set_targets to expr + index pairs, which which makes it easier to generate
-//       code for these eventually
-//    b) Transform all blocks into a list of declarations and a trailing expression, inserting
-//       a dummy Unit expression if the last declaration is not a Declaration::Expr
-//
-// We also try to keep as many Spans around as possible, mostly to help us when debugging our compiler
+    pub fn apply_subst(&self, subst: Substitution) -> Substitution {
+        if self.is_empty() {
+            return subst;
+        }
+        let mut subst = subst;
+        for (_, v) in subst.0.iter_mut() {
+            let ty = std::mem::replace(v, Ty::Any);
+            *v = self.apply(ty);
+        }
+        subst
+    }
+
+    pub fn names(&self) -> Vec<Name> {
+        let mut keys: Vec<Name> = self.0.keys().copied().collect();
+        keys.sort();
+        keys
+    }
+
+    pub fn tys(&self) -> Vec<&Ty> {
+        let mut keys: Vec<(&Name, &Ty)> = self.0.iter().collect();
+        keys.sort_by_key(|(n, _)| **n);
+        keys.into_iter().map(|(_, t)| t).collect()
+    }
+
+    pub fn tys_owned(&self) -> Vec<Ty> {
+        let mut keys: Vec<(&Name, &Ty)> = self.0.iter().collect();
+        keys.sort_by_key(|(n, _)| **n);
+        keys.into_iter().map(|(_, t)| t.clone()).collect()
+    }
+}
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Op {

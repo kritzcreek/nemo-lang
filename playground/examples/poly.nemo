@@ -1,6 +1,11 @@
 import log : fn (i32) -> unit from log
 import log_f32 : fn (f32) -> unit from log
 
+variant Option[a] {
+  struct None {},
+  struct Some { value : a },
+}
+
 fn for_each[a](f : fn (a) -> unit, as : [a]) {
   let i = 0;
   while i < @array_len(as) {
@@ -10,6 +15,9 @@ fn for_each[a](f : fn (a) -> unit, as : [a]) {
 }
 
 fn main() {
+
+  let o = Option::Some #[i32] { value = 42 };
+
   let xs = [1, 2, 3, 5];
   for_each#[i32](log, xs);
 

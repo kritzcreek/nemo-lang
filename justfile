@@ -18,7 +18,7 @@ run-wasm FILE:
     wasm-tools print build/{{ without_extension(FILE) }}_opt.wasm -o build/{{ without_extension(FILE) }}_opt.wast
     node dev/run-wasm.mjs build/{{ without_extension(FILE) }}.wasm
 
-dev FILE: build-cli
+dev FILE:
     watchexec --quiet -e nemo,rs just run-wasm {{ FILE }}
 
 playground: build-wasm-lib

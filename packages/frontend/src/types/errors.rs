@@ -59,6 +59,7 @@ pub enum TyErrorData {
     InvalidOperator,
     CantInferEmptyArray,
     CantInstantiateFunctionRef,
+    TypeParamInVariantStruct,
     Message(String),
     UnknownVar(String),
     UnknownFunction(String),
@@ -124,6 +125,7 @@ fn code_for_error(err_data: &TyErrorData) -> i32 {
         TyErrorData::PatternTypeMismatch { .. } => 20,
         TyErrorData::CantInstantiateFunctionRef => 21,
         TyErrorData::TyArgCountMismatch(_, _) => 22,
+        TyErrorData::TypeParamInVariantStruct => 23,
     }
 }
 
@@ -217,6 +219,9 @@ fn error_label(err_data: &TyErrorData, name_map: &NameMap) -> String {
             "This pattern can't match a value of type {}",
             expected.display(name_map),
         ),
+        TyErrorData::TypeParamInVariantStruct => {
+            "Can't declare type parameters for structs in a variant.".to_string()
+        }
     }
 }
 

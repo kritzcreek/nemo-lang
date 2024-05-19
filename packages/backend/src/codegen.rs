@@ -65,9 +65,9 @@ impl<'a> Codegen<'a> {
                 let ty_idx = self.builder.array_type_elem(t);
                 ConstExpr::ref_null(HeapType::Concrete(ty_idx))
             }
-            Ty::Struct(s) => {
-                let s = self.builder.struct_type(*s);
-                ConstExpr::ref_null(HeapType::Concrete(s.type_idx))
+            Ty::Cons { name: s, ty_args } => {
+                let idx = self.builder.heap_type(*s, ty_args);
+                ConstExpr::ref_null(HeapType::Concrete(idx))
             }
             Ty::Func(ty) => {
                 let ty_idx = self.builder.func_type(ty);
@@ -217,11 +217,15 @@ impl<'a> Codegen<'a> {
                 branches,
             } => {
                 let mut instrs = vec![];
+
+                let gen_name = self.builder.name_supply.local_idx(Id {
+                    it: "$match_scrutinee".to_string(),
+                    at: scrutinee.at,
+                });
                 let scrutinee_ty = self.builder.val_ty(&scrutinee.ty);
+                let scrutinee_local = body.new_local(gen_name, scrutinee_ty);
                 instrs.extend(self.compile_expr(body, scrutinee));
 
-                // TODO: Could use name_supply to gen a proper named local here?
-                let scrutinee_local = body.fresh_local(scrutinee_ty);
                 instrs.push(Instruction::LocalSet(scrutinee_local));
 
                 let ret_ty = self.builder.val_ty(&expr.ty);
@@ -255,13 +259,16 @@ impl<'a> Codegen<'a> {
             }
             ExprData::Struct { name, mut fields } => {
                 let mut instrs = vec![];
+                let Ty::Cons { name: _, ty_args } = &expr.ty else {
+                    panic!("Can't create a non-struct ty from a struct expr")
+                };
+
+                let type_idx = self.builder.heap_type(name, ty_args);
                 let struct_info = self.builder.struct_type(name);
-                let type_idx = struct_info.type_idx;
                 // Sort fields according to field_order
-                fields.sort_by_cached_key(|(name, _)| {
-                    struct_info.fields.iter().position(|f| name == f).unwrap()
-                });
-                if let Some(tag) = struct_info.variant_tag {
+                fields.sort_by_cached_key(|(name, _)| struct_info.field_idx(*name));
+                if let Some(variant) = struct_info.definition.variant {
+                    let tag = self.builder.variant_tag(variant, name);
                     instrs.push(Instruction::I32Const(tag))
                 }
 
@@ -272,7 +279,13 @@ impl<'a> Codegen<'a> {
                 instrs
             }
             ExprData::StructIdx { expr, index } => {
-                let (struct_type_index, field_index) = self.builder.lookup_field(&index);
+                let Ty::Cons { name, ty_args } = &expr.ty else {
+                    panic!("Can't index a non-struct type")
+                };
+                let struct_type_index = self.builder.heap_type(*name, ty_args);
+                let ty_info = self.builder.struct_type(*name);
+                let field_index = ty_info.field_idx(index);
+
                 let mut instrs = self.compile_expr(body, expr);
                 instrs.push(Instruction::StructGet {
                     struct_type_index,
@@ -323,27 +336,30 @@ impl<'a> Codegen<'a> {
                 alternative,
                 binder,
             } => {
-                let variant_info = self.builder.variant_type(variant);
+                let Ty::Cons { name: _, ty_args } = &pattern.ty else {
+                    panic!("Can't pattern match a non-struct type")
+                };
+                let subst = self.builder.substitution().apply_subst(ty_args.clone());
+
+                let variant_type_idx = self.builder.heap_type(variant, &subst);
                 let check = vec![
                     Instruction::LocalGet(scrutinee_idx),
                     Instruction::StructGet {
-                        struct_type_index: variant_info.type_idx,
+                        struct_type_index: variant_type_idx,
                         // The tag field is always field 0
                         field_index: 0,
                     },
                     Instruction::I32Const(self.builder.variant_tag(variant, alternative)),
                     Instruction::I32Eq,
                 ];
-
-                let struct_info = self.builder.struct_type(alternative);
+                let struct_type_idx = self.builder.heap_type(alternative, &subst);
                 let val_ty = ValType::Ref(RefType {
                     nullable: false,
-                    heap_type: HeapType::Concrete(struct_info.type_idx),
+                    heap_type: HeapType::Concrete(struct_type_idx),
                 });
-
                 let setup = vec![
                     Instruction::LocalGet(scrutinee_idx),
-                    Instruction::RefCastNonNull(HeapType::Concrete(struct_info.type_idx)),
+                    Instruction::RefCastNonNull(HeapType::Concrete(struct_type_idx)),
                     Instruction::LocalSet(body.new_local(binder, val_ty)),
                 ];
                 (check, setup)
@@ -411,7 +427,13 @@ impl<'a> Codegen<'a> {
                 instrs
             }
             SetTargetData::Struct { target, index } => {
-                let (struct_type_index, field_index) = self.builder.lookup_field(&index);
+                let Ty::Cons { name, ty_args } = &target.ty else {
+                    panic!("Can't index a non-struct type")
+                };
+                let struct_type_index = self.builder.heap_type(*name, ty_args);
+                let ty_info = self.builder.struct_type(*name);
+                let field_index = ty_info.field_idx(index);
+
                 let mut instrs = self.compile_expr(body, target);
                 instrs.extend(self.compile_expr(body, expr));
                 instrs.push(Instruction::StructSet {
