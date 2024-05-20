@@ -1,3 +1,27 @@
+// This function gets called using `requestAnimationFrame`, which tries to maintain
+// a smooth framerate.
+fn tick(elapsed_time_ms : f32) {
+  clear();
+
+  let idx = 0;
+  while idx < @array_len(cubes) {
+    collide_cube(cubes[idx]);
+    tick_cube(cubes[idx], elapsed_time_ms);
+    draw_cube(cubes[idx]);
+
+    set idx = idx + 1
+  };
+
+  set idx = 0;
+  while idx < @array_len(particles.buffer) {
+    draw_particle(particles.buffer[idx]);
+    let particle = particles.buffer[idx];
+    set particle.time = f32_max(0.0, particle.time - elapsed_time_ms);
+
+    set idx = idx + 1
+  }
+}
+
 import move_to : fn (f32, f32) -> unit from move_to
 import line_to : fn (f32, f32) -> unit from line_to
 import arc : fn (f32, f32, f32, f32, f32) -> unit from arc
@@ -85,10 +109,10 @@ fn size(body : Body) -> f32 {
 fn draw_body(x : f32, y : f32, body : Body) {
   match body {
     Body::Cube c => {
-        move_to(x, y);
-        line_to(x , y + c.size);
-        line_to(x + c.size, y + c.size);
-        line_to(x + c.size, y);
+      move_to(x, y);
+      line_to(x , y + c.size);
+      line_to(x + c.size, y + c.size);
+      line_to(x + c.size, y);
     },
     Body::Circle c => {
       let half_radius = c.radius / 2.0;
@@ -157,26 +181,4 @@ fn tick_cube(cube : Shape, elapsed_time_ms : f32) {
     set cube.y = clamp(0.0, cube.y, 500.0);
     set cube.vy = f32_neg(cube.vy)
   } else {}
-}
-
-fn tick(elapsed_time_ms : f32) {
-  clear();
-
-  let idx = 0;
-  while idx < @array_len(cubes) {
-    collide_cube(cubes[idx]);
-    tick_cube(cubes[idx], elapsed_time_ms);
-    draw_cube(cubes[idx]);
-
-    set idx = idx + 1
-  };
-
-  set idx = 0;
-  while idx < @array_len(particles.buffer) {
-    draw_particle(particles.buffer[idx]);
-    let particle = particles.buffer[idx];
-    set particle.time = f32_max(0.0, particle.time - elapsed_time_ms);
-
-    set idx = idx + 1
-  }
 }
