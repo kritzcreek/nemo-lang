@@ -787,11 +787,11 @@ impl Typechecker {
         )
     }
 
-    fn infer_callee(&mut self, expr: &Expr, ty_args: &Option<Vec<Ty>>) -> (Ty, Option<ir::Callee>) {
+    fn infer_callee(&mut self, expr: &Expr, ty_args: &[Ty]) -> (Ty, Option<ir::Callee>) {
         if let Expr::EVar(v) = expr {
             let var_tkn = v.ident_token().unwrap();
             if self.context.lookup_var(var_tkn.text()).is_some() {
-                if ty_args.is_some() {
+                if !ty_args.is_empty() {
                     self.report_error_token(&var_tkn, CantInstantiateFunctionRef);
                     return (Ty::Any, None);
                 }
@@ -799,23 +799,18 @@ impl Typechecker {
                 (ty, ir.map(ir::Callee::FuncRef))
             } else if let Some(def) = self.context.lookup_func(var_tkn.text()) {
                 self.record_ref(&var_tkn, def.name);
-                let ty = if let Some(ty_args) = ty_args {
-                    let params: Vec<Name> = def.ty_params.iter().map(|(_, name)| *name).collect();
-                    if params.len() != ty_args.len() {
-                        self.report_error(expr, TyArgCountMismatch(params.len(), ty_args.len()));
-                        return (Ty::Any, None);
-                    }
-                    let subst = Substitution::new(&params, ty_args);
-                    subst.apply_func(def.ty.clone())
-                } else {
-                    def.ty.clone()
-                };
+                let params: Vec<Name> = def.ty_params.iter().map(|(_, name)| *name).collect();
+                if params.len() != ty_args.len() {
+                    self.report_error(expr, TyArgCountMismatch(params.len(), ty_args.len()));
+                    return (Ty::Any, None);
+                }
+                let subst = Substitution::new(&params, ty_args);
+                let ty = subst.apply_func(def.ty.clone());
                 (
                     Ty::Func(Box::new(ty)),
                     Some(ir::Callee::Func {
                         name: def.name,
-                        // TODO can we consume ty_args here?
-                        type_args: ty_args.clone().unwrap_or_default(),
+                        type_args: subst,
                     }),
                 )
             } else if let Some(builtin) = lookup_builtin(var_tkn.text()) {
@@ -974,9 +969,10 @@ impl Typechecker {
             }
             Expr::ECall(call_expr) => {
                 let func_expr = call_expr.expr()?;
-                let ty_arg_list: Option<Vec<Ty>> = call_expr
+                let ty_arg_list: Vec<Ty> = call_expr
                     .e_ty_arg_list()
-                    .map(|tas| tas.types().map(|t| self.check_ty(&t)).collect());
+                    .map(|tas| tas.types().map(|t| self.check_ty(&t)).collect())
+                    .unwrap_or_default();
                 match self.infer_callee(&func_expr, &ty_arg_list) {
                     (Ty::Func(func_ty), callee) => {
                         let mut builder = CallBuilder::new();

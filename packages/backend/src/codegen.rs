@@ -139,10 +139,7 @@ impl<'a> Codegen<'a> {
                 match func {
                     Callee::Func { name, type_args } => {
                         let name = if !type_args.is_empty() {
-                            let type_args: Vec<Ty> = type_args
-                                .into_iter()
-                                .map(|t| self.builder.substitution().apply(t))
-                                .collect();
+                            let type_args = self.builder.substitution().apply_subst(type_args);
                             self.instantiate_polyfunc(name, &type_args)
                         } else {
                             name
@@ -464,10 +461,11 @@ impl<'a> Codegen<'a> {
         }
     }
 
-    fn instantiate_polyfunc(&mut self, name: Name, ty_params: &[Ty]) -> Name {
+    fn instantiate_polyfunc(&mut self, name: Name, ty_params: &Substitution) -> Name {
         let new_name = {
             let poly_func = self.poly_funcs.get_mut(&name).expect("Unknown polyfunc");
-            if let Some(existing) = poly_func.instances.get(ty_params) {
+            let tys = ty_params.tys_owned();
+            if let Some(existing) = poly_func.instances.get(&tys) {
                 return *existing;
             }
             let definition = self
@@ -476,7 +474,7 @@ impl<'a> Codegen<'a> {
                 .lookup(name)
                 .expect("Unknown polyfunc");
             let mut it = format!("{}#", definition.it);
-            for param in ty_params {
+            for param in &tys {
                 write!(
                     &mut it,
                     "_{}",
@@ -488,22 +486,20 @@ impl<'a> Codegen<'a> {
                 it,
                 at: definition.at,
             });
-            poly_func.instances.insert(ty_params.to_vec(), new_name);
+            poly_func.instances.insert(tys, new_name);
             new_name
         };
 
         let poly_func = self.poly_funcs.get(&name).expect("Unknown polyfunc");
-        let subst = Substitution::new(&poly_func.func.ty_params, ty_params);
-        let previous_subst = self.builder.set_substitution(subst);
+        let previous_subst = self.builder.set_substitution(ty_params.clone());
         self.builder
             .declare_func(new_name, poly_func.func.func_ty());
 
         let params = poly_func
             .func
-            .clone()
             .params
-            .into_iter()
-            .map(|(name, ty)| (name, self.builder.val_ty(&ty)))
+            .iter()
+            .map(|(name, ty)| (*name, self.builder.val_ty(ty)))
             .collect();
         let mut body_builder = BodyBuilder::new(params);
         let body = self.compile_expr(&mut body_builder, poly_func.func.clone().body);

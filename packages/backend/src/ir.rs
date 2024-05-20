@@ -301,7 +301,7 @@ impl Spanned for Expr {
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Callee {
-    Func { name: Name, type_args: Vec<Ty> },
+    Func { name: Name, type_args: Substitution },
     FuncRef(Expr),
     Builtin(&'static str),
 }
