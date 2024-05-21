@@ -4,6 +4,7 @@ use backend::ir::{Name, NameMap};
 use core::fmt;
 use line_index::{LineCol, LineIndex};
 use rowan::TextRange;
+use std::fmt::Write;
 use std::str;
 
 #[derive(Debug)]
@@ -59,6 +60,7 @@ pub enum TyErrorData {
     InvalidOperator,
     CantInferEmptyArray,
     CantInstantiateFunctionRef,
+    CantInferTypeArguments(Vec<Name>),
     TypeParamInVariantStruct,
     Message(String),
     UnknownVar(String),
@@ -126,6 +128,7 @@ fn code_for_error(err_data: &TyErrorData) -> i32 {
         TyErrorData::CantInstantiateFunctionRef => 21,
         TyErrorData::TyArgCountMismatch(_, _) => 22,
         TyErrorData::TypeParamInVariantStruct => 23,
+        TyErrorData::CantInferTypeArguments(_) => 24,
     }
 }
 
@@ -140,6 +143,14 @@ fn error_label(err_data: &TyErrorData, name_map: &NameMap) -> String {
         TyErrorData::UnknownVar(v) => format!("Unknown variable {v}"),
         TyErrorData::UnknownFunction(f) => format!("Unknown function {f}"),
         TyErrorData::UnknownType(t) => format!("Unknown type {t}"),
+        TyErrorData::CantInferTypeArguments(names) => {
+            let mut names = names.into_iter();
+            let mut buf = name_map.get(names.next().unwrap()).unwrap().it.clone();
+            for name in names {
+                write!(&mut buf, ", {}", name_map.get(name).unwrap().it).unwrap()
+            }
+          format!("Can't infer the type arguments {} to this call. Specify them explicitly", buf)
+        }
         TyErrorData::UnknownIntrinsic(f, arg_count) => {
             format!("Unknown intrinsic {f} with argcount: {arg_count}")
         }

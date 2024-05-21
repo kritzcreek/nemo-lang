@@ -1,20 +1,7 @@
-import log : fn (i32) -> unit from log
-import random : fn () -> f32 from random_float
-
-fn round(x : f32) -> i32 {
-  let y = x + 0.5;
-  i32_trunc_f32_s(y)
-}
-
-fn random_int(low : i32, high : i32) -> i32 {
-  let scaled = random() * f32_convert_i32_s(high - low);
-  low + round(scaled)
-}
-
-fn add(x : i32, y : i32) -> i32 {
-  x + y
+fn id[a](x : [a], y : [a]) -> a {
+  x[0]
 }
 
 fn main() -> i32 {
-  random_int(0, 12)
+  id([1], [])
 }

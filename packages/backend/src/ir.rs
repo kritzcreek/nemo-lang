@@ -1,6 +1,9 @@
 pub use crate::names::{Id, Name, NameMap, NameSupply};
 use core::fmt;
-use std::{collections::BTreeMap, fmt::Debug};
+use std::{
+    collections::{BTreeMap, HashSet},
+    fmt::Debug,
+};
 use text_size::TextRange;
 
 pub(crate) trait Spanned {
@@ -25,6 +28,33 @@ pub enum Ty {
 impl Ty {
     pub fn display<'a>(&'a self, name_map: &'a NameMap) -> TyDisplay<'a> {
         TyDisplay { ty: self, name_map }
+    }
+
+    fn vars_inner(&self, acc: &mut HashSet<Name>) {
+        match self {
+            Ty::I32 | Ty::F32 | Ty::Unit | Ty::Bool | Ty::Error => {}
+            Ty::Array(t) => t.vars_inner(acc),
+            Ty::Cons { name: _, ty_args } => {
+                for ty in ty_args.0.values() {
+                    ty.vars_inner(acc)
+                }
+            }
+            Ty::Var(v) => {
+                acc.insert(*v);
+            }
+            Ty::Func(func_ty) => {
+                for t in &func_ty.arguments {
+                    t.vars_inner(acc)
+                }
+                func_ty.result.vars_inner(acc)
+            }
+        }
+    }
+
+    pub fn vars(&self) -> HashSet<Name> {
+        let mut result = HashSet::new();
+        self.vars_inner(&mut result);
+        result
     }
 }
 
@@ -102,7 +132,7 @@ impl fmt::Display for FuncTyDisplay<'_> {
 }
 
 #[derive(Debug, Default, PartialEq, Eq, Clone, Hash)]
-pub struct Substitution(BTreeMap<Name, Ty>);
+pub struct Substitution(pub BTreeMap<Name, Ty>);
 impl Substitution {
     pub fn empty() -> Self {
         Substitution(BTreeMap::new())
@@ -122,6 +152,10 @@ impl Substitution {
 
     pub fn lookup(&self, var: Name) -> Option<&Ty> {
         self.0.get(&var)
+    }
+
+    pub fn add(&mut self, var: Name, ty: Ty) {
+        self.0.insert(var, ty);
     }
 
     pub fn apply(&self, ty: Ty) -> Ty {
