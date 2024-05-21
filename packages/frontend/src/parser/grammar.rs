@@ -574,16 +574,6 @@ fn atom(p: &mut Parser) -> Progress {
             p.bump(T![ident]);
             p.finish_at(c, SyntaxKind::EVar)
         }
-        T![at_ident] => {
-            p.bump(T![at_ident]);
-            if p.at(T!['(']) {
-                call_arg_list(p);
-                p.finish_at(c, SyntaxKind::EIntrinsic)
-            } else {
-                p.error("expected an open parenthesis");
-                p.finish_at(c, SyntaxKind::Error)
-            }
-        }
         _ => return Progress::None,
     }
 

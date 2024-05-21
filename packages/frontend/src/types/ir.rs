@@ -27,20 +27,6 @@ pub(crate) fn lit(lit: Option<Lit>) -> Option<ExprData> {
     Some(ExprData::Lit(lit?))
 }
 
-pub(crate) fn array_len(at: TextRange) -> Option<Intrinsic> {
-    Some(ir::Intrinsic {
-        it: ir::IntrinsicData::ArrayLen,
-        at,
-    })
-}
-
-pub(crate) fn array_new(at: TextRange) -> Option<Intrinsic> {
-    Some(ir::Intrinsic {
-        it: ir::IntrinsicData::ArrayNew,
-        at,
-    })
-}
-
 pub(crate) fn expr_decl(expr: Option<Expr>) -> Option<DeclarationData> {
     Some(DeclarationData::Expr(expr?))
 }
@@ -458,43 +444,6 @@ impl CallBuilder {
     pub(crate) fn build(self) -> Option<ExprData> {
         Some(ExprData::Call {
             func: self.func?,
-            arguments: self.arguments?,
-        })
-    }
-}
-
-pub(crate) struct IntrinsicBuilder {
-    intrinsic: Option<Intrinsic>,
-    arguments: Option<Vec<Expr>>,
-}
-
-impl IntrinsicBuilder {
-    pub(crate) fn new() -> Self {
-        IntrinsicBuilder {
-            intrinsic: None,
-            arguments: Some(vec![]),
-        }
-    }
-
-    pub(crate) fn intrinsic(&mut self, intrinsic: Option<Intrinsic>) -> &mut Self {
-        self.intrinsic = intrinsic;
-        self
-    }
-
-    pub(crate) fn argument(&mut self, elem: Option<Expr>) -> &mut Self {
-        if let Some(arguments) = &mut self.arguments {
-            if let Some(elem) = elem {
-                arguments.push(elem)
-            } else {
-                self.arguments = None
-            }
-        }
-        self
-    }
-
-    pub(crate) fn build(self) -> Option<ExprData> {
-        Some(ExprData::Intrinsic {
-            intrinsic: self.intrinsic?,
             arguments: self.arguments?,
         })
     }

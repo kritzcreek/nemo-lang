@@ -19,7 +19,7 @@ pub enum Ty {
     Func(Box<FuncTy>),
 
     // Typechecking internal used for error recovery
-    Any,
+    Error,
 }
 
 impl Ty {
@@ -60,7 +60,7 @@ impl fmt::Display for TyDisplay<'_> {
             }
             Ty::Var(v) => write!(f, "{}", self.name_map.get(v).unwrap().it),
             Ty::Func(func_ty) => func_ty.display(self.name_map).fmt(f),
-            Ty::Any => write!(f, "ANY"),
+            Ty::Error => write!(f, "ERROR"),
         }
     }
 }
@@ -130,7 +130,7 @@ impl Substitution {
         }
         match ty {
             Ty::Var(n) => self.0.get(&n).cloned().unwrap_or(ty),
-            Ty::I32 | Ty::F32 | Ty::Unit | Ty::Bool | Ty::Any => ty,
+            Ty::I32 | Ty::F32 | Ty::Unit | Ty::Bool | Ty::Error => ty,
             Ty::Array(t) => Ty::Array(Box::new(self.apply(*t))),
             Ty::Func(f) => Ty::Func(Box::new(self.apply_func(*f))),
             Ty::Cons { name, ty_args } => Ty::Cons {
@@ -156,7 +156,7 @@ impl Substitution {
         }
         let mut subst = subst;
         for (_, v) in subst.0.iter_mut() {
-            let ty = std::mem::replace(v, Ty::Any);
+            let ty = std::mem::replace(v, Ty::Error);
             *v = self.apply(ty);
         }
         subst
@@ -245,24 +245,6 @@ pub enum LitData {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct Intrinsic {
-    pub it: IntrinsicData,
-    pub at: TextRange,
-}
-
-impl Spanned for Intrinsic {
-    fn at(&self) -> &TextRange {
-        &self.at
-    }
-}
-
-#[derive(Debug, PartialEq, Clone, Copy)]
-pub enum IntrinsicData {
-    ArrayLen,
-    ArrayNew,
-}
-
-#[derive(Debug, PartialEq, Clone)]
 pub struct Pattern {
     pub it: Box<PatternData>,
     pub at: TextRange,
@@ -345,10 +327,6 @@ pub enum ExprData {
     Match {
         scrutinee: Expr,
         branches: Vec<MatchBranch>,
-    },
-    Intrinsic {
-        intrinsic: Intrinsic,
-        arguments: Vec<Expr>,
     },
 }
 

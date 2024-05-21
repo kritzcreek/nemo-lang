@@ -68,7 +68,6 @@ Expr
   | EIf
   | EMatch
   | EBlock
-  | EIntrinsic
 
 ELit = Literal
 EVar = 'ident'
@@ -92,8 +91,6 @@ EMatch = 'match' scrutinee:Expr '{' EMatchBranch* '}'
 EMatchBranch = Pattern '=>' body:EBlock
 
 EBlock = '{' Declaration* '}'
-
-EIntrinsic = 'at_ident' EArgList
 
 // Declarations
 Declaration

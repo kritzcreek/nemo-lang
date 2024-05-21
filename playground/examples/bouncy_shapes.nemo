@@ -4,16 +4,16 @@ fn tick(elapsed_time_ms : f32) {
   clear();
 
   let idx = 0;
-  while idx < @array_len(cubes) {
-    collide_cube(cubes[idx]);
-    tick_cube(cubes[idx], elapsed_time_ms);
-    draw_cube(cubes[idx]);
+  while idx < array_len#[Shape](shapes) {
+    collide_shape(shapes[idx]);
+    tick_shape(shapes[idx], elapsed_time_ms);
+    draw_shape(shapes[idx]);
 
     set idx = idx + 1
   };
 
   set idx = 0;
-  while idx < @array_len(particles.buffer) {
+  while idx < array_len#[Particle](particles.buffer) {
     draw_particle(particles.buffer[idx]);
     let particle = particles.buffer[idx];
     set particle.time = f32_max(0.0, particle.time - elapsed_time_ms);
@@ -74,7 +74,7 @@ global red = Color { r = 180.0, g = 0.0, b = 0.0 }
 global green = Color { r = 0.0, g = 180.0, b = 0.0 }
 global blue = Color { r = 0.0, g = 0.0, b = 180.0 }
 
-global cubes = [
+global shapes = [
   Shape { x =   0.0, y = 0.0, vx =  9.0, vy = 14.0, body = Body::Cube { size = 10.0 }, color = red },
   Shape { x = 100.0, y = 0.0, vx = 10.0, vy = 13.0, body = Body::Cube { size = 15.0 }, color = green },
   Shape { x = 200.0, y = 0.0, vx = 11.0, vy = 12.0, body = Body::Circle { radius = 10.0 }, color = blue },
@@ -85,14 +85,14 @@ global cubes = [
 ]
 
 global particles = RingBuffer {
-  buffer = @array_new(Particle { x = 0.0, y = 0.0, color = red, time = 0.0 }, 25),
+  buffer = array_new#[Particle](Particle { x = 0.0, y = 0.0, color = red, time = 0.0 }, 25),
   watermark = 0
 }
 
 fn add_particle(p : Particle) {
   set particles.buffer[particles.watermark] = p;
   set particles.watermark =
-    i32_rem_s(particles.watermark + 1, @array_len(particles.buffer))
+    i32_rem_s(particles.watermark + 1, array_len#[Particle](particles.buffer))
 }
 
 fn clamp(min : f32, val : f32, max : f32) -> f32 {
@@ -121,10 +121,10 @@ fn draw_body(x : f32, y : f32, body : Body) {
   }
 }
 
-fn draw_cube(cube : Shape) {
+fn draw_shape(shape : Shape) {
   begin_path();
-  draw_body(cube.x, cube.y, cube.body);
-  set_stroke_color(cube.color.r, cube.color.g, cube.color.b);
+  draw_body(shape.x, shape.y, shape.body);
+  set_stroke_color(shape.color.r, shape.color.g, shape.color.b);
   close_path();
   stroke()
 }
@@ -138,7 +138,7 @@ fn draw_particle(particle : Particle) {
   } else {}
 }
 
-fn collide_cubes(c1 : Shape, c2 : Shape) {
+fn collide_shapes(c1 : Shape, c2 : Shape) {
   let overlap_x = c1.x < c2.x + size(c2.body) && c1.x + size(c1.body) > c2.x;
   let overlap_y = c1.y < c2.y + size(c2.body) && c1.y + size(c1.body) > c2.y;
 
@@ -155,30 +155,30 @@ fn collide_cubes(c1 : Shape, c2 : Shape) {
   } else {}
 }
 
-fn collide_cube(cube : Shape) {
+fn collide_shape(shape : Shape) {
   let idx = 0;
-  while idx < @array_len(cubes) {
-    if cubes[idx].x == cube.x && cubes[idx].y == cube.y {
+  while idx < array_len#[Shape](shapes) {
+    if shapes[idx].x == shape.x && shapes[idx].y == shape.y {
     } else {
-      collide_cubes(cube, cubes[idx])
+      collide_shapes(shape, shapes[idx])
     };
     set idx = idx + 1
   }
 }
 
-fn tick_cube(cube : Shape, elapsed_time_ms : f32) {
+fn tick_shape(shape : Shape, elapsed_time_ms : f32) {
   let elapsed_factor = elapsed_time_ms / 48.0;
 
-  set cube.x = cube.x + cube.vx * elapsed_factor;
-  set cube.y = cube.y + cube.vy * elapsed_factor;
+  set shape.x = shape.x + shape.vx * elapsed_factor;
+  set shape.y = shape.y + shape.vy * elapsed_factor;
 
-  if cube.x < 0.0 || cube.x > 500.0 {
-    set cube.x = clamp(0.0, cube.x, 500.0);
-    set cube.vx = f32_neg(cube.vx)
+  if shape.x < 0.0 || shape.x > 500.0 {
+    set shape.x = clamp(0.0, shape.x, 500.0);
+    set shape.vx = f32_neg(shape.vx)
   } else {};
 
-  if cube.y < 0.0 || cube.y > 500.0 {
-    set cube.y = clamp(0.0, cube.y, 500.0);
-    set cube.vy = f32_neg(cube.vy)
+  if shape.y < 0.0 || shape.y > 500.0 {
+    set shape.y = clamp(0.0, shape.y, 500.0);
+    set shape.vy = f32_neg(shape.vy)
   } else {}
 }
