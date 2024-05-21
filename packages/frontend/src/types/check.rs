@@ -1183,7 +1183,6 @@ impl Typechecker {
         (last_expr, builder)
     }
 
-    // TODO: Should add a check case for EMatch
     fn check_expr(&mut self, expr: &Expr, expected: &Ty) -> Option<ir::Expr> {
         let ir = match (expr, expected) {
             (Expr::EArray(expr), Ty::Array(elem_ty)) => {
