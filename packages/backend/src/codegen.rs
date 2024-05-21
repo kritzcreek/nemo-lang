@@ -76,7 +76,7 @@ impl<'a> Codegen<'a> {
                 unreachable!("Globals can't be var-typed")
             }
             Ty::Error => {
-                unreachable!("ANY shouldn't make it into codegen")
+                unreachable!("ERROR shouldn't make it into codegen")
             }
         }
     }
