@@ -431,7 +431,7 @@ impl<'a> Builder<'a> {
                 self.val_ty(&ty.clone())
             }
             Ty::Error => {
-                unreachable!("ANY shouldn't make it into codegen")
+                unreachable!("ERROR shouldn't make it into codegen")
             }
         }
     }
