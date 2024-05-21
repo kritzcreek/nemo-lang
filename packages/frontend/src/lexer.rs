@@ -188,9 +188,6 @@ pub enum SyntaxKind {
     #[regex("[A-Z][A-Za-z0-9_]*")]
     UPPER_IDENT,
 
-    #[regex("@[a-z_][A-Za-z0-9_]*")]
-    AT_IDENT,
-
     #[regex(r"[0-9]+\.[0-9]+")]
     FLOAT_LIT,
 
@@ -426,5 +423,4 @@ macro_rules ! T {
     [float_lit] => { SyntaxKind::FLOAT_LIT };
     [ident] => { SyntaxKind::IDENT };
     [upper_ident] => { SyntaxKind::UPPER_IDENT };
-    [at_ident] => { SyntaxKind::AT_IDENT };
 }

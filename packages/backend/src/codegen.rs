@@ -5,9 +5,8 @@ use wasm_encoder::{BlockType, ConstExpr, HeapType, Instruction, RefType, ValType
 
 use crate::{
     ir::{
-        Callee, Declaration, DeclarationData, Expr, ExprData, Func, IntrinsicData, Lit, LitData,
-        Name, Op, OpData, Pattern, PatternData, Program, SetTarget, SetTargetData, Substitution,
-        Ty, TypeDef,
+        Callee, Declaration, DeclarationData, Expr, ExprData, Func, Lit, LitData, Name, Op, OpData,
+        Pattern, PatternData, Program, SetTarget, SetTargetData, Substitution, Ty, TypeDef,
     },
     names::{Id, NameSupply},
     wasm_builder::{BodyBuilder, Builder},
@@ -76,7 +75,7 @@ impl<'a> Codegen<'a> {
             Ty::Var(_) => {
                 unreachable!("Globals can't be var-typed")
             }
-            Ty::Any => {
+            Ty::Error => {
                 unreachable!("ANY shouldn't make it into codegen")
             }
         }
@@ -155,7 +154,14 @@ impl<'a> Codegen<'a> {
                         instrs.extend(self.compile_expr(body, callee));
                         instrs.push(Instruction::CallRef(ty_idx))
                     }
-                    Callee::Builtin(builtin) => instrs.push(builtin_instruction(builtin)),
+                    Callee::Builtin(builtin) => {
+                        if builtin == "array_new" {
+                            let array_ty = self.builder.array_type(&expr.ty);
+                            instrs.push(Instruction::ArrayNew(array_ty))
+                        } else {
+                            instrs.push(builtin_instruction(builtin))
+                        }
+                    }
                 }
                 instrs
             }
@@ -288,23 +294,6 @@ impl<'a> Codegen<'a> {
                     struct_type_index,
                     field_index,
                 });
-                instrs
-            }
-            ExprData::Intrinsic {
-                intrinsic,
-                arguments,
-            } => {
-                let mut instrs = vec![];
-                for argument in arguments {
-                    instrs.extend(self.compile_expr(body, argument))
-                }
-                match intrinsic.it {
-                    IntrinsicData::ArrayLen => instrs.push(Instruction::ArrayLen),
-                    IntrinsicData::ArrayNew => {
-                        let array_ty = self.builder.array_type(&expr.ty);
-                        instrs.push(Instruction::ArrayNew(array_ty))
-                    }
-                }
                 instrs
             }
         }
@@ -617,6 +606,8 @@ fn builtin_instruction(builtin: &str) -> Instruction<'static> {
         "i32_shr_s" => Instruction::I32ShrS,
         "i32_trunc_f32_s" => Instruction::I32TruncF32S,
         "i32_reinterpret_f32" => Instruction::I32ReinterpretF32,
+        "array_len" => Instruction::ArrayLen,
+        "array_new" => unreachable!("array_new needs special handling"),
         b => unreachable!("Unknown builtin {b}"),
     }
 }

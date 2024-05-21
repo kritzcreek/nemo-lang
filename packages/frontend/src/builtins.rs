@@ -1,15 +1,18 @@
 use crate::types::{FuncTy, Ty};
+use backend::ir::Name;
 use lazy_static::lazy_static;
 use std::collections::HashMap;
 
 pub struct Fn {
     pub name: &'static str,
+    pub ty_params: Vec<Name>,
     pub ty: FuncTy,
 }
 
 fn f32_func_unary(name: &'static str) -> Fn {
     Fn {
         name,
+        ty_params: vec![],
         ty: FuncTy {
             arguments: vec![Ty::F32],
             result: Ty::F32,
@@ -20,6 +23,7 @@ fn f32_func_unary(name: &'static str) -> Fn {
 fn f32_func_binary(name: &'static str) -> Fn {
     Fn {
         name,
+        ty_params: vec![],
         ty: FuncTy {
             arguments: vec![Ty::F32, Ty::F32],
             result: Ty::F32,
@@ -30,6 +34,7 @@ fn f32_func_binary(name: &'static str) -> Fn {
 fn i32_func_unary(name: &'static str) -> Fn {
     Fn {
         name,
+        ty_params: vec![],
         ty: FuncTy {
             arguments: vec![Ty::I32],
             result: Ty::I32,
@@ -40,6 +45,7 @@ fn i32_func_unary(name: &'static str) -> Fn {
 fn i32_func_binary(name: &'static str) -> Fn {
     Fn {
         name,
+        ty_params: vec![],
         ty: FuncTy {
             arguments: vec![Ty::I32, Ty::I32],
             result: Ty::I32,
@@ -64,6 +70,7 @@ lazy_static! {
             "f32_convert_i32_s",
             Fn {
                 name: "f32_convert_i32_s",
+                ty_params: vec![],
                 ty: FuncTy {
                     arguments: vec![Ty::I32],
                     result: Ty::F32,
@@ -74,6 +81,7 @@ lazy_static! {
             "f32_convert_i32_u",
             Fn {
                 name: "f32_convert_i32_u",
+                ty_params: vec![],
                 ty: FuncTy {
                     arguments: vec![Ty::I32],
                     result: Ty::F32,
@@ -93,6 +101,7 @@ lazy_static! {
             "i32_trunc_f32_s",
             Fn {
                 name: "i32_trunc_f32_s",
+                ty_params: vec![],
                 ty: FuncTy {
                     arguments: vec![Ty::F32],
                     result: Ty::I32,
@@ -103,9 +112,32 @@ lazy_static! {
             "i32_reinterpret_f32",
             Fn {
                 name: "i32_reinterpret_f32",
+                ty_params: vec![],
                 ty: FuncTy {
                     arguments: vec![Ty::F32],
                     result: Ty::I32,
+                },
+            },
+        );
+        m.insert(
+            "array_len",
+            Fn {
+                name: "array_len",
+                ty_params: vec![Name::Gen(0)],
+                ty: FuncTy {
+                    arguments: vec![Ty::Array(Box::new(Ty::Var(Name::Gen(0))))],
+                    result: Ty::I32,
+                },
+            },
+        );
+        m.insert(
+            "array_new",
+            Fn {
+                name: "array_new",
+                ty_params: vec![Name::Gen(0)],
+                ty: FuncTy {
+                    arguments: vec![Ty::Var(Name::Gen(0)), Ty::I32],
+                    result: Ty::Array(Box::new(Ty::Var(Name::Gen(0)))),
                 },
             },
         );

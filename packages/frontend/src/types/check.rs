@@ -1,8 +1,7 @@
 use super::ir::{
-    array_len, array_new, expr_decl, unit_lit, var, var_pat, ArrayBuilder, ArrayIdxBuilder,
-    BinaryBuilder, BlockBuilder, CallBuilder, FuncBuilder, IfBuilder, IntrinsicBuilder, LetBuilder,
-    MatchBuilder, PatVariantBuilder, SetArrayBuilder, SetBuilder, StructBuilder, StructIdxBuilder,
-    WhileBuilder,
+    expr_decl, unit_lit, var, var_pat, ArrayBuilder, ArrayIdxBuilder, BinaryBuilder, BlockBuilder,
+    CallBuilder, FuncBuilder, IfBuilder, LetBuilder, MatchBuilder, PatVariantBuilder,
+    SetArrayBuilder, SetBuilder, StructBuilder, StructIdxBuilder, WhileBuilder,
 };
 use super::names::{Name, NameSupply};
 use super::{
@@ -366,19 +365,19 @@ impl Typechecker {
                     match self.check_ty(&ty_node) {
                         Ty::Func(t) => *t,
                         ty => {
-                            if ty != Ty::Any {
+                            if ty != Ty::Error {
                                 self.report_error(&ty_node, NonFunctionImport { name, ty });
                             }
                             FuncTy {
                                 arguments: vec![],
-                                result: Ty::Any,
+                                result: Ty::Error,
                             }
                         }
                     }
                 } else {
                     FuncTy {
                         arguments: vec![],
-                        result: Ty::Any,
+                        result: Ty::Error,
                     }
                 };
                 imports.push(self.build_import_ir(&i, name, &ty));
@@ -508,7 +507,7 @@ impl Typechecker {
                 };
                 let ty = match field.ty() {
                     Some(field_ty) => self.check_ty(&field_ty),
-                    None => Ty::Any,
+                    None => Ty::Error,
                 };
                 let name = self.name_supply.field_idx(&field_name);
                 self.record_def(&field_name, name);
@@ -559,7 +558,7 @@ impl Typechecker {
 
                 let mut arguments = vec![];
                 for param in top_fn.params() {
-                    let ty = param.ty().map(|t| self.check_ty(&t)).unwrap_or(Ty::Any);
+                    let ty = param.ty().map(|t| self.check_ty(&t)).unwrap_or(Ty::Error);
                     arguments.push(ty);
                 }
                 let name = self.name_supply.func_idx(&fn_name_tkn);
@@ -584,26 +583,26 @@ impl Typechecker {
             Type::TyUnit(_) => Ty::Unit,
             Type::TyArray(t) => match t.elem().map(|e| self.check_ty(&e)) {
                 Some(elem_ty) => Ty::Array(Box::new(elem_ty)),
-                None => Ty::Array(Box::new(Ty::Any)),
+                None => Ty::Array(Box::new(Ty::Error)),
             },
             Type::TyCons(t) => {
                 let ty_args: Vec<Ty> = t.type_args().map(|t| self.check_ty(&t)).collect();
                 if let Some(ty) = t.qualifier().map(|q| q.upper_ident_token().unwrap()) {
                     let Some(TypeDef::Variant(def)) = self.context.lookup_type(ty.text()) else {
                         self.report_error_token(&ty, UnknownType(ty.text().to_string()));
-                        return Ty::Any;
+                        return Ty::Error;
                     };
                     self.record_ref(&ty, def.name);
 
                     let Some(alt) = t.upper_ident_token() else {
-                        return Ty::Any;
+                        return Ty::Error;
                     };
                     let Some(name) = def.alternatives.get(alt.text()) else {
                         self.report_error_token(
                             &alt,
                             UnknownType(format!("{}::{}", ty.text(), alt.text())),
                         );
-                        return Ty::Any;
+                        return Ty::Error;
                     };
                     self.record_ref(&alt, *name);
 
@@ -618,7 +617,7 @@ impl Typechecker {
                     let ty_name = t.upper_ident_token().unwrap();
                     let Some(def) = self.context.lookup_type(ty_name.text()) else {
                         self.report_error_token(&ty_name, UnknownType(ty_name.text().to_string()));
-                        return Ty::Any;
+                        return Ty::Error;
                     };
                     self.record_ref(&ty_name, def.name());
 
@@ -638,7 +637,7 @@ impl Typechecker {
                     Ty::Var(name)
                 } else {
                     self.report_error_token(&tkn, UnknownType(tkn.to_string()));
-                    Ty::Any
+                    Ty::Error
                 }
             }
             Type::TyFn(t) => {
@@ -648,7 +647,7 @@ impl Typechecker {
                         arguments.push(self.check_ty(&arg))
                     }
                 }
-                let result = t.result().map_or_else(|| Ty::Any, |t| self.check_ty(&t));
+                let result = t.result().map_or_else(|| Ty::Error, |t| self.check_ty(&t));
                 let func_ty = FuncTy { arguments, result };
                 Ty::Func(Box::new(func_ty))
             }
@@ -793,7 +792,7 @@ impl Typechecker {
             if self.context.lookup_var(var_tkn.text()).is_some() {
                 if !ty_args.is_empty() {
                     self.report_error_token(&var_tkn, CantInstantiateFunctionRef);
-                    return (Ty::Any, None);
+                    return (Ty::Error, None);
                 }
                 let (ty, ir) = self.infer_expr(expr);
                 (ty, ir.map(ir::Callee::FuncRef))
@@ -802,7 +801,7 @@ impl Typechecker {
                 let params: Vec<Name> = def.ty_params.iter().map(|(_, name)| *name).collect();
                 if params.len() != ty_args.len() {
                     self.report_error(expr, TyArgCountMismatch(params.len(), ty_args.len()));
-                    return (Ty::Any, None);
+                    return (Ty::Error, None);
                 }
                 let subst = Substitution::new(&params, ty_args);
                 let ty = subst.apply_func(def.ty.clone());
@@ -814,13 +813,21 @@ impl Typechecker {
                     }),
                 )
             } else if let Some(builtin) = lookup_builtin(var_tkn.text()) {
+                if builtin.ty_params.len() != ty_args.len() {
+                    self.report_error(
+                        expr,
+                        TyArgCountMismatch(builtin.ty_params.len(), ty_args.len()),
+                    );
+                    return (Ty::Error, None);
+                }
+                let subst = Substitution::new(&builtin.ty_params, ty_args);
                 (
-                    Ty::Func(Box::new(builtin.ty.clone())),
+                    Ty::Func(Box::new(subst.apply_func(builtin.ty.clone()))),
                     Some(ir::Callee::Builtin(builtin.name)),
                 )
             } else {
                 self.report_error(expr, UnknownVar(var_tkn.text().to_string()));
-                return (Ty::Any, None);
+                return (Ty::Error, None);
             }
         } else {
             let (ty, ir) = self.infer_expr(expr);
@@ -834,7 +841,7 @@ impl Typechecker {
                 self.record_typed(expr.syntax(), &ty);
                 (ty, ir)
             }
-            None => (Ty::Any, None),
+            None => (Ty::Error, None),
         }
     }
 
@@ -852,7 +859,7 @@ impl Typechecker {
                     (Ty::Array(Box::new(elem_ty)), builder.build())
                 } else {
                     self.report_error(arr, CantInferEmptyArray);
-                    (Ty::Array(Box::new(Ty::Any)), None)
+                    (Ty::Array(Box::new(Ty::Error)), None)
                 }
             }
             Expr::ELit(l) => {
@@ -993,46 +1000,10 @@ impl Typechecker {
                         (func_ty.result, builder.build())
                     }
                     (ty, _) => {
-                        if ty != Ty::Any {
+                        if ty != Ty::Error {
                             self.report_error(&func_expr, NotAFunction(ty));
                         }
                         return None;
-                    }
-                }
-            }
-            Expr::EIntrinsic(intrinsic_expr) => {
-                let intrinsic_tkn = intrinsic_expr.at_ident_token().unwrap();
-                let args: Vec<Expr> = intrinsic_expr.e_arg_list().unwrap().exprs().collect();
-                match (intrinsic_tkn.text(), args.len()) {
-                    ("@array_len", 1) => {
-                        let (ty, ir) = self.infer_expr(&args[0]);
-                        if !matches!(ty, Ty::Array(_)) {
-                            self.report_error(
-                                &args[0],
-                                Message(format!("expected an array type, but got {:?}", ty)),
-                            );
-                            (Ty::I32, None)
-                        } else {
-                            let mut builder = IntrinsicBuilder::new();
-                            builder.intrinsic(array_len(intrinsic_tkn.text_range()));
-                            builder.argument(ir);
-                            (Ty::I32, builder.build())
-                        }
-                    }
-                    ("@array_new", 2) => {
-                        let mut builder = IntrinsicBuilder::new();
-                        builder.intrinsic(array_new(intrinsic_tkn.text_range()));
-                        let (elem_ty, ir) = self.infer_expr(&args[0]);
-                        builder.argument(ir);
-                        builder.argument(self.check_expr(&args[1], &Ty::I32));
-                        (Ty::Array(Box::new(elem_ty)), builder.build())
-                    }
-                    (f, arg_count) => {
-                        self.report_error_token(
-                            &intrinsic_tkn,
-                            UnknownIntrinsic(f.to_string(), arg_count),
-                        );
-                        (Ty::Any, None)
                     }
                 }
             }
@@ -1053,7 +1024,7 @@ impl Typechecker {
                     }
                     (ty, builder.build())
                 } else {
-                    (Ty::Any, None)
+                    (Ty::Error, None)
                 }
             }
             Expr::EMatch(match_expr) => self.check_match(match_expr, None),
@@ -1069,7 +1040,7 @@ impl Typechecker {
                         *elem_ty
                     }
                     (ty, _) => {
-                        if ty != Ty::Any {
+                        if ty != Ty::Error {
                             self.report_error(&arr_expr, NonArrayIdx(ty))
                         }
                         return None;
@@ -1096,7 +1067,7 @@ impl Typechecker {
                 let (rhs_ty, rhs_ir) = self.infer_expr(&bin_expr.rhs()?);
                 builder.right(rhs_ir);
                 let op_tkn = bin_expr.op()?;
-                if lhs_ty == Ty::Any || rhs_ty == Ty::Any {
+                if lhs_ty == Ty::Error || rhs_ty == Ty::Error {
                     return None;
                 }
                 match check_op(&op_tkn, &lhs_ty, &rhs_ty) {
@@ -1155,7 +1126,7 @@ impl Typechecker {
     ) -> (Ty, Option<ir::ExprData>) {
         let mut builder = MatchBuilder::new();
         let Some(scrutinee) = match_expr.scrutinee() else {
-            return (Ty::Any, None);
+            return (Ty::Error, None);
         };
 
         let (ty_scrutinee, ir_scrutinee) = self.infer_expr(&scrutinee);
@@ -1171,7 +1142,7 @@ impl Typechecker {
                 self.check_expr(&body.into(), expected)
             } else {
                 let (ty_body, ir) = self.infer_expr(&body.into());
-                if ty_body != Ty::Any {
+                if ty_body != Ty::Error {
                     ty = Some(ty_body);
                 }
                 ir
@@ -1186,7 +1157,7 @@ impl Typechecker {
             }
             self.context.leave_block();
         }
-        (ty.unwrap_or(Ty::Any), builder.build())
+        (ty.unwrap_or(Ty::Error), builder.build())
     }
 
     // Infers all declarations in the given block, and returns the trailing expression iff it exists
@@ -1255,7 +1226,7 @@ impl Typechecker {
                     builder.expr(self.check_expr(&last_expr, expected));
                 } else {
                     builder.expr(unit_lit(block_expr.syntax().text_range()));
-                    if !matches!(expected, Ty::Unit | Ty::Any) {
+                    if !matches!(expected, Ty::Unit | Ty::Error) {
                         self.report_error(
                             block_expr,
                             TypeMismatch {
@@ -1271,7 +1242,7 @@ impl Typechecker {
             (Expr::EMatch(match_expr), _) => self.check_match(match_expr, Some(expected.clone())).1,
             _ => {
                 let (ty, ir) = self.infer_expr(expr);
-                if *expected != Ty::Any && ty != Ty::Any && ty.ne(expected) {
+                if *expected != Ty::Error && ty != Ty::Error && ty.ne(expected) {
                     println!("{ty:?} {expected:?}");
                     self.report_error(
                         expr,
@@ -1319,7 +1290,7 @@ impl Typechecker {
                 }
             }
             ty => {
-                if *ty != Ty::Any {
+                if *ty != Ty::Error {
                     self.report_error_token(field_name_tkn, NonStructIdx(ty.clone()))
                 }
                 return None;
@@ -1355,7 +1326,7 @@ impl Typechecker {
                         self.infer_expr(&expr)
                     }
                 } else {
-                    (Ty::Any, None)
+                    (Ty::Error, None)
                 };
                 builder.expr(ir);
 
@@ -1377,7 +1348,7 @@ impl Typechecker {
                     builder.set_target(ir);
                     ty
                 } else {
-                    Ty::Any
+                    Ty::Error
                 };
                 if let Some(expr) = set_decl.expr() {
                     builder.expr(self.check_expr(&expr, &set_ty));
@@ -1413,7 +1384,7 @@ impl Typechecker {
 
     fn infer_set_target(&mut self, set_target: &SetTarget) -> (Ty, Option<ir::SetTarget>) {
         let Some(expr) = set_target.set_target_expr() else {
-            return (Ty::Any, None);
+            return (Ty::Error, None);
         };
         let (ty, ir_data) = match expr {
             SetTargetExpr::EVar(var) => {
@@ -1424,7 +1395,7 @@ impl Typechecker {
                     (ty, Some(ir))
                 } else {
                     self.report_error_token(&ident_tkn, UnknownVar(ident_tkn.text().to_string()));
-                    (Ty::Any, None)
+                    (Ty::Error, None)
                 }
             }
             SetTargetExpr::EArrayIdx(arr_idx) => {
@@ -1440,28 +1411,28 @@ impl Typechecker {
                 }
 
                 match arr_ty {
-                    None | Some(Ty::Any) => (Ty::Any, None),
+                    None | Some(Ty::Error) => (Ty::Error, None),
                     Some(Ty::Array(elem_ty)) => ((*elem_ty).clone(), builder.build()),
                     Some(t) => {
                         self.report_error(&arr_idx, NonArrayIdx(t));
-                        (Ty::Any, None)
+                        (Ty::Error, None)
                     }
                 }
             }
             SetTargetExpr::EStructIdx(struct_idx) => {
                 let mut builder = SetStructBuilder::new();
                 let Some(target_expr) = struct_idx.expr() else {
-                    return (Ty::Any, None);
+                    return (Ty::Error, None);
                 };
                 let (target_ty, ir) = self.infer_expr(&target_expr);
                 builder.target(ir);
                 let Some(field_name_tkn) = struct_idx.ident_token() else {
-                    return (Ty::Any, None);
+                    return (Ty::Error, None);
                 };
 
                 let Some((name, field_ty)) = self.check_struct_idx(&target_ty, &field_name_tkn)
                 else {
-                    return (Ty::Any, None);
+                    return (Ty::Error, None);
                 };
                 builder.index(name);
                 (field_ty, builder.build())
@@ -1519,7 +1490,7 @@ impl Typechecker {
                             None
                         }
                     }
-                    Ty::Any => None,
+                    Ty::Error => None,
                     _ => {
                         self.report_error(
                             pattern,

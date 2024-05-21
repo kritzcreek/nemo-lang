@@ -430,7 +430,7 @@ impl<'a> Builder<'a> {
                 };
                 self.val_ty(&ty.clone())
             }
-            Ty::Any => {
+            Ty::Error => {
                 unreachable!("ANY shouldn't make it into codegen")
             }
         }
