@@ -144,7 +144,7 @@ fn error_label(err_data: &TyErrorData, name_map: &NameMap) -> String {
         TyErrorData::UnknownFunction(f) => format!("Unknown function {f}"),
         TyErrorData::UnknownType(t) => format!("Unknown type {t}"),
         TyErrorData::CantInferTypeArguments(names) => {
-            let mut names = names.into_iter();
+            let mut names = names.iter();
             let mut buf = name_map.get(names.next().unwrap()).unwrap().it.clone();
             for name in names {
                 write!(&mut buf, ", {}", name_map.get(name).unwrap().it).unwrap()

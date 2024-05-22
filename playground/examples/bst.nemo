@@ -1,20 +1,20 @@
 // Inserts random numbers from 0 to 100 into a binary search tree until it 
 // reaches size 50, then looks up the values for 1, 11, 21, ..., 91
 fn main() {
-  let tree = Bst #[i32, f32] {
+  let tree = Bst {
     compare = compare_i32,
-    root = leaf#[i32, f32] (10, 3.14),
+    root = leaf(10, 3.14),
   };
 
-  while size#[i32, f32](tree) < 50 {
+  while size(tree) < 50 {
     let key = random_int(0, 100);
     let value = random();
-    set tree = insert#[i32, f32](tree, key, value);
+    set tree = insert(tree, key, value);
   };
 
   let i = 1;
   while i < 100 {
-    match lookup#[i32, f32](tree, i) {
+    match lookup(tree, i) {
       Option::None _ => { log_f32(0.0 - 1.0) },
       Option::Some found => { log_f32(found.value) },
     };
@@ -37,6 +37,20 @@ variant Option[a] {
   struct Some { value: a },
 }
 
+fn unwrap_or[a](opt : Option[a], default : a) -> a {
+  match opt {
+    Option::None _ => { default },
+    Option::Some x => { x.value },
+  }
+}
+
+fn map_or[a, b](opt : Option[a], default : b, f : fn(a) -> b) -> b {
+  match opt {
+    Option::None _ => { default },
+    Option::Some x => { f(x.value) },
+  }
+}
+
 struct Bst[k, v] {
   compare: fn (k, k) -> Ordering,
   root: Option[Node[k, v]],
@@ -50,8 +64,8 @@ struct Node[k, v] {
 }
 
 fn leaf[k, v](key : k, value : v) -> Option[Node[k, v]] {
-  Option::Some #[Node[k, v]] {
-    value = Node #[k, v] {
+  Option::Some {
+    value = Node {
       key = key,
       value = value,
       left = Option::None #[Node[k, v]] {},
@@ -68,7 +82,7 @@ fn insert_node[k, v](
 ) -> Node[k, v] {
   match compare(key, node.key) {
     Ordering::Eq _ => {
-      Node #[k, v] {
+      Node {
         key = key,
         value = value,
         left = node.left,
@@ -78,19 +92,19 @@ fn insert_node[k, v](
     Ordering::Lt _ => {
       match node.left {
         Option::None _ => {
-          Node #[k, v] {
+          Node {
             key = node.key,
             value = node.value,
-            left = leaf#[k, v](key, value),
+            left = leaf(key, value),
             right = node.right,
           }
         },
         Option::Some left => {
-          Node #[k, v] {
+          Node {
             key = node.key,
             value = node.value,
-            left = Option::Some #[Node[k, v]] {
-              value = insert_node#[k, v](left.value, compare, key, value) 
+            left = Option::Some {
+              value = insert_node(left.value, compare, key, value) 
             },
             right = node.right,
           }
@@ -100,20 +114,20 @@ fn insert_node[k, v](
     Ordering::Gt _ => {
       match node.right {
         Option::None _ => {
-          Node #[k, v] {
+          Node {
             key = key,
             value = value,
             left = node.left,
-            right = leaf#[k, v](key, value),
+            right = leaf(key, value),
           }
         },
         Option::Some right => {
-          Node #[k, v] {
+          Node {
             key = node.key,
             value = node.value,
             left = node.left,
-            right = Option::Some #[Node[k, v]] {
-              value = insert_node#[k, v](right.value, compare, key, value) 
+            right = Option::Some {
+              value = insert_node(right.value, compare, key, value) 
             },
           }
         }
@@ -125,16 +139,16 @@ fn insert_node[k, v](
 fn insert[k, v](tree : Bst[k, v], key : k, value : v) -> Bst[k, v] {
   match tree.root {
     Option::None _ => {
-      Bst #[k, v] {
+      Bst {
         compare = tree.compare,
-        root = leaf #[k, v] (key, value),
+        root = leaf(key, value),
       }
     },
     Option::Some root => {
-      Bst#[k, v] {
+      Bst {
         compare = tree.compare,
-        root = Option::Some #[Node[k, v]] {
-          value = insert_node #[k, v] (root.value, tree.compare, key, value),
+        root = Option::Some {
+          value = insert_node(root.value, tree.compare, key, value),
         },
       }
     }
@@ -159,7 +173,7 @@ fn lookup[k, v](tree : Bst[k, v], key : k) -> Option[v] {
             set current = node.value.right;
           },
           Ordering::Eq _ => {
-            set result = Option::Some #[v] { value = node.value.value };
+            set result = Option::Some { value = node.value.value };
             set keep_going = false;
           },
         }
@@ -184,18 +198,18 @@ fn compare_i32(a : i32, b : i32) -> Ordering {
 fn size[k, v](tree : Bst[k, v]) -> i32 {
   match tree.root {
     Option::None _ => { 0 },
-    Option::Some root => { size_node#[k, v](root.value) },
+    Option::Some root => { size_node(root.value) },
   }
 }
 
 fn size_node[k, v](node : Node[k, v]) -> i32 {
   let left = match node.left {
     Option::None _ => { 0 },
-    Option::Some n => { size_node#[k, v](n.value) },
+    Option::Some n => { size_node(n.value) },
   };
   let right = match node.right {
     Option::None _ => { 0 },
-    Option::Some n => { size_node#[k, v](n.value) },
+    Option::Some n => { size_node(n.value) },
   };
   1 + left + right
 }

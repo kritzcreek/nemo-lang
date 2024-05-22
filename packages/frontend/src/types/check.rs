@@ -801,23 +801,24 @@ impl Typechecker {
     ) -> Result<Substitution, Vec<TyErrorData>> {
         let mut subst = Substitution::empty();
         let mut errs = vec![];
-        for (arg, definition) in args.into_iter().zip(arg_tys) {
+        for (arg, definition) in args.iter().zip(arg_tys) {
             let definition = subst.apply(definition.clone());
             let free_vars = definition.vars();
             // This is cursed in terms of bidirectional checking discipline
-            let ir = if relevant_vars.into_iter().any(|v| free_vars.contains(v)) {
-                let (ty, ir) = self.infer_expr(&arg);
+            let ir = if relevant_vars.iter().any(|v| free_vars.contains(v)) {
+                let (ty, ir) = self.infer_expr(arg);
                 if let Err(err) = match_ty(&mut subst, relevant_vars, definition, ty) {
                     errs.push(err)
                 }
                 ir
             } else {
-                self.check_expr(&arg, &definition)
+                self.check_expr(arg, &definition)
             };
             builder.argument(ir);
         }
+
         let unsolved: Vec<Name> = relevant_vars
-            .into_iter()
+            .iter()
             .filter(|var| subst.lookup(**var).is_none())
             .copied()
             .collect();
@@ -961,9 +962,10 @@ impl Typechecker {
                         let mut builder = StructBuilder::new();
                         builder.name(Some(name));
 
-                        let subst = if let Some(ty_arg_list) = struct_expr.e_ty_arg_list() {
-                            let ty_arg_names: Vec<Name> =
-                                def.ty_params.iter().map(|(_, name)| *name).collect();
+                        let mut do_infer = false;
+                        let ty_arg_names: Vec<Name> =
+                            def.ty_params.iter().map(|(_, name)| *name).collect();
+                        let mut subst = if let Some(ty_arg_list) = struct_expr.e_ty_arg_list() {
                             let tys: Vec<Ty> =
                                 ty_arg_list.types().map(|t| self.check_ty(&t)).collect();
                             if ty_arg_names.len() != tys.len() {
@@ -974,6 +976,10 @@ impl Typechecker {
                             }
                             Substitution::new(&ty_arg_names, &tys)
                         } else {
+                            if !ty_arg_names.is_empty() {
+                                // Inference
+                                do_infer = true;
+                            }
                             Substitution::default()
                         };
 
@@ -997,10 +1003,17 @@ impl Typechecker {
                             self.record_ref(&field_tkn, field_name);
                             seen.push(field_name);
                             if let Some(field_expr) = field.expr() {
-                                builder.field(
-                                    field_name,
-                                    self.check_expr(&field_expr, &subst.apply(ty.clone())),
-                                );
+                                let ir = if do_infer {
+                                    let definition = subst.apply(ty.clone());
+                                    let (inferred, ir) = self.infer_expr(&field_expr);
+                                    match_ty(&mut subst, &ty_arg_names, definition, inferred)
+                                        .map_err(|err| self.report_error(&field_expr, err))
+                                        .ok();
+                                    ir
+                                } else {
+                                    self.check_expr(&field_expr, &subst.apply(ty.clone()))
+                                };
+                                builder.field(field_name, ir);
                             }
                         }
                         // TODO report all missing fields at once
@@ -1014,6 +1027,18 @@ impl Typechecker {
                                     },
                                 );
                             }
+                        }
+
+                        let unsolved: Vec<Name> = ty_arg_names
+                            .iter()
+                            .filter(|var| subst.lookup(**var).is_none())
+                            .copied()
+                            .collect();
+                        if !unsolved.is_empty() {
+                            self.report_error_token(
+                                &struct_name_tkn,
+                                CantInferTypeArguments(unsolved),
+                            );
                         }
                         (
                             Ty::Cons {
@@ -1636,6 +1661,9 @@ fn check_op(op: &SyntaxToken, ty_left: &Ty, ty_right: &Ty) -> Option<(ir::OpData
     Some(op_data)
 }
 
+// `match_ty` is non-commutative unification. Only variables on the left are allowed to be solved, and we limit
+// the set of variables that may be solved to `relevant_vars`. This is used to implement inference for type
+// parameters to polymorphic functions.
 fn match_ty(
     subst: &mut Substitution,
     relevant_vars: &[Name],
@@ -1675,7 +1703,8 @@ fn match_ty(
                     relevant_vars,
                     v,
                     ts2.lookup(k)
-                        .expect("Two Cons types with different subst variables")
+                        // TODO I'm not sure this won't randomly happen
+                        .expect("Two matching Cons types with different subst variables")
                         .clone(),
                 )?
             }
