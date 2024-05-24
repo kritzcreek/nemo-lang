@@ -357,6 +357,15 @@ impl Typechecker {
         })
     }
 
+    fn instantiate(&mut self, vars: &[Name]) -> Substitution {
+        let mut subst = Substitution::empty();
+        for var in vars {
+            let gen_name = self.name_supply.gen_idx();
+            subst.add(*var, Ty::Var(gen_name));
+        }
+        subst
+    }
+
     fn check_imports(&mut self, root: &Root) -> Option<Vec<ir::Import>> {
         let mut imports = vec![];
         for top_level in root.top_levels() {
@@ -807,7 +816,7 @@ impl Typechecker {
             // This is cursed in terms of bidirectional checking discipline
             let ir = if relevant_vars.iter().any(|v| free_vars.contains(v)) {
                 let (ty, ir) = self.infer_expr(arg);
-                if let Err(err) = match_ty(&mut subst, relevant_vars, definition, ty) {
+                if let Err(err) = match_ty(&mut subst, definition, ty) {
                     errs.push(err)
                 }
                 ir
@@ -1004,9 +1013,8 @@ impl Typechecker {
                             seen.push(field_name);
                             if let Some(field_expr) = field.expr() {
                                 let ir = if do_infer {
-                                    let definition = subst.apply(ty.clone());
                                     let (inferred, ir) = self.infer_expr(&field_expr);
-                                    match_ty(&mut subst, &ty_arg_names, definition, inferred)
+                                    match_ty(&mut subst, ty.clone(), inferred)
                                         .map_err(|err| self.report_error(&field_expr, err))
                                         .ok();
                                     ir
@@ -1662,30 +1670,29 @@ fn check_op(op: &SyntaxToken, ty_left: &Ty, ty_right: &Ty) -> Option<(ir::OpData
 }
 
 // `match_ty` is non-commutative unification. Only variables on the left are allowed to be solved, and we limit
-// the set of variables that may be solved to `relevant_vars`. This is used to implement inference for type
-// parameters to polymorphic functions.
-fn match_ty(
-    subst: &mut Substitution,
-    relevant_vars: &[Name],
-    definition: Ty,
-    inferred: Ty,
-) -> Result<(), TyErrorData> {
+// the set of variables that may be solved to `Name::Gen(_)`. This is used to implement inference for type
+// parameters to polymorphic functions or struct literals.
+fn match_ty(subst: &mut Substitution, definition: Ty, inferred: Ty) -> Result<(), TyErrorData> {
     let ty1 = subst.apply(definition);
     let ty2 = subst.apply(inferred);
 
     match (ty1, ty2) {
-        (Ty::Var(n), t) if relevant_vars.contains(&n) => {
+        (Ty::Var(n @ Name::Gen(_)), t) => {
+            // We don't solve for `Ty::Error`, because we're still hoping to
+            // solve for a real type.
             if t != Ty::Error {
-                subst.add(n, t);
+                if let Some(_) = subst.add(n, t) {
+                    panic!("Impossible! match_ty solved the same variable twice.")
+                }
             }
             Ok(())
         }
-        (Ty::Array(t1), Ty::Array(t2)) => match_ty(subst, relevant_vars, *t1, *t2),
+        (Ty::Array(t1), Ty::Array(t2)) => match_ty(subst, *t1, *t2),
         (Ty::Func(t1), Ty::Func(t2)) => {
             for (a1, a2) in t1.arguments.into_iter().zip(t2.arguments) {
-                match_ty(subst, relevant_vars, a1, a2)?
+                match_ty(subst, a1, a2)?
             }
-            match_ty(subst, relevant_vars, t1.result, t2.result)
+            match_ty(subst, t1.result, t2.result)
         }
         (
             Ty::Cons {
@@ -1700,7 +1707,6 @@ fn match_ty(
             for (k, v) in ts1.0 {
                 match_ty(
                     subst,
-                    relevant_vars,
                     v,
                     ts2.lookup(k)
                         // TODO I'm not sure this won't randomly happen

@@ -154,8 +154,8 @@ impl Substitution {
         self.0.get(&var)
     }
 
-    pub fn add(&mut self, var: Name, ty: Ty) {
-        self.0.insert(var, ty);
+    pub fn add(&mut self, var: Name, ty: Ty) -> Option<Ty> {
+        self.0.insert(var, ty)
     }
 
     pub fn apply(&self, ty: Ty) -> Ty {
