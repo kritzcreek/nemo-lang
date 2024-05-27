@@ -1,8 +1,8 @@
-import log : fn (i32) -> i32 from log
+import log : fn (i32) -> unit from log
 
 variant List[a] {
-  struct Nil[a] {},
-  struct Cons[a] {
+  struct Nil {},
+  struct Cons {
     head : a,
     tail : List[a]
   }
@@ -30,8 +30,20 @@ fn range(lo : i32, hi : i32) -> List[i32] {
    result
 }
 
-fn main() -> i32 {
+fn sum(xs : List[i32]) -> i32 {
+  let result = 0;
+  match xs {
+    List::Nil _ => { 0 },
+    List::Cons l => { l.head + sum(l.tail) }
+  }
+}
+
+fn square(x : i32) -> i32 {
+  x * x
+}
+
+fn main() {
   let list = range(0, 10);
-  map#[i32, i32](log, list);
-  42
+  let squared = map#[i32, i32](square, list);
+  log(sum(squared))
 }

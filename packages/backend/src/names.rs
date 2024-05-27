@@ -1,18 +1,11 @@
 use std::{collections::HashMap, fmt};
 
-use crate::ir::Spanned;
 use text_size::TextRange;
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub struct Id {
     pub it: String,
     pub at: TextRange,
-}
-
-impl Spanned for Id {
-    fn at(&self) -> &TextRange {
-        &self.at
-    }
 }
 
 // Should we have spanned names as well?
