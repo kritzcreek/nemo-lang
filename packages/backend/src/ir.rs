@@ -3,10 +3,6 @@ use core::fmt;
 use std::{collections::BTreeMap, fmt::Debug};
 use text_size::TextRange;
 
-pub(crate) trait Spanned {
-    fn at(&self) -> &TextRange;
-}
-
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub enum Ty {
     I32,
@@ -187,12 +183,6 @@ pub struct Op {
     pub at: TextRange,
 }
 
-impl Spanned for Op {
-    fn at(&self) -> &TextRange {
-        &self.at
-    }
-}
-
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
 pub enum OpData {
     I32Add,
@@ -228,12 +218,6 @@ pub struct Lit {
     pub it: LitData,
     pub at: TextRange,
     pub ty: Ty,
-}
-
-impl Spanned for Lit {
-    fn at(&self) -> &TextRange {
-        &self.at
-    }
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -273,12 +257,6 @@ pub struct Expr {
     pub it: Box<ExprData>,
     pub at: TextRange,
     pub ty: Ty,
-}
-
-impl Spanned for Expr {
-    fn at(&self) -> &TextRange {
-        &self.at
-    }
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -337,12 +315,6 @@ pub struct Declaration {
     pub ty: Ty,
 }
 
-impl Spanned for Declaration {
-    fn at(&self) -> &TextRange {
-        &self.at
-    }
-}
-
 #[derive(Debug, PartialEq, Clone)]
 pub enum DeclarationData {
     Let { binder: Name, expr: Expr },
@@ -356,12 +328,6 @@ pub struct SetTarget {
     pub it: SetTargetData,
     pub at: TextRange,
     pub ty: Ty,
-}
-
-impl Spanned for SetTarget {
-    fn at(&self) -> &TextRange {
-        &self.at
-    }
 }
 
 #[derive(Debug, PartialEq, Clone)]
