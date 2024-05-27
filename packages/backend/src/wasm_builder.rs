@@ -140,7 +140,10 @@ impl<'a> Builder<'a> {
 
         for (name, info) in self.structs {
             for (tys, type_idx) in &info.instances {
-                let mut it = format!("{}#", names.lookup(name).unwrap().it);
+                let mut it = names.lookup(name).unwrap().it.clone();
+                if !tys.is_empty() {
+                    it.push('#');
+                }
                 for param in tys {
                     write!(&mut it, "_{}", param.display(&names.name_map)).unwrap()
                 }
@@ -155,7 +158,10 @@ impl<'a> Builder<'a> {
 
         for (name, info) in self.variants {
             for (tys, type_idx) in info.instances {
-                let mut it = format!("{}#", names.lookup(name).unwrap().it);
+                let mut it = names.lookup(name).unwrap().it.clone();
+                if !tys.is_empty() {
+                    it.push('#');
+                }
                 for param in tys {
                     write!(&mut it, "_{}", param.display(&names.name_map)).unwrap()
                 }
