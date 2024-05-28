@@ -146,20 +146,29 @@ type CompileState = {
   instance: WebAssembly.Instance | undefined;
 };
 
-function compile(input: string, imports: WebAssembly.Imports): CompileState {
-  const result = compiler.compile(input);
-  const diagnostics = result.errors;
+function compile(
+  input: string,
+  imports: WebAssembly.Imports,
+): CompileState | undefined {
+  let result: compiler.CompileResult;
+  try {
+    result = compiler.compile(input);
+  } catch (e) {
+    console.error("The compiler crashed", e);
+    return undefined;
+  }
   const highlights = result.highlights;
+  const diagnostics = result.errors;
   let instance;
   if (diagnostics.length === 0) {
+    document.getElementById("output-wast")!.textContent = result.wast;
+    // Using synchronous module instantiation
+    // (not recommended, but makes working with the Codemirror API much simpler)
     try {
-      document.getElementById("output-wast")!.textContent = result.wast;
-      // Using synchronous module instantiation
-      // (not recommended, but makes working with the Codemirror API much simpler)
       const mod = new WebAssembly.Module(result.wasm);
       instance = new WebAssembly.Instance(mod, imports);
     } catch (e) {
-      console.error(e);
+      console.error("Instantiating Wasm instance failed", e);
     }
   }
   return { diagnostics, highlights, instance };
@@ -167,14 +176,20 @@ function compile(input: string, imports: WebAssembly.Imports): CompileState {
 
 const compile_result = StateField.define<CompileState>({
   create: function (state: EditorState): CompileState {
-    return compile(state.doc.toString(), getWasmImports());
+    return (
+      compile(state.doc.toString(), getWasmImports()) ?? {
+        diagnostics: [],
+        highlights: [],
+        instance: undefined,
+      }
+    );
   },
   update: function (
     prev: CompileState,
     transaction: Transaction,
   ): CompileState {
     return transaction.docChanged
-      ? compile(transaction.newDoc.toString(), getWasmImports())
+      ? compile(transaction.newDoc.toString(), getWasmImports()) ?? prev
       : prev;
   },
 });
