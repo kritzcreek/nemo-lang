@@ -167,8 +167,28 @@ impl<'a> Codegen<'a> {
             }
             ExprData::Binary { op, left, right } => {
                 let mut instrs = self.compile_expr(body, left);
-                instrs.extend(self.compile_expr(body, right));
-                instrs.extend(Self::compile_op(&op));
+                // BoolOr and BoolAnd get compiled to ifs because their second
+                // argument is evaluated lazily
+                match op.it {
+                    OpData::BoolOr => {
+                        instrs.push(Instruction::If(BlockType::Result(ValType::I32)));
+                        instrs.push(Instruction::I32Const(1));
+                        instrs.push(Instruction::Else);
+                        instrs.extend(self.compile_expr(body, right));
+                        instrs.push(Instruction::End)
+                    }
+                    OpData::BoolAnd => {
+                        instrs.push(Instruction::If(BlockType::Result(ValType::I32)));
+                        instrs.extend(self.compile_expr(body, right));
+                        instrs.push(Instruction::Else);
+                        instrs.push(Instruction::I32Const(0));
+                        instrs.push(Instruction::End)
+                    }
+                    _ => {
+                        instrs.extend(self.compile_expr(body, right));
+                        instrs.extend(Self::compile_op(&op));
+                    }
+                }
                 instrs
             }
             ExprData::Array(elements) => {
