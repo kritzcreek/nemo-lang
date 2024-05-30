@@ -6,7 +6,7 @@ use wasm_encoder::{BlockType, ConstExpr, HeapType, Instruction, RefType, ValType
 use crate::{
     ir::{
         Callee, Declaration, DeclarationData, Expr, ExprData, Func, Lit, LitData, Name, Op, OpData,
-        Pattern, PatternData, Program, SetTarget, SetTargetData, Substitution, Ty, TypeDef,
+        Pattern, PatternData, Program, SetTarget, SetTargetData, TypeArguments, Ty, TypeDef,
     },
     names::{Id, NameSupply},
     wasm_builder::{BodyBuilder, Builder},
@@ -74,6 +74,9 @@ impl<'a> Codegen<'a> {
             }
             Ty::Var(_) => {
                 unreachable!("Globals can't be var-typed")
+            }
+            Ty::Meta(_) => {
+                unreachable!("META shouldn't make it into codegen")
             }
             Ty::Error => {
                 unreachable!("ERROR shouldn't make it into codegen")
@@ -450,10 +453,10 @@ impl<'a> Codegen<'a> {
         }
     }
 
-    fn instantiate_polyfunc(&mut self, name: Name, ty_params: &Substitution) -> Name {
+    fn instantiate_polyfunc(&mut self, name: Name, ty_params: &TypeArguments) -> Name {
         let new_name = {
             let poly_func = self.poly_funcs.get_mut(&name).expect("Unknown polyfunc");
-            let tys = ty_params.tys_owned();
+            let tys: Vec<Ty> = ty_params.tys_owned().collect();
             if let Some(existing) = poly_func.instances.get(&tys) {
                 return *existing;
             }

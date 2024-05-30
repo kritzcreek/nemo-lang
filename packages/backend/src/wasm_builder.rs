@@ -2,7 +2,7 @@ use std::fmt::Write;
 use std::iter;
 use std::{collections::HashMap, mem};
 
-use crate::ir::{FuncTy, Id, Import, Name, Struct, Substitution, Ty, Variant};
+use crate::ir::{FuncTy, Id, Import, Name, Struct, TypeArguments, Ty, Variant};
 use crate::names::NameSupply;
 use wasm_encoder::{
     self, ArrayType, CodeSection, CompositeType, ConstExpr, ElementSection, Elements, EntityType,
@@ -90,7 +90,7 @@ pub struct Builder<'a> {
     imports: HashMap<Name, ImportData>,
     exports: Vec<Export>,
     start_fn: Option<FuncIdx>,
-    substitution: Substitution,
+    substitution: TypeArguments,
     // Stores the type index for all array types we've declared so far.
     // Uses the arrays _ELEM TYPE_ as the key
     func_tys: HashMap<FuncType, TypeIdx>,
@@ -113,7 +113,7 @@ impl<'a> Builder<'a> {
             imports: HashMap::new(),
             exports: vec![],
             start_fn: None,
-            substitution: Substitution::new(&[], &[]),
+            substitution: TypeArguments::new(&[], &[]),
         }
     }
 
@@ -310,11 +310,12 @@ impl<'a> Builder<'a> {
         self.variant_type(variant).tag(alternative)
     }
 
-    pub fn heap_type(&mut self, name: Name, ty_params: &Substitution) -> TypeIdx {
-        let tys = self
+    pub fn heap_type(&mut self, name: Name, ty_params: &TypeArguments) -> TypeIdx {
+        let tys: Vec<Ty> = self
             .substitution()
             .apply_subst(ty_params.clone())
-            .tys_owned();
+            .tys_owned()
+            .collect();
         if let Some(v) = self.variants.get_mut(&name) {
             if let Some(type_idx) = v.instances.get(&tys) {
                 return *type_idx;
@@ -429,6 +430,9 @@ impl<'a> Builder<'a> {
                     panic!("Tried to compile a VAR with no matching substitution")
                 };
                 self.val_ty(&ty.clone())
+            }
+            Ty::Meta(_) => {
+                unreachable!("META shouldn't make it into codegen")
             }
             Ty::Error => {
                 unreachable!("ERROR shouldn't make it into codegen")
@@ -568,15 +572,15 @@ impl<'a> Builder<'a> {
         }
     }
 
-    pub(crate) fn substitution(&mut self) -> &Substitution {
+    pub(crate) fn substitution(&mut self) -> &TypeArguments {
         &self.substitution
     }
 
-    pub(crate) fn set_substitution(&mut self, subst: Substitution) -> Substitution {
+    pub(crate) fn set_substitution(&mut self, subst: TypeArguments) -> TypeArguments {
         mem::replace(&mut self.substitution, subst)
     }
 
-    pub(crate) fn restore_substitution(&mut self, subst: Substitution) {
+    pub(crate) fn restore_substitution(&mut self, subst: TypeArguments) {
         self.substitution = subst
     }
 }

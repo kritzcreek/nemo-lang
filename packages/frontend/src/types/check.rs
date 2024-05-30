@@ -21,7 +21,7 @@ use crate::{
     builtins::lookup_builtin,
     lexer::{is_whitespace, SyntaxKind},
 };
-use backend::ir::{self, LitData, OpData, Substitution};
+use backend::ir::{self, LitData, OpData, TypeArguments};
 use rowan::TextRange;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -299,11 +299,15 @@ impl Typechecker {
         assert!(previous_typed.is_none())
     }
 
-    fn report_error_token(&mut self, elem: &SyntaxToken, error: TyErrorData) {
+    fn report_error_range(&mut self, range : TextRange, error: TyErrorData) {
         self.errors.push(TyError {
-            at: elem.text_range(),
+            at: range,
             it: error,
         })
+    }
+
+    fn report_error_token(&mut self, elem: &SyntaxToken, error: TyErrorData) {
+        self.report_error_range(elem.text_range(), error);
     }
 
     fn report_error<N: AstNode>(&mut self, elem: &N, error: TyErrorData) {
@@ -324,10 +328,7 @@ impl Typechecker {
             }
         }
 
-        self.errors.push(TyError {
-            at: TextRange::new(start, end),
-            it: error,
-        })
+        self.report_error_range(TextRange::new(start, end), error);
     }
 
     pub fn infer_program(&mut self, root: &Root) -> Option<ir::Program> {
@@ -607,7 +608,7 @@ impl Typechecker {
                     self.record_ref(&alt, *name);
 
                     let ty_param_names: Vec<Name> = def.ty_params.iter().map(|(_, n)| *n).collect();
-                    let subst = Substitution::new(&ty_param_names, &ty_args);
+                    let subst = TypeArguments::new(&ty_param_names, &ty_args);
 
                     Ty::Cons {
                         name: *name,
@@ -623,7 +624,7 @@ impl Typechecker {
 
                     let ty_param_names: Vec<Name> =
                         def.ty_params().iter().map(|(_, n)| *n).collect();
-                    let subst = Substitution::new(&ty_param_names, &ty_args);
+                    let subst = TypeArguments::new(&ty_param_names, &ty_args);
                     Ty::Cons {
                         name: def.name(),
                         ty_args: subst,
@@ -803,7 +804,7 @@ impl Typechecker {
                     self.report_error(expr, TyArgCountMismatch(params.len(), ty_args.len()));
                     return (Ty::Error, None);
                 }
-                let subst = Substitution::new(&params, ty_args);
+                let subst = TypeArguments::new(&params, ty_args);
                 let ty = subst.apply_func(def.ty.clone());
                 (
                     Ty::Func(Box::new(ty)),
@@ -820,7 +821,7 @@ impl Typechecker {
                     );
                     return (Ty::Error, None);
                 }
-                let subst = Substitution::new(&builtin.ty_params, ty_args);
+                let subst = TypeArguments::new(&builtin.ty_params, ty_args);
                 (
                     Ty::Func(Box::new(subst.apply_func(builtin.ty.clone()))),
                     Some(ir::Callee::Builtin(builtin.name)),
@@ -921,9 +922,9 @@ impl Typechecker {
                                     TyArgCountMismatch(ty_arg_names.len(), tys.len()),
                                 )
                             }
-                            Substitution::new(&ty_arg_names, &tys)
+                            TypeArguments::new(&ty_arg_names, &tys)
                         } else {
-                            Substitution::default()
+                            TypeArguments::default()
                         };
 
                         let mut seen = vec![];
@@ -1242,7 +1243,6 @@ impl Typechecker {
             _ => {
                 let (ty, ir) = self.infer_expr(expr);
                 if *expected != Ty::Error && ty != Ty::Error && ty.ne(expected) {
-                    println!("{ty:?} {expected:?}");
                     self.report_error(
                         expr,
                         TypeMismatch {
@@ -1261,6 +1261,34 @@ impl Typechecker {
             ty: expected.clone(),
         })
     }
+
+    // fn unify(&mut self, range: TextRange, ty1: &Ty, ty2: &Ty) {
+    //     match (ty1, ty2) {
+    //         (Ty::Error, _) => (),
+    //         (_, Ty::Error) => (),
+    //         (Ty::I32, Ty::I32) => (),
+    //         (Ty::F32, Ty::F32) => (),
+    //         (Ty::Bool, Ty::Bool) => (),
+    //         (Ty::Unit, Ty::Unit) => (),
+    //         (Ty::Array(ty1), Ty::Array(ty2)) => self.unify(range, ty1, ty2),
+    //         (Ty::Cons { name: name1, ty_args: ty_args1 }, Ty::Cons { name: name2, ty_args: ty_args2 }) => {
+    //             if name1 != name2 {
+    //                 self.report_error_range(
+    //                     range,
+    //                     TypeMismatch {
+    //                         expected: ty1.clone(),
+    //                         actual: ty2.clone(),
+    //                     },
+    //                 );
+    //                 return
+    //             } else {
+    //                 for (ty1, ty2) in ty_args1.iter().zip(ty_args2) {
+    //                     self.unify(ty1, ty2);
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
 
     fn check_struct_idx(
         &mut self,

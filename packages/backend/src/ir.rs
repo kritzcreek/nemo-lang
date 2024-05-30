@@ -1,6 +1,6 @@
 pub use crate::names::{Id, Name, NameMap, NameSupply};
 use core::fmt;
-use std::{collections::BTreeMap, fmt::Debug};
+use std::fmt::Debug;
 use text_size::TextRange;
 
 pub(crate) trait Spanned {
@@ -14,11 +14,12 @@ pub enum Ty {
     Unit,
     Bool,
     Array(Box<Ty>),
-    Cons { name: Name, ty_args: Substitution },
+    Cons { name: Name, ty_args: TypeArguments },
     Var(Name),
     Func(Box<FuncTy>),
 
     // Typechecking internal used for error recovery
+    Meta(u32),
     Error,
 }
 
@@ -60,6 +61,7 @@ impl fmt::Display for TyDisplay<'_> {
             }
             Ty::Var(v) => write!(f, "{}", self.name_map.get(v).unwrap().it),
             Ty::Func(func_ty) => func_ty.display(self.name_map).fmt(f),
+            Ty::Meta(n) => write!(f, "META({n})"),
             Ty::Error => write!(f, "ERROR"),
         }
     }
@@ -102,18 +104,18 @@ impl fmt::Display for FuncTyDisplay<'_> {
 }
 
 #[derive(Debug, Default, PartialEq, Eq, Clone, Hash)]
-pub struct Substitution(BTreeMap<Name, Ty>);
-impl Substitution {
+pub struct TypeArguments(Vec<(Name, Ty)>);
+impl TypeArguments {
     pub fn empty() -> Self {
-        Substitution(BTreeMap::new())
+        TypeArguments(vec![])
     }
 
     pub fn new(names: &[Name], tys: &[Ty]) -> Self {
-        let mut mappings = BTreeMap::new();
+        let mut mappings = vec![];
         for (name, ty) in names.iter().zip(tys.iter()) {
-            mappings.insert(*name, ty.clone());
+            mappings.push((*name, ty.clone()));
         }
-        Substitution(mappings)
+        TypeArguments(mappings)
     }
 
     pub fn is_empty(&self) -> bool {
@@ -121,7 +123,12 @@ impl Substitution {
     }
 
     pub fn lookup(&self, var: Name) -> Option<&Ty> {
-        self.0.get(&var)
+        for (name, ty) in &self.0 {
+            if *name == var {
+                return Some(ty);
+            }
+        }
+        None
     }
 
     pub fn apply(&self, ty: Ty) -> Ty {
@@ -129,8 +136,8 @@ impl Substitution {
             return ty;
         }
         match ty {
-            Ty::Var(n) => self.0.get(&n).cloned().unwrap_or(ty),
-            Ty::I32 | Ty::F32 | Ty::Unit | Ty::Bool | Ty::Error => ty,
+            Ty::Var(n) => self.lookup(n).cloned().unwrap_or(ty),
+            Ty::I32 | Ty::F32 | Ty::Unit | Ty::Bool | Ty::Error | Ty::Meta(_) => ty,
             Ty::Array(t) => Ty::Array(Box::new(self.apply(*t))),
             Ty::Func(f) => Ty::Func(Box::new(self.apply_func(*f))),
             Ty::Cons { name, ty_args } => Ty::Cons {
@@ -150,7 +157,7 @@ impl Substitution {
         }
     }
 
-    pub fn apply_subst(&self, subst: Substitution) -> Substitution {
+    pub fn apply_subst(&self, subst: TypeArguments) -> TypeArguments {
         if self.is_empty() {
             return subst;
         }
@@ -162,22 +169,16 @@ impl Substitution {
         subst
     }
 
-    pub fn names(&self) -> Vec<Name> {
-        let mut keys: Vec<Name> = self.0.keys().copied().collect();
-        keys.sort();
-        keys
+    pub fn names(&self) -> impl Iterator<Item = Name> + '_ {
+        self.0.iter().map(|(n, _)| n).copied()
     }
 
-    pub fn tys(&self) -> Vec<&Ty> {
-        let mut keys: Vec<(&Name, &Ty)> = self.0.iter().collect();
-        keys.sort_by_key(|(n, _)| **n);
-        keys.into_iter().map(|(_, t)| t).collect()
+    pub fn tys(&self) -> impl Iterator<Item = &Ty> + '_ {
+        self.0.iter().map(|(_, t)| t)
     }
 
-    pub fn tys_owned(&self) -> Vec<Ty> {
-        let mut keys: Vec<(&Name, &Ty)> = self.0.iter().collect();
-        keys.sort_by_key(|(n, _)| **n);
-        keys.into_iter().map(|(_, t)| t.clone()).collect()
+    pub fn tys_owned(&self) -> impl Iterator<Item = Ty> + '_ {
+        self.tys().cloned()
     }
 }
 
@@ -283,7 +284,10 @@ impl Spanned for Expr {
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Callee {
-    Func { name: Name, type_args: Substitution },
+    Func {
+        name: Name,
+        type_args: TypeArguments,
+    },
     FuncRef(Expr),
     Builtin(&'static str),
 }
