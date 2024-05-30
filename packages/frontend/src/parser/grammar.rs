@@ -527,7 +527,9 @@ fn atom(p: &mut Parser) -> Progress {
     match p.current() {
         T!['('] => {
             p.bump(T!['(']);
-            expr(p);
+            if !expr(p).made_progress() {
+                p.error("expected an expression")
+            }
             p.expect(T![')']);
             p.finish_at(c, SyntaxKind::EParen);
         }
