@@ -251,6 +251,12 @@ impl<N> Occurrence<N> {
 
 pub type OccurenceMap = HashMap<SyntaxTokenPtr, Occurrence<Name>>;
 
+#[derive(Debug)]
+enum InferCallee {
+    Unambiguous(Ty, Option<ir::Callee>),
+    Ambiguous(FuncDef),
+}
+
 pub struct Typechecker {
     pub typed_nodes: HashMap<SyntaxNodePtr, Ty>,
     pub names: OccurenceMap,
@@ -349,6 +355,15 @@ impl Typechecker {
             funcs: functions?,
             start_fn: self.name_supply.start_idx(),
         })
+    }
+
+    fn instantiate(&mut self, vars: &[Name]) -> Substitution {
+        let mut subst = Substitution::empty();
+        for var in vars {
+            let gen_name = self.name_supply.gen_idx();
+            subst.add(*var, Ty::Var(gen_name));
+        }
+        subst
     }
 
     fn check_imports(&mut self, root: &Root) -> Option<Vec<ir::Import>> {
@@ -786,26 +801,72 @@ impl Typechecker {
         )
     }
 
-    fn infer_callee(&mut self, expr: &Expr, ty_args: &[Ty]) -> (Ty, Option<ir::Callee>) {
+    fn match_callee(
+        &mut self,
+        arg_tys: &[Ty],
+        args: &[Expr],
+        builder: &mut CallBuilder,
+        relevant_vars: &[Name],
+    ) -> Result<Substitution, Vec<TyErrorData>> {
+        let mut subst = Substitution::empty();
+        let mut errs = vec![];
+        for (arg, definition) in args.iter().zip(arg_tys) {
+            let definition = subst.apply(definition.clone());
+            let free_vars = definition.vars();
+            // This is cursed in terms of bidirectional checking discipline
+            let ir = if relevant_vars.iter().any(|v| free_vars.contains(v)) {
+                let (ty, ir) = self.infer_expr(arg);
+                if let Err(err) = match_ty(&mut subst, definition, ty) {
+                    errs.push(err)
+                }
+                ir
+            } else {
+                self.check_expr(arg, &definition)
+            };
+            builder.argument(ir);
+        }
+
+        let unsolved: Vec<Name> = relevant_vars
+            .iter()
+            .filter(|var| subst.lookup(**var).is_none())
+            .copied()
+            .collect();
+        if !unsolved.is_empty() {
+            errs.push(CantInferTypeArguments(unsolved));
+        }
+
+        if errs.is_empty() {
+            Ok(subst)
+        } else {
+            Err(errs)
+        }
+    }
+
+    fn infer_callee(&mut self, expr: &Expr, ty_args: &[Ty]) -> InferCallee {
         if let Expr::EVar(v) = expr {
             let var_tkn = v.ident_token().unwrap();
             if self.context.lookup_var(var_tkn.text()).is_some() {
                 if !ty_args.is_empty() {
                     self.report_error_token(&var_tkn, CantInstantiateFunctionRef);
-                    return (Ty::Error, None);
+                    return InferCallee::Unambiguous(Ty::Error, None);
                 }
                 let (ty, ir) = self.infer_expr(expr);
-                (ty, ir.map(ir::Callee::FuncRef))
+                InferCallee::Unambiguous(ty, ir.map(ir::Callee::FuncRef))
             } else if let Some(def) = self.context.lookup_func(var_tkn.text()) {
                 self.record_ref(&var_tkn, def.name);
                 let params: Vec<Name> = def.ty_params.iter().map(|(_, name)| *name).collect();
+                if !params.is_empty() && ty_args.is_empty() {
+                    return InferCallee::Ambiguous((*def).clone());
+                }
+
                 if params.len() != ty_args.len() {
                     self.report_error(expr, TyArgCountMismatch(params.len(), ty_args.len()));
-                    return (Ty::Error, None);
+                    return InferCallee::Unambiguous(Ty::Error, None);
                 }
+
                 let subst = Substitution::new(&params, ty_args);
                 let ty = subst.apply_func(def.ty.clone());
-                (
+                InferCallee::Unambiguous(
                     Ty::Func(Box::new(ty)),
                     Some(ir::Callee::Func {
                         name: def.name,
@@ -818,20 +879,20 @@ impl Typechecker {
                         expr,
                         TyArgCountMismatch(builtin.ty_params.len(), ty_args.len()),
                     );
-                    return (Ty::Error, None);
+                    return InferCallee::Unambiguous(Ty::Error, None);
                 }
                 let subst = Substitution::new(&builtin.ty_params, ty_args);
-                (
+                InferCallee::Unambiguous(
                     Ty::Func(Box::new(subst.apply_func(builtin.ty.clone()))),
                     Some(ir::Callee::Builtin(builtin.name)),
                 )
             } else {
                 self.report_error(expr, UnknownVar(var_tkn.text().to_string()));
-                return (Ty::Error, None);
+                return InferCallee::Unambiguous(Ty::Error, None);
             }
         } else {
             let (ty, ir) = self.infer_expr(expr);
-            (ty, ir.map(ir::Callee::FuncRef))
+            InferCallee::Unambiguous(ty, ir.map(ir::Callee::FuncRef))
         }
     }
 
@@ -910,9 +971,10 @@ impl Typechecker {
                         let mut builder = StructBuilder::new();
                         builder.name(Some(name));
 
-                        let subst = if let Some(ty_arg_list) = struct_expr.e_ty_arg_list() {
-                            let ty_arg_names: Vec<Name> =
-                                def.ty_params.iter().map(|(_, name)| *name).collect();
+                        let mut do_infer = false;
+                        let ty_arg_names: Vec<Name> =
+                            def.ty_params.iter().map(|(_, name)| *name).collect();
+                        let mut subst = if let Some(ty_arg_list) = struct_expr.e_ty_arg_list() {
                             let tys: Vec<Ty> =
                                 ty_arg_list.types().map(|t| self.check_ty(&t)).collect();
                             if ty_arg_names.len() != tys.len() {
@@ -923,6 +985,10 @@ impl Typechecker {
                             }
                             Substitution::new(&ty_arg_names, &tys)
                         } else {
+                            if !ty_arg_names.is_empty() {
+                                // Inference
+                                do_infer = true;
+                            }
                             Substitution::default()
                         };
 
@@ -946,10 +1012,16 @@ impl Typechecker {
                             self.record_ref(&field_tkn, field_name);
                             seen.push(field_name);
                             if let Some(field_expr) = field.expr() {
-                                builder.field(
-                                    field_name,
-                                    self.check_expr(&field_expr, &subst.apply(ty.clone())),
-                                );
+                                let ir = if do_infer {
+                                    let (inferred, ir) = self.infer_expr(&field_expr);
+                                    match_ty(&mut subst, ty.clone(), inferred)
+                                        .map_err(|err| self.report_error(&field_expr, err))
+                                        .ok();
+                                    ir
+                                } else {
+                                    self.check_expr(&field_expr, &subst.apply(ty.clone()))
+                                };
+                                builder.field(field_name, ir);
                             }
                         }
                         // TODO report all missing fields at once
@@ -963,6 +1035,18 @@ impl Typechecker {
                                     },
                                 );
                             }
+                        }
+
+                        let unsolved: Vec<Name> = ty_arg_names
+                            .iter()
+                            .filter(|var| subst.lookup(**var).is_none())
+                            .copied()
+                            .collect();
+                        if !unsolved.is_empty() {
+                            self.report_error_token(
+                                &struct_name_tkn,
+                                CantInferTypeArguments(unsolved),
+                            );
                         }
                         (
                             Ty::Cons {
@@ -981,7 +1065,7 @@ impl Typechecker {
                     .map(|tas| tas.types().map(|t| self.check_ty(&t)).collect())
                     .unwrap_or_default();
                 match self.infer_callee(&func_expr, &ty_arg_list) {
-                    (Ty::Func(func_ty), callee) => {
+                    InferCallee::Unambiguous(Ty::Func(func_ty), callee) => {
                         let mut builder = CallBuilder::new();
                         builder.func(callee);
                         if let Some(arg_list) = call_expr.e_arg_list() {
@@ -999,11 +1083,45 @@ impl Typechecker {
                         }
                         (func_ty.result, builder.build())
                     }
-                    (ty, _) => {
+                    InferCallee::Unambiguous(ty, _) => {
                         if ty != Ty::Error {
                             self.report_error(&func_expr, NotAFunction(ty));
                         }
                         return None;
+                    }
+                    InferCallee::Ambiguous(def) => {
+                        let arg_list = call_expr.e_arg_list()?;
+                        let arg_exprs: Vec<Expr> = arg_list.exprs().collect();
+                        let def_arg_count = def.ty.arguments.len();
+                        if arg_exprs.len() != def_arg_count {
+                            self.report_error(
+                                &arg_list,
+                                ArgCountMismatch(def_arg_count, arg_exprs.len()),
+                            );
+                        }
+                        let mut builder = CallBuilder::new();
+                        let ty_vars: Vec<Name> = def.ty_params.iter().map(|(_, n)| *n).collect();
+                        match self.match_callee(
+                            &def.ty.arguments,
+                            &arg_exprs,
+                            &mut builder,
+                            &ty_vars,
+                        ) {
+                            Ok(subst) => {
+                                let ty = subst.apply(def.ty.result);
+                                builder.func(Some(ir::Callee::Func {
+                                    name: def.name,
+                                    type_args: subst,
+                                }));
+                                (ty, builder.build())
+                            }
+                            Err(errors) => {
+                                for error in errors {
+                                    self.report_error(call_expr, error);
+                                }
+                                (Ty::Error, None)
+                            }
+                        }
                     }
                 }
             }
@@ -1549,4 +1667,59 @@ fn check_op(op: &SyntaxToken, ty_left: &Ty, ty_right: &Ty) -> Option<(ir::OpData
         (_, _, _) => return None,
     };
     Some(op_data)
+}
+
+// `match_ty` is non-commutative unification. Only variables on the left are allowed to be solved, and we limit
+// the set of variables that may be solved to `Name::Gen(_)`. This is used to implement inference for type
+// parameters to polymorphic functions or struct literals.
+fn match_ty(subst: &mut Substitution, definition: Ty, inferred: Ty) -> Result<(), TyErrorData> {
+    let ty1 = subst.apply(definition);
+    let ty2 = subst.apply(inferred);
+
+    match (ty1, ty2) {
+        (Ty::Var(n @ Name::Gen(_)), t) => {
+            // We don't solve for `Ty::Error`, because we're still hoping to
+            // solve for a real type.
+            if t != Ty::Error {
+                if let Some(_) = subst.add(n, t) {
+                    panic!("Impossible! match_ty solved the same variable twice.")
+                }
+            }
+            Ok(())
+        }
+        (Ty::Array(t1), Ty::Array(t2)) => match_ty(subst, *t1, *t2),
+        (Ty::Func(t1), Ty::Func(t2)) => {
+            for (a1, a2) in t1.arguments.into_iter().zip(t2.arguments) {
+                match_ty(subst, a1, a2)?
+            }
+            match_ty(subst, t1.result, t2.result)
+        }
+        (
+            Ty::Cons {
+                name: n1,
+                ty_args: ts1,
+            },
+            Ty::Cons {
+                name: n2,
+                ty_args: ts2,
+            },
+        ) if n1 == n2 => {
+            for (k, v) in ts1.0 {
+                match_ty(
+                    subst,
+                    v,
+                    ts2.lookup(k)
+                        // TODO I'm not sure this won't randomly happen
+                        .expect("Two matching Cons types with different subst variables")
+                        .clone(),
+                )?
+            }
+            Ok(())
+        }
+        (t1, t2) if t1 == t2 => Ok(()),
+        (t1, t2) => Err(TypeMismatch {
+            expected: t1,
+            actual: t2,
+        }),
+    }
 }

@@ -54,6 +54,10 @@ impl NameSupply {
         })
     }
 
+    pub fn gen_idx(&mut self) -> Name {
+        self.0.gen_idx()
+    }
+
     pub fn lookup(&self, name: Name) -> Option<&Id> {
         self.0.lookup(name)
     }
