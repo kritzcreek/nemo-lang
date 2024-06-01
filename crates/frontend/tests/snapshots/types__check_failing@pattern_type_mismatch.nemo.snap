@@ -1,0 +1,12 @@
+---
+source: crates/frontend/tests/types.rs
+expression: err_buf
+input_file: crates/frontend/tests/type_errors/pattern_type_mismatch.nemo
+---
+[20] Error: This pattern can't match a value of type i32
+   ╭─[source:2:1]
+   │
+ 7 │     V::S _ => {}
+   │     ───┬──  
+   │        ╰──── This pattern can't match a value of type i32
+───╯

@@ -1,0 +1,12 @@
+---
+source: crates/frontend/tests/types.rs
+expression: err_buf
+input_file: crates/frontend/tests/type_errors/unknown_function.nemo
+---
+[05] Error: Unknown variable unknown
+   ╭─[source:2:1]
+   │
+ 2 │   unknown()
+   │   ───┬───  
+   │      ╰───── Unknown variable unknown
+───╯
