@@ -11,13 +11,13 @@
   "devDependencies": {
     "lit-html": "^3.1.3",
     "typescript": "^5.4.5",
-    "vite": "^5.2.10"
+    "vite": "^5.2.12"
   },
   "dependencies": {
-    "@codemirror/autocomplete": "^6.16.0",
+    "@codemirror/autocomplete": "^6.16.2",
     "@codemirror/commands": "^6.5.0",
     "@codemirror/language": "^6.10.1",
-    "@codemirror/lint": "^6.7.0",
+    "@codemirror/lint": "^6.8.0",
     "@codemirror/search": "^6.5.6",
     "@codemirror/state": "^6.4.1",
     "@codemirror/view": "^6.26.3",
