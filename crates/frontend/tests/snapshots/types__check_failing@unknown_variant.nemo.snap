@@ -1,0 +1,12 @@
+---
+source: crates/frontend/tests/types.rs
+expression: err_buf
+input_file: crates/frontend/tests/type_errors/unknown_variant.nemo
+---
+[07] Error: Unknown type Unknown
+   ╭─[source:2:1]
+   │
+ 3 │     Unknown::C _ => {}
+   │     ───┬───  
+   │        ╰───── Unknown type Unknown
+───╯

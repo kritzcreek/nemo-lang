@@ -1,13 +1,13 @@
 set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
 
 install:
-    cargo install --path packages/cli
+    cargo install --path crates/cli
 
 build-cli:
     cargo build --release --bin nemo
 
 build-wasm-lib:
-    cd packages/wasm-lib && cargo rustc  --crate-type cdylib --target wasm32-unknown-unknown --release
+    cd crates/wasm-lib && cargo rustc  --crate-type cdylib --target wasm32-unknown-unknown --release
     wasm-bindgen target/wasm32-unknown-unknown/release/wasm_lib.wasm --out-dir playground/wasm-lib/ --target web
     wasm-opt -Os playground/wasm-lib/wasm_lib_bg.wasm -o playground/wasm-lib/wasm_lib_bg.wasm
 

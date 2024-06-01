@@ -1,0 +1,20 @@
+---
+source: crates/frontend/tests/types.rs
+expression: err_buf
+input_file: crates/frontend/tests/type_errors/non_struct_idx.nemo
+---
+[10] Error: Tried to index into a non-struct type i32
+   ╭─[source:2:1]
+   │
+ 2 │   10.x;
+   │      ┬  
+   │      ╰── Tried to index into a non-struct type i32
+───╯
+
+[10] Error: Tried to index into a non-struct type i32
+   ╭─[source:2:1]
+   │
+ 4 │   set x.y = 10
+   │         ┬  
+   │         ╰── Tried to index into a non-struct type i32
+───╯

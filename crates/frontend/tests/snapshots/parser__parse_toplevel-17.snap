@@ -1,0 +1,84 @@
+---
+source: crates/frontend/tests/parser.rs
+expression: output
+input_file: crates/frontend/tests/passing/toplevel.nemo
+---
+struct Box[a] {
+  content : a
+}
+
+fn main() -> Box[i32] {
+  Box #[i32] { content = 42 }
+}
+
+// ---
+Root@0..89
+  TopStruct@0..32
+    LINEFEED@0..1 "\n"
+    STRUCT_KW@1..7 "struct"
+    SPACE@7..8 " "
+    UPPER_IDENT@8..11 "Box"
+    L_BRACKET@11..12 "["
+    ParamTy@12..13
+      IDENT@12..13 "a"
+    R_BRACKET@13..14 "]"
+    SPACE@14..15 " "
+    L_BRACE@15..16 "{"
+    StructField@16..30
+      LINEFEED@16..17 "\n"
+      SPACE@17..19 "  "
+      IDENT@19..26 "content"
+      SPACE@26..27 " "
+      COLON@27..28 ":"
+      SPACE@28..29 " "
+      TyVar@29..30
+        IDENT@29..30 "a"
+    LINEFEED@30..31 "\n"
+    R_BRACE@31..32 "}"
+  TopFn@32..89
+    LINEFEED@32..33 "\n"
+    LINEFEED@33..34 "\n"
+    FN_KW@34..36 "fn"
+    SPACE@36..37 " "
+    IDENT@37..41 "main"
+    L_PAREN@41..42 "("
+    R_PAREN@42..43 ")"
+    SPACE@43..44 " "
+    ARROW@44..46 "->"
+    SPACE@46..47 " "
+    TyCons@47..56
+      UPPER_IDENT@47..50 "Box"
+      L_BRACKET@50..51 "["
+      TyInt@51..54
+        I32_BUILTIN@51..54 "i32"
+      R_BRACKET@54..55 "]"
+      SPACE@55..56 " "
+    EBlock@56..89
+      L_BRACE@56..57 "{"
+      DExpr@57..87
+        EStruct@57..87
+          LINEFEED@57..58 "\n"
+          SPACE@58..60 "  "
+          UPPER_IDENT@60..63 "Box"
+          SPACE@63..64 " "
+          ETyArgList@64..71
+            HASH@64..65 "#"
+            L_BRACKET@65..66 "["
+            TyInt@66..69
+              I32_BUILTIN@66..69 "i32"
+            R_BRACKET@69..70 "]"
+            SPACE@70..71 " "
+          L_BRACE@71..72 "{"
+          SPACE@72..73 " "
+          EStructField@73..86
+            IDENT@73..80 "content"
+            SPACE@80..81 " "
+            EQUALS@81..82 "="
+            SPACE@82..83 " "
+            ELit@83..86
+              LitInt@83..86
+                INT_LIT@83..85 "42"
+                SPACE@85..86 " "
+          R_BRACE@86..87 "}"
+      LINEFEED@87..88 "\n"
+      R_BRACE@88..89 "}"

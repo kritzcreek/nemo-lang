@@ -1,0 +1,107 @@
+---
+source: crates/frontend/tests/parser.rs
+expression: output
+input_file: crates/frontend/tests/passing/toplevel.nemo
+---
+fn add_particle(p : Particle) {
+  set particles.buffer[particles.watermark] = p;
+  set particles.watermark =
+    i32_rem_s(particles.watermark + 1, @array_len(particles.buffer))
+}
+
+
+
+// ---
+Root@0..180
+  TopFn@0..180
+    LINEFEED@0..1 "\n"
+    FN_KW@1..3 "fn"
+    SPACE@3..4 " "
+    IDENT@4..16 "add_particle"
+    L_PAREN@16..17 "("
+    Param@17..29
+      IDENT@17..18 "p"
+      SPACE@18..19 " "
+      COLON@19..20 ":"
+      SPACE@20..21 " "
+      TyCons@21..29
+        UPPER_IDENT@21..29 "Particle"
+    R_PAREN@29..30 ")"
+    SPACE@30..31 " "
+    EBlock@31..180
+      L_BRACE@31..32 "{"
+      DSet@32..80
+        LINEFEED@32..33 "\n"
+        SPACE@33..35 "  "
+        SET_KW@35..38 "set"
+        SPACE@38..39 " "
+        SetTarget@39..77
+          EArrayIdx@39..77
+            EStructIdx@39..55
+              EVar@39..48
+                IDENT@39..48 "particles"
+              DOT@48..49 "."
+              IDENT@49..55 "buffer"
+            L_BRACKET@55..56 "["
+            EStructIdx@56..75
+              EVar@56..65
+                IDENT@56..65 "particles"
+              DOT@65..66 "."
+              IDENT@66..75 "watermark"
+            R_BRACKET@75..76 "]"
+            SPACE@76..77 " "
+        EQUALS@77..78 "="
+        SPACE@78..79 " "
+        EVar@79..80
+          IDENT@79..80 "p"
+      SEMICOLON@80..81 ";"
+      DSet@81..178
+        LINEFEED@81..82 "\n"
+        SPACE@82..84 "  "
+        SET_KW@84..87 "set"
+        SPACE@87..88 " "
+        SetTarget@88..108
+          EStructIdx@88..108
+            EVar@88..97
+              IDENT@88..97 "particles"
+            DOT@97..98 "."
+            IDENT@98..107 "watermark"
+            SPACE@107..108 " "
+        EQUALS@108..109 "="
+        ECall@109..178
+          EVar@109..123
+            LINEFEED@109..110 "\n"
+            SPACE@110..114 "    "
+            IDENT@114..123 "i32_rem_s"
+          EArgList@123..178
+            L_PAREN@123..124 "("
+            EBinary@124..147
+              EStructIdx@124..144
+                EVar@124..133
+                  IDENT@124..133 "particles"
+                DOT@133..134 "."
+                IDENT@134..143 "watermark"
+                SPACE@143..144 " "
+              BinOp@144..146
+                PLUS@144..145 "+"
+                SPACE@145..146 " "
+              ELit@146..147
+                LitInt@146..147
+                  INT_LIT@146..147 "1"
+            COMMA@147..148 ","
+            SPACE@148..149 " "
+            ECall@149..177
+              EVar@149..159
+                LEX_ERROR@149..150 "@"
+                IDENT@150..159 "array_len"
+              EArgList@159..177
+                L_PAREN@159..160 "("
+                EStructIdx@160..176
+                  EVar@160..169
+                    IDENT@160..169 "particles"
+                  DOT@169..170 "."
+                  IDENT@170..176 "buffer"
+                R_PAREN@176..177 ")"
+            R_PAREN@177..178 ")"
+      LINEFEED@178..179 "\n"
+      R_BRACE@179..180 "}"
