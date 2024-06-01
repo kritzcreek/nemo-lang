@@ -36,12 +36,12 @@
     "watch": "tsc -b -w"
   },
   "dependencies": {
-    "@types/vscode": "^1.85.0",
+    "@types/vscode": "^1.89.0",
     "vscode-languageclient": "^9.0.1"
   },
   "devDependencies": {
-    "@types/node": "^18.16.0",
-    "typescript": "^5.3.3",
-    "@vscode/vsce": "^2.15.0"
+    "@types/node": "^20.13.0",
+    "typescript": "^5.4.5",
+    "@vscode/vsce": "^2.26.1"
   }
 }
