@@ -1,0 +1,9 @@
+[package]
+name = "pretty"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.82"
+ecow = "0.2.2"
+itertools = "0.13.0"
