@@ -26,6 +26,51 @@ use rowan::TextRange;
 use std::collections::HashMap;
 use std::rc::Rc;
 
+trait HasRange {
+    fn to_range(&self) -> TextRange;
+}
+
+impl<N: AstNode> HasRange for N {
+    fn to_range(&self) -> TextRange {
+        self.syntax().to_range()
+    }
+}
+
+impl HasRange for SyntaxNode {
+    fn to_range(&self) -> TextRange {
+        let at = self.text_range();
+        let mut start = at.start();
+        let mut end = at.end();
+        let mut children = self.descendants_with_tokens();
+        for elem in children.by_ref() {
+            if elem.as_token().is_some() && !is_whitespace(elem.kind()) {
+                start = elem.text_range().start();
+                break;
+            }
+        }
+
+        for elem in children {
+            if elem.as_token().is_some() && !is_whitespace(elem.kind()) {
+                end = elem.text_range().end();
+            }
+        }
+
+        TextRange::new(start, end)
+    }
+}
+
+impl HasRange for SyntaxToken {
+    fn to_range(&self) -> TextRange {
+        self.text_range()
+    }
+}
+
+impl HasRange for TextRange {
+    fn to_range(&self) -> TextRange {
+        *self
+    }
+}
+
 #[derive(Debug, Clone)]
 struct StructDef {
     name: Name,
@@ -299,33 +344,9 @@ impl Typechecker {
         assert!(previous_typed.is_none())
     }
 
-    fn report_error_token(&mut self, elem: &SyntaxToken, error: TyErrorData) {
+    fn report_error<N: HasRange>(&mut self, node: &N, error: TyErrorData) {
         self.errors.push(TyError {
-            at: elem.text_range(),
-            it: error,
-        })
-    }
-
-    fn report_error<N: AstNode>(&mut self, elem: &N, error: TyErrorData) {
-        let at = elem.syntax().text_range();
-        let mut start = at.start();
-        let mut end = at.end();
-        let mut children = elem.syntax().descendants_with_tokens();
-        for elem in children.by_ref() {
-            if elem.as_token().is_some() && !is_whitespace(elem.kind()) {
-                start = elem.text_range().start();
-                break;
-            }
-        }
-
-        for elem in children {
-            if elem.as_token().is_some() && !is_whitespace(elem.kind()) {
-                end = elem.text_range().end();
-            }
-        }
-
-        self.errors.push(TyError {
-            at: TextRange::new(start, end),
+            at: node.to_range(),
             it: error,
         })
     }
@@ -455,7 +476,7 @@ impl Typechecker {
                         self.record_def(&tkn, alt_name);
 
                         if s.type_params().next().is_some() {
-                            self.report_error_token(&tkn, TypeParamInVariantStruct);
+                            self.report_error(&tkn, TypeParamInVariantStruct);
                         }
 
                         self.context.declare_type_def(
@@ -589,7 +610,7 @@ impl Typechecker {
                 let ty_args: Vec<Ty> = t.type_args().map(|t| self.check_ty(&t)).collect();
                 if let Some(ty) = t.qualifier().map(|q| q.upper_ident_token().unwrap()) {
                     let Some(TypeDef::Variant(def)) = self.context.lookup_type(ty.text()) else {
-                        self.report_error_token(&ty, UnknownType(ty.text().to_string()));
+                        self.report_error(&ty, UnknownType(ty.text().to_string()));
                         return Ty::Error;
                     };
                     self.record_ref(&ty, def.name);
@@ -598,7 +619,7 @@ impl Typechecker {
                         return Ty::Error;
                     };
                     let Some(name) = def.alternatives.get(alt.text()) else {
-                        self.report_error_token(
+                        self.report_error(
                             &alt,
                             UnknownType(format!("{}::{}", ty.text(), alt.text())),
                         );
@@ -616,7 +637,7 @@ impl Typechecker {
                 } else {
                     let ty_name = t.upper_ident_token().unwrap();
                     let Some(def) = self.context.lookup_type(ty_name.text()) else {
-                        self.report_error_token(&ty_name, UnknownType(ty_name.text().to_string()));
+                        self.report_error(&ty_name, UnknownType(ty_name.text().to_string()));
                         return Ty::Error;
                     };
                     self.record_ref(&ty_name, def.name());
@@ -636,7 +657,7 @@ impl Typechecker {
                     self.record_ref(&tkn, name);
                     Ty::Var(name)
                 } else {
-                    self.report_error_token(&tkn, UnknownType(tkn.to_string()));
+                    self.report_error(&tkn, UnknownType(tkn.to_string()));
                     Ty::Error
                 }
             }
@@ -754,7 +775,7 @@ impl Typechecker {
                 if let Ok(float) = float_tkn.text().parse::<f32>() {
                     (Ty::F32, Some(ir::LitData::F32(float)))
                 } else {
-                    self.report_error_token(&float_tkn, InvalidLiteral);
+                    self.report_error(&float_tkn, InvalidLiteral);
                     (Ty::F32, None)
                 }
             }
@@ -791,7 +812,7 @@ impl Typechecker {
             let var_tkn = v.ident_token().unwrap();
             if self.context.lookup_var(var_tkn.text()).is_some() {
                 if !ty_args.is_empty() {
-                    self.report_error_token(&var_tkn, CantInstantiateFunctionRef);
+                    self.report_error(&var_tkn, CantInstantiateFunctionRef);
                     return (Ty::Error, None);
                 }
                 let (ty, ir) = self.infer_expr(expr);
@@ -870,7 +891,7 @@ impl Typechecker {
                 let var_tkn = v.ident_token().unwrap();
                 match self.context.lookup_var_or_func(var_tkn.text()) {
                     None => {
-                        self.report_error_token(&var_tkn, UnknownVar(var_tkn.text().to_string()));
+                        self.report_error(&var_tkn, UnknownVar(var_tkn.text().to_string()));
                         return None;
                     }
                     Some((ty, name)) => {
@@ -898,7 +919,7 @@ impl Typechecker {
                 };
                 match struct_def {
                     None => {
-                        self.report_error_token(
+                        self.report_error(
                             &struct_name_tkn,
                             UnknownType(struct_name_tkn.text().to_string()),
                         );
@@ -934,7 +955,7 @@ impl Typechecker {
                             let Some((field_name, ty)) =
                                 self.context.get_fields(name).get(field_tkn.text()).cloned()
                             else {
-                                self.report_error_token(
+                                self.report_error(
                                     &field_tkn,
                                     UnknownField {
                                         struct_name: name,
@@ -955,7 +976,7 @@ impl Typechecker {
                         // TODO report all missing fields at once
                         for field_name in self.context.field_defs.get(&name).unwrap().names() {
                             if !seen.contains(&field_name) {
-                                self.report_error_token(
+                                self.report_error(
                                     &struct_name_tkn,
                                     MissingField {
                                         struct_name: name,
@@ -1072,7 +1093,7 @@ impl Typechecker {
                 }
                 match check_op(&op_tkn, &lhs_ty, &rhs_ty) {
                     None => {
-                        self.report_error_token(
+                        self.report_error(
                             &op_tkn,
                             Message(format!(
                                 "Invalid operator {} for lhs of type {} and rhs of type {}",
@@ -1283,21 +1304,21 @@ impl Typechecker {
                             .cloned(),
                     ),
                     TypeDef::Variant(_) => {
-                        self.report_error_token(field_name_tkn, NonStructIdx(receiver.clone()));
+                        self.report_error(field_name_tkn, NonStructIdx(receiver.clone()));
                         return None;
                     }
                 }
             }
             ty => {
                 if *ty != Ty::Error {
-                    self.report_error_token(field_name_tkn, NonStructIdx(ty.clone()))
+                    self.report_error(field_name_tkn, NonStructIdx(ty.clone()))
                 }
                 return None;
             }
         };
         match field {
             None => {
-                self.report_error_token(
+                self.report_error(
                     field_name_tkn,
                     UnknownField {
                         struct_name: def.name,
@@ -1393,7 +1414,7 @@ impl Typechecker {
                     self.record_ref(&ident_tkn, name);
                     (ty, Some(ir))
                 } else {
-                    self.report_error_token(&ident_tkn, UnknownVar(ident_tkn.text().to_string()));
+                    self.report_error(&ident_tkn, UnknownVar(ident_tkn.text().to_string()));
                     (Ty::Error, None)
                 }
             }
@@ -1455,7 +1476,7 @@ impl Typechecker {
                 let var = pat.ident_token()?;
                 let mut builder = PatVariantBuilder::new();
                 let Some(def) = self.context.lookup_variant(ty.text()) else {
-                    self.report_error_token(&ty, UnknownType(ty.text().to_string()));
+                    self.report_error(&ty, UnknownType(ty.text().to_string()));
                     return None;
                 };
                 self.record_ref(&ty, def.name);
@@ -1479,7 +1500,7 @@ impl Typechecker {
                             self.record_def(&var, name);
                             builder.build()
                         } else {
-                            self.report_error_token(
+                            self.report_error(
                                 &ctor,
                                 UnknownAlternative {
                                     variant_name: def.name,
