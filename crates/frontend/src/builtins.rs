@@ -1,5 +1,5 @@
 use crate::types::{FuncTy, Ty};
-use backend::ir::Name;
+use crate::ir::Name;
 use lazy_static::lazy_static;
 use std::collections::HashMap;
 

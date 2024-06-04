@@ -1,5 +1,5 @@
-use backend::ir::NameMap;
-pub use backend::ir::{self, Id, Name};
+use crate::ir::NameMap;
+pub use crate::ir::{self, Id, Name};
 use rowan::TextRange;
 
 use crate::syntax::SyntaxToken;

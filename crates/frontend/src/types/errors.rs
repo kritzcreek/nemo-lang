@@ -1,6 +1,6 @@
 use crate::{lexer::is_whitespace, syntax::{ast::AstNode, SyntaxNode, SyntaxToken}, types::Ty};
 use ariadne::{Config, Label, Report, ReportKind, Source};
-use backend::ir::{Name, NameMap};
+use crate::ir::{Name, NameMap};
 use core::fmt;
 use line_index::{LineCol, LineIndex};
 use rowan::TextRange;

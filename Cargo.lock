@@ -86,6 +86,7 @@ checksum = "0c4b4d0bd25bd0b74681c0ad21497610ce1b7c91b1022cd21c80c6fbdd9476b0"
 name = "backend"
 version = "0.1.0"
 dependencies = [
+ "frontend",
  "text-size",
  "wasm-encoder",
 ]
@@ -174,6 +175,7 @@ checksum = "98cc8fbded0c607b7ba9dd60cd98df59af97e84d24e49c8557331cfc26d301ce"
 name = "cli"
 version = "0.1.0"
 dependencies = [
+ "backend",
  "clap",
  "frontend",
  "language-server",
@@ -260,7 +262,6 @@ name = "frontend"
 version = "0.1.0"
 dependencies = [
  "ariadne",
- "backend",
  "insta",
  "lazy_static",
  "line-index",

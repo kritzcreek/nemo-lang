@@ -1,6 +1,6 @@
 /// A bunch of builders for backend ir, so the type checker can continue to be
 /// written in an imperative style
-use backend::ir::{self, *};
+use crate::ir::{self, *};
 use rowan::TextRange;
 
 pub(crate) fn var(name: Name) -> Option<ExprData> {

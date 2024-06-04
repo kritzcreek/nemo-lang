@@ -16,7 +16,7 @@ use crate::syntax::{nodes::*, SyntaxNode, SyntaxNodePtr, SyntaxToken};
 use crate::types::ir::SetStructBuilder;
 use crate::T;
 use crate::{builtins::lookup_builtin, lexer::SyntaxKind};
-use backend::ir::{self, LitData, OpData, Substitution};
+use crate::ir::{self, LitData, OpData, Substitution};
 use rowan::TextRange;
 use std::collections::HashMap;
 use std::rc::Rc;

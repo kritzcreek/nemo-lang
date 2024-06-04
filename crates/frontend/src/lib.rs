@@ -4,11 +4,10 @@ pub mod lexer;
 pub mod parser;
 pub mod syntax;
 pub mod types;
+pub mod ir;
+pub mod names;
 
-use backend::{
-    codegen::codegen,
-    ir::{NameMap, NameSupply},
-};
+use crate::ir::{NameMap, NameSupply};
 use line_index::{LineCol, LineIndex};
 use parser::{parse_prog, ParseError};
 use rowan::TextRange;
@@ -122,15 +121,4 @@ pub fn run_frontend(source: &str) -> CheckResult<CheckError> {
 pub fn check_program(source: &str) -> (NameSupply, Vec<CheckError>) {
     let check_result = run_frontend(source);
     (check_result.names, check_result.errors)
-}
-
-pub fn compile_program(source: &str) -> (NameSupply, Result<Vec<u8>, Vec<CheckError>>) {
-    let check_result = run_frontend(source);
-    match check_result.ir {
-        Some(ir) if check_result.errors.is_empty() => {
-            let (wasm, names) = codegen(ir, check_result.names);
-            (names, Ok(wasm))
-        }
-        _ => (check_result.names, Err(check_result.errors)),
-    }
 }

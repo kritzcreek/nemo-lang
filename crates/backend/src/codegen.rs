@@ -2,14 +2,13 @@ use std::collections::HashMap;
 use std::fmt::Write;
 
 use wasm_encoder::{BlockType, ConstExpr, HeapType, Instruction, RefType, ValType};
-
-use crate::{
+use crate::wasm_builder::{BodyBuilder, Builder};
+use frontend::{
     ir::{
         Callee, Declaration, DeclarationData, Expr, ExprData, Func, Lit, LitData, Name, Op, OpData,
         Pattern, PatternData, Program, SetTarget, SetTargetData, Substitution, Ty, TypeDef,
     },
     names::{Id, NameSupply},
-    wasm_builder::{BodyBuilder, Builder},
 };
 
 pub fn codegen(program: Program, name_supply: NameSupply) -> (Vec<u8>, NameSupply) {
