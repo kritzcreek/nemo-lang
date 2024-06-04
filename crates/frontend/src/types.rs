@@ -24,9 +24,9 @@ pub struct CheckResult<E> {
 
 pub fn check_prog(prog: Root) -> CheckResult<TyError> {
     let mut checker = Typechecker::new();
-    let ir = checker.infer_program(&prog);
+    let (ir, errors) = checker.infer_program(&prog);
     CheckResult {
-        errors: checker.errors,
+        errors,
         occurrences: checker.names,
         names: checker.name_supply.take(),
         typed_nodes: checker.typed_nodes,
