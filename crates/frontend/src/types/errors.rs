@@ -1,10 +1,74 @@
-use crate::types::Ty;
+use crate::{lexer::is_whitespace, syntax::{ast::AstNode, SyntaxNode, SyntaxToken}, types::Ty};
 use ariadne::{Config, Label, Report, ReportKind, Source};
 use backend::ir::{Name, NameMap};
 use core::fmt;
 use line_index::{LineCol, LineIndex};
 use rowan::TextRange;
 use std::str;
+
+#[derive(Debug)]
+pub struct TyErrors {
+    pub errors: Vec<TyError>
+}
+
+impl TyErrors {
+    pub fn new() -> Self {
+        Self { errors: vec![] }
+    }
+
+    pub fn report<N: HasRange>(&mut self, node: &N, error: TyErrorData) {
+        self.errors.push(TyError {
+            at: node.to_range(),
+            it: error,
+        })
+    }
+}
+
+pub trait HasRange {
+    fn to_range(&self) -> TextRange;
+}
+
+impl<N: AstNode> HasRange for N {
+    fn to_range(&self) -> TextRange {
+        self.syntax().to_range()
+    }
+}
+
+impl HasRange for SyntaxNode {
+    fn to_range(&self) -> TextRange {
+        let at = self.text_range();
+        let mut start = at.start();
+        let mut end = at.end();
+        let mut children = self.descendants_with_tokens();
+        for elem in children.by_ref() {
+            if elem.as_token().is_some() && !is_whitespace(elem.kind()) {
+                start = elem.text_range().start();
+                break;
+            }
+        }
+
+        for elem in children {
+            if elem.as_token().is_some() && !is_whitespace(elem.kind()) {
+                end = elem.text_range().end();
+            }
+        }
+
+        TextRange::new(start, end)
+    }
+}
+
+impl HasRange for SyntaxToken {
+    fn to_range(&self) -> TextRange {
+        self.text_range()
+    }
+}
+
+impl HasRange for TextRange {
+    fn to_range(&self) -> TextRange {
+        *self
+    }
+}
+
 
 #[derive(Debug)]
 pub struct TyError {
