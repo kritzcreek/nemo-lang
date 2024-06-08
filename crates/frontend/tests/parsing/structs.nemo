@@ -1,0 +1,7 @@
+global _ = Vec { }
+global _ = Vec { x = 10 }
+global _ = Vec { x = 10, y = 1.0 }
+global _ = Vec { x = 10, y = 1.0, }
+global _ = v.x
+global _ = v.x.y
+global _ = v[0].y

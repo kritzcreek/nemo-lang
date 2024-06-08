@@ -1,0 +1,7 @@
+global _ = 1 + 1
+global _ = 1 + 1 + 1
+global _ = 1 * 1 + 1
+global _ = 1 + 1 * 1
+global _ = 1 <= 2 && 1 < 1 || 1 >= 3 && 3 > 4 || 1 == 1 || 1 != 2
+global _ = 1 + x.y
+global _ = f32_abs(delta_x) > f32_abs(delta_y)

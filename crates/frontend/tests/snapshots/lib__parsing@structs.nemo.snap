@@ -1,0 +1,158 @@
+---
+source: crates/frontend/tests/lib.rs
+assertion_line: 132
+expression: output
+input_file: crates/frontend/tests/parsing/structs.nemo
+---
+Root@0..165
+  TopGlobal@0..18
+    GLOBAL_KW@0..6 "global"
+    SPACE@6..7 " "
+    IDENT@7..8 "_"
+    SPACE@8..9 " "
+    EQUALS@9..10 "="
+    SPACE@10..11 " "
+    EStruct@11..18
+      UPPER_IDENT@11..14 "Vec"
+      SPACE@14..15 " "
+      L_BRACE@15..16 "{"
+      SPACE@16..17 " "
+      R_BRACE@17..18 "}"
+  TopGlobal@18..44
+    LINEFEED@18..19 "\n"
+    GLOBAL_KW@19..25 "global"
+    SPACE@25..26 " "
+    IDENT@26..27 "_"
+    SPACE@27..28 " "
+    EQUALS@28..29 "="
+    SPACE@29..30 " "
+    EStruct@30..44
+      UPPER_IDENT@30..33 "Vec"
+      SPACE@33..34 " "
+      L_BRACE@34..35 "{"
+      SPACE@35..36 " "
+      EStructField@36..43
+        IDENT@36..37 "x"
+        SPACE@37..38 " "
+        EQUALS@38..39 "="
+        SPACE@39..40 " "
+        ELit@40..43
+          LitInt@40..43
+            INT_LIT@40..42 "10"
+            SPACE@42..43 " "
+      R_BRACE@43..44 "}"
+  TopGlobal@44..79
+    LINEFEED@44..45 "\n"
+    GLOBAL_KW@45..51 "global"
+    SPACE@51..52 " "
+    IDENT@52..53 "_"
+    SPACE@53..54 " "
+    EQUALS@54..55 "="
+    SPACE@55..56 " "
+    EStruct@56..79
+      UPPER_IDENT@56..59 "Vec"
+      SPACE@59..60 " "
+      L_BRACE@60..61 "{"
+      SPACE@61..62 " "
+      EStructField@62..68
+        IDENT@62..63 "x"
+        SPACE@63..64 " "
+        EQUALS@64..65 "="
+        SPACE@65..66 " "
+        ELit@66..68
+          LitInt@66..68
+            INT_LIT@66..68 "10"
+      COMMA@68..69 ","
+      SPACE@69..70 " "
+      EStructField@70..78
+        IDENT@70..71 "y"
+        SPACE@71..72 " "
+        EQUALS@72..73 "="
+        SPACE@73..74 " "
+        ELit@74..78
+          LitFloat@74..78
+            FLOAT_LIT@74..77 "1.0"
+            SPACE@77..78 " "
+      R_BRACE@78..79 "}"
+  TopGlobal@79..115
+    LINEFEED@79..80 "\n"
+    GLOBAL_KW@80..86 "global"
+    SPACE@86..87 " "
+    IDENT@87..88 "_"
+    SPACE@88..89 " "
+    EQUALS@89..90 "="
+    SPACE@90..91 " "
+    EStruct@91..115
+      UPPER_IDENT@91..94 "Vec"
+      SPACE@94..95 " "
+      L_BRACE@95..96 "{"
+      SPACE@96..97 " "
+      EStructField@97..103
+        IDENT@97..98 "x"
+        SPACE@98..99 " "
+        EQUALS@99..100 "="
+        SPACE@100..101 " "
+        ELit@101..103
+          LitInt@101..103
+            INT_LIT@101..103 "10"
+      COMMA@103..104 ","
+      SPACE@104..105 " "
+      EStructField@105..112
+        IDENT@105..106 "y"
+        SPACE@106..107 " "
+        EQUALS@107..108 "="
+        SPACE@108..109 " "
+        ELit@109..112
+          LitFloat@109..112
+            FLOAT_LIT@109..112 "1.0"
+      COMMA@112..113 ","
+      SPACE@113..114 " "
+      R_BRACE@114..115 "}"
+  TopGlobal@115..130
+    LINEFEED@115..116 "\n"
+    GLOBAL_KW@116..122 "global"
+    SPACE@122..123 " "
+    IDENT@123..124 "_"
+    SPACE@124..125 " "
+    EQUALS@125..126 "="
+    SPACE@126..127 " "
+    EStructIdx@127..130
+      EVar@127..128
+        IDENT@127..128 "v"
+      DOT@128..129 "."
+      IDENT@129..130 "x"
+  TopGlobal@130..147
+    LINEFEED@130..131 "\n"
+    GLOBAL_KW@131..137 "global"
+    SPACE@137..138 " "
+    IDENT@138..139 "_"
+    SPACE@139..140 " "
+    EQUALS@140..141 "="
+    SPACE@141..142 " "
+    EStructIdx@142..147
+      EStructIdx@142..145
+        EVar@142..143
+          IDENT@142..143 "v"
+        DOT@143..144 "."
+        IDENT@144..145 "x"
+      DOT@145..146 "."
+      IDENT@146..147 "y"
+  TopGlobal@147..165
+    LINEFEED@147..148 "\n"
+    GLOBAL_KW@148..154 "global"
+    SPACE@154..155 " "
+    IDENT@155..156 "_"
+    SPACE@156..157 " "
+    EQUALS@157..158 "="
+    SPACE@158..159 " "
+    EStructIdx@159..165
+      EArrayIdx@159..163
+        EVar@159..160
+          IDENT@159..160 "v"
+        L_BRACKET@160..161 "["
+        ELit@161..162
+          LitInt@161..162
+            INT_LIT@161..162 "0"
+        R_BRACKET@162..163 "]"
+      DOT@163..164 "."
+      IDENT@164..165 "y"
