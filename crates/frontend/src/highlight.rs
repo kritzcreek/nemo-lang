@@ -1,6 +1,6 @@
+use crate::ir::Name;
 use crate::lexer::SyntaxKind;
 use crate::syntax::ast::AstNode;
-use backend::ir::Name;
 use rowan::TextRange;
 
 use crate::syntax::nodes::Root;
