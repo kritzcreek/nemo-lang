@@ -4,7 +4,7 @@ use crate::syntax::ast::AstNode;
 use rowan::TextRange;
 
 use crate::syntax::nodes::Root;
-use crate::types::check::OccurenceMap;
+use crate::types::OccurrenceMap;
 use crate::T;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -26,7 +26,7 @@ pub struct Highlight {
     pub kind: HighlightKind,
 }
 
-pub fn highlight(root: &Root, occurrences: &OccurenceMap) -> Vec<Highlight> {
+pub fn highlight(root: &Root, occurrences: &OccurrenceMap) -> Vec<Highlight> {
     let mut highlights = Vec::new();
     for node in root.syntax().descendants_with_tokens() {
         match node.kind() {

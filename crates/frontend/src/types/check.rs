@@ -236,11 +236,11 @@ impl<N> Occurrence<N> {
     }
 }
 
-pub type OccurenceMap = HashMap<SyntaxTokenPtr, Occurrence<Name>>;
+pub type OccurrenceMap = HashMap<SyntaxTokenPtr, Occurrence<Name>>;
 
 pub struct Typechecker {
     pub typed_nodes: HashMap<SyntaxNodePtr, Ty>,
-    pub names: OccurenceMap,
+    pub names: OccurrenceMap,
 
     pub name_supply: NameSupply,
     context: Ctx,

@@ -12,7 +12,7 @@ use parser::{parse_prog, ParseError};
 use rowan::TextRange;
 use std::fmt::{self, Write};
 use syntax::{ast::AstNode, nodes::Root};
-use types::{error::TyError, CheckResult};
+use types::{TyError, CheckResult};
 
 #[derive(Debug)]
 pub enum CheckError {

@@ -1,12 +1,11 @@
-pub mod check;
-pub mod error;
-pub mod names;
+mod check;
+mod error;
+mod names;
 
-use self::{
-    check::{Occurrence, Typechecker},
-    error::TyError,
-};
-pub use crate::ir::{FuncTy, NameMap, Program, Ty};
+pub use error::TyError;
+pub use check::{Occurrence, OccurrenceMap};
+use check::Typechecker;
+use crate::ir::{FuncTy, Program, Ty};
 use crate::ir::{Name, NameSupply};
 use crate::syntax::{nodes::Root, token_ptr::SyntaxTokenPtr, SyntaxNodePtr};
 use std::collections::HashMap;

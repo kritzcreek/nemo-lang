@@ -1,5 +1,4 @@
-use crate::ir::Name;
-use crate::types::{FuncTy, Ty};
+use crate::ir::{Name, FuncTy, Ty};
 use lazy_static::lazy_static;
 use std::collections::HashMap;
 
