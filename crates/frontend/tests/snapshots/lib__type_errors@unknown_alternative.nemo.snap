@@ -1,0 +1,21 @@
+---
+source: crates/frontend/tests/lib.rs
+assertion_line: 104
+expression: output
+input_file: crates/frontend/tests/type_errors/unknown_alternative.nemo
+---
+[07] Error: Unknown type Unknown
+   ╭─[source:2:1]
+   │
+ 6 │   V::Unknown {};
+   │      ───┬───  
+   │         ╰───── Unknown type Unknown
+───╯
+
+[19] Error: Unknown alternative. V does not have an alternative named Unknown
+   ╭─[source:2:1]
+   │
+ 9 │     V::Unknown _ => {}
+   │        ───┬───  
+   │           ╰───── Unknown alternative. V does not have an alternative named Unknown
+───╯

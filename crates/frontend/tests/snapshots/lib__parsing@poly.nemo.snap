@@ -1,0 +1,139 @@
+---
+source: crates/frontend/tests/lib.rs
+assertion_line: 132
+expression: output
+input_file: crates/frontend/tests/parsing/poly.nemo
+---
+Root@0..153
+  TopFn@0..63
+    FN_KW@0..2 "fn"
+    SPACE@2..3 " "
+    IDENT@3..7 "poly"
+    L_BRACKET@7..8 "["
+    ParamTy@8..11
+      IDENT@8..9 "a"
+      COMMA@9..10 ","
+      SPACE@10..11 " "
+    ParamTy@11..12
+      IDENT@11..12 "b"
+    R_BRACKET@12..13 "]"
+    L_PAREN@13..14 "("
+    Param@14..21
+      IDENT@14..15 "a"
+      SPACE@15..16 " "
+      COLON@16..17 ":"
+      SPACE@17..18 " "
+      TyVar@18..19
+        IDENT@18..19 "a"
+      COMMA@19..20 ","
+      SPACE@20..21 " "
+    Param@21..30
+      IDENT@21..26 "other"
+      SPACE@26..27 " "
+      COLON@27..28 ":"
+      SPACE@28..29 " "
+      TyVar@29..30
+        IDENT@29..30 "b"
+    R_PAREN@30..31 ")"
+    SPACE@31..32 " "
+    EBlock@32..63
+      L_BRACE@32..33 "{"
+      DExpr@33..61
+        ECall@33..61
+          EVar@33..40
+            LINEFEED@33..34 "\n"
+            SPACE@34..36 "  "
+            IDENT@36..40 "poly"
+          ETyArgList@40..52
+            HASH@40..41 "#"
+            L_BRACKET@41..42 "["
+            TyInt@42..45
+              I32_BUILTIN@42..45 "i32"
+            COMMA@45..46 ","
+            SPACE@46..47 " "
+            TyBool@47..51
+              BOOL_BUILTIN@47..51 "bool"
+            R_BRACKET@51..52 "]"
+          EArgList@52..61
+            L_PAREN@52..53 "("
+            ELit@53..54
+              LitInt@53..54
+                INT_LIT@53..54 "1"
+            COMMA@54..55 ","
+            SPACE@55..56 " "
+            ELit@56..60
+              LitBool@56..60
+                TRUE_KW@56..60 "true"
+            R_PAREN@60..61 ")"
+      LINEFEED@61..62 "\n"
+      R_BRACE@62..63 "}"
+  TopStruct@63..96
+    LINEFEED@63..64 "\n"
+    LINEFEED@64..65 "\n"
+    STRUCT_KW@65..71 "struct"
+    SPACE@71..72 " "
+    UPPER_IDENT@72..75 "Box"
+    L_BRACKET@75..76 "["
+    ParamTy@76..77
+      IDENT@76..77 "a"
+    R_BRACKET@77..78 "]"
+    SPACE@78..79 " "
+    L_BRACE@79..80 "{"
+    StructField@80..94
+      LINEFEED@80..81 "\n"
+      SPACE@81..83 "  "
+      IDENT@83..90 "content"
+      SPACE@90..91 " "
+      COLON@91..92 ":"
+      SPACE@92..93 " "
+      TyVar@93..94
+        IDENT@93..94 "a"
+    LINEFEED@94..95 "\n"
+    R_BRACE@95..96 "}"
+  TopFn@96..153
+    LINEFEED@96..97 "\n"
+    LINEFEED@97..98 "\n"
+    FN_KW@98..100 "fn"
+    SPACE@100..101 " "
+    IDENT@101..105 "main"
+    L_PAREN@105..106 "("
+    R_PAREN@106..107 ")"
+    SPACE@107..108 " "
+    ARROW@108..110 "->"
+    SPACE@110..111 " "
+    TyCons@111..120
+      UPPER_IDENT@111..114 "Box"
+      L_BRACKET@114..115 "["
+      TyInt@115..118
+        I32_BUILTIN@115..118 "i32"
+      R_BRACKET@118..119 "]"
+      SPACE@119..120 " "
+    EBlock@120..153
+      L_BRACE@120..121 "{"
+      DExpr@121..151
+        EStruct@121..151
+          LINEFEED@121..122 "\n"
+          SPACE@122..124 "  "
+          UPPER_IDENT@124..127 "Box"
+          SPACE@127..128 " "
+          ETyArgList@128..135
+            HASH@128..129 "#"
+            L_BRACKET@129..130 "["
+            TyInt@130..133
+              I32_BUILTIN@130..133 "i32"
+            R_BRACKET@133..134 "]"
+            SPACE@134..135 " "
+          L_BRACE@135..136 "{"
+          SPACE@136..137 " "
+          EStructField@137..150
+            IDENT@137..144 "content"
+            SPACE@144..145 " "
+            EQUALS@145..146 "="
+            SPACE@146..147 " "
+            ELit@147..150
+              LitInt@147..150
+                INT_LIT@147..149 "42"
+                SPACE@149..150 " "
+          R_BRACE@150..151 "}"
+      LINEFEED@151..152 "\n"
+      R_BRACE@152..153 "}"

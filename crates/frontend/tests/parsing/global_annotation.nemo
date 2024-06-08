@@ -1,0 +1,10 @@
+global _ : i32 = 0
+global _ : f32 = 0
+global _ : bool = 0
+global _ : unit = 0
+global _ : Struct = 0
+global _ : [i32] = 0
+global _ : [[Struct]] = 0
+global _ : fn() -> unit = 0
+global _ : fn(i32) -> f32 = 0
+global _ : fn(i32, f32, fn(i32) -> i32) -> f32 = 0

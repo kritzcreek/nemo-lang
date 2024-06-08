@@ -1,0 +1,13 @@
+---
+source: crates/frontend/tests/lib.rs
+assertion_line: 104
+expression: output
+input_file: crates/frontend/tests/type_errors/operator_type_mismatch.nemo
+---
+[04] Error: Invalid operator + for lhs of type i32 and rhs of type f32
+   ╭─[source:1:13]
+   │
+ 2 │    1 + 2.0
+   │      ┬  
+   │      ╰── Invalid operator + for lhs of type i32 and rhs of type f32
+───╯

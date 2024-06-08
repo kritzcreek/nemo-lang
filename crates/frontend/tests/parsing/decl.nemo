@@ -1,0 +1,13 @@
+global _ = {
+    let x = 1;
+    let y : i32 = 10;
+    set x = 1;
+    set x[0] = 1;
+    set x.y = 1;
+    set x[0].y = 1;
+    set x.y[0] = 1;
+    while x {
+      1;
+      2
+    };
+}

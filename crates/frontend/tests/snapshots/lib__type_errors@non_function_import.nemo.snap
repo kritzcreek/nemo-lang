@@ -1,0 +1,13 @@
+---
+source: crates/frontend/tests/lib.rs
+assertion_line: 104
+expression: output
+input_file: crates/frontend/tests/type_errors/non_function_import.nemo
+---
+[18] Error: Can't import a non-function value. internal is of type i32
+   ╭─[source:1:13]
+   │
+ 1 │ import internal : i32 from external
+   │                   ──┬─  
+   │                     ╰─── Can't import a non-function value. internal is of type i32
+───╯

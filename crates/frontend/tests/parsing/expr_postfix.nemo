@@ -1,0 +1,7 @@
+global _ = f()
+global _ = f(1)
+global _ = f(1, 2,)
+global _ = f(1, f(2))
+global _ = x.f()
+global _ = x[1].f()
+global _ = f(1)(x)

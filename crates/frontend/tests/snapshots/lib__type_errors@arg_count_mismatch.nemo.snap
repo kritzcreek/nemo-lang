@@ -1,0 +1,21 @@
+---
+source: crates/frontend/tests/lib.rs
+assertion_line: 104
+expression: output
+input_file: crates/frontend/tests/type_errors/arg_count_mismatch.nemo
+---
+[11] Error: Mismatched arg count. Expected 1 argument, but got 3
+   ╭─[source:1:13]
+   │
+ 6 │   func(1, 2, 3);
+   │       ────┬────  
+   │           ╰────── Mismatched arg count. Expected 1 argument, but got 3
+───╯
+
+[11] Error: Mismatched arg count. Expected 2 arguments, but got 3
+   ╭─[source:1:13]
+   │
+ 7 │   i32_rem_s(1, 2, 3);
+   │            ────┬────  
+   │                ╰────── Mismatched arg count. Expected 2 arguments, but got 3
+───╯
