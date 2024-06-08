@@ -7,3 +7,4 @@ license = "MIT"
 [dependencies]
 text-size = "1.1.1"
 wasm-encoder = "0.209"
+frontend = { path = "../frontend" }
