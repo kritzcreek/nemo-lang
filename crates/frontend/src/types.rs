@@ -1,6 +1,5 @@
 pub mod check;
 pub mod errors;
-mod ir;
 pub mod names;
 
 use self::{

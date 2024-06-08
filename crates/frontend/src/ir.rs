@@ -238,7 +238,9 @@ pub struct Pattern {
 
 #[derive(Debug, PartialEq, Clone, IrBuilder)]
 pub enum PatternData {
-    PatVar(Name),
+    PatVar {
+        var: Name
+    },
     PatVariant {
         variant: Name,
         alternative: Name,
@@ -269,8 +271,12 @@ pub enum Callee {
 
 #[derive(Debug, PartialEq, Clone, IrBuilder)]
 pub enum ExprData {
-    Lit(Lit),
-    Var(Name),
+    Lit {
+        lit: Lit,
+    },
+    Var {
+        name: Name,
+    },
     Call {
         func: Callee,
         arguments: Vec<Expr>,
@@ -322,7 +328,7 @@ pub struct Declaration {
 pub enum DeclarationData {
     Let { binder: Name, expr: Expr },
     Set { set_target: SetTarget, expr: Expr },
-    Expr(Expr),
+    Expr { expr: Expr },
     While { condition: Expr, body: Expr },
 }
 
