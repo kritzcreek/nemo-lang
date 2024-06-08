@@ -1,11 +1,11 @@
 pub mod builtins;
 pub mod highlight;
+pub mod ir;
 pub mod lexer;
+pub mod names;
 pub mod parser;
 pub mod syntax;
 pub mod types;
-pub mod ir;
-pub mod names;
 
 use crate::ir::{NameMap, NameSupply};
 use line_index::{LineCol, LineIndex};

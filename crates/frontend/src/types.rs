@@ -7,9 +7,9 @@ use self::{
     check::{Occurrence, Typechecker},
     errors::TyError,
 };
-use crate::syntax::{nodes::Root, token_ptr::SyntaxTokenPtr, SyntaxNodePtr};
 pub use crate::ir::{FuncTy, NameMap, Program, Ty};
 use crate::ir::{Name, NameSupply};
+use crate::syntax::{nodes::Root, token_ptr::SyntaxTokenPtr, SyntaxNodePtr};
 use std::collections::HashMap;
 
 #[derive(Debug)]

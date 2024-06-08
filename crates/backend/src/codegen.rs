@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::fmt::Write;
 
-use wasm_encoder::{BlockType, ConstExpr, HeapType, Instruction, RefType, ValType};
 use crate::wasm_builder::{BodyBuilder, Builder};
 use frontend::{
     ir::{
@@ -10,6 +9,7 @@ use frontend::{
     },
     names::{Id, NameSupply},
 };
+use wasm_encoder::{BlockType, ConstExpr, HeapType, Instruction, RefType, ValType};
 
 pub fn codegen(program: Program, name_supply: NameSupply) -> (Vec<u8>, NameSupply) {
     let builder = Builder::new(name_supply);
@@ -190,12 +190,12 @@ impl<'a> Codegen<'a> {
                 }
                 instrs
             }
-            ExprData::Array(elements) => {
-                let array_size = elements.len() as u32;
+            ExprData::Array { elems } => {
+                let array_size = elems.len() as u32;
                 let array_type_index = self.builder.array_type(&expr.ty);
 
                 let mut instrs = vec![];
-                for element in elements {
+                for element in elems {
                     instrs.extend(self.compile_expr(body, element));
                 }
                 instrs.push(Instruction::ArrayNewFixed {
@@ -325,7 +325,7 @@ impl<'a> Codegen<'a> {
         scrutinee_idx: u32,
     ) -> (Vec<Instruction<'a>>, Vec<Instruction<'a>>) {
         match *pattern.it {
-            PatternData::Var(v) => {
+            PatternData::PatVar(v) => {
                 let ty = self.builder.val_ty(&pattern.ty);
                 let idx = body.new_local(v, ty);
                 (
@@ -336,7 +336,7 @@ impl<'a> Codegen<'a> {
                     ],
                 )
             }
-            PatternData::Variant {
+            PatternData::PatVariant {
                 variant,
                 alternative,
                 binder,
@@ -423,7 +423,7 @@ impl<'a> Codegen<'a> {
         expr: Expr,
     ) -> Vec<Instruction<'a>> {
         match set_target.it {
-            SetTargetData::Array { target, index } => {
+            SetTargetData::SetArray { target, index } => {
                 let array_ty = self.builder.array_type(&target.ty);
                 let mut instrs = self.compile_expr(body, target);
                 instrs.extend(self.compile_expr(body, index));
@@ -431,7 +431,7 @@ impl<'a> Codegen<'a> {
                 instrs.push(Instruction::ArraySet(array_ty));
                 instrs
             }
-            SetTargetData::Struct { target, index } => {
+            SetTargetData::SetStruct { target, index } => {
                 let Ty::Cons { name, ty_args } = &target.ty else {
                     panic!("Can't index a non-struct type")
                 };
@@ -447,7 +447,7 @@ impl<'a> Codegen<'a> {
                 });
                 instrs
             }
-            SetTargetData::Var { name } => {
+            SetTargetData::SetVar { name } => {
                 let mut instrs = self.compile_expr(body, expr);
                 match name {
                     Name::Global(_) => {

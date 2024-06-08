@@ -1,6 +1,10 @@
-use crate::{lexer::is_whitespace, syntax::{ast::AstNode, SyntaxNode, SyntaxToken}, types::Ty};
-use ariadne::{Config, Label, Report, ReportKind, Source};
 use crate::ir::{Name, NameMap};
+use crate::{
+    lexer::is_whitespace,
+    syntax::{ast::AstNode, SyntaxNode, SyntaxToken},
+    types::Ty,
+};
+use ariadne::{Config, Label, Report, ReportKind, Source};
 use core::fmt;
 use line_index::{LineCol, LineIndex};
 use rowan::TextRange;
@@ -8,7 +12,7 @@ use std::str;
 
 #[derive(Debug)]
 pub struct TyErrors {
-    pub errors: Vec<TyError>
+    pub errors: Vec<TyError>,
 }
 
 impl TyErrors {
@@ -68,7 +72,6 @@ impl HasRange for TextRange {
         *self
     }
 }
-
 
 #[derive(Debug)]
 pub struct TyError {

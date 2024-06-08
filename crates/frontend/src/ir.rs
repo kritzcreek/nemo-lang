@@ -1,5 +1,6 @@
 pub use crate::names::{Id, Name, NameMap, NameSupply};
 use core::fmt;
+use derive_ir::IrBuilder;
 use std::{collections::BTreeMap, fmt::Debug};
 use text_size::TextRange;
 
@@ -235,10 +236,10 @@ pub struct Pattern {
     pub ty: Ty,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, IrBuilder)]
 pub enum PatternData {
-    Var(Name),
-    Variant {
+    PatVar(Name),
+    PatVariant {
         variant: Name,
         alternative: Name,
         binder: Name,
@@ -266,7 +267,7 @@ pub enum Callee {
     Builtin(&'static str),
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, IrBuilder)]
 pub enum ExprData {
     Lit(Lit),
     Var(Name),
@@ -279,7 +280,9 @@ pub enum ExprData {
         left: Expr,
         right: Expr,
     },
-    Array(Vec<Expr>),
+    Array {
+        elems: Vec<Expr>,
+    },
     ArrayIdx {
         array: Expr,
         index: Expr,
@@ -315,7 +318,7 @@ pub struct Declaration {
     pub ty: Ty,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, IrBuilder)]
 pub enum DeclarationData {
     Let { binder: Name, expr: Expr },
     Set { set_target: SetTarget, expr: Expr },
@@ -330,11 +333,11 @@ pub struct SetTarget {
     pub ty: Ty,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, IrBuilder)]
 pub enum SetTargetData {
-    Array { target: Expr, index: Expr },
-    Struct { target: Expr, index: Name },
-    Var { name: Name },
+    SetArray { target: Expr, index: Expr },
+    SetStruct { target: Expr, index: Name },
+    SetVar { name: Name },
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -373,7 +376,7 @@ pub struct Global {
     pub init: Expr,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, IrBuilder)]
 pub struct Func {
     pub name: Name,
     pub ty_params: Vec<Name>,

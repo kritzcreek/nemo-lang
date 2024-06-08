@@ -1,8 +1,8 @@
 use std::{error::Error, fs, path::PathBuf, process};
 
+use backend::compile_program;
 use clap::{Parser, Subcommand};
 use frontend::render_errors;
-use backend::compile_program;
 use language_server::start_language_server;
 
 /// The nemo language
