@@ -1,10 +1,10 @@
 pub mod check;
-pub mod errors;
+pub mod error;
 pub mod names;
 
 use self::{
     check::{Occurrence, Typechecker},
-    errors::TyError,
+    error::TyError,
 };
 pub use crate::ir::{FuncTy, NameMap, Program, Ty};
 use crate::ir::{Name, NameSupply};

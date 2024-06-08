@@ -1,7 +1,7 @@
 use rowan::Checkpoint;
 
-use super::Parser;
-use crate::lexer::SyntaxKind;
+use super::parser::Parser;
+use super::SyntaxKind;
 use crate::T;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]

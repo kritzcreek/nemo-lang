@@ -1,7 +1,6 @@
 pub mod builtins;
 pub mod highlight;
 pub mod ir;
-pub mod lexer;
 pub mod names;
 pub mod parser;
 pub mod syntax;
@@ -13,7 +12,7 @@ use parser::{parse_prog, ParseError};
 use rowan::TextRange;
 use std::fmt::{self, Write};
 use syntax::{ast::AstNode, nodes::Root};
-use types::{errors::TyError, CheckResult};
+use types::{error::TyError, CheckResult};
 
 #[derive(Debug)]
 pub enum CheckError {

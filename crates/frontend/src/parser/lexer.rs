@@ -47,13 +47,6 @@ fn is_trailing(kind: SyntaxKind) -> bool {
     kind == SyntaxKind::SPACE
 }
 
-pub fn is_whitespace(kind: SyntaxKind) -> bool {
-    matches!(
-        kind,
-        SyntaxKind::SPACE | SyntaxKind::LINEFEED | SyntaxKind::LINE_COMMENT | SyntaxKind::LEX_ERROR
-    )
-}
-
 impl<'a> Lexer<'a> {
     fn inner_peek(&mut self) -> Option<Token<'a>> {
         match &self.lookahead {
@@ -93,7 +86,7 @@ impl<'a> Iterator for Lexer<'a> {
             span: self.inner.span(),
         };
 
-        while matches!(self.inner_peek(), Some(tkn) if is_whitespace(tkn.kind)) {
+        while matches!(self.inner_peek(), Some(tkn) if tkn.kind.is_whitespace()) {
             leading.push(self.inner_next().unwrap())
         }
 
@@ -366,6 +359,15 @@ pub enum SyntaxKind {
 
     // Recovery node
     Error,
+}
+
+impl SyntaxKind {
+    pub fn is_whitespace(&self) -> bool {
+      matches!(
+          self,
+          SyntaxKind::SPACE | SyntaxKind::LINEFEED | SyntaxKind::LINE_COMMENT | SyntaxKind::LEX_ERROR
+      )
+    }
 }
 
 #[macro_export]

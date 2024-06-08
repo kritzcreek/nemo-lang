@@ -1,6 +1,5 @@
 use crate::ir::{Name, NameMap};
 use crate::{
-    lexer::is_whitespace,
     syntax::{ast::AstNode, SyntaxNode, SyntaxToken},
     types::Ty,
 };
@@ -45,14 +44,14 @@ impl HasRange for SyntaxNode {
         let mut end = at.end();
         let mut children = self.descendants_with_tokens();
         for elem in children.by_ref() {
-            if elem.as_token().is_some() && !is_whitespace(elem.kind()) {
+            if elem.as_token().is_some() && !elem.kind().is_whitespace() {
                 start = elem.text_range().start();
                 break;
             }
         }
 
         for elem in children {
-            if elem.as_token().is_some() && !is_whitespace(elem.kind()) {
+            if elem.as_token().is_some() && !elem.kind().is_whitespace() {
                 end = elem.text_range().end();
             }
         }

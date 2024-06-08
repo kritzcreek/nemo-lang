@@ -1,10 +1,9 @@
-use super::errors::TyErrors;
-use super::errors::{TyError, TyErrorData::*};
+use super::error::{TyErrors, TyError, TyErrorData::*};
 use super::names::{Name, NameSupply};
 use super::{FuncTy, Ty};
 use crate::builtins::lookup_builtin;
 use crate::ir::{self, ExprBuilder, LitBuilder, PatVarBuilder, Substitution, VarBuilder};
-use crate::lexer::SyntaxKind;
+use crate::parser::SyntaxKind;
 use crate::syntax::ast::AstNode;
 use crate::syntax::nodes::*;
 use crate::syntax::token_ptr::SyntaxTokenPtr;

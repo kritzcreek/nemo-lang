@@ -1,5 +1,5 @@
 use crate::ir::Name;
-use crate::lexer::SyntaxKind;
+use crate::parser::SyntaxKind;
 use crate::syntax::ast::AstNode;
 use rowan::TextRange;
 
