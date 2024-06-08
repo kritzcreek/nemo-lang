@@ -1,17 +1,15 @@
 use super::errors::TyErrors;
-use super::ir::{expr_decl, unit_lit, var, var_pat};
+use super::errors::{TyError, TyErrorData::*};
 use super::names::{Name, NameSupply};
-use super::{
-    errors::{TyError, TyErrorData::*},
-    ir::lit,
-};
 use super::{FuncTy, Ty};
-use crate::ir::{self, Substitution};
+use crate::builtins::lookup_builtin;
+use crate::ir::{self, ExprBuilder, LitBuilder, PatVarBuilder, Substitution, VarBuilder};
+use crate::lexer::SyntaxKind;
 use crate::syntax::ast::AstNode;
+use crate::syntax::nodes::*;
 use crate::syntax::token_ptr::SyntaxTokenPtr;
-use crate::syntax::{nodes::*, SyntaxNode, SyntaxNodePtr, SyntaxToken};
+use crate::syntax::{SyntaxNode, SyntaxNodePtr, SyntaxToken};
 use crate::T;
-use crate::{builtins::lookup_builtin, lexer::SyntaxKind};
 use rowan::TextRange;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -853,7 +851,9 @@ impl Typechecker {
             }
             Expr::ELit(l) => {
                 let (ty, ir) = self.infer_literal(errors, &l.literal().unwrap());
-                (ty, lit(ir))
+                let mut builder = LitBuilder::default();
+                builder.lit(ir);
+                (ty, builder.build())
             }
             Expr::EVar(v) => {
                 let var_tkn = v.ident_token().unwrap();
@@ -863,7 +863,9 @@ impl Typechecker {
                         return None;
                     }
                     Some((ty, name)) => {
-                        let ir = var(name);
+                        let mut builder = VarBuilder::default();
+                        builder.name(Some(name));
+                        let ir = builder.build();
                         self.record_ref(&var_tkn, name);
                         (ty, ir)
                     }
@@ -1380,8 +1382,10 @@ impl Typechecker {
                 (Ty::Unit, builder.build())
             }
             Declaration::DExpr(decl) => {
+                let mut builder = ExprBuilder::default();
                 let (ty, ir) = self.infer_expr(errors, &decl.expr().unwrap());
-                (ty, expr_decl(ir))
+                builder.expr(ir);
+                (ty, builder.build())
             }
         };
         (
@@ -1530,7 +1534,9 @@ impl Typechecker {
                 self.context
                     .add_var(ident_tkn.text().to_string(), expected.clone(), name);
                 self.record_def(&ident_tkn, name);
-                var_pat(name)
+                let mut builder = PatVarBuilder::default();
+                builder.var(Some(name));
+                builder.build()
             }
         };
         Some(ir::Pattern {
@@ -1572,4 +1578,18 @@ fn check_op(op: &SyntaxToken, ty_left: &Ty, ty_right: &Ty) -> Option<(ir::OpData
         (_, _, _) => return None,
     };
     Some(op_data)
+}
+
+fn unit_lit(range: TextRange) -> Option<ir::Expr> {
+    Some(ir::Expr {
+        at: range,
+        ty: Ty::Unit,
+        it: Box::new(ir::ExprData::Lit {
+            lit: ir::Lit {
+                at: range,
+                ty: Ty::Unit,
+                it: ir::LitData::Unit,
+            },
+        }),
+    })
 }

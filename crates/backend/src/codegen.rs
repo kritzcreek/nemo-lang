@@ -34,23 +34,14 @@ struct Codegen<'a> {
 
 impl<'a> Codegen<'a> {
     fn const_expr(expr: &Expr) -> Option<ConstExpr> {
-        match *expr.it {
-            ExprData::Lit(Lit {
-                it: LitData::Bool(false),
-                ..
-            }) => Some(ConstExpr::i32_const(0)),
-            ExprData::Lit(Lit {
-                it: LitData::Bool(true),
-                ..
-            }) => Some(ConstExpr::i32_const(1)),
-            ExprData::Lit(Lit {
-                it: LitData::I32(n),
-                ..
-            }) => Some(ConstExpr::i32_const(n)),
-            ExprData::Lit(Lit {
-                it: LitData::F32(n),
-                ..
-            }) => Some(ConstExpr::f32_const(n)),
+        let ExprData::Lit { lit } = &*expr.it else {
+            return None;
+        };
+        match lit.it {
+            LitData::Bool(false) => Some(ConstExpr::i32_const(0)),
+            LitData::Bool(true) => Some(ConstExpr::i32_const(1)),
+            LitData::I32(n) => Some(ConstExpr::i32_const(n)),
+            LitData::F32(n) => Some(ConstExpr::f32_const(n)),
             _ => None,
         }
     }
@@ -120,12 +111,12 @@ impl<'a> Codegen<'a> {
 
     fn compile_expr(&mut self, body: &mut BodyBuilder, expr: Expr) -> Vec<Instruction<'a>> {
         match *expr.it {
-            ExprData::Lit(l) => Self::compile_lit(l),
-            ExprData::Var(v) => match v {
-                Name::Local(_) => vec![Instruction::LocalGet(body.lookup_local(&v).unwrap())],
-                Name::Global(_) => vec![Instruction::GlobalGet(self.builder.lookup_global(&v))],
-                Name::Func(_) => vec![Instruction::RefFunc(self.builder.lookup_func(&v))],
-                n => unreachable!("Cannot compile a variable reference to {n:?}"),
+            ExprData::Lit { lit } => Self::compile_lit(lit),
+            ExprData::Var { name } => match name {
+                Name::Local(_) => vec![Instruction::LocalGet(body.lookup_local(&name).unwrap())],
+                Name::Global(_) => vec![Instruction::GlobalGet(self.builder.lookup_global(&name))],
+                Name::Func(_) => vec![Instruction::RefFunc(self.builder.lookup_func(&name))],
+                _ => unreachable!("Cannot compile a variable reference to {name:?}"),
             },
             ExprData::Call { func, arguments } => {
                 let mut instrs = vec![];
@@ -325,9 +316,9 @@ impl<'a> Codegen<'a> {
         scrutinee_idx: u32,
     ) -> (Vec<Instruction<'a>>, Vec<Instruction<'a>>) {
         match *pattern.it {
-            PatternData::PatVar(v) => {
+            PatternData::PatVar { var } => {
                 let ty = self.builder.val_ty(&pattern.ty);
-                let idx = body.new_local(v, ty);
+                let idx = body.new_local(var, ty);
                 (
                     vec![Instruction::I32Const(1)],
                     vec![
@@ -384,8 +375,8 @@ impl<'a> Codegen<'a> {
             DeclarationData::Set { set_target, expr } => {
                 self.compile_set_target(body, set_target, expr)
             }
-            DeclarationData::Expr(e) => {
-                let mut instrs = self.compile_expr(body, e);
+            DeclarationData::Expr { expr } => {
+                let mut instrs = self.compile_expr(body, expr);
                 instrs.push(Instruction::Drop);
                 instrs
             }
