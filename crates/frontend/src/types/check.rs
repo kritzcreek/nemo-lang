@@ -736,7 +736,7 @@ impl Typechecker {
             }
             Literal::LitInt(l) => {
                 let int = if let Some(tkn) = l.int_lit_token() {
-                    i32::from_str_radix(tkn.text(), 10)
+                    tkn.text().parse()
                 } else if let Some(tkn) = l.binary_lit_token() {
                     i32::from_str_radix(tkn.text().strip_prefix("0b").unwrap(), 2)
                 } else if let Some(tkn) = l.hex_lit_token() {

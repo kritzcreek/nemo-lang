@@ -5,13 +5,13 @@ use std::str;
 mod error;
 mod grammar;
 mod lexer;
-mod parser;
+mod parsing;
 
 pub use error::{render_parse_error, ParseError};
 pub use lexer::{SyntaxKind, TToken};
 
 pub fn parse_prog(input: &str) -> Parse {
-    let mut p = parser::Parser::new(input);
+    let mut p = parsing::Parser::new(input);
     let c = p.checkpoint();
     grammar::prog(&mut p);
     if !p.at(SyntaxKind::EOF) {
