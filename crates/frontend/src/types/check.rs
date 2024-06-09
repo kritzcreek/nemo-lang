@@ -1,15 +1,16 @@
 use super::error::{TyError, TyErrorData::*, TyErrors};
-use super::names::{Name, NameSupply};
-use super::{FuncTy, Ty};
+use super::names::NameSupply;
 use crate::builtins::lookup_builtin;
-use crate::ir::{self, ExprBuilder, LitBuilder, PatVarBuilder, Substitution, VarBuilder};
+use crate::ir::{
+    self, ExprBuilder, FuncTy, LitBuilder, Name, PatVarBuilder, Substitution, Ty, VarBuilder,
+};
 use crate::parser::SyntaxKind;
 use crate::syntax::token_ptr::SyntaxTokenPtr;
 use crate::syntax::*;
 use crate::T;
-use rowan::TextRange;
 use std::collections::HashMap;
 use std::rc::Rc;
+use text_size::TextRange;
 
 #[derive(Debug, Clone)]
 struct StructDef {

@@ -1,10 +1,9 @@
 use crate::ir::Name;
 use crate::parser::SyntaxKind;
-use rowan::TextRange;
-
 use crate::syntax::{AstNode, Root};
 use crate::types::OccurrenceMap;
 use crate::T;
+use text_size::TextRange;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HighlightKind {
