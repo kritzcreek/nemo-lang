@@ -11,12 +11,11 @@ use lsp_types::request::{
 };
 use lsp_types::{
     Diagnostic, DiagnosticOptions, DiagnosticServerCapabilities, DiagnosticSeverity,
-    DocumentDiagnosticReport, FullDocumentDiagnosticReport, GotoDefinitionResponse, Hover,
-    HoverContents, InitializeParams, Location, MarkupContent, MarkupKind, OneOf, Position, Range,
-    RelatedFullDocumentDiagnosticReport, SemanticToken, SemanticTokenType, SemanticTokens,
-    SemanticTokensFullOptions, SemanticTokensLegend, SemanticTokensOptions,
-    SemanticTokensServerCapabilities, ServerCapabilities, TextDocumentSyncCapability,
-    TextDocumentSyncKind, WorkDoneProgressOptions,
+    DocumentDiagnosticReport, FullDocumentDiagnosticReport, GotoDefinitionResponse,
+    InitializeParams, Location, OneOf, Position, Range, RelatedFullDocumentDiagnosticReport,
+    SemanticToken, SemanticTokenType, SemanticTokens, SemanticTokensFullOptions,
+    SemanticTokensLegend, SemanticTokensOptions, SemanticTokensServerCapabilities,
+    ServerCapabilities, TextDocumentSyncCapability, TextDocumentSyncKind, WorkDoneProgressOptions,
 };
 use serde_json::json;
 use std::error::Error;
@@ -198,35 +197,35 @@ fn main_loop(
                     Err(ExtractError::MethodMismatch(req)) => req,
                 };
                 let _req = match cast_request::<HoverRequest>(req) {
-                    Ok((id, params)) => {
-                        let uri = params.text_document_position_params.text_document.uri;
-                        let position = params.text_document_position_params.position;
-                        let file_path = uri.to_file_path().unwrap();
-                        eprintln!("Attempting to read {uri} as file {}", file_path.display());
+                    Ok((_id, _params)) => {
+                        // let uri = params.text_document_position_params.text_document.uri;
+                        // let position = params.text_document_position_params.position;
+                        // let file_path = uri.to_file_path().unwrap();
+                        // eprintln!("Attempting to read {uri} as file {}", file_path.display());
 
-                        let file_data = match vfs.read_file(&file_path) {
-                            Some(program) => program,
-                            None => {
-                                vfs.open_file(file_path.clone()).unwrap();
-                                vfs.read_file(&file_path).unwrap()
-                            }
-                        };
-                        let Some(hover_response) = hover(file_data, &position) else {
-                            connection.sender.send(Message::Response(Response {
-                                id,
-                                result: Some(json!("null")),
-                                error: None,
-                            }))?;
-                            continue;
-                        };
-                        let result = serde_json::to_value(&hover_response).unwrap();
+                        // let file_data = match vfs.read_file(&file_path) {
+                        //     Some(program) => program,
+                        //     None => {
+                        //         vfs.open_file(file_path.clone()).unwrap();
+                        //         vfs.read_file(&file_path).unwrap()
+                        //     }
+                        // };
+                        // let Some(hover_response) = hover(file_data, &position) else {
+                        //     connection.sender.send(Message::Response(Response {
+                        //         id,
+                        //         result: Some(json!("null")),
+                        //         error: None,
+                        //     }))?;
+                        //     continue;
+                        // };
+                        //let result = serde_json::to_value(&hover_response).unwrap();
 
-                        let resp = Response {
-                            id,
-                            result: Some(result),
-                            error: None,
-                        };
-                        connection.sender.send(Message::Response(resp))?;
+                        //let resp = Response {
+                        //    id,
+                        //    result: Some(result),
+                        //    error: None,
+                        //};
+                        //connection.sender.send(Message::Response(resp))?;
                         continue;
                     }
                     Err(err @ ExtractError::JsonError { .. }) => panic!("{err:?}"),
@@ -377,43 +376,43 @@ fn find_definition(file_data: &FileData, position: &Position) -> Option<Range> {
         .and_then(|def| resolve_text_range(&def.at, &file_data.line_index))
 }
 
-fn hover(file_data: &FileData, position: &Position) -> Option<Hover> {
-    let offset = file_data.line_index.offset(LineCol {
-        line: position.line,
-        col: position.character,
-    })?;
-
-    let mut matches = vec![];
-    for (ptr, ty) in &file_data.check_result.typed_nodes {
-        if ptr.text_range().contains(offset) {
-            matches.push((ptr, ty));
-        }
-    }
-
-    if matches.is_empty() {
-        return None;
-    }
-    let mut matches = matches.into_iter();
-    let mut narrowest_match = matches.next().unwrap();
-    for (ptr, ty) in matches {
-        if ptr.text_range().len() < narrowest_match.0.text_range().len() {
-            narrowest_match = (ptr, ty);
-        }
-    }
-
-    Some(Hover {
-        contents: HoverContents::Markup(MarkupContent {
-            kind: MarkupKind::Markdown,
-            value: format!(
-                "{}",
-                narrowest_match
-                    .1
-                    .display(&file_data.check_result.names.name_map)
-            ),
-        }),
-        range: resolve_text_range(&narrowest_match.0.text_range(), &file_data.line_index),
-    })
-}
+// fn hover(file_data: &FileData, position: &Position) -> Option<Hover> {
+//     let offset = file_data.line_index.offset(LineCol {
+//         line: position.line,
+//         col: position.character,
+//     })?;
+//
+//     let mut matches = vec![];
+//     for (ptr, ty) in &file_data.check_result.typed_nodes {
+//         if ptr.text_range().contains(offset) {
+//             matches.push((ptr, ty));
+//         }
+//     }
+//
+//     if matches.is_empty() {
+//         return None;
+//     }
+//     let mut matches = matches.into_iter();
+//     let mut narrowest_match = matches.next().unwrap();
+//     for (ptr, ty) in matches {
+//         if ptr.text_range().len() < narrowest_match.0.text_range().len() {
+//             narrowest_match = (ptr, ty);
+//         }
+//     }
+//
+//     Some(Hover {
+//         contents: HoverContents::Markup(MarkupContent {
+//             kind: MarkupKind::Markdown,
+//             value: format!(
+//                 "{}",
+//                 narrowest_match
+//                     .1
+//                     .display(&file_data.check_result.names.name_map)
+//             ),
+//         }),
+//         range: resolve_text_range(&narrowest_match.0.text_range(), &file_data.line_index),
+//     })
+// }
 
 fn cast_request<R>(req: Request) -> Result<(RequestId, R::Params), ExtractError<Request>>
 where

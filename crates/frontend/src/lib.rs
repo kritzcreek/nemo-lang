@@ -108,7 +108,6 @@ pub fn run_frontend(source: &str) -> CheckResult<CheckError> {
     CheckResult {
         errors,
         names: check_result.names,
-        typed_nodes: check_result.typed_nodes,
         occurrences: check_result.occurrences,
         ir: check_result.ir,
         parse: check_result.parse,
