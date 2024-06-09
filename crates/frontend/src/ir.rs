@@ -1,4 +1,6 @@
-pub use crate::names::{Id, Name, NameMap, NameSupply};
+mod names;
+
+pub use names::{Id, Name, NameMap, NameSupply};
 use core::fmt;
 use derive_ir::IrBuilder;
 use std::{collections::BTreeMap, fmt::Debug};

@@ -7,7 +7,7 @@ pub use check::{Occurrence, OccurrenceMap};
 use check::Typechecker;
 use crate::ir::{FuncTy, Program, Ty};
 use crate::ir::{Name, NameSupply};
-use crate::syntax::{nodes::Root, token_ptr::SyntaxTokenPtr, SyntaxNodePtr};
+use crate::syntax::{Root, token_ptr::SyntaxTokenPtr, SyntaxNodePtr};
 use std::collections::HashMap;
 
 #[derive(Debug)]

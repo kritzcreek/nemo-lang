@@ -1,7 +1,6 @@
 pub mod builtins;
 pub mod highlight;
 pub mod ir;
-pub mod names;
 pub mod parser;
 pub mod syntax;
 pub mod types;
@@ -11,7 +10,6 @@ use line_index::{LineCol, LineIndex};
 use parser::{parse_prog, ParseError};
 use rowan::TextRange;
 use std::fmt::{self, Write};
-use syntax::{ast::AstNode, nodes::Root};
 use types::{TyError, CheckResult};
 
 #[derive(Debug)]
@@ -92,10 +90,7 @@ pub fn render_errors(errs: &[CheckError], source: &str, name_map: &NameMap) -> S
 pub fn run_frontend(source: &str) -> CheckResult<CheckError> {
     let parse = parse_prog(source);
     let mut errors = vec![];
-    let check_result = match Root::cast(parse.syntax()) {
-        None => panic!("Parse didn't yield a Root node"),
-        Some(root) => types::check_prog(root),
-    };
+    let check_result = types::check_prog(parse.root());
 
     for error in parse.errors {
         errors.push(CheckError::ParseError(error));

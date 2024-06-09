@@ -1,9 +1,8 @@
 use crate::ir::Name;
 use crate::parser::SyntaxKind;
-use crate::syntax::ast::AstNode;
 use rowan::TextRange;
 
-use crate::syntax::nodes::Root;
+use crate::syntax::{AstNode, Root};
 use crate::types::OccurrenceMap;
 use crate::T;
 

@@ -2,12 +2,9 @@ use std::collections::HashMap;
 use std::fmt::Write;
 
 use crate::wasm_builder::{BodyBuilder, Builder};
-use frontend::{
-    ir::{
-        Callee, Declaration, DeclarationData, Expr, ExprData, Func, Lit, LitData, Name, Op, OpData,
-        Pattern, PatternData, Program, SetTarget, SetTargetData, Substitution, Ty, TypeDef,
-    },
-    names::{Id, NameSupply},
+use frontend::ir::{
+    Callee, Declaration, DeclarationData, Expr, ExprData, Func, Id, Lit, LitData, Name, NameSupply,
+    Op, OpData, Pattern, PatternData, Program, SetTarget, SetTargetData, Substitution, Ty, TypeDef,
 };
 use wasm_encoder::{BlockType, ConstExpr, HeapType, Instruction, RefType, ValType};
 

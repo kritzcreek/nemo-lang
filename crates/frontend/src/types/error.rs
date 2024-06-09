@@ -1,6 +1,6 @@
 use crate::ir::{Name, NameMap};
 use crate::{
-    syntax::{ast::AstNode, SyntaxNode, SyntaxToken},
+    syntax::{AstNode, SyntaxNode, SyntaxToken},
     types::Ty,
 };
 use ariadne::{Config, Label, Report, ReportKind, Source};

@@ -1,4 +1,4 @@
-use crate::syntax::SyntaxNode;
+use crate::syntax::{Root, AstNode, SyntaxNode};
 use rowan::GreenNode;
 use std::str;
 
@@ -39,6 +39,10 @@ pub struct Parse {
 impl Parse {
     pub fn syntax(&self) -> SyntaxNode {
         SyntaxNode::new_root(self.green_node.clone())
+    }
+
+    pub fn root(&self) -> Root {
+        Root::cast(self.syntax()).unwrap()
     }
 
     pub fn debug_tree(&self) -> String {

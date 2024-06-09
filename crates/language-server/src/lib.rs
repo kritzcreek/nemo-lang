@@ -1,7 +1,7 @@
 pub mod vfs;
 
 use frontend::highlight::HighlightKind;
-use frontend::names::NameMap;
+use frontend::ir::NameMap;
 use frontend::CheckError;
 use line_index::{LineCol, LineIndex, TextRange};
 use lsp_server::{Connection, ExtractError, Message, Notification, Request, RequestId, Response};

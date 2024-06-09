@@ -1,10 +1,12 @@
-pub mod ast;
+mod ast;
 #[allow(clippy::all)]
-pub mod nodes;
+mod nodes;
 pub mod token_ptr;
 
 use crate::parser::SyntaxKind;
 use num_traits::{FromPrimitive, ToPrimitive};
+pub use nodes::*;
+pub use ast::*;
 
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub enum NemoLanguage {}
