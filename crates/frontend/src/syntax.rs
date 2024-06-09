@@ -1,8 +1,8 @@
 mod ast;
 #[allow(clippy::all)]
 mod nodes;
-pub mod token_ptr;
 
+pub mod token_ptr;
 use crate::parser::SyntaxKind;
 pub use ast::*;
 pub use nodes::*;

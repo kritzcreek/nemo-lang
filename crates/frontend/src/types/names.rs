@@ -1,8 +1,6 @@
-use crate::ir::NameMap;
-pub use crate::ir::{self, Id, Name};
-use rowan::TextRange;
-
+use crate::ir::{self, Id, Name, NameMap};
 use crate::syntax::SyntaxToken;
+use text_size::TextRange;
 
 #[derive(Debug, Clone, Default)]
 pub struct NameSupply(ir::NameSupply);

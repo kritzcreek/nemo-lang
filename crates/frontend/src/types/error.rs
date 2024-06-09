@@ -1,13 +1,10 @@
-use crate::ir::{Name, NameMap};
-use crate::{
-    syntax::{AstNode, SyntaxNode, SyntaxToken},
-    types::Ty,
-};
+use crate::ir::{Name, NameMap, Ty};
+use crate::syntax::{AstNode, SyntaxNode, SyntaxToken};
 use ariadne::{Config, Label, Report, ReportKind, Source};
 use core::fmt;
 use line_index::{LineCol, LineIndex};
-use rowan::TextRange;
 use std::str;
+use text_size::TextRange;
 
 #[derive(Debug)]
 pub struct TyErrors {

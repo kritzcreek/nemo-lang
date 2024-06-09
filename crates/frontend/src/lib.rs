@@ -8,8 +8,8 @@ pub mod types;
 use crate::ir::NameMap;
 use line_index::{LineCol, LineIndex};
 use parser::{parse_prog, ParseError};
-use rowan::TextRange;
 use std::fmt::{self, Write};
+use text_size::TextRange;
 use types::{CheckResult, TyError};
 
 #[derive(Debug)]

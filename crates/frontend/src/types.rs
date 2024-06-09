@@ -2,8 +2,7 @@ mod check;
 mod error;
 mod names;
 
-use crate::ir::{FuncTy, Program, Ty};
-use crate::ir::{Name, NameSupply};
+use crate::ir::{Name, NameSupply, Program};
 use crate::syntax::{token_ptr::SyntaxTokenPtr, Root};
 use check::Typechecker;
 pub use check::{Occurrence, OccurrenceMap};
