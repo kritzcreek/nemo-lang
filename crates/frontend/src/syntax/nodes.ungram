@@ -68,6 +68,7 @@ Expr
   | EIf
   | EMatch
   | EBlock
+  | EReturn
 
 ELit = Literal
 EVar = 'ident'
@@ -91,6 +92,7 @@ EMatch = 'match' scrutinee:Expr '{' EMatchBranch* '}'
 EMatchBranch = Pattern '=>' body:EBlock
 
 EBlock = '{' Declaration* '}'
+EReturn = 'return' Expr
 
 // Declarations
 Declaration

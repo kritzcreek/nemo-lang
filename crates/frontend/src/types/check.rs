@@ -84,8 +84,15 @@ struct FuncDef {
 #[derive(Debug)]
 struct Ctx {
     values: Vec<HashMap<String, (Ty, Name)>>,
-    functions: HashMap<String, Rc<FuncDef>>,
     type_vars: HashMap<String, Name>,
+    // We keep track of the return type of the current function
+    // so that we can type check early returns
+    // NOTE: Once we implement anonymous functions this will need to be a stack
+    return_type: Ty,
+
+    // Basically "static" data. Once we've walked all type definitions
+    // and function headers this data is fixed.
+    functions: HashMap<String, Rc<FuncDef>>,
     types_names: HashMap<String, Name>,
     type_defs: HashMap<Name, TypeDef>,
     field_defs: HashMap<Name, StructFields>,
@@ -95,8 +102,10 @@ impl Ctx {
     fn new() -> Ctx {
         Ctx {
             values: vec![],
-            functions: HashMap::new(),
             type_vars: HashMap::new(),
+            return_type: Ty::Error,
+
+            functions: HashMap::new(),
             type_defs: HashMap::new(),
             types_names: HashMap::new(),
             field_defs: HashMap::new(),
@@ -155,6 +164,14 @@ impl Ctx {
         self.functions.get(name).cloned()
     }
 
+    fn return_type(&self) -> &Ty {
+        &self.return_type
+    }
+
+    fn set_return_type(&mut self, ty: Ty) {
+        self.return_type = ty
+    }
+
     fn declare_type_def(&mut self, v: &str, name: Name, def: TypeDef) {
         let mut is_sub_struct = false;
         if let TypeDef::Struct(struct_def) = &def {
@@ -199,6 +216,10 @@ impl Ctx {
         d.clone()
     }
 
+    fn get_fields(&self, name: Name) -> &HashMap<String, (Name, Ty)> {
+        &self.field_defs.get(&name).unwrap().fields
+    }
+
     fn lookup_variant(&self, ty: &str) -> Option<Rc<VariantDef>> {
         let def = self.lookup_type(ty)?;
         match def {
@@ -213,10 +234,6 @@ impl Ctx {
 
     fn leave_block(&mut self) {
         self.values.pop().expect("Tried to pop from an empty Ctx");
-    }
-
-    fn get_fields(&self, name: Name) -> &HashMap<String, (Name, Ty)> {
-        &self.field_defs.get(&name).unwrap().fields
     }
 }
 
@@ -690,6 +707,7 @@ impl Typechecker {
                 }
 
                 builder.return_ty(Some(func_ty.result.clone()));
+                self.context.set_return_type(func_ty.result.clone());
 
                 if let Some(body) = top_fn.body() {
                     // println!("Checking body {}", func_name.text());
@@ -1082,6 +1100,7 @@ impl Typechecker {
                 self.context.leave_block();
                 (ty, builder.build())
             }
+            Expr::EReturn(return_expr) => todo!(),
         };
 
         let ir_expr = ir.map(|expr_data| ir::Expr {

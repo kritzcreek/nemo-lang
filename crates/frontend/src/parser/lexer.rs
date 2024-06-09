@@ -157,6 +157,9 @@ pub enum SyntaxKind {
     #[token("while")]
     WHILE_KW,
 
+    #[token("return")]
+    RETURN_KW,
+
     #[token("true")]
     TRUE_KW,
 
@@ -332,7 +335,7 @@ pub enum SyntaxKind {
     EIf,
     EMatch,
     EBlock,
-    EIntrinsic,
+    EReturn,
 
     // Match expressions
     EMatchBranch,
@@ -421,6 +424,7 @@ macro_rules ! T {
     [struct] => { SyntaxKind::STRUCT_KW };
     [variant] => { SyntaxKind::VARIANT_KW };
     [while] => { SyntaxKind::WHILE_KW };
+    [return] => { SyntaxKind::RETURN_KW };
     [import] => { SyntaxKind::IMPORT_KW };
     [int_lit] => { SyntaxKind::INT_LIT };
     [binary_lit] => { SyntaxKind::BINARY_LIT };

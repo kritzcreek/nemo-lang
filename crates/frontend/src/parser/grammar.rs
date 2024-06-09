@@ -349,6 +349,10 @@ fn expr(p: &mut Parser) -> Progress {
         match_expr(p);
         return Progress::Made;
     }
+    if p.at(T![return]) {
+        return_expr(p);
+        return Progress::Made;
+    }
     expr_bp(p, 0)
 }
 
@@ -434,6 +438,15 @@ fn pattern(p: &mut Parser) -> Progress {
         }
         _ => Progress::None,
     }
+}
+
+fn return_expr(p: &mut Parser) {
+    let c = p.checkpoint();
+    p.bump(T![return]);
+    if !expr(p).made_progress() {
+        p.error("expected an expression")
+    }
+    p.finish_at(c, SyntaxKind::EReturn)
 }
 
 fn ty_arg_list(p: &mut Parser) -> Progress {
