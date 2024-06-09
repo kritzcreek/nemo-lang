@@ -1,4 +1,6 @@
-use frontend::{check_program, CheckError, parser::parse_prog};
+use frontend::run_frontend;
+use frontend::types::CheckResult;
+use frontend::{parser::parse_prog, CheckError};
 use insta::{assert_snapshot, glob};
 use std::fmt::Write;
 use std::fs;
@@ -60,9 +62,8 @@ fn normalize_newlines(src: &mut String) {
     }
 }
 
-
 fn snapshot_type_errors(path: &Path, source: &str) -> String {
-    let (names, errors) = check_program(&source);
+    let CheckResult { names, errors, .. } = run_frontend(&source);
     if errors
         .iter()
         .any(|e| matches!(e, CheckError::ParseError(_)))
@@ -84,7 +85,7 @@ fn snapshot_type_errors(path: &Path, source: &str) -> String {
             error.display(&source, &names.name_map, false)
         )
         .unwrap();
-    };
+    }
     err_buf
 }
 
@@ -108,11 +109,12 @@ fn test_type_errors() {
 fn snapshot_parse_tree(input: &str) -> String {
     let parse = parse_prog(input);
     let tree = parse.debug_tree();
-    let errors = parse.errors
-      .into_iter()
-      .map(|e| format!("{}", e.display(input, false)))
-      .collect::<Vec<_>>()
-      .join("\n");
+    let errors = parse
+        .errors
+        .into_iter()
+        .map(|e| format!("{}", e.display(input, false)))
+        .collect::<Vec<_>>()
+        .join("\n");
     format!("{}\n\n{}", tree, errors)
 }
 

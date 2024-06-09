@@ -5,12 +5,12 @@ pub mod parser;
 pub mod syntax;
 pub mod types;
 
-use crate::ir::{NameMap, NameSupply};
+use crate::ir::NameMap;
 use line_index::{LineCol, LineIndex};
 use parser::{parse_prog, ParseError};
 use rowan::TextRange;
 use std::fmt::{self, Write};
-use types::{TyError, CheckResult};
+use types::{CheckResult, TyError};
 
 #[derive(Debug)]
 pub enum CheckError {
@@ -87,6 +87,9 @@ pub fn render_errors(errs: &[CheckError], source: &str, name_map: &NameMap) -> S
     output
 }
 
+/// Runs the full frontend on `source` and returns the generated IR and other structures.
+/// If there are any errors, the generated IR should _not_ be used. It's returned here for
+/// debugging purposes.
 pub fn run_frontend(source: &str) -> CheckResult<CheckError> {
     let parse = parse_prog(source);
     let mut errors = vec![];
@@ -112,7 +115,21 @@ pub fn run_frontend(source: &str) -> CheckResult<CheckError> {
     }
 }
 
-pub fn check_program(source: &str) -> (NameSupply, Vec<CheckError>) {
+/// Checks the given program, and prints any parse or type errors.
+/// If there are any errors returns a summary message in Err otherwise Ok.
+pub fn check_program(source: &str) -> Result<(), String> {
     let check_result = run_frontend(source);
-    (check_result.names, check_result.errors)
+    if !check_result.errors.is_empty() {
+        for err in &check_result.errors {
+            eprintln!(
+                "{}",
+                err.display(source, &check_result.names.name_map, true)
+            );
+        }
+        return Err(format!(
+            "Check failed with {} errors",
+            check_result.errors.len()
+        ));
+    }
+    Ok(())
 }

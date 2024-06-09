@@ -1,11 +1,11 @@
-use super::error::{TyErrors, TyError, TyErrorData::*};
+use super::error::{TyError, TyErrorData::*, TyErrors};
 use super::names::{Name, NameSupply};
 use super::{FuncTy, Ty};
 use crate::builtins::lookup_builtin;
 use crate::ir::{self, ExprBuilder, LitBuilder, PatVarBuilder, Substitution, VarBuilder};
 use crate::parser::SyntaxKind;
-use crate::syntax::*;
 use crate::syntax::token_ptr::SyntaxTokenPtr;
+use crate::syntax::*;
 use crate::syntax::{SyntaxNode, SyntaxNodePtr, SyntaxToken};
 use crate::T;
 use rowan::TextRange;

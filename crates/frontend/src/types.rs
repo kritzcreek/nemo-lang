@@ -2,12 +2,12 @@ mod check;
 mod error;
 mod names;
 
-pub use error::TyError;
-pub use check::{Occurrence, OccurrenceMap};
-use check::Typechecker;
 use crate::ir::{FuncTy, Program, Ty};
 use crate::ir::{Name, NameSupply};
-use crate::syntax::{Root, token_ptr::SyntaxTokenPtr, SyntaxNodePtr};
+use crate::syntax::{token_ptr::SyntaxTokenPtr, Root, SyntaxNodePtr};
+use check::Typechecker;
+pub use check::{Occurrence, OccurrenceMap};
+pub use error::TyError;
 use std::collections::HashMap;
 
 #[derive(Debug)]

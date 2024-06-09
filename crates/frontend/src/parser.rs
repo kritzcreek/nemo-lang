@@ -1,15 +1,14 @@
-use crate::syntax::{Root, AstNode, SyntaxNode};
+use crate::syntax::{AstNode, Root, SyntaxNode};
 use rowan::GreenNode;
 use std::str;
 
-mod lexer;
-mod grammar;
-mod parser;
 mod error;
+mod grammar;
+mod lexer;
+mod parser;
 
+pub use error::{render_parse_error, ParseError};
 pub use lexer::{SyntaxKind, TToken};
-pub use error::{ParseError, render_parse_error};
-
 
 pub fn parse_prog(input: &str) -> Parse {
     let mut p = parser::Parser::new(input);

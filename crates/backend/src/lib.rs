@@ -2,15 +2,27 @@ pub mod codegen;
 mod wasm_builder;
 
 use codegen::codegen;
-use frontend::{ir::NameSupply, run_frontend, CheckError};
+use frontend::run_frontend;
 
-pub fn compile_program(source: &str) -> (NameSupply, Result<Vec<u8>, Vec<CheckError>>) {
+pub fn compile_program(source: &str) -> Result<Vec<u8>, String> {
     let check_result = run_frontend(source);
-    match check_result.ir {
-        Some(ir) if check_result.errors.is_empty() => {
-            let (wasm, names) = codegen(ir, check_result.names);
-            (names, Ok(wasm))
+
+    if !check_result.errors.is_empty() {
+        for err in &check_result.errors {
+            eprintln!(
+                "{}",
+                err.display(source, &check_result.names.name_map, true)
+            );
         }
-        _ => (check_result.names, Err(check_result.errors)),
+        return Err(format!(
+            "Compiling failed with {} errors",
+            check_result.errors.len()
+        ));
     }
+
+    let (wasm, _) = codegen(
+        check_result.ir.expect("No IR despite no check errors"),
+        check_result.names,
+    );
+    Ok(wasm)
 }

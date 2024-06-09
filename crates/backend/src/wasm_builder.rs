@@ -2,7 +2,7 @@ use std::fmt::Write;
 use std::iter;
 use std::{collections::HashMap, mem};
 
-use frontend::ir::{FuncTy, Id, Import, Name, Struct, Substitution, Ty, Variant, NameSupply};
+use frontend::ir::{FuncTy, Id, Import, Name, NameSupply, Struct, Substitution, Ty, Variant};
 use wasm_encoder::{
     self, ArrayType, CodeSection, CompositeType, ConstExpr, ElementSection, Elements, EntityType,
     ExportKind, ExportSection, FieldType, FuncType, Function, FunctionSection, GlobalSection,

@@ -363,10 +363,13 @@ pub enum SyntaxKind {
 
 impl SyntaxKind {
     pub fn is_whitespace(&self) -> bool {
-      matches!(
-          self,
-          SyntaxKind::SPACE | SyntaxKind::LINEFEED | SyntaxKind::LINE_COMMENT | SyntaxKind::LEX_ERROR
-      )
+        matches!(
+            self,
+            SyntaxKind::SPACE
+                | SyntaxKind::LINEFEED
+                | SyntaxKind::LINE_COMMENT
+                | SyntaxKind::LEX_ERROR
+        )
     }
 }
 

@@ -1,8 +1,8 @@
 mod names;
 
-pub use names::{Id, Name, NameMap, NameSupply};
 use core::fmt;
 use derive_ir::IrBuilder;
+pub use names::{Id, Name, NameMap, NameSupply};
 use std::{collections::BTreeMap, fmt::Debug};
 use text_size::TextRange;
 
@@ -241,7 +241,7 @@ pub struct Pattern {
 #[derive(Debug, PartialEq, Clone, IrBuilder)]
 pub enum PatternData {
     PatVar {
-        var: Name
+        var: Name,
     },
     PatVariant {
         variant: Name,

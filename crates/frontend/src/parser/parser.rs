@@ -1,6 +1,6 @@
-use crate::syntax::NemoLanguage;
-use super::lexer::{self, SyntaxKind, TToken};
 use super::error::ParseError;
+use super::lexer::{self, SyntaxKind, TToken};
+use crate::syntax::NemoLanguage;
 use rowan::{Checkpoint, GreenNodeBuilder, Language};
 use std::str;
 use text_size::{TextRange, TextSize};
