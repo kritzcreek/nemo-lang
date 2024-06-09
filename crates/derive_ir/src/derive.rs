@@ -142,7 +142,7 @@ fn parse_option_ty(ty: &syn::Type) -> Option<&syn::Type> {
     parse_unary_ty(ty, "Option")
 }
 
-fn parse_unary_ty<'a, 'b>(ty: &'a syn::Type, name: &'b str) -> Option<&'a syn::Type> {
+fn parse_unary_ty<'a>(ty: &'a syn::Type, name: &str) -> Option<&'a syn::Type> {
     let syn::Type::Path(path) = ty else {
         return None;
     };
@@ -163,5 +163,5 @@ fn parse_unary_ty<'a, 'b>(ty: &'a syn::Type, name: &'b str) -> Option<&'a syn::T
     let syn::GenericArgument::Type(elem_ty) = &args.args[0] else {
         return None;
     };
-    return Some(elem_ty);
+    Some(elem_ty)
 }

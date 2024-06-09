@@ -54,10 +54,6 @@ impl NameSupply {
         })
     }
 
-    pub fn lookup(&self, name: Name) -> Option<&Id> {
-        self.0.lookup(name)
-    }
-
     pub fn name_map(&self) -> &NameMap {
         &self.0.name_map
     }

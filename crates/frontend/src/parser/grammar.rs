@@ -1,8 +1,7 @@
-use rowan::Checkpoint;
-
-use super::Parser;
-use crate::lexer::SyntaxKind;
+use super::parsing::Parser;
+use super::SyntaxKind;
 use crate::T;
+use rowan::Checkpoint;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 pub enum Progress {
