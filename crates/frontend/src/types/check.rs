@@ -1,14 +1,11 @@
-use super::errors::TyErrors;
-use super::errors::{TyError, TyErrorData::*};
+use super::error::{TyError, TyErrorData::*, TyErrors};
 use super::names::{Name, NameSupply};
 use super::{FuncTy, Ty};
 use crate::builtins::lookup_builtin;
 use crate::ir::{self, ExprBuilder, LitBuilder, PatVarBuilder, Substitution, VarBuilder};
-use crate::lexer::SyntaxKind;
-use crate::syntax::ast::AstNode;
-use crate::syntax::nodes::*;
+use crate::parser::SyntaxKind;
 use crate::syntax::token_ptr::SyntaxTokenPtr;
-use crate::syntax::{SyntaxNode, SyntaxNodePtr, SyntaxToken};
+use crate::syntax::*;
 use crate::T;
 use rowan::TextRange;
 use std::collections::HashMap;
@@ -237,12 +234,10 @@ impl<N> Occurrence<N> {
     }
 }
 
-pub type OccurenceMap = HashMap<SyntaxTokenPtr, Occurrence<Name>>;
+pub type OccurrenceMap = HashMap<SyntaxTokenPtr, Occurrence<Name>>;
 
 pub struct Typechecker {
-    pub typed_nodes: HashMap<SyntaxNodePtr, Ty>,
-    pub names: OccurenceMap,
-
+    pub occurrences: OccurrenceMap,
     pub name_supply: NameSupply,
     context: Ctx,
 }
@@ -256,9 +251,7 @@ impl Default for Typechecker {
 impl Typechecker {
     pub fn new() -> Typechecker {
         Typechecker {
-            typed_nodes: HashMap::new(),
-            names: HashMap::new(),
-
+            occurrences: HashMap::new(),
             name_supply: NameSupply::new(),
             context: Ctx::new(),
         }
@@ -266,23 +259,16 @@ impl Typechecker {
 
     fn record_def(&mut self, token: &SyntaxToken, name: Name) {
         let previous_def = self
-            .names
+            .occurrences
             .insert(SyntaxTokenPtr::new(token), Occurrence::Def(name));
         assert!(previous_def.is_none())
     }
 
     fn record_ref(&mut self, token: &SyntaxToken, name: Name) {
         let previous_ref = self
-            .names
+            .occurrences
             .insert(SyntaxTokenPtr::new(token), Occurrence::Ref(name));
         assert!(previous_ref.is_none())
-    }
-
-    fn record_typed(&mut self, node: &SyntaxNode, ty: &Ty) {
-        let previous_typed = self
-            .typed_nodes
-            .insert(SyntaxNodePtr::new(node), ty.clone());
-        assert!(previous_typed.is_none())
     }
 
     pub fn infer_program(&mut self, root: &Root) -> (Option<ir::Program>, Vec<TyError>) {
@@ -738,7 +724,7 @@ impl Typechecker {
             }
             Literal::LitInt(l) => {
                 let int = if let Some(tkn) = l.int_lit_token() {
-                    i32::from_str_radix(tkn.text(), 10)
+                    tkn.text().parse()
                 } else if let Some(tkn) = l.binary_lit_token() {
                     i32::from_str_radix(tkn.text().strip_prefix("0b").unwrap(), 2)
                 } else if let Some(tkn) = l.hex_lit_token() {
@@ -819,13 +805,8 @@ impl Typechecker {
     }
 
     fn infer_expr(&mut self, errors: &mut TyErrors, expr: &Expr) -> (Ty, Option<ir::Expr>) {
-        match self.infer_expr_inner(errors, expr) {
-            Some((ty, ir)) => {
-                self.record_typed(expr.syntax(), &ty);
-                (ty, ir)
-            }
-            None => (Ty::Error, None),
-        }
+        self.infer_expr_inner(errors, expr)
+            .unwrap_or((Ty::Error, None))
     }
 
     fn infer_expr_inner(
@@ -1264,7 +1245,6 @@ impl Typechecker {
                 return ir;
             }
         };
-        self.record_typed(expr.syntax(), expected);
         ir.map(|it| ir::Expr {
             it: Box::new(it),
             at: expr.syntax().text_range(),

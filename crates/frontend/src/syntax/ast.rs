@@ -1,7 +1,4 @@
-use crate::{
-    lexer::is_whitespace,
-    syntax::{SyntaxKind, SyntaxNode, SyntaxNodeChildren, SyntaxToken},
-};
+use crate::syntax::{SyntaxKind, SyntaxNode, SyntaxNodeChildren, SyntaxToken};
 use std::marker::PhantomData;
 
 use super::nodes::{EArrayIdx, EBinary, EIf, Expr};
@@ -110,7 +107,7 @@ impl EBinary {
             .children_with_tokens()
             .find_map(|t| {
                 let tkn = t.as_token()?;
-                if is_whitespace(tkn.kind()) {
+                if tkn.kind().is_whitespace() {
                     None
                 } else {
                     Some(tkn.clone())

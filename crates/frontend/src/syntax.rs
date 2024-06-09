@@ -1,9 +1,11 @@
-pub mod ast;
+mod ast;
 #[allow(clippy::all)]
-pub mod nodes;
+mod nodes;
 pub mod token_ptr;
 
-use crate::lexer::SyntaxKind;
+use crate::parser::SyntaxKind;
+pub use ast::*;
+pub use nodes::*;
 use num_traits::{FromPrimitive, ToPrimitive};
 
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
