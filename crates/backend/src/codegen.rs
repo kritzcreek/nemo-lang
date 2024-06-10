@@ -62,6 +62,9 @@ impl<'a> Codegen<'a> {
             Ty::Var(_) => {
                 unreachable!("Globals can't be var-typed")
             }
+            Ty::Diverge => {
+                unreachable!("Globals can't be diverge-typed")
+            }
             Ty::Error => {
                 unreachable!("ERROR shouldn't make it into codegen")
             }
@@ -301,6 +304,11 @@ impl<'a> Codegen<'a> {
                     struct_type_index,
                     field_index,
                 });
+                instrs
+            }
+            ExprData::Return { expr } => {
+                let mut instrs = self.compile_expr(body, expr);
+                instrs.push(Instruction::Return);
                 instrs
             }
         }

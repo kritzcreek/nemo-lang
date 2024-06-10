@@ -16,6 +16,8 @@ pub enum Ty {
     Cons { name: Name, ty_args: Substitution },
     Var(Name),
     Func(Box<FuncTy>),
+    // The type of return expressions
+    Diverge,
 
     // Typechecking internal used for error recovery
     Error,
@@ -39,6 +41,7 @@ impl fmt::Display for TyDisplay<'_> {
             Ty::F32 => write!(f, "f32"),
             Ty::Bool => write!(f, "bool"),
             Ty::Unit => write!(f, "unit"),
+            Ty::Diverge => write!(f, "!"),
             Ty::Array(t) => write!(f, "[{}]", t.display(self.name_map)),
             Ty::Cons {
                 name: t,
@@ -129,7 +132,7 @@ impl Substitution {
         }
         match ty {
             Ty::Var(n) => self.0.get(&n).cloned().unwrap_or(ty),
-            Ty::I32 | Ty::F32 | Ty::Unit | Ty::Bool | Ty::Error => ty,
+            Ty::I32 | Ty::F32 | Ty::Unit | Ty::Bool | Ty::Error | Ty::Diverge => ty,
             Ty::Array(t) => Ty::Array(Box::new(self.apply(*t))),
             Ty::Func(f) => Ty::Func(Box::new(self.apply_func(*f))),
             Ty::Cons { name, ty_args } => Ty::Cons {
@@ -317,6 +320,9 @@ pub enum ExprData {
         scrutinee: Expr,
         branches: Vec<MatchBranch>,
     },
+    Return {
+        expr: Expr,
+    }
 }
 
 #[derive(Debug, PartialEq, Clone)]

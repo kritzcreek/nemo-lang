@@ -1,0 +1,28 @@
+---
+source: crates/frontend/tests/lib.rs
+assertion_line: 134
+expression: output
+input_file: crates/frontend/tests/parsing/return.nemo
+---
+Root@0..26
+  TopFn@0..26
+    FN_KW@0..2 "fn"
+    SPACE@2..3 " "
+    IDENT@3..7 "main"
+    L_PAREN@7..8 "("
+    R_PAREN@8..9 ")"
+    SPACE@9..10 " "
+    EBlock@10..26
+      L_BRACE@10..11 "{"
+      DExpr@11..23
+        EReturn@11..23
+          LINEFEED@11..12 "\n"
+          SPACE@12..14 "  "
+          RETURN_KW@14..20 "return"
+          SPACE@20..21 " "
+          EBlock@21..23
+            L_BRACE@21..22 "{"
+            R_BRACE@22..23 "}"
+      SEMICOLON@23..24 ";"
+      LINEFEED@24..25 "\n"
+      R_BRACE@25..26 "}"
