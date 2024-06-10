@@ -253,13 +253,13 @@ pub enum SyntaxKind {
     #[token("<")]
     L_ANGLE,
 
+    #[token("<=")]
+    L_ANGLE_EQ,
+
     #[token(">")]
     R_ANGLE,
 
     #[token(">=")]
-    L_ANGLE_EQ,
-
-    #[token("<=")]
     R_ANGLE_EQ,
 
     #[token("::")]

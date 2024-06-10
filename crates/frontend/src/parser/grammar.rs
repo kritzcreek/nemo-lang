@@ -444,7 +444,7 @@ fn return_expr(p: &mut Parser) {
     let c = p.checkpoint();
     p.bump(T![return]);
     if !expr(p).made_progress() {
-        p.error("expected an expression")
+        p.error("expected an expression. If you're trying to return unit use 'return {}'")
     }
     p.finish_at(c, SyntaxKind::EReturn)
 }

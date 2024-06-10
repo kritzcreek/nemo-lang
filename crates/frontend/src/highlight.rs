@@ -35,6 +35,7 @@ pub fn highlight(root: &Root, occurrences: &OccurrenceMap) -> Vec<Highlight> {
             | T![if]
             | T![else]
             | T![while]
+            | T![return]
             | T![fn]
             | T![variant]
             | T![struct]
