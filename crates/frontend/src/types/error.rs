@@ -123,6 +123,7 @@ pub enum TyErrorData {
     CantInferEmptyArray,
     CantInstantiateFunctionRef,
     TypeParamInVariantStruct,
+    CantReturnFromGlobal,
     Message(String),
     UnknownVar(String),
     UnknownFunction(String),
@@ -189,6 +190,7 @@ fn code_for_error(err_data: &TyErrorData) -> i32 {
         TyErrorData::CantInstantiateFunctionRef => 21,
         TyErrorData::TyArgCountMismatch(_, _) => 22,
         TyErrorData::TypeParamInVariantStruct => 23,
+        TyErrorData::CantReturnFromGlobal => 24,
     }
 }
 
@@ -199,6 +201,7 @@ fn error_label(err_data: &TyErrorData, name_map: &NameMap) -> String {
         TyErrorData::InvalidOperator => "The impossible happened! An invalid operator".to_string(),
         TyErrorData::CantInferEmptyArray => "Can't infer type of an empty array".to_string(),
         TyErrorData::CantInstantiateFunctionRef => "Can't instantiate function reference. Only top-level functions may be polymorphic at this time.".to_string(),
+        TyErrorData::CantReturnFromGlobal => "Can't 'return' from a global definition.".to_string(),
         TyErrorData::Message(m) => m.clone(),
         TyErrorData::UnknownVar(v) => format!("Unknown variable {v}"),
         TyErrorData::UnknownFunction(f) => format!("Unknown function {f}"),

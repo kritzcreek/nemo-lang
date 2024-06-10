@@ -435,9 +435,8 @@ impl<'a> Builder<'a> {
                 };
                 self.val_ty(&ty.clone())
             }
-            Ty::Error => {
-                unreachable!("ERROR shouldn't make it into codegen")
-            }
+            Ty::Diverge => unreachable!("val_ty of Diverge"),
+            Ty::Error => unreachable!("ERROR shouldn't make it into codegen")
         }
     }
 

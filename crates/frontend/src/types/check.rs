@@ -2,7 +2,8 @@ use super::error::{TyError, TyErrorData::*, TyErrors};
 use super::names::NameSupply;
 use crate::builtins::lookup_builtin;
 use crate::ir::{
-    self, ExprBuilder, FuncTy, LitBuilder, Name, PatVarBuilder, Substitution, Ty, VarBuilder,
+    self, ExprBuilder, FuncTy, LitBuilder, Name, PatVarBuilder, ReturnBuilder, Substitution, Ty,
+    VarBuilder,
 };
 use crate::parser::SyntaxKind;
 use crate::syntax::token_ptr::SyntaxTokenPtr;
@@ -84,8 +85,15 @@ struct FuncDef {
 #[derive(Debug)]
 struct Ctx {
     values: Vec<HashMap<String, (Ty, Name)>>,
-    functions: HashMap<String, Rc<FuncDef>>,
     type_vars: HashMap<String, Name>,
+    // We keep track of the return type of the current function
+    // so that we can type check early returns
+    // NOTE: Once we implement anonymous functions this will need to be a stack
+    return_type: Option<Rc<Ty>>,
+
+    // Basically "static" data. Once we've walked all type definitions
+    // and function headers this data is fixed.
+    functions: HashMap<String, Rc<FuncDef>>,
     types_names: HashMap<String, Name>,
     type_defs: HashMap<Name, TypeDef>,
     field_defs: HashMap<Name, StructFields>,
@@ -95,8 +103,10 @@ impl Ctx {
     fn new() -> Ctx {
         Ctx {
             values: vec![],
-            functions: HashMap::new(),
             type_vars: HashMap::new(),
+            return_type: None,
+
+            functions: HashMap::new(),
             type_defs: HashMap::new(),
             types_names: HashMap::new(),
             field_defs: HashMap::new(),
@@ -155,6 +165,14 @@ impl Ctx {
         self.functions.get(name).cloned()
     }
 
+    fn return_type(&self) -> Option<Rc<Ty>> {
+        self.return_type.clone()
+    }
+
+    fn set_return_type(&mut self, ty: Ty) {
+        self.return_type = Some(Rc::new(ty))
+    }
+
     fn declare_type_def(&mut self, v: &str, name: Name, def: TypeDef) {
         let mut is_sub_struct = false;
         if let TypeDef::Struct(struct_def) = &def {
@@ -199,6 +217,10 @@ impl Ctx {
         d.clone()
     }
 
+    fn get_fields(&self, name: Name) -> &HashMap<String, (Name, Ty)> {
+        &self.field_defs.get(&name).unwrap().fields
+    }
+
     fn lookup_variant(&self, ty: &str) -> Option<Rc<VariantDef>> {
         let def = self.lookup_type(ty)?;
         match def {
@@ -213,10 +235,6 @@ impl Ctx {
 
     fn leave_block(&mut self) {
         self.values.pop().expect("Tried to pop from an empty Ctx");
-    }
-
-    fn get_fields(&self, name: Name) -> &HashMap<String, (Name, Ty)> {
-        &self.field_defs.get(&name).unwrap().fields
     }
 }
 
@@ -690,6 +708,7 @@ impl Typechecker {
                 }
 
                 builder.return_ty(Some(func_ty.result.clone()));
+                self.context.set_return_type(func_ty.result.clone());
 
                 if let Some(body) = top_fn.body() {
                     // println!("Checking body {}", func_name.text());
@@ -991,16 +1010,23 @@ impl Typechecker {
                 if let Some(condition) = if_expr.condition() {
                     builder.condition(self.check_expr(errors, &condition, &Ty::Bool));
                 }
+                let mut ty = Ty::Error;
                 if let Some(then_branch) = if_expr.then_branch() {
-                    let (ty, ir) = self.infer_expr(errors, &then_branch);
+                    let (then_ty, ir) = self.infer_expr(errors, &then_branch);
+                    ty = then_ty;
                     builder.then_branch(ir);
-                    if let Some(else_branch) = if_expr.else_branch() {
-                        builder.else_branch(self.check_expr(errors, &else_branch, &ty));
-                    }
-                    (ty, builder.build())
-                } else {
-                    (Ty::Error, None)
                 }
+                if let Some(else_branch) = if_expr.else_branch() {
+                    let ir = if matches!(ty, Ty::Error | Ty::Diverge) {
+                        let (else_ty, ir) = self.infer_expr(errors, &else_branch);
+                        ty = else_ty;
+                        ir
+                    } else {
+                        self.check_expr(errors, &else_branch, &ty)
+                    };
+                    builder.else_branch(ir);
+                }
+                (ty, builder.build())
             }
             Expr::EMatch(match_expr) => self.check_match(errors, match_expr, None),
             Expr::EArrayIdx(idx_expr) => {
@@ -1082,6 +1108,21 @@ impl Typechecker {
                 self.context.leave_block();
                 (ty, builder.build())
             }
+            Expr::EReturn(return_expr) => {
+                let Some(return_ty) = self.context.return_type() else {
+                    errors.report(return_expr, CantReturnFromGlobal);
+                    return None
+                };
+                let mut builder = ReturnBuilder::default();
+                if let Some(return_value) = return_expr.expr() {
+                    builder.expr(self.check_expr(
+                        errors,
+                        &return_value,
+                        return_ty.as_ref(),
+                    ));
+                }
+                (Ty::Diverge, builder.build())
+            }
         };
 
         let ir_expr = ir.map(|expr_data| ir::Expr {
@@ -1114,14 +1155,17 @@ impl Typechecker {
             };
             self.context.enter_block();
             let pattern_ir = self.check_pattern(errors, &pattern, &ty_scrutinee);
-            let body_ir = if let Some(expected) = &ty {
-                self.check_expr(errors, &body.into(), expected)
-            } else {
-                let (ty_body, ir) = self.infer_expr(errors, &body.into());
-                if ty_body != Ty::Error {
-                    ty = Some(ty_body);
+            let body_ir = match &ty {
+                Some(expected) if expected != &Ty::Diverge => {
+                    self.check_expr(errors, &body.into(), expected)
                 }
-                ir
+                _ => {
+                    let (ty_body, ir) = self.infer_expr(errors, &body.into());
+                    if ty_body != Ty::Error {
+                        ty = Some(ty_body);
+                    }
+                    ir
+                }
             };
 
             if let (Some(pattern_ir), Some(body_ir)) = (pattern_ir, body_ir) {
@@ -1147,6 +1191,7 @@ impl Typechecker {
         let last_expr = if let Some((last, declarations)) = declarations.split_last() {
             for decl in declarations {
                 let (_, ir) = self.infer_decl(errors, decl);
+                // TODO: if ty_decl is Ty::Diverge here, all following declarations are dead code
                 builder.declarations(ir);
             }
             match last {
@@ -1233,8 +1278,7 @@ impl Typechecker {
             }
             _ => {
                 let (ty, ir) = self.infer_expr(errors, expr);
-                if *expected != Ty::Error && ty != Ty::Error && ty.ne(expected) {
-                    println!("{ty:?} {expected:?}");
+                if *expected != Ty::Error && !matches!(ty, Ty::Error | Ty::Diverge) && ty.ne(expected) {
                     errors.report(
                         expr,
                         TypeMismatch {

@@ -1,6 +1,6 @@
 ---
 source: crates/frontend/tests/lib.rs
-assertion_line: 132
+assertion_line: 134
 expression: output
 input_file: crates/frontend/tests/parsing/infix_op.nemo
 ---
@@ -119,7 +119,7 @@ Root@0..211
             INT_LIT@91..92 "1"
             SPACE@92..93 " "
         BinOp@93..96
-          R_ANGLE_EQ@93..95 "<="
+          L_ANGLE_EQ@93..95 "<="
           SPACE@95..96 " "
         ELit@96..98
           LitInt@96..98
@@ -151,7 +151,7 @@ Root@0..211
                 INT_LIT@110..111 "1"
                 SPACE@111..112 " "
             BinOp@112..115
-              L_ANGLE_EQ@112..114 ">="
+              R_ANGLE_EQ@112..114 ">="
               SPACE@114..115 " "
             ELit@115..117
               LitInt@115..117

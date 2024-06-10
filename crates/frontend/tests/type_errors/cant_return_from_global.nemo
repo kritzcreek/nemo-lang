@@ -1,0 +1,5 @@
+global g = return 1
+global g2 = {
+  let x = 3;
+  return x
+}
