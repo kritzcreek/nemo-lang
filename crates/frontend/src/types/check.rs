@@ -89,7 +89,7 @@ struct Ctx {
     // We keep track of the return type of the current function
     // so that we can type check early returns
     // NOTE: Once we implement anonymous functions this will need to be a stack
-    return_type: Rc<Ty>,
+    return_type: Option<Rc<Ty>>,
 
     // Basically "static" data. Once we've walked all type definitions
     // and function headers this data is fixed.
@@ -104,7 +104,7 @@ impl Ctx {
         Ctx {
             values: vec![],
             type_vars: HashMap::new(),
-            return_type: Rc::new(Ty::Error),
+            return_type: None,
 
             functions: HashMap::new(),
             type_defs: HashMap::new(),
@@ -165,12 +165,12 @@ impl Ctx {
         self.functions.get(name).cloned()
     }
 
-    fn return_type(&self) -> Rc<Ty> {
+    fn return_type(&self) -> Option<Rc<Ty>> {
         self.return_type.clone()
     }
 
     fn set_return_type(&mut self, ty: Ty) {
-        self.return_type = Rc::new(ty)
+        self.return_type = Some(Rc::new(ty))
     }
 
     fn declare_type_def(&mut self, v: &str, name: Name, def: TypeDef) {
@@ -1109,12 +1109,16 @@ impl Typechecker {
                 (ty, builder.build())
             }
             Expr::EReturn(return_expr) => {
+                let Some(return_ty) = self.context.return_type() else {
+                    errors.report(return_expr, CantReturnFromGlobal);
+                    return None
+                };
                 let mut builder = ReturnBuilder::default();
                 if let Some(return_value) = return_expr.expr() {
                     builder.expr(self.check_expr(
                         errors,
                         &return_value,
-                        self.context.return_type().as_ref(),
+                        return_ty.as_ref(),
                     ));
                 }
                 (Ty::Diverge, builder.build())
