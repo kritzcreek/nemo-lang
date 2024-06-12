@@ -109,8 +109,8 @@ fn test_type_errors() {
 fn snapshot_parse_tree(input: &str) -> String {
     let parse = parse_prog(input);
     let tree = parse.debug_tree();
-    let errors = parse
-        .errors
+    let (_, errors) = parse.take();
+    let errors = errors
         .into_iter()
         .map(|e| format!("{}", e.display(input, false)))
         .collect::<Vec<_>>()

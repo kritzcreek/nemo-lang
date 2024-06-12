@@ -7,8 +7,8 @@ mod grammar;
 mod lexer;
 mod parsing;
 
-pub use error::{render_parse_error, ParseError};
-pub use lexer::{SyntaxKind, TToken};
+pub use error::ParseError;
+pub use lexer::SyntaxKind;
 
 pub fn parse_prog(input: &str) -> Parse {
     let mut p = parsing::Parser::new(input);
@@ -31,19 +31,11 @@ pub fn parse_prog(input: &str) -> Parse {
 }
 
 pub struct Parse {
-    pub green_node: GreenNode,
-    pub errors: Vec<ParseError>,
+    green_node: GreenNode,
+    errors: Vec<ParseError>,
 }
 
 impl Parse {
-    pub fn syntax(&self) -> SyntaxNode {
-        SyntaxNode::new_root(self.green_node.clone())
-    }
-
-    pub fn root(&self) -> Root {
-        Root::cast(self.syntax()).unwrap()
-    }
-
     pub fn debug_tree(&self) -> String {
         let syntax_node = SyntaxNode::new_root(self.green_node.clone());
         let formatted = format!("{:#?}", syntax_node);
@@ -52,7 +44,10 @@ impl Parse {
         formatted[0..formatted.len() - 1].to_string()
     }
 
-    pub fn has_errors(&self) -> bool {
-        !self.errors.is_empty()
+    pub fn take(self) -> (Root, Vec<ParseError>) {
+        (
+            Root::cast(SyntaxNode::new_root(self.green_node)).unwrap(),
+            self.errors,
+        )
     }
 }

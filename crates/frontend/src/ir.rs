@@ -322,7 +322,7 @@ pub enum ExprData {
     },
     Return {
         expr: Expr,
-    }
+    },
 }
 
 #[derive(Debug, PartialEq, Clone)]
