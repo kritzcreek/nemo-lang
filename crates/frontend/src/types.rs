@@ -5,9 +5,10 @@ mod names;
 use crate::ir::{Name, NameSupply, Program};
 use crate::syntax::{token_ptr::SyntaxTokenPtr, Root};
 use check::Typechecker;
+use std::collections::HashMap;
+
 pub use check::{Occurrence, OccurrenceMap};
 pub use error::TyError;
-use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct CheckResult<E> {

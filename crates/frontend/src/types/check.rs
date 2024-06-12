@@ -1111,15 +1111,11 @@ impl Typechecker {
             Expr::EReturn(return_expr) => {
                 let Some(return_ty) = self.context.return_type() else {
                     errors.report(return_expr, CantReturnFromGlobal);
-                    return None
+                    return None;
                 };
                 let mut builder = ReturnBuilder::default();
                 if let Some(return_value) = return_expr.expr() {
-                    builder.expr(self.check_expr(
-                        errors,
-                        &return_value,
-                        return_ty.as_ref(),
-                    ));
+                    builder.expr(self.check_expr(errors, &return_value, return_ty.as_ref()));
                 }
                 (Ty::Diverge, builder.build())
             }
@@ -1278,7 +1274,10 @@ impl Typechecker {
             }
             _ => {
                 let (ty, ir) = self.infer_expr(errors, expr);
-                if *expected != Ty::Error && !matches!(ty, Ty::Error | Ty::Diverge) && ty.ne(expected) {
+                if *expected != Ty::Error
+                    && !matches!(ty, Ty::Error | Ty::Diverge)
+                    && ty.ne(expected)
+                {
                     errors.report(
                         expr,
                         TypeMismatch {

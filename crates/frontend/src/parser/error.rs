@@ -42,12 +42,7 @@ impl fmt::Display for ParseErrorDisplay<'_, '_> {
     }
 }
 
-pub fn render_parse_error(
-    source: &str,
-    error: &ParseError,
-    colors: bool,
-    output: &mut fmt::Formatter,
-) {
+fn render_parse_error(source: &str, error: &ParseError, colors: bool, output: &mut fmt::Formatter) {
     let file_name = "source";
 
     let out = Color::Fixed(81);
