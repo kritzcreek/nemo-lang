@@ -8,8 +8,8 @@ pub mod types;
 
 use parser::parse_prog;
 
-pub use types::CheckResult;
 pub use error::CheckError;
+pub use types::CheckResult;
 
 /// Runs the full frontend on `source` and returns the generated IR and other structures.
 /// If there are any errors, the generated IR should _not_ be used. It's returned here for

@@ -320,6 +320,11 @@ pub enum ExprData {
         scrutinee: Expr,
         branches: Vec<MatchBranch>,
     },
+    Lambda {
+        params: Vec<(Name, Ty)>,
+        return_ty: Ty,
+        body: Expr,
+    },
     Return {
         expr: Expr,
     },

@@ -67,6 +67,7 @@ Expr
   | EStructIdx
   | EIf
   | EMatch
+  | EFunc
   | EBlock
   | EReturn
 
@@ -90,6 +91,8 @@ EIf = 'if' condition:Expr then_branch:EBlock 'else' else_branch:EBlock
 
 EMatch = 'match' scrutinee:Expr '{' EMatchBranch* '}'
 EMatchBranch = Pattern '=>' body:EBlock
+
+EFunc = 'fn' '(' Param* ')' return_ty:Type body:Expr
 
 EBlock = '{' Declaration* '}'
 EReturn = 'return' Expr

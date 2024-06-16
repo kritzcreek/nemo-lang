@@ -311,6 +311,11 @@ impl<'a> Codegen<'a> {
                 instrs.push(Instruction::Return);
                 instrs
             }
+            ExprData::Lambda {
+                params: _,
+                return_ty: _,
+                body: _,
+            } => todo!(),
         }
     }
 
