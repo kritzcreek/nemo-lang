@@ -294,7 +294,9 @@ impl Expr {
             match &*expr.it {
                 ExprData::Lit { .. } => {}
                 ExprData::Var { name } => {
-                    current.insert(*name, &expr.ty);
+                    if let Name::Local(_) = name {
+                        current.insert(*name, &expr.ty);
+                    }
                 }
                 ExprData::Call { func, arguments } => {
                     match func {
