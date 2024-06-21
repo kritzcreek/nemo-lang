@@ -19,7 +19,7 @@ Root@0..121
             LINEFEED@11..12 "\n"
             SPACE@12..14 "  "
             L_PAREN@14..15 "("
-            EFunc@15..44
+            ELambda@15..44
               FN_KW@15..17 "fn"
               SPACE@17..18 " "
               L_PAREN@18..19 "("
@@ -74,7 +74,7 @@ Root@0..121
               IDENT@58..59 "o"
             COMMA@59..60 ","
             SPACE@60..61 " "
-            EFunc@61..111
+            ELambda@61..111
               FN_KW@61..63 "fn"
               SPACE@63..64 " "
               L_PAREN@64..65 "("
