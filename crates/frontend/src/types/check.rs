@@ -9,7 +9,7 @@ use crate::parser::SyntaxKind;
 use crate::syntax::token_ptr::SyntaxTokenPtr;
 use crate::syntax::*;
 use crate::T;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 use text_size::TextRange;
 
@@ -1094,10 +1094,10 @@ impl Typechecker {
                     }
                 }
             }
-            Expr::EFunc(func) => {
+            Expr::ELambda(lambda) => {
                 let mut ty_func = FuncTy {
                     arguments: vec![],
-                    result: func
+                    result: lambda
                         .return_ty()
                         .map(|t| self.check_ty(errors, &t))
                         .unwrap_or(Ty::Unit),
@@ -1105,7 +1105,8 @@ impl Typechecker {
                 let mut builder = LambdaBuilder::default();
                 builder.return_ty(Some(ty_func.result.clone()));
                 self.context.enter_block();
-                for param in func.params() {
+                let mut params = HashSet::new();
+                for param in lambda.params() {
                     let Some(name_tkn) = param.ident_token() else {
                         continue;
                     };
@@ -1116,11 +1117,18 @@ impl Typechecker {
                     };
                     builder.params(Some((name, ty.clone())));
                     ty_func.arguments.push(ty.clone());
+                    params.insert(name);
                     self.context.add_var(name_tkn.text().to_string(), ty, name);
                 }
 
-                if let Some(body) = func.body() {
-                    builder.body(self.check_expr(errors, &body, &ty_func.result));
+                if let Some(body) = lambda.body() {
+                    let body_ir = self.check_expr(errors, &body, &ty_func.result);
+                    if let Some(body_ir) = body_ir {
+                        for (n, ty) in body_ir.free_vars().into_iter().filter(|(n, _)| !params.contains(n)) {
+                            builder.captures(Some((n, ty.clone())));
+                        }
+                        builder.body(Some(body_ir));
+                    }
                 }
                 self.context.leave_block();
                 (Ty::Func(Box::new(ty_func)), builder.build())

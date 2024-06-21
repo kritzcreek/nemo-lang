@@ -529,10 +529,10 @@ impl EMatch {
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct EFunc {
+pub struct ELambda {
     pub(crate) syntax: SyntaxNode,
 }
-impl EFunc {
+impl ELambda {
     pub fn fn_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T![fn])
     }
@@ -749,7 +749,7 @@ pub enum Expr {
     EStructIdx(EStructIdx),
     EIf(EIf),
     EMatch(EMatch),
-    EFunc(EFunc),
+    ELambda(ELambda),
     EBlock(EBlock),
     EReturn(EReturn),
 }
@@ -1317,9 +1317,9 @@ impl AstNode for EMatch {
         &self.syntax
     }
 }
-impl AstNode for EFunc {
+impl AstNode for ELambda {
     fn can_cast(kind: SyntaxKind) -> bool {
-        kind == EFunc
+        kind == ELambda
     }
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         if Self::can_cast(syntax.kind()) {
@@ -1694,9 +1694,9 @@ impl From<EMatch> for Expr {
         Expr::EMatch(node)
     }
 }
-impl From<EFunc> for Expr {
-    fn from(node: EFunc) -> Expr {
-        Expr::EFunc(node)
+impl From<ELambda> for Expr {
+    fn from(node: ELambda) -> Expr {
+        Expr::ELambda(node)
     }
 }
 impl From<EBlock> for Expr {
@@ -1713,7 +1713,7 @@ impl AstNode for Expr {
     fn can_cast(kind: SyntaxKind) -> bool {
         match kind {
             ELit | EVar | EArray | EStruct | ECall | EParen | EBinary | EArrayIdx | EStructIdx
-            | EIf | EMatch | EFunc | EBlock | EReturn => true,
+            | EIf | EMatch | ELambda | EBlock | EReturn => true,
             _ => false,
         }
     }
@@ -1730,7 +1730,7 @@ impl AstNode for Expr {
             EStructIdx => Expr::EStructIdx(EStructIdx { syntax }),
             EIf => Expr::EIf(EIf { syntax }),
             EMatch => Expr::EMatch(EMatch { syntax }),
-            EFunc => Expr::EFunc(EFunc { syntax }),
+            ELambda => Expr::ELambda(ELambda { syntax }),
             EBlock => Expr::EBlock(EBlock { syntax }),
             EReturn => Expr::EReturn(EReturn { syntax }),
             _ => return None,
@@ -1750,7 +1750,7 @@ impl AstNode for Expr {
             Expr::EStructIdx(it) => &it.syntax,
             Expr::EIf(it) => &it.syntax,
             Expr::EMatch(it) => &it.syntax,
-            Expr::EFunc(it) => &it.syntax,
+            Expr::ELambda(it) => &it.syntax,
             Expr::EBlock(it) => &it.syntax,
             Expr::EReturn(it) => &it.syntax,
         }
@@ -2127,7 +2127,7 @@ impl std::fmt::Display for EMatch {
         std::fmt::Display::fmt(self.syntax(), f)
     }
 }
-impl std::fmt::Display for EFunc {
+impl std::fmt::Display for ELambda {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
     }

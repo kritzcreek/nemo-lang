@@ -29,6 +29,8 @@ pub fn run_frontend(source: &str) -> CheckResult<CheckError> {
         panic!("No IR generated, despite no errors")
     };
 
+    dbg!(&check_result.ir);
+
     CheckResult {
         errors,
         names: check_result.names,

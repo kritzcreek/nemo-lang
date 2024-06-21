@@ -312,6 +312,7 @@ impl<'a> Codegen<'a> {
                 instrs
             }
             ExprData::Lambda {
+                captures: _,
                 params: _,
                 return_ty: _,
                 body: _,

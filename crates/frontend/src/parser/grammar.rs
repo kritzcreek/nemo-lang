@@ -463,7 +463,7 @@ fn func_expr(p: &mut Parser) {
     if !block_expr(p).made_progress() {
         p.error("expected a function body")
     }
-    p.finish_at(c, SyntaxKind::EFunc);
+    p.finish_at(c, SyntaxKind::ELambda);
 }
 
 fn ty_arg_list(p: &mut Parser) -> Progress {
