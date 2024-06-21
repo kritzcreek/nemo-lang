@@ -330,10 +330,10 @@ impl Expr {
                 ExprData::Block { declarations, expr } => {
                     let mut fvs = HashMap::new();
                     free_vars_inner(&mut fvs, expr);
-                    for decl in declarations.into_iter().rev() {
+                    for decl in declarations.iter().rev() {
                         match &decl.it {
                             DeclarationData::Let { binder, expr } => {
-                                fvs.remove(&binder);
+                                fvs.remove(binder);
                                 free_vars_inner(&mut fvs, expr)
                             }
                             DeclarationData::Set {

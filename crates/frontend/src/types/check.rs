@@ -10,6 +10,7 @@ use crate::syntax::token_ptr::SyntaxTokenPtr;
 use crate::syntax::*;
 use crate::T;
 use std::collections::{HashMap, HashSet};
+use std::mem;
 use std::rc::Rc;
 use text_size::TextRange;
 
@@ -87,8 +88,7 @@ struct Ctx {
     values: Vec<HashMap<String, (Ty, Name)>>,
     type_vars: HashMap<String, Name>,
     // We keep track of the return type of the current function
-    // so that we can type check early returns
-    // NOTE: Once we implement anonymous functions this will need to be a stack
+    // so that we can typecheck early returns
     return_type: Option<Rc<Ty>>,
 
     // Basically "static" data. Once we've walked all type definitions
@@ -169,8 +169,12 @@ impl Ctx {
         self.return_type.clone()
     }
 
-    fn set_return_type(&mut self, ty: Ty) {
-        self.return_type = Some(Rc::new(ty))
+    fn set_return_type(&mut self, ty: Ty) -> Option<Rc<Ty>> {
+        mem::replace(&mut self.return_type, Some(Rc::new(ty)))
+    }
+
+    fn restore_return_type(&mut self, ty: Option<Rc<Ty>>) {
+        self.return_type = ty
     }
 
     fn declare_type_def(&mut self, v: &str, name: Name, def: TypeDef) {
@@ -708,7 +712,8 @@ impl Typechecker {
                 }
 
                 builder.return_ty(Some(func_ty.result.clone()));
-                self.context.set_return_type(func_ty.result.clone());
+                // It's fine to drop any previous return type here
+                let _ = self.context.set_return_type(func_ty.result.clone());
 
                 if let Some(body) = top_fn.body() {
                     // println!("Checking body {}", func_name.text());
@@ -1105,6 +1110,7 @@ impl Typechecker {
                 let mut builder = LambdaBuilder::default();
                 builder.return_ty(Some(ty_func.result.clone()));
                 self.context.enter_block();
+                let prev_return_ty = self.context.set_return_type(ty_func.result.clone());
                 let mut params = HashSet::new();
                 for param in lambda.params() {
                     let Some(name_tkn) = param.ident_token() else {
@@ -1124,13 +1130,19 @@ impl Typechecker {
                 if let Some(body) = lambda.body() {
                     let body_ir = self.check_expr(errors, &body, &ty_func.result);
                     if let Some(body_ir) = body_ir {
-                        for (n, ty) in body_ir.free_vars().into_iter().filter(|(n, _)| !params.contains(n)) {
+                        for (n, ty) in body_ir
+                            .free_vars()
+                            .into_iter()
+                            .filter(|(n, _)| !params.contains(n))
+                        {
                             builder.captures(Some((n, ty.clone())));
                         }
                         builder.body(Some(body_ir));
                     }
                 }
                 self.context.leave_block();
+                // Restore the previous return type
+                self.context.restore_return_type(prev_return_ty);
                 (Ty::Func(Box::new(ty_func)), builder.build())
             }
             Expr::EBlock(block_expr) => {
