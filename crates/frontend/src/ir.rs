@@ -1,9 +1,13 @@
 mod names;
+pub mod format;
 
 use core::fmt;
 use derive_ir::IrBuilder;
 pub use names::{Id, Name, NameMap, NameSupply};
-use std::{collections::BTreeMap, fmt::Debug};
+use std::{
+    collections::{BTreeMap, HashMap},
+    fmt::Debug,
+};
 use text_size::TextRange;
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
@@ -240,6 +244,14 @@ pub struct Pattern {
     pub at: TextRange,
     pub ty: Ty,
 }
+impl Pattern {
+    fn bound_vars(&self) -> Vec<Name> {
+        match *self.it {
+            PatternData::PatVar { var } => vec![var],
+            PatternData::PatVariant { binder, .. } => vec![binder],
+        }
+    }
+}
 
 #[derive(Debug, PartialEq, Clone, IrBuilder)]
 pub enum PatternData {
@@ -260,11 +272,114 @@ pub struct MatchBranch {
     pub body: Expr,
 }
 
+impl MatchBranch {
+    fn free_vars(&self) -> HashMap<Name, &Ty> {
+        let mut fvs = self.body.free_vars();
+        for bound in self.pattern.bound_vars() {
+            fvs.remove(&bound);
+        }
+        fvs
+    }
+}
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct Expr {
     pub it: Box<ExprData>,
     pub at: TextRange,
     pub ty: Ty,
+}
+
+impl Expr {
+    pub fn free_vars(&self) -> HashMap<Name, &Ty> {
+        fn free_vars_inner<'a>(current: &mut HashMap<Name, &'a Ty>, expr: &'a Expr) {
+            match &*expr.it {
+                ExprData::Lit { .. } => {}
+                ExprData::Var { name } => {
+                    if let Name::Local(_) = name {
+                        current.insert(*name, &expr.ty);
+                    }
+                }
+                ExprData::Call { func, arguments } => {
+                    match func {
+                        Callee::FuncRef(e) => free_vars_inner(current, e),
+                        Callee::Func { .. } | Callee::Builtin(_) => {}
+                    }
+                    for arg in arguments {
+                        free_vars_inner(current, arg)
+                    }
+                }
+                ExprData::Binary { op: _, left, right } => {
+                    free_vars_inner(current, left);
+                    free_vars_inner(current, right);
+                }
+                ExprData::Array { elems } => {
+                    for elem in elems {
+                        free_vars_inner(current, elem)
+                    }
+                }
+                ExprData::ArrayIdx { array, index } => {
+                    free_vars_inner(current, array);
+                    free_vars_inner(current, index);
+                }
+                ExprData::If {
+                    condition,
+                    then_branch,
+                    else_branch,
+                } => {
+                    free_vars_inner(current, condition);
+                    free_vars_inner(current, then_branch);
+                    free_vars_inner(current, else_branch);
+                }
+                ExprData::Block { declarations, expr } => {
+                    let mut fvs = HashMap::new();
+                    free_vars_inner(&mut fvs, expr);
+                    for decl in declarations.iter().rev() {
+                        match &decl.it {
+                            DeclarationData::Let { binder, expr } => {
+                                fvs.remove(binder);
+                                free_vars_inner(&mut fvs, expr)
+                            }
+                            DeclarationData::Set {
+                                set_target: _,
+                                expr,
+                            } => free_vars_inner(&mut fvs, expr),
+                            DeclarationData::Expr { expr } => free_vars_inner(&mut fvs, expr),
+                            DeclarationData::While { condition, body } => {
+                                free_vars_inner(&mut fvs, condition);
+                                free_vars_inner(&mut fvs, body)
+                            }
+                        }
+                    }
+                    current.extend(fvs)
+                }
+                ExprData::Struct { name: _, fields } => {
+                    for (_, expr) in fields {
+                        free_vars_inner(current, expr)
+                    }
+                }
+                ExprData::StructIdx { expr, index: _ } => free_vars_inner(current, expr),
+                ExprData::Match {
+                    scrutinee,
+                    branches,
+                } => {
+                    free_vars_inner(current, scrutinee);
+                    for branch in branches {
+                        let fvs = branch.free_vars();
+                        current.extend(fvs)
+                    }
+                }
+                ExprData::Lambda { captures, .. } => {
+                    for (capture, ty) in captures {
+                        current.insert(*capture, ty);
+                    }
+                }
+                ExprData::Return { expr } => free_vars_inner(current, expr),
+            }
+        }
+        let mut results = HashMap::new();
+        free_vars_inner(&mut results, self);
+        results
+    }
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -319,6 +434,12 @@ pub enum ExprData {
     Match {
         scrutinee: Expr,
         branches: Vec<MatchBranch>,
+    },
+    Lambda {
+        captures: Vec<(Name, Ty)>,
+        params: Vec<(Name, Ty)>,
+        return_ty: Ty,
+        body: Expr,
     },
     Return {
         expr: Expr,

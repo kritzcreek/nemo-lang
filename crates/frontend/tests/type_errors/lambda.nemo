@@ -1,0 +1,6 @@
+fn main() -> i32 {
+    let f = fn () -> f32 {
+      return 10;
+    };
+    return 10.0;
+}
