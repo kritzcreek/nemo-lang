@@ -1,4 +1,5 @@
 mod names;
+pub mod format;
 
 use core::fmt;
 use derive_ir::IrBuilder;
