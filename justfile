@@ -3,8 +3,9 @@ set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
 install:
     cargo install --path crates/cli
 
-build-cli:
-    cargo build --release --bin nemo
+gen:
+    cargo xtask-gen-ast
+    cargo fmt --all
 
 build-wasm-lib:
     cd crates/wasm-lib && cargo rustc  --crate-type cdylib --target wasm32-unknown-unknown --release
