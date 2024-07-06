@@ -3,10 +3,10 @@ use std::fmt::Write;
 
 use crate::wasm_builder::{BodyBuilder, Builder};
 use frontend::ir::{
-    Callee, Declaration, DeclarationData, Expr, ExprData, Func, FuncTy, Id, Lit, LitData, Name,
-    NameSupply, Op, OpData, Pattern, PatternData, Program, SetTarget, SetTargetData, Substitution,
-    Ty, TypeDef,
+    Callee, Declaration, DeclarationData, Expr, ExprData, Func, Id, Lit, LitData, Name, NameSupply,
+    Op, OpData, Pattern, PatternData, Program, SetTarget, SetTargetData, Substitution, Ty, TypeDef,
 };
+use text_size::TextRange;
 use wasm_encoder::{BlockType, ConstExpr, HeapType, Instruction, RefType, ValType};
 
 pub fn codegen(program: Program, name_supply: NameSupply) -> (Vec<u8>, NameSupply) {
@@ -315,24 +315,75 @@ impl<'a> Codegen<'a> {
             ExprData::Lambda {
                 captures,
                 params,
-                return_ty,
-                body: _,
+                return_ty: _,
+                body,
             } => {
-                let captures = captures.iter().map(|(_, ty)| ty).collect::<Vec<_>>();
+                let capture_tys = captures.iter().map(|(_, ty)| ty).collect::<Vec<_>>();
                 let Ty::Func(func_ty) = &expr.ty else {
                     panic!("Found lambda expression with non-func ty: {:?}", expr.ty)
                 };
-                self.builder.closure_type(func_ty, captures.as_ref());
+                // struct { $code, captures... }
+                let (closure_info, concrete_closure_ty) =
+                    self.builder.closure_type(func_ty, capture_tys.as_ref());
                 if captures.is_empty() {
-                    // Actually not that special, until I implement an optimization,
+                    // Actually not special, until I implement an optimization,
                     // that detects applications of closures with no env
                 }
-                vec![]
-                // (type $code-<purely_based_on_func_ty> (func (param $env (ref $clos-f64-f64)) <lambda_params> <lambda_result>))
-                // (type $clos-<purely_based_on_func_ty> (struct (field $code (ref $code-f64-f64)))
-                //
-                // Gets created via downcast from $clos-f64-f64
-                // (type $inner-clos (struct (extend $clos-f64-f64) <lambda_captures>)
+                // TODO: Generate function
+                let (func_name, func_idx) = self
+                    .builder
+                    .declare_anon_func(expr.at, closure_info.closure_func_ty);
+                let env_name = self.builder.name_supply.local_idx(Id {
+                    at: TextRange::empty(0.into()),
+                    it: "env".to_string(),
+                });
+                let mut func_params = vec![(
+                    env_name,
+                    ValType::Ref(RefType {
+                        nullable: false,
+                        heap_type: HeapType::Concrete(closure_info.closure_struct_ty),
+                    }),
+                )];
+                func_params.extend(
+                    params
+                        .iter()
+                        .map(|(name, ty)| (*name, self.builder.val_ty(ty))),
+                );
+                let mut body_builder = BodyBuilder::new(func_params);
+
+                // Downcast to concret env type
+                let env_local = body_builder.fresh_local(ValType::Ref(RefType {
+                    nullable: false,
+                    heap_type: HeapType::Concrete(concrete_closure_ty),
+                }));
+                let mut instrs = vec![];
+                instrs.push(Instruction::LocalGet(0));
+                instrs.push(Instruction::RefCastNonNull(HeapType::Concrete(
+                    concrete_closure_ty,
+                )));
+                instrs.push(Instruction::LocalSet(env_local));
+
+                // Splat captures into locals
+                for (idx, (name, ty)) in captures.into_iter().enumerate() {
+                    let local = body_builder.new_local(name, self.builder.val_ty(&ty));
+                    instrs.push(Instruction::LocalGet(env_local));
+                    instrs.push(Instruction::StructGet {
+                        struct_type_index: concrete_closure_ty,
+                        field_index: idx as u32 + 1,
+                    });
+                    instrs.push(Instruction::LocalSet(local));
+                }
+                // Generate function body
+                instrs.extend(self.compile_expr(&mut body_builder, body));
+
+                self.builder
+                    .fill_func(func_name, body_builder.get_locals(), instrs);
+
+                // Construct concrete closure struct
+                vec![
+                    Instruction::RefFunc(func_idx),
+                    Instruction::StructNew(closure_info.closure_struct_ty),
+                ]
             }
         }
     }

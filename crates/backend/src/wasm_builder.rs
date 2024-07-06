@@ -3,6 +3,7 @@ use std::iter;
 use std::{collections::HashMap, mem};
 
 use frontend::ir::{FuncTy, Id, Import, Name, NameSupply, Struct, Substitution, Ty, Variant};
+use text_size::TextRange;
 use wasm_encoder::{
     self, ArrayType, CodeSection, CompositeType, ConstExpr, ElementSection, Elements, EntityType,
     ExportKind, ExportSection, FieldType, FuncType, Function, FunctionSection, GlobalSection,
@@ -87,8 +88,8 @@ impl VariantInfo {
 
 #[derive(Debug, Clone, Copy)]
 pub struct ClosureInfo {
-    pub code_ty: TypeIdx,
-    pub clos_ty: TypeIdx,
+    pub closure_struct_ty: TypeIdx,
+    pub closure_func_ty: TypeIdx,
 }
 
 #[derive(Debug)]
@@ -149,6 +150,8 @@ impl<'a> Builder<'a> {
         let mut type_section = TypeSection::new();
         let mut all_field_names = IndirectNameMap::new();
 
+        // I remember this didn't work on some more complicated programs
+        // but it passes for all the current example programs. Keep an eye on it
         type_section.rec(self.types);
         // for ty in self.types {
         //     type_section.subtype(&ty);
@@ -490,7 +493,7 @@ impl<'a> Builder<'a> {
     }
 
     // Registers a closure type and returns the type index of the non-erased closure type
-    pub fn closure_type(&mut self, func_ty: &FuncTy, captures: &[&Ty]) -> TypeIdx {
+    pub fn closure_type(&mut self, func_ty: &FuncTy, captures: &[&Ty]) -> (ClosureInfo, TypeIdx) {
         let closure_info = if let Some(closure_info) = self.get_closure_ty(func_ty) {
             closure_info
         } else {
@@ -498,12 +501,12 @@ impl<'a> Builder<'a> {
                 func_ty.arguments.iter().map(|t| self.val_ty(t)).collect();
             let result_ty = self.val_ty(&func_ty.result);
 
-            let code_ty = self.types.len() as u32;
-            let clos_ty = code_ty + 1;
+            let closure_func_ty = self.types.len() as u32;
+            let closure_struct_ty = closure_func_ty + 1;
 
             let mut params = vec![ValType::Ref(RefType {
                 nullable: false,
-                heap_type: HeapType::Concrete(clos_ty),
+                heap_type: HeapType::Concrete(closure_struct_ty),
             })];
             params.extend(param_tys);
 
@@ -519,14 +522,17 @@ impl<'a> Builder<'a> {
                     fields: [FieldType {
                         element_type: StorageType::Val(ValType::Ref(RefType {
                             nullable: false,
-                            heap_type: HeapType::Concrete(code_ty),
+                            heap_type: HeapType::Concrete(closure_func_ty),
                         })),
                         mutable: false,
                     }]
                     .into(),
                 }),
             });
-            let closure_info = ClosureInfo { code_ty, clos_ty };
+            let closure_info = ClosureInfo {
+                closure_struct_ty,
+                closure_func_ty,
+            };
             self.closure_tys.insert(func_ty.clone(), closure_info);
             closure_info
         };
@@ -534,7 +540,7 @@ impl<'a> Builder<'a> {
         let mut fields = vec![FieldType {
             element_type: StorageType::Val(ValType::Ref(RefType {
                 nullable: false,
-                heap_type: HeapType::Concrete(closure_info.code_ty),
+                heap_type: HeapType::Concrete(closure_info.closure_func_ty),
             })),
             mutable: false,
         }];
@@ -546,12 +552,12 @@ impl<'a> Builder<'a> {
         let concrete_type = self.types.len() as u32;
         self.types.push(SubType {
             is_final: true,
-            supertype_idx: Some(closure_info.clos_ty),
+            supertype_idx: Some(closure_info.closure_struct_ty),
             composite_type: CompositeType::Struct(StructType {
                 fields: fields.into_boxed_slice(),
             }),
         });
-        concrete_type
+        (closure_info, concrete_type)
     }
 
     pub fn declare_import(&mut self, import: Import) {
@@ -622,6 +628,25 @@ impl<'a> Builder<'a> {
         self.start_fn = Some(index)
     }
 
+    pub fn declare_anon_func(&mut self, at: TextRange, ty: TypeIdx) -> (Name, FuncIdx) {
+        let index = (self.imports.len() + self.funcs.len()) as u32;
+        let name = self.name_supply.func_idx(Id {
+            // TODO: Use surrounding function name or something?
+            it: format!("closure-{index}"),
+            at,
+        });
+        self.funcs.insert(
+            name,
+            FuncData {
+                index,
+                ty,
+                locals: None,
+                body: None,
+            },
+        );
+        (name, index)
+    }
+
     pub fn declare_func(&mut self, name: Name, func_ty: FuncTy) {
         let index = (self.imports.len() + self.funcs.len()) as u32;
         let ty = self.func_type(&func_ty);
@@ -675,7 +700,6 @@ pub struct BodyBuilder {
     param_count: usize,
     locals: Vec<ValType>,
     named_locals: HashMap<Name, u32>,
-    // TODO: support captures in closures
 }
 
 #[derive(Debug)]
