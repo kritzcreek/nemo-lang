@@ -3,8 +3,9 @@ use std::fmt::Write;
 
 use crate::wasm_builder::{BodyBuilder, Builder};
 use frontend::ir::{
-    Callee, Declaration, DeclarationData, Expr, ExprData, Func, Id, Lit, LitData, Name, NameSupply,
-    Op, OpData, Pattern, PatternData, Program, SetTarget, SetTargetData, Substitution, Ty, TypeDef,
+    Callee, Declaration, DeclarationData, Expr, ExprData, Func, FuncTy, Id, Lit, LitData, Name,
+    NameSupply, Op, OpData, Pattern, PatternData, Program, SetTarget, SetTargetData, Substitution,
+    Ty, TypeDef,
 };
 use wasm_encoder::{BlockType, ConstExpr, HeapType, Instruction, RefType, ValType};
 
@@ -312,11 +313,27 @@ impl<'a> Codegen<'a> {
                 instrs
             }
             ExprData::Lambda {
-                captures: _,
-                params: _,
-                return_ty: _,
+                captures,
+                params,
+                return_ty,
                 body: _,
-            } => todo!(),
+            } => {
+                let captures = captures.iter().map(|(_, ty)| ty).collect::<Vec<_>>();
+                let Ty::Func(func_ty) = &expr.ty else {
+                    panic!("Found lambda expression with non-func ty: {:?}", expr.ty)
+                };
+                self.builder.closure_type(func_ty, captures.as_ref());
+                if captures.is_empty() {
+                    // Actually not that special, until I implement an optimization,
+                    // that detects applications of closures with no env
+                }
+                vec![]
+                // (type $code-<purely_based_on_func_ty> (func (param $env (ref $clos-f64-f64)) <lambda_params> <lambda_result>))
+                // (type $clos-<purely_based_on_func_ty> (struct (field $code (ref $code-f64-f64)))
+                //
+                // Gets created via downcast from $clos-f64-f64
+                // (type $inner-clos (struct (extend $clos-f64-f64) <lambda_captures>)
+            }
         }
     }
 

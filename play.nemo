@@ -2,7 +2,7 @@ global x = 10
 
 fn main() {
     let y = 20;
-    let f = fn () -> i32 {
+    let f = fn (z : i32) -> i32 {
       x + y
     }
 }

@@ -17,6 +17,7 @@ type FieldIdx = u32;
 type GlobalIdx = u32;
 type LocalIdx = u32;
 
+#[derive(Debug)]
 pub struct FuncData<'a> {
     index: FuncIdx,
     ty: TypeIdx,
@@ -24,6 +25,7 @@ pub struct FuncData<'a> {
     body: Option<Vec<Instruction<'a>>>,
 }
 
+#[derive(Debug)]
 pub struct GlobalData {
     index: GlobalIdx,
     name: Name,
@@ -31,6 +33,7 @@ pub struct GlobalData {
     init: ConstExpr,
 }
 
+#[derive(Debug)]
 pub struct ImportData {
     index: FuncIdx,
     ty_idx: TypeIdx,
@@ -38,6 +41,7 @@ pub struct ImportData {
     func: String,
 }
 
+#[derive(Debug)]
 pub struct Export {
     name: String,
     desc: (ExportKind, u32),
@@ -81,6 +85,13 @@ impl VariantInfo {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct ClosureInfo {
+    pub code_ty: TypeIdx,
+    pub clos_ty: TypeIdx,
+}
+
+#[derive(Debug)]
 pub struct Builder<'a> {
     pub(crate) name_supply: NameSupply,
     funcs: HashMap<Name, FuncData<'a>>,
@@ -96,6 +107,9 @@ pub struct Builder<'a> {
     arrays: HashMap<ValType, TypeIdx>,
     structs: HashMap<Name, StructInfo>,
     variants: HashMap<Name, VariantInfo>,
+    // TODO: Could use `FuncType` as the key, and avoid creating duplicated closure types
+    // for equivalent function types.
+    closure_tys: HashMap<FuncTy, ClosureInfo>,
 }
 
 impl<'a> Builder<'a> {
@@ -109,6 +123,7 @@ impl<'a> Builder<'a> {
             func_tys: HashMap::new(),
             structs: HashMap::new(),
             variants: HashMap::new(),
+            closure_tys: HashMap::new(),
             imports: HashMap::new(),
             exports: vec![],
             start_fn: None,
@@ -133,9 +148,11 @@ impl<'a> Builder<'a> {
         let mut type_names = WasmNameMap::new();
         let mut type_section = TypeSection::new();
         let mut all_field_names = IndirectNameMap::new();
-        for ty in self.types {
-            type_section.subtype(&ty);
-        }
+
+        type_section.rec(self.types);
+        // for ty in self.types {
+        //     type_section.subtype(&ty);
+        // }
 
         for (name, info) in self.structs {
             for (tys, type_idx) in &info.instances {
@@ -468,6 +485,75 @@ impl<'a> Builder<'a> {
         }
     }
 
+    pub fn get_closure_ty(&mut self, func_ty: &FuncTy) -> Option<ClosureInfo> {
+        self.closure_tys.get(func_ty).copied()
+    }
+
+    // Registers a closure type and returns the type index of the non-erased closure type
+    pub fn closure_type(&mut self, func_ty: &FuncTy, captures: &[&Ty]) -> TypeIdx {
+        let closure_info = if let Some(closure_info) = self.get_closure_ty(func_ty) {
+            closure_info
+        } else {
+            let param_tys: Vec<ValType> =
+                func_ty.arguments.iter().map(|t| self.val_ty(t)).collect();
+            let result_ty = self.val_ty(&func_ty.result);
+
+            let code_ty = self.types.len() as u32;
+            let clos_ty = code_ty + 1;
+
+            let mut params = vec![ValType::Ref(RefType {
+                nullable: false,
+                heap_type: HeapType::Concrete(clos_ty),
+            })];
+            params.extend(param_tys);
+
+            self.types.push(SubType {
+                is_final: true,
+                supertype_idx: None,
+                composite_type: CompositeType::Func(FuncType::new(params, iter::once(result_ty))),
+            });
+            self.types.push(SubType {
+                is_final: false,
+                supertype_idx: None,
+                composite_type: CompositeType::Struct(StructType {
+                    fields: [FieldType {
+                        element_type: StorageType::Val(ValType::Ref(RefType {
+                            nullable: false,
+                            heap_type: HeapType::Concrete(code_ty),
+                        })),
+                        mutable: false,
+                    }]
+                    .into(),
+                }),
+            });
+            let closure_info = ClosureInfo { code_ty, clos_ty };
+            self.closure_tys.insert(func_ty.clone(), closure_info);
+            closure_info
+        };
+
+        let mut fields = vec![FieldType {
+            element_type: StorageType::Val(ValType::Ref(RefType {
+                nullable: false,
+                heap_type: HeapType::Concrete(closure_info.code_ty),
+            })),
+            mutable: false,
+        }];
+        fields.extend(captures.into_iter().map(|t| FieldType {
+            // Careful! May change self.types length
+            element_type: StorageType::Val(self.val_ty(t)),
+            mutable: false,
+        }));
+        let concrete_type = self.types.len() as u32;
+        self.types.push(SubType {
+            is_final: true,
+            supertype_idx: Some(closure_info.clos_ty),
+            composite_type: CompositeType::Struct(StructType {
+                fields: fields.into_boxed_slice(),
+            }),
+        });
+        concrete_type
+    }
+
     pub fn declare_import(&mut self, import: Import) {
         let index = self.imports.len() as u32;
         let ty_idx = self.func_type(&import.func_ty);
@@ -589,8 +675,10 @@ pub struct BodyBuilder {
     param_count: usize,
     locals: Vec<ValType>,
     named_locals: HashMap<Name, u32>,
+    // TODO: support captures in closures
 }
 
+#[derive(Debug)]
 pub struct FnLocals {
     locals: Vec<ValType>,
     names: HashMap<LocalIdx, Name>,
