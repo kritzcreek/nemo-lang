@@ -488,14 +488,10 @@ impl<'a> Builder<'a> {
         }
     }
 
-    pub fn get_closure_ty(&mut self, func_ty: &FuncTy) -> Option<ClosureInfo> {
-        self.closure_tys.get(func_ty).copied()
-    }
-
-    // Registers a closure type and returns the type index of the non-erased closure type
-    pub fn closure_type(&mut self, func_ty: &FuncTy, captures: &[&Ty]) -> (ClosureInfo, TypeIdx) {
-        let closure_info = if let Some(closure_info) = self.get_closure_ty(func_ty) {
-            closure_info
+    // Registers a closure type
+    pub fn closure_type(&mut self, func_ty: &FuncTy) -> ClosureInfo {
+        if let Some(closure_info) = self.closure_tys.get(func_ty) {
+            *closure_info
         } else {
             let param_tys: Vec<ValType> =
                 func_ty.arguments.iter().map(|t| self.val_ty(t)).collect();
@@ -535,8 +531,15 @@ impl<'a> Builder<'a> {
             };
             self.closure_tys.insert(func_ty.clone(), closure_info);
             closure_info
-        };
+        }
+    }
 
+    // TODO: We should also cache the concrete types here?
+    pub fn closure_type_concrete(
+        &mut self,
+        closure_info: ClosureInfo,
+        captures: &[&Ty],
+    ) -> TypeIdx {
         let mut fields = vec![FieldType {
             element_type: StorageType::Val(ValType::Ref(RefType {
                 nullable: false,
@@ -557,7 +560,7 @@ impl<'a> Builder<'a> {
                 fields: fields.into_boxed_slice(),
             }),
         });
-        (closure_info, concrete_type)
+        concrete_type
     }
 
     pub fn declare_import(&mut self, import: Import) {
