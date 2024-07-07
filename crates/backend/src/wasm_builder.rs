@@ -111,6 +111,7 @@ pub struct Builder<'a> {
     // TODO: Could use `FuncType` as the key, and avoid creating duplicated closure types
     // for equivalent function types.
     closure_tys: HashMap<FuncTy, ClosureInfo>,
+    func_refs: HashMap<Name, FuncIdx>,
 }
 
 impl<'a> Builder<'a> {
@@ -125,6 +126,7 @@ impl<'a> Builder<'a> {
             structs: HashMap::new(),
             variants: HashMap::new(),
             closure_tys: HashMap::new(),
+            func_refs: HashMap::new(),
             imports: HashMap::new(),
             exports: vec![],
             start_fn: None,
@@ -670,6 +672,36 @@ impl<'a> Builder<'a> {
             f.locals = Some(locals);
             f.body = Some(body)
         });
+    }
+
+    pub fn func_ref(&mut self, name: Name, closure_info: ClosureInfo, ty: &FuncTy) -> FuncIdx {
+        if let Some(idx) = self.func_refs.get(&name) {
+            return *idx;
+        }
+        let Id { it, at } = self.resolve_name(name);
+        let func_name = self.name_supply.func_idx(Id {
+            it: format!("{it}#ref"),
+            at,
+        });
+        let mut instrs: Vec<Instruction> = (0..ty.arguments.len())
+            .map(|i| Instruction::LocalGet(i as u32 + 1))
+            .collect();
+        instrs.push(Instruction::Call(self.lookup_func(&name)));
+        let func_idx = (self.imports.len() + self.funcs.len()) as u32;
+        self.funcs.insert(
+            func_name,
+            FuncData {
+                index: func_idx,
+                ty: closure_info.closure_func_ty,
+                locals: Some(FnLocals {
+                    locals: vec![],
+                    names: HashMap::new(),
+                }),
+                body: Some(instrs),
+            },
+        );
+        self.func_refs.insert(name, func_idx);
+        func_idx
     }
 
     pub fn lookup_func(&self, name: &Name) -> FuncIdx {

@@ -120,11 +120,10 @@ impl<'a> Codegen<'a> {
                     let Ty::Func(ty) = &expr.ty else {
                         unreachable!("Non-function type for function reference")
                     };
-                    let func_idx = self.builder.lookup_func(&name);
                     let closure_ty = self.builder.closure_type(ty);
-                    // TODO: Need to generate a wrapper function that discards the empty env
+                    let wrapped_func_idx = self.builder.func_ref(name, closure_ty, ty);
                     vec![
-                        Instruction::RefFunc(func_idx),
+                        Instruction::RefFunc(wrapped_func_idx),
                         Instruction::StructNew(closure_ty.closure_struct_ty),
                     ]
                 }
