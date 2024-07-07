@@ -45,7 +45,7 @@ fn toplevel(p: &mut Parser) -> Progress {
             Progress::Made
         }
         T![fn] => {
-            top_fn(p);
+            top_func(p);
             Progress::Made
         }
         T![import] => {
@@ -124,7 +124,7 @@ fn top_variant(p: &mut Parser) {
     p.finish_at(c, SyntaxKind::TopVariant)
 }
 
-fn top_fn(p: &mut Parser) {
+fn top_func(p: &mut Parser) {
     let c = p.checkpoint();
     p.bump(SyntaxKind::FN_KW);
     if !p.eat(SyntaxKind::IDENT) {
@@ -349,6 +349,10 @@ fn expr(p: &mut Parser) -> Progress {
         match_expr(p);
         return Progress::Made;
     }
+    if p.at(T![fn]) {
+        func_expr(p);
+        return Progress::Made;
+    }
     if p.at(T![return]) {
         return_expr(p);
         return Progress::Made;
@@ -447,6 +451,19 @@ fn return_expr(p: &mut Parser) {
         p.error("expected an expression. If you're trying to return unit use 'return {}'")
     }
     p.finish_at(c, SyntaxKind::EReturn)
+}
+
+fn func_expr(p: &mut Parser) {
+    let c = p.checkpoint();
+    p.bump(T![fn]);
+    param_list(p);
+    if p.eat(T![->]) && !typ(p).made_progress() {
+        p.error("expected a return type")
+    }
+    if !block_expr(p).made_progress() {
+        p.error("expected a function body")
+    }
+    p.finish_at(c, SyntaxKind::ELambda);
 }
 
 fn ty_arg_list(p: &mut Parser) -> Progress {
