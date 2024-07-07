@@ -5,11 +5,18 @@ fn main() -> i32 {
     let f = fn (z : i32) -> i32 {
       x + y + z
     };
-    twice#[i32](f)(12);
+    let twice_mono = twice_mono;
+    twice_mono(f)(12);
 }
 
 fn twice[a](f : fn(a) -> a) -> fn (a) -> a {
     fn (x : a) -> a {
+        f(f(x))
+    }
+}
+
+fn twice_mono(f : fn(i32) -> i32) -> fn (i32) -> i32 {
+    fn (x : i32) -> i32 {
         f(f(x))
     }
 }

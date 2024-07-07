@@ -116,7 +116,18 @@ impl<'a> Codegen<'a> {
             ExprData::Var { name } => match name {
                 Name::Local(_) => vec![Instruction::LocalGet(body.lookup_local(&name).unwrap())],
                 Name::Global(_) => vec![Instruction::GlobalGet(self.builder.lookup_global(&name))],
-                Name::Func(_) => vec![Instruction::RefFunc(self.builder.lookup_func(&name))],
+                Name::Func(_) => {
+                    let Ty::Func(ty) = &expr.ty else {
+                        unreachable!("Non-function type for function reference")
+                    };
+                    let func_idx = self.builder.lookup_func(&name);
+                    let closure_ty = self.builder.closure_type(ty);
+                    // TODO: Need to generate a wrapper function that discards the empty env
+                    vec![
+                        Instruction::RefFunc(func_idx),
+                        Instruction::StructNew(closure_ty.closure_struct_ty),
+                    ]
+                }
                 _ => unreachable!("Cannot compile a variable reference to {name:?}"),
             },
             ExprData::Call { func, arguments } => {
