@@ -3,6 +3,7 @@ use std::iter;
 use std::{collections::HashMap, mem};
 
 use frontend::ir::{FuncTy, Id, Import, Name, NameSupply, Struct, Substitution, Ty, Variant};
+use text_size::TextRange;
 use wasm_encoder::{
     self, ArrayType, CodeSection, CompositeType, ConstExpr, ElementSection, Elements, EntityType,
     ExportKind, ExportSection, FieldType, FuncType, Function, FunctionSection, GlobalSection,
@@ -17,6 +18,7 @@ type FieldIdx = u32;
 type GlobalIdx = u32;
 type LocalIdx = u32;
 
+#[derive(Debug)]
 pub struct FuncData<'a> {
     index: FuncIdx,
     ty: TypeIdx,
@@ -24,6 +26,7 @@ pub struct FuncData<'a> {
     body: Option<Vec<Instruction<'a>>>,
 }
 
+#[derive(Debug)]
 pub struct GlobalData {
     index: GlobalIdx,
     name: Name,
@@ -31,6 +34,7 @@ pub struct GlobalData {
     init: ConstExpr,
 }
 
+#[derive(Debug)]
 pub struct ImportData {
     index: FuncIdx,
     ty_idx: TypeIdx,
@@ -38,6 +42,7 @@ pub struct ImportData {
     func: String,
 }
 
+#[derive(Debug)]
 pub struct Export {
     name: String,
     desc: (ExportKind, u32),
@@ -81,6 +86,13 @@ impl VariantInfo {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct ClosureInfo {
+    pub closure_struct_ty: TypeIdx,
+    pub closure_func_ty: TypeIdx,
+}
+
+#[derive(Debug)]
 pub struct Builder<'a> {
     pub(crate) name_supply: NameSupply,
     funcs: HashMap<Name, FuncData<'a>>,
@@ -96,6 +108,10 @@ pub struct Builder<'a> {
     arrays: HashMap<ValType, TypeIdx>,
     structs: HashMap<Name, StructInfo>,
     variants: HashMap<Name, VariantInfo>,
+    // TODO: Could use `FuncType` as the key, and avoid creating duplicated closure types
+    // for equivalent function types.
+    closure_tys: HashMap<FuncTy, ClosureInfo>,
+    func_refs: HashMap<Name, FuncIdx>,
 }
 
 impl<'a> Builder<'a> {
@@ -109,6 +125,8 @@ impl<'a> Builder<'a> {
             func_tys: HashMap::new(),
             structs: HashMap::new(),
             variants: HashMap::new(),
+            closure_tys: HashMap::new(),
+            func_refs: HashMap::new(),
             imports: HashMap::new(),
             exports: vec![],
             start_fn: None,
@@ -133,9 +151,13 @@ impl<'a> Builder<'a> {
         let mut type_names = WasmNameMap::new();
         let mut type_section = TypeSection::new();
         let mut all_field_names = IndirectNameMap::new();
-        for ty in self.types {
-            type_section.subtype(&ty);
-        }
+
+        // I remember this didn't work on some more complicated programs
+        // but it passes for all the current example programs. Keep an eye on it
+        type_section.rec(self.types);
+        // for ty in self.types {
+        //     type_section.subtype(&ty);
+        // }
 
         for (name, info) in self.structs {
             for (tys, type_idx) in &info.instances {
@@ -423,10 +445,10 @@ impl<'a> Builder<'a> {
                 })
             }
             Ty::Func(func_ty) => {
-                let ty_idx = self.func_type(func_ty);
+                let info = self.closure_type(func_ty);
                 ValType::Ref(RefType {
                     nullable: false,
-                    heap_type: HeapType::Concrete(ty_idx),
+                    heap_type: HeapType::Concrete(info.closure_struct_ty),
                 })
             }
             Ty::Var(v) => {
@@ -466,6 +488,82 @@ impl<'a> Builder<'a> {
                 ix
             }
         }
+    }
+
+    // Registers a closure type
+    pub fn closure_type(&mut self, func_ty: &FuncTy) -> ClosureInfo {
+        let func_ty = self.substitution().apply_func(func_ty.clone());
+        if let Some(closure_info) = self.closure_tys.get(&func_ty) {
+            *closure_info
+        } else {
+            let param_tys: Vec<ValType> =
+                func_ty.arguments.iter().map(|t| self.val_ty(t)).collect();
+            let result_ty = self.val_ty(&func_ty.result);
+
+            let closure_func_ty = self.types.len() as u32;
+            let closure_struct_ty = closure_func_ty + 1;
+
+            let mut params = vec![ValType::Ref(RefType {
+                nullable: false,
+                heap_type: HeapType::Concrete(closure_struct_ty),
+            })];
+            params.extend(param_tys);
+
+            self.types.push(SubType {
+                is_final: true,
+                supertype_idx: None,
+                composite_type: CompositeType::Func(FuncType::new(params, iter::once(result_ty))),
+            });
+            self.types.push(SubType {
+                is_final: false,
+                supertype_idx: None,
+                composite_type: CompositeType::Struct(StructType {
+                    fields: [FieldType {
+                        element_type: StorageType::Val(ValType::Ref(RefType {
+                            nullable: false,
+                            heap_type: HeapType::Concrete(closure_func_ty),
+                        })),
+                        mutable: false,
+                    }]
+                    .into(),
+                }),
+            });
+            let closure_info = ClosureInfo {
+                closure_struct_ty,
+                closure_func_ty,
+            };
+            self.closure_tys.insert(func_ty, closure_info);
+            closure_info
+        }
+    }
+
+    // TODO: We should also cache the concrete types here?
+    pub fn closure_type_concrete(
+        &mut self,
+        closure_info: ClosureInfo,
+        captures: &[&Ty],
+    ) -> TypeIdx {
+        let mut fields = vec![FieldType {
+            element_type: StorageType::Val(ValType::Ref(RefType {
+                nullable: false,
+                heap_type: HeapType::Concrete(closure_info.closure_func_ty),
+            })),
+            mutable: false,
+        }];
+        fields.extend(captures.into_iter().map(|t| FieldType {
+            // Careful! May change self.types length
+            element_type: StorageType::Val(self.val_ty(t)),
+            mutable: false,
+        }));
+        let concrete_type = self.types.len() as u32;
+        self.types.push(SubType {
+            is_final: true,
+            supertype_idx: Some(closure_info.closure_struct_ty),
+            composite_type: CompositeType::Struct(StructType {
+                fields: fields.into_boxed_slice(),
+            }),
+        });
+        concrete_type
     }
 
     pub fn declare_import(&mut self, import: Import) {
@@ -536,6 +634,25 @@ impl<'a> Builder<'a> {
         self.start_fn = Some(index)
     }
 
+    pub fn declare_anon_func(&mut self, at: TextRange, ty: TypeIdx) -> (Name, FuncIdx) {
+        let index = (self.imports.len() + self.funcs.len()) as u32;
+        let name = self.name_supply.func_idx(Id {
+            // TODO: Use surrounding function name or something?
+            it: format!("closure-{index}"),
+            at,
+        });
+        self.funcs.insert(
+            name,
+            FuncData {
+                index,
+                ty,
+                locals: None,
+                body: None,
+            },
+        );
+        (name, index)
+    }
+
     pub fn declare_func(&mut self, name: Name, func_ty: FuncTy) {
         let index = (self.imports.len() + self.funcs.len()) as u32;
         let ty = self.func_type(&func_ty);
@@ -555,6 +672,36 @@ impl<'a> Builder<'a> {
             f.locals = Some(locals);
             f.body = Some(body)
         });
+    }
+
+    pub fn func_ref(&mut self, name: Name, closure_info: ClosureInfo, ty: &FuncTy) -> FuncIdx {
+        if let Some(idx) = self.func_refs.get(&name) {
+            return *idx;
+        }
+        let Id { it, at } = self.resolve_name(name);
+        let func_name = self.name_supply.func_idx(Id {
+            it: format!("{it}#ref"),
+            at,
+        });
+        let mut instrs: Vec<Instruction> = (0..ty.arguments.len())
+            .map(|i| Instruction::LocalGet(i as u32 + 1))
+            .collect();
+        instrs.push(Instruction::Call(self.lookup_func(&name)));
+        let func_idx = (self.imports.len() + self.funcs.len()) as u32;
+        self.funcs.insert(
+            func_name,
+            FuncData {
+                index: func_idx,
+                ty: closure_info.closure_func_ty,
+                locals: Some(FnLocals {
+                    locals: vec![],
+                    names: HashMap::new(),
+                }),
+                body: Some(instrs),
+            },
+        );
+        self.func_refs.insert(name, func_idx);
+        func_idx
     }
 
     pub fn lookup_func(&self, name: &Name) -> FuncIdx {
@@ -591,6 +738,7 @@ pub struct BodyBuilder {
     named_locals: HashMap<Name, u32>,
 }
 
+#[derive(Debug)]
 pub struct FnLocals {
     locals: Vec<ValType>,
     names: HashMap<LocalIdx, Name>,

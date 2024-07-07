@@ -6,6 +6,7 @@ use frontend::ir::{
     Callee, Declaration, DeclarationData, Expr, ExprData, Func, Id, Lit, LitData, Name, NameSupply,
     Op, OpData, Pattern, PatternData, Program, SetTarget, SetTargetData, Substitution, Ty, TypeDef,
 };
+use text_size::TextRange;
 use wasm_encoder::{BlockType, ConstExpr, HeapType, Instruction, RefType, ValType};
 
 pub fn codegen(program: Program, name_supply: NameSupply) -> (Vec<u8>, NameSupply) {
@@ -56,8 +57,8 @@ impl<'a> Codegen<'a> {
                 ConstExpr::ref_null(HeapType::Concrete(idx))
             }
             Ty::Func(ty) => {
-                let ty_idx = self.builder.func_type(ty);
-                ConstExpr::ref_null(HeapType::Concrete(ty_idx))
+                let clos_ty = self.builder.closure_type(ty);
+                ConstExpr::ref_null(HeapType::Concrete(clos_ty.closure_struct_ty))
             }
             Ty::Var(_) => {
                 unreachable!("Globals can't be var-typed")
@@ -115,18 +116,29 @@ impl<'a> Codegen<'a> {
             ExprData::Var { name } => match name {
                 Name::Local(_) => vec![Instruction::LocalGet(body.lookup_local(&name).unwrap())],
                 Name::Global(_) => vec![Instruction::GlobalGet(self.builder.lookup_global(&name))],
-                Name::Func(_) => vec![Instruction::RefFunc(self.builder.lookup_func(&name))],
+                Name::Func(_) => {
+                    let Ty::Func(ty) = &expr.ty else {
+                        unreachable!("Non-function type for function reference")
+                    };
+                    let closure_ty = self.builder.closure_type(ty);
+                    let wrapped_func_idx = self.builder.func_ref(name, closure_ty, ty);
+                    vec![
+                        Instruction::RefFunc(wrapped_func_idx),
+                        Instruction::StructNew(closure_ty.closure_struct_ty),
+                    ]
+                }
                 _ => unreachable!("Cannot compile a variable reference to {name:?}"),
             },
             ExprData::Call { func, arguments } => {
-                let mut instrs = vec![];
+                let mut arg_instrs = vec![];
                 for arg in arguments {
-                    let arg_instrs = self.compile_expr(body, arg);
-                    instrs.extend(arg_instrs);
+                    arg_instrs.extend(self.compile_expr(body, arg));
                 }
 
+                let mut instrs = vec![];
                 match func {
                     Callee::Func { name, type_args } => {
+                        instrs.extend(arg_instrs);
                         let name = if !type_args.is_empty() {
                             let type_args = self.builder.substitution().apply_subst(type_args);
                             self.instantiate_polyfunc(name, &type_args)
@@ -137,14 +149,28 @@ impl<'a> Codegen<'a> {
                         instrs.push(Instruction::Call(func_idx));
                     }
                     Callee::FuncRef(callee) => {
-                        let Ty::Func(ty) = &callee.ty else {
+                        let Ty::Func(ty) = callee.ty.clone() else {
                             unreachable!("Non-function type for callee")
                         };
-                        let ty_idx = self.builder.func_type(ty);
+                        let closure_info = self.builder.closure_type(ty.as_ref());
+                        let clos_local = body.fresh_local(ValType::Ref(RefType {
+                            nullable: false,
+                            heap_type: HeapType::Concrete(closure_info.closure_struct_ty),
+                        }));
                         instrs.extend(self.compile_expr(body, callee));
-                        instrs.push(Instruction::CallRef(ty_idx))
+                        instrs.push(Instruction::LocalTee(clos_local));
+                        instrs.extend(arg_instrs);
+                        instrs.extend([
+                            Instruction::LocalGet(clos_local),
+                            Instruction::StructGet {
+                                struct_type_index: closure_info.closure_struct_ty,
+                                field_index: 0,
+                            },
+                        ]);
+                        instrs.push(Instruction::CallRef(closure_info.closure_func_ty));
                     }
                     Callee::Builtin(builtin) => {
+                        instrs.extend(arg_instrs);
                         if builtin == "array_new" {
                             let array_ty = self.builder.array_type(&expr.ty);
                             instrs.push(Instruction::ArrayNew(array_ty))
@@ -309,6 +335,83 @@ impl<'a> Codegen<'a> {
             ExprData::Return { expr } => {
                 let mut instrs = self.compile_expr(body, expr);
                 instrs.push(Instruction::Return);
+                instrs
+            }
+            ExprData::Lambda {
+                captures,
+                params,
+                return_ty: _,
+                body: lambda_body,
+            } => {
+                let capture_tys = captures.iter().map(|(_, ty)| ty).collect::<Vec<_>>();
+                let Ty::Func(func_ty) = &expr.ty else {
+                    panic!("Found lambda expression with non-func ty: {:?}", expr.ty)
+                };
+                let closure_info = self.builder.closure_type(func_ty);
+                let concrete_closure_ty = self
+                    .builder
+                    .closure_type_concrete(closure_info, capture_tys.as_ref());
+                if captures.is_empty() {
+                    // Actually not special, until I implement an optimization,
+                    // that detects applications of closures with no env
+                }
+                // Hoist the lambda to a top-level function accepting an environment
+                let (func_name, func_idx) = self
+                    .builder
+                    .declare_anon_func(expr.at, closure_info.closure_func_ty);
+                let env_name = self.builder.name_supply.local_idx(Id {
+                    at: TextRange::empty(0.into()),
+                    it: "env".to_string(),
+                });
+                let mut func_params = vec![(
+                    env_name,
+                    ValType::Ref(RefType {
+                        nullable: false,
+                        heap_type: HeapType::Concrete(closure_info.closure_struct_ty),
+                    }),
+                )];
+                func_params.extend(
+                    params
+                        .iter()
+                        .map(|(name, ty)| (*name, self.builder.val_ty(ty))),
+                );
+                let mut body_builder = BodyBuilder::new(func_params);
+
+                // Downcast to concret env type
+                let env_local = body_builder.fresh_local(ValType::Ref(RefType {
+                    nullable: false,
+                    heap_type: HeapType::Concrete(concrete_closure_ty),
+                }));
+                let mut lambda_instrs = vec![];
+                lambda_instrs.push(Instruction::LocalGet(0));
+                lambda_instrs.push(Instruction::RefCastNonNull(HeapType::Concrete(
+                    concrete_closure_ty,
+                )));
+                lambda_instrs.push(Instruction::LocalSet(env_local));
+
+                // Splat captures into locals
+                for (idx, (name, ty)) in captures.iter().enumerate() {
+                    let local = body_builder.new_local(*name, self.builder.val_ty(&ty));
+                    lambda_instrs.push(Instruction::LocalGet(env_local));
+                    lambda_instrs.push(Instruction::StructGet {
+                        struct_type_index: concrete_closure_ty,
+                        field_index: idx as u32 + 1,
+                    });
+                    lambda_instrs.push(Instruction::LocalSet(local));
+                }
+                // Generate function body
+                lambda_instrs.extend(self.compile_expr(&mut body_builder, lambda_body));
+
+                self.builder
+                    .fill_func(func_name, body_builder.get_locals(), lambda_instrs);
+
+                // Construct concrete closure struct
+                let mut instrs = vec![Instruction::RefFunc(func_idx)];
+                for (name, _) in captures {
+                    let local = body.lookup_local(&name).expect("Capture not found");
+                    instrs.push(Instruction::LocalGet(local));
+                }
+                instrs.push(Instruction::StructNew(concrete_closure_ty));
                 instrs
             }
         }

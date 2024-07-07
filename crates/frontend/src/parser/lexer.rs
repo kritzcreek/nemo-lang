@@ -335,6 +335,7 @@ pub enum SyntaxKind {
     EIf,
     EMatch,
     EBlock,
+    ELambda,
     EReturn,
 
     // Match expressions
