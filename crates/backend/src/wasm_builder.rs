@@ -490,7 +490,8 @@ impl<'a> Builder<'a> {
 
     // Registers a closure type
     pub fn closure_type(&mut self, func_ty: &FuncTy) -> ClosureInfo {
-        if let Some(closure_info) = self.closure_tys.get(func_ty) {
+        let func_ty = self.substitution().apply_func(func_ty.clone());
+        if let Some(closure_info) = self.closure_tys.get(&func_ty) {
             *closure_info
         } else {
             let param_tys: Vec<ValType> =
@@ -529,7 +530,7 @@ impl<'a> Builder<'a> {
                 closure_struct_ty,
                 closure_func_ty,
             };
-            self.closure_tys.insert(func_ty.clone(), closure_info);
+            self.closure_tys.insert(func_ty, closure_info);
             closure_info
         }
     }
