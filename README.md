@@ -33,6 +33,7 @@ Features we implement "on-top"
 
 - First order parametric polymorphism (Generics) via monomorphization
 - Variants & Pattern matching
+- Closures
 - Lazy initialization for non-const globals
 - Type directed operator resolution (+ can mean both i32.add and f32.add)
 - Type directed field resolution for struct access
