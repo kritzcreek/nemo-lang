@@ -2,7 +2,8 @@ global x = 10
 
 fn main() -> i32 {
     let y = 20;
-    (fn (z : i32) -> i32 {
+    let f = fn (z : i32) -> i32 {
       x + y + z
-    })(12);
+    };
+    f(12);
 }

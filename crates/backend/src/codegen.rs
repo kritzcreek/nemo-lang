@@ -57,8 +57,8 @@ impl<'a> Codegen<'a> {
                 ConstExpr::ref_null(HeapType::Concrete(idx))
             }
             Ty::Func(ty) => {
-                let ty_idx = self.builder.func_type(ty);
-                ConstExpr::ref_null(HeapType::Concrete(ty_idx))
+                let clos_ty = self.builder.closure_type(ty);
+                ConstExpr::ref_null(HeapType::Concrete(clos_ty.closure_struct_ty))
             }
             Ty::Var(_) => {
                 unreachable!("Globals can't be var-typed")

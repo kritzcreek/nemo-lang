@@ -443,10 +443,10 @@ impl<'a> Builder<'a> {
                 })
             }
             Ty::Func(func_ty) => {
-                let ty_idx = self.func_type(func_ty);
+                let info = self.closure_type(func_ty);
                 ValType::Ref(RefType {
                     nullable: false,
-                    heap_type: HeapType::Concrete(ty_idx),
+                    heap_type: HeapType::Concrete(info.closure_struct_ty),
                 })
             }
             Ty::Var(v) => {
