@@ -21,13 +21,25 @@ fn map[a, b](f : fn (a) -> b, as : List[a]) -> List[b] {
   }
 }
 
+fn for_each[a](f : fn (a) -> unit, as : List[a]) {
+  while true {
+    match as {
+      List::Nil l => { return {} },
+      List::Cons l => {
+        f(l.head);
+        set as = l.tail
+      }
+    }
+  }
+}
+
 fn range(lo : i32, hi : i32) -> List[i32] {
-   let result = List::Nil#[i32]{};
-   while lo < hi {
-     set result = List::Cons#[i32] { head = hi, tail = result };
-     set hi = hi - 1
-   };
-   result
+  let result = List::Nil#[i32]{};
+  while lo < hi {
+    set result = List::Cons#[i32] { head = hi, tail = result };
+    set hi = hi - 1
+  };
+  result
 }
 
 fn sum(xs : List[i32]) -> i32 {
@@ -38,12 +50,9 @@ fn sum(xs : List[i32]) -> i32 {
   }
 }
 
-fn square(x : i32) -> i32 {
-  x * x
-}
-
 fn main() {
   let list = range(0, 10);
-  let squared = map#[i32, i32](square, list);
+  let squared = map#[i32, i32](fn (x : i32) -> i32 { x * x }, list);
+  for_each#[i32](log, squared);
   log(sum(squared))
 }
