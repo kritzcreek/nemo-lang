@@ -22,7 +22,7 @@ run-wasm FILE:
     node dev/run-wasm.mjs build/{{ without_extension(FILE) }}.wasm
 
 dev FILE:
-    watchexec --quiet -e nemo,rs just run-wasm {{ FILE }}
+    RUST_BACKTRACE=1 watchexec --quiet -e nemo,rs just run-wasm {{ FILE }}
 
 playground: build-wasm-lib
     cd playground && npm i && npm run dev
