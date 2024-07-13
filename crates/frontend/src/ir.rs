@@ -1,5 +1,5 @@
-mod names;
 pub mod format;
+mod names;
 
 use core::fmt;
 use derive_ir::IrBuilder;
@@ -339,10 +339,21 @@ impl Expr {
                                 fvs.remove(binder);
                                 free_vars_inner(&mut fvs, expr)
                             }
-                            DeclarationData::Set {
-                                set_target: _,
-                                expr,
-                            } => free_vars_inner(&mut fvs, expr),
+                            DeclarationData::Set { set_target, expr } => {
+                                match &set_target.it {
+                                    SetTargetData::SetArray { target, index } => {
+                                        free_vars_inner(&mut fvs, target);
+                                        free_vars_inner(&mut fvs, index)
+                                    }
+                                    SetTargetData::SetStruct { target, index: _ } => {
+                                        free_vars_inner(&mut fvs, target)
+                                    }
+                                    SetTargetData::SetVar { name } => {
+                                        fvs.insert(*name, &set_target.ty);
+                                    }
+                                }
+                                free_vars_inner(&mut fvs, expr)
+                            }
                             DeclarationData::Expr { expr } => free_vars_inner(&mut fvs, expr),
                             DeclarationData::While { condition, body } => {
                                 free_vars_inner(&mut fvs, condition);
