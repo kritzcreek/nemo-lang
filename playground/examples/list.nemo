@@ -1,3 +1,13 @@
+// Shows how to use a variant type to implement a simple linked list
+// and then use it to implement a few polymorphic higher order functions.
+// Both via recursion and imperative style.
+fn main() {
+  let list = range(0, 10);
+  let squared = map#[i32, i32](fn (x : i32) -> i32 { x * x }, list);
+  for_each#[i32](log, squared);
+  log(sum(squared))
+}
+
 import log : fn (i32) -> unit from log
 
 variant List[a] {
@@ -48,11 +58,4 @@ fn sum(xs : List[i32]) -> i32 {
     List::Nil _ => { 0 },
     List::Cons l => { l.head + sum(l.tail) }
   }
-}
-
-fn main() {
-  let list = range(0, 10);
-  let squared = map#[i32, i32](fn (x : i32) -> i32 { x * x }, list);
-  for_each#[i32](log, squared);
-  log(sum(squared))
 }
