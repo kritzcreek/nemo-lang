@@ -273,7 +273,7 @@ pub struct MatchBranch {
 }
 
 impl MatchBranch {
-    fn free_vars(&self) -> HashMap<Name, &Ty> {
+    fn free_vars(&self) -> HashMap<Name, FreeVarInfo<'_>> {
         let mut fvs = self.body.free_vars();
         for bound in self.pattern.bound_vars() {
             fvs.remove(&bound);
@@ -289,14 +289,24 @@ pub struct Expr {
     pub ty: Ty,
 }
 
+#[derive(Debug, PartialEq, Clone)]
+pub struct FreeVarInfo<'a> {
+    pub ty: &'a Ty,
+    pub is_assigned: Option<TextRange>,
+}
+
 impl Expr {
-    pub fn free_vars(&self) -> HashMap<Name, &Ty> {
-        fn free_vars_inner<'a>(current: &mut HashMap<Name, &'a Ty>, expr: &'a Expr) {
+    pub fn free_vars(&self) -> HashMap<Name, FreeVarInfo<'_>> {
+        fn free_vars_inner<'a>(current: &mut HashMap<Name, FreeVarInfo<'a>>, expr: &'a Expr) {
             match &*expr.it {
                 ExprData::Lit { .. } => {}
                 ExprData::Var { name } => {
                     if let Name::Local(_) = name {
-                        current.insert(*name, &expr.ty);
+                        // We don't want to override an existing entry for a variable that gets re-assigned
+                        current.entry(*name).or_insert_with(|| FreeVarInfo {
+                            ty: &expr.ty,
+                            is_assigned: None,
+                        });
                     }
                 }
                 ExprData::Call { func, arguments } => {
@@ -349,7 +359,12 @@ impl Expr {
                                         free_vars_inner(&mut fvs, target)
                                     }
                                     SetTargetData::SetVar { name } => {
-                                        fvs.insert(*name, &set_target.ty);
+                                        fvs.entry(*name)
+                                            .and_modify(|fvi| fvi.is_assigned = Some(set_target.at))
+                                            .or_insert(FreeVarInfo {
+                                                ty: &set_target.ty,
+                                                is_assigned: Some(set_target.at),
+                                            });
                                     }
                                 }
                                 free_vars_inner(&mut fvs, expr)
@@ -381,7 +396,13 @@ impl Expr {
                 }
                 ExprData::Lambda { captures, .. } => {
                     for (capture, ty) in captures {
-                        current.insert(*capture, ty);
+                        current.insert(
+                            *capture,
+                            FreeVarInfo {
+                                ty: &ty,
+                                is_assigned: None,
+                            },
+                        );
                     }
                 }
                 ExprData::Return { expr } => free_vars_inner(current, expr),

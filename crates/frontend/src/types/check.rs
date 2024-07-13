@@ -1130,12 +1130,14 @@ impl Typechecker {
                 if let Some(body) = lambda.body() {
                     let body_ir = self.check_expr(errors, &body, &ty_func.result);
                     if let Some(body_ir) = body_ir {
-                        for (n, ty) in body_ir
-                            .free_vars()
-                            .into_iter()
-                            .filter(|(n, _)| !params.contains(n))
-                        {
-                            builder.captures(Some((n, ty.clone())));
+                        for (n, fvi) in body_ir.free_vars() {
+                            if !params.contains(&n) {
+                                if let Some(assignment) = fvi.is_assigned {
+                                    errors.report(&assignment, CantReassignCapturedVariable(n));
+                                } else {
+                                    builder.captures(Some((n, fvi.ty.clone())));
+                                }
+                            }
                         }
                         builder.body(Some(body_ir));
                     }

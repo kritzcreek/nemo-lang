@@ -1,0 +1,12 @@
+---
+source: crates/frontend/tests/lib.rs
+expression: output
+input_file: crates/frontend/tests/type_errors/cant_reassign_captured_variable.nemo
+---
+[25] Error: Can't reassign the captured variable 'local'. Maybe you want to box this variable in a struct?
+   ╭─[source:2:1]
+   │
+ 4 │         set local = 20;
+   │             ───┬──  
+   │                ╰──── Can't reassign the captured variable 'local'. Maybe you want to box this variable in a struct?
+───╯
