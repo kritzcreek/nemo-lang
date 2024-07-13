@@ -136,6 +136,7 @@ pub enum TyErrorData {
         name: Name,
         ty: Ty,
     },
+    CantReassignCapturedVariable(Name),
     ArgCountMismatch(usize, usize),
     TyArgCountMismatch(usize, usize),
     FieldTypeMismatch {
@@ -191,6 +192,7 @@ fn code_for_error(err_data: &TyErrorData) -> i32 {
         TyErrorData::TyArgCountMismatch(_, _) => 22,
         TyErrorData::TypeParamInVariantStruct => 23,
         TyErrorData::CantReturnFromGlobal => 24,
+        TyErrorData::CantReassignCapturedVariable(_) => 25,
     }
 }
 
@@ -287,6 +289,9 @@ fn error_label(err_data: &TyErrorData, name_map: &NameMap) -> String {
         ),
         TyErrorData::TypeParamInVariantStruct => {
             "Can't declare type parameters for structs in a variant.".to_string()
+        }
+        TyErrorData::CantReassignCapturedVariable(n) => {
+            format!("Can't reassign the captured variable '{}'. Maybe you want to box this variable in a struct?", name_map.get(n).unwrap().it)
         }
     }
 }
