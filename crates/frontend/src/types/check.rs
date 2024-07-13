@@ -13,6 +13,7 @@ use std::collections::{HashMap, HashSet};
 use std::mem;
 use std::rc::Rc;
 use text_size::TextRange;
+use tracing::instrument;
 
 #[derive(Debug, Clone)]
 struct StructDef {
@@ -295,6 +296,7 @@ impl Typechecker {
     }
 
     pub fn infer_program(&mut self, root: &Root) -> (Option<ir::Program>, Vec<TyError>) {
+        tracing::span!(tracing::Level::INFO, "Typechecking");
         let mut errors: TyErrors = TyErrors::new();
         let ir = self.infer_program_inner(&mut errors, root);
         (ir, errors.errors)
@@ -829,9 +831,16 @@ impl Typechecker {
         }
     }
 
+    #[instrument(name="infer", skip_all, fields(expr=show_text_range(expr.syntax().text_range())))]
     fn infer_expr(&mut self, errors: &mut TyErrors, expr: &Expr) -> (Ty, Option<ir::Expr>) {
-        self.infer_expr_inner(errors, expr)
-            .unwrap_or((Ty::Error, None))
+        let (ty, ir) = self
+            .infer_expr_inner(errors, expr)
+            .unwrap_or((Ty::Error, None));
+        tracing::info!(
+            "Inferred type: {}",
+            ty.display(&self.name_supply.name_map())
+        );
+        return (ty, ir);
     }
 
     fn infer_expr_inner(
@@ -1263,6 +1272,13 @@ impl Typechecker {
         expr: &Expr,
         expected: &Ty,
     ) -> Option<ir::Expr> {
+        let span = tracing::span!(
+            tracing::Level::INFO,
+            "check",
+            expr = show_text_range(expr.syntax().text_range()),
+            expected = expected.display(self.name_supply.name_map()).to_string(),
+        );
+        let guard = span.enter();
         let ir = match (expr, expected) {
             (Expr::EArray(expr), Ty::Array(elem_ty)) => {
                 let mut builder = ir::ArrayBuilder::default();
@@ -1326,6 +1342,7 @@ impl Typechecker {
                     .1
             }
             _ => {
+                drop(guard);
                 let (ty, ir) = self.infer_expr(errors, expr);
                 if *expected != Ty::Error
                     && !matches!(ty, Ty::Error | Ty::Diverge)
@@ -1342,6 +1359,7 @@ impl Typechecker {
                 return ir;
             }
         };
+        tracing::info!("✔︎");
         ir.map(|it| ir::Expr {
             it: Box::new(it),
             at: expr.syntax().text_range(),
@@ -1669,4 +1687,8 @@ fn unit_lit(range: TextRange) -> Option<ir::Expr> {
             },
         }),
     })
+}
+
+fn show_text_range(range: TextRange) -> String {
+    format!("{:?}..{:?}", range.start(), range.end())
 }
