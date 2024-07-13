@@ -8,9 +8,9 @@ pub mod types;
 
 use parser::parse_prog;
 
+use crate::ir::format::format_ir;
 pub use error::CheckError;
 pub use types::CheckResult;
-use crate::ir::format::format_ir;
 
 /// Runs the full frontend on `source` and returns the generated IR and other structures.
 /// If there are any errors, the generated IR should _not_ be used. It's returned here for
@@ -32,7 +32,6 @@ pub fn run_frontend(source: &str) -> CheckResult<CheckError> {
     if let Some(ir) = &check_result.ir {
         println!("{}", format_ir(&check_result.names, ir));
     }
-
 
     CheckResult {
         errors,
