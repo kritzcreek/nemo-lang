@@ -877,102 +877,7 @@ impl Typechecker {
                     }
                 }
             }
-            Expr::EStruct(struct_expr) => {
-                let (struct_def, struct_name_tkn) = if let Some(ty) = struct_expr
-                    .qualifier()
-                    .map(|q| q.upper_ident_token().unwrap())
-                {
-                    let alt = struct_expr.upper_ident_token()?;
-                    let struct_def = self.context.lookup_variant(ty.text()).and_then(|def| {
-                        self.record_ref(&ty, def.name);
-                        def.lookup_alternative(alt.text())
-                            .map(|alt_name| self.context.lookup_struct_name(alt_name))
-                    });
-                    (struct_def, alt)
-                } else {
-                    let tkn = struct_expr.upper_ident_token()?;
-                    (self.context.lookup_struct(tkn.text()), tkn)
-                };
-                match struct_def {
-                    None => {
-                        errors.report(
-                            &struct_name_tkn,
-                            UnknownType(struct_name_tkn.text().to_string()),
-                        );
-                        return None;
-                    }
-                    Some(def) => {
-                        let name = def.name;
-                        self.record_ref(&struct_name_tkn, name);
-                        let mut builder = ir::StructBuilder::default();
-                        builder.name(Some(name));
-
-                        let subst = if let Some(ty_arg_list) = struct_expr.e_ty_arg_list() {
-                            let ty_arg_names: Vec<Name> =
-                                def.ty_params.iter().map(|(_, name)| *name).collect();
-                            let tys: Vec<Ty> = ty_arg_list
-                                .types()
-                                .map(|t| self.check_ty(errors, &t))
-                                .collect();
-                            if ty_arg_names.len() != tys.len() {
-                                errors.report(
-                                    &ty_arg_list,
-                                    TyArgCountMismatch(ty_arg_names.len(), tys.len()),
-                                )
-                            }
-                            Substitution::new(&ty_arg_names, &tys)
-                        } else {
-                            Substitution::default()
-                        };
-
-                        let mut seen = vec![];
-                        for field in struct_expr.e_struct_fields() {
-                            let Some(field_tkn) = field.ident_token() else {
-                                continue;
-                            };
-                            let Some((field_name, ty)) =
-                                self.context.get_fields(name).get(field_tkn.text()).cloned()
-                            else {
-                                errors.report(
-                                    &field_tkn,
-                                    UnknownField {
-                                        struct_name: name,
-                                        field_name: field_tkn.text().to_string(),
-                                    },
-                                );
-                                continue;
-                            };
-                            self.record_ref(&field_tkn, field_name);
-                            seen.push(field_name);
-                            if let Some(field_expr) = field.expr() {
-                                builder.fields(
-                                    self.check_expr(errors, &field_expr, &subst.apply(ty.clone()))
-                                        .map(|e| (field_name, e)),
-                                );
-                            }
-                        }
-                        // TODO report all missing fields at once
-                        for field_name in self.context.field_defs.get(&name).unwrap().names() {
-                            if !seen.contains(&field_name) {
-                                errors.report(
-                                    &struct_name_tkn,
-                                    MissingField {
-                                        struct_name: name,
-                                        field_name,
-                                    },
-                                );
-                            }
-                        }
-                        (
-                            Ty::Cons {
-                                name: def.variant.unwrap_or(name),
-                                ty_args: subst,
-                            },
-                            builder.build(),
-                        )
-                    }
-                }
-            }
+            Expr::EStruct(struct_expr) => self.check_struct(errors, struct_expr, None)?,
             Expr::ECall(call_expr) => {
                 let func_expr = call_expr.expr()?;
                 let ty_arg_list: Vec<Ty> = call_expr
@@ -1184,6 +1089,124 @@ impl Typechecker {
         Some((ty, ir_expr))
     }
 
+    fn check_struct(
+        &mut self,
+        errors: &mut TyErrors,
+        struct_expr: &EStruct,
+        expected: Option<&Ty>,
+    ) -> Option<(Ty, Option<ir::ExprData>)> {
+        let (struct_def, struct_name_tkn) = if let Some(ty) = struct_expr
+            .qualifier()
+            .map(|q| q.upper_ident_token().unwrap())
+        {
+            let alt = struct_expr.upper_ident_token()?;
+            let struct_def = self.context.lookup_variant(ty.text()).and_then(|def| {
+                self.record_ref(&ty, def.name);
+                def.lookup_alternative(alt.text())
+                    .map(|alt_name| self.context.lookup_struct_name(alt_name))
+            });
+            (struct_def, alt)
+        } else {
+            let tkn = struct_expr.upper_ident_token()?;
+            (self.context.lookup_struct(tkn.text()), tkn)
+        };
+        let def = match struct_def {
+            None => {
+                errors.report(
+                    &struct_name_tkn,
+                    UnknownType(struct_name_tkn.text().to_string()),
+                );
+                return None;
+            }
+            Some(def) => def,
+        };
+        self.record_ref(&struct_name_tkn, def.name);
+
+        let mut builder = ir::StructBuilder::default();
+        builder.name(Some(def.name));
+
+        let subst: Option<Substitution>;
+
+        let ty_arg_list: Option<Vec<Type>> =
+            struct_expr.e_ty_arg_list().map(|t| t.types().collect());
+        if def.ty_params.len() != 0 && ty_arg_list.is_none() {
+            // Infer instantiation
+            if let Some(inferred_subst) =
+                expected.and_then(|expected| infer_struct_instantiation(&def, &expected).cloned())
+            {
+                subst = Some(inferred_subst)
+            } else {
+                errors.report(struct_expr, TyArgCountMismatch(def.ty_params.len(), 0));
+                return None;
+            }
+        } else {
+            let ty_arg_list = ty_arg_list.unwrap_or(vec![]);
+            if def.ty_params.len() != ty_arg_list.len() {
+                errors.report(
+                    struct_expr,
+                    TyArgCountMismatch(def.ty_params.len(), ty_arg_list.len()),
+                );
+                return None;
+            }
+            let ty_arg_names: Vec<Name> = def.ty_params.iter().map(|(_, name)| *name).collect();
+            let tys: Vec<Ty> = ty_arg_list
+                .into_iter()
+                .map(|t| self.check_ty(errors, &t))
+                .collect();
+            subst = Some(Substitution::new(&ty_arg_names, &tys));
+        }
+        let subst = subst.unwrap_or_default();
+
+        let mut seen = vec![];
+        for field in struct_expr.e_struct_fields() {
+            let Some(field_tkn) = field.ident_token() else {
+                continue;
+            };
+            let Some((field_name, ty)) = self
+                .context
+                .get_fields(def.name)
+                .get(field_tkn.text())
+                .cloned()
+            else {
+                errors.report(
+                    &field_tkn,
+                    UnknownField {
+                        struct_name: def.name,
+                        field_name: field_tkn.text().to_string(),
+                    },
+                );
+                continue;
+            };
+            self.record_ref(&field_tkn, field_name);
+            seen.push(field_name);
+            if let Some(field_expr) = field.expr() {
+                builder.fields(
+                    self.check_expr(errors, &field_expr, &subst.apply(ty.clone()))
+                        .map(|e| (field_name, e)),
+                );
+            }
+        }
+        // TODO report all missing fields at once
+        for field_name in self.context.field_defs.get(&def.name).unwrap().names() {
+            if !seen.contains(&field_name) {
+                errors.report(
+                    &struct_name_tkn,
+                    MissingField {
+                        struct_name: def.name,
+                        field_name,
+                    },
+                );
+            }
+        }
+        Some((
+            Ty::Cons {
+                name: def.variant.unwrap_or(def.name),
+                ty_args: subst,
+            },
+            builder.build(),
+        ))
+    }
+
     fn check_match(
         &mut self,
         errors: &mut TyErrors,
@@ -1283,6 +1306,10 @@ impl Typechecker {
                     builder.index(self.check_expr(errors, &index, &Ty::I32));
                 }
                 builder.build()
+            }
+            (Expr::EStruct(expr), ty) => {
+                let (_, ir) = self.check_struct(errors, expr, Some(ty))?;
+                ir
             }
             (Expr::EIf(expr), ty) => {
                 let mut builder = ir::IfBuilder::default();
@@ -1669,4 +1696,17 @@ fn unit_lit(range: TextRange) -> Option<ir::Expr> {
             },
         }),
     })
+}
+
+fn infer_struct_instantiation<'a, 'b>(
+    def: &StructDef,
+    expected: &'a Ty,
+) -> Option<&'a Substitution> {
+    // Infer instantiation
+    if let Ty::Cons { name, ty_args } = expected {
+        if *name == def.name || def.variant.is_some_and(|v| v == *name) {
+            return Some(ty_args);
+        }
+    }
+    None
 }
