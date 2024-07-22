@@ -1,4 +1,4 @@
-use super::error::{TyError, TyErrorData::*, TyErrors};
+use super::error::{HasRange, TyError, TyErrorData::*, TyErrors};
 use super::names::NameSupply;
 use crate::builtins::lookup_builtin;
 use crate::ir::{
@@ -13,6 +13,7 @@ use std::collections::{HashMap, HashSet};
 use std::mem;
 use std::rc::Rc;
 use text_size::TextRange;
+use tracing::{debug, debug_span, instrument};
 
 #[derive(Debug, Clone)]
 struct StructDef {
@@ -295,6 +296,7 @@ impl Typechecker {
     }
 
     pub fn infer_program(&mut self, root: &Root) -> (Option<ir::Program>, Vec<TyError>) {
+        tracing::span!(tracing::Level::INFO, "Typechecking");
         let mut errors: TyErrors = TyErrors::new();
         let ir = self.infer_program_inner(&mut errors, root);
         (ir, errors.errors)
@@ -829,9 +831,17 @@ impl Typechecker {
         }
     }
 
+    #[instrument(level = "debug", skip_all, fields(expr = trace_expr_range(expr)))]
     fn infer_expr(&mut self, errors: &mut TyErrors, expr: &Expr) -> (Ty, Option<ir::Expr>) {
-        self.infer_expr_inner(errors, expr)
-            .unwrap_or((Ty::Error, None))
+        let (ty, ir) = self
+            .infer_expr_inner(errors, expr)
+            .unwrap_or((Ty::Error, None));
+        debug!(
+            name: "inferred expr type",
+            ty = ty.display(self.name_supply.name_map()).to_string(),
+            ir = ir.as_ref().map(|ir| ir.display(&self.name_supply.inner()).to_string()),
+        );
+        return (ty, ir);
     }
 
     fn infer_expr_inner(
@@ -1263,6 +1273,12 @@ impl Typechecker {
         expr: &Expr,
         expected: &Ty,
     ) -> Option<ir::Expr> {
+        let span = debug_span!(
+            "check_expr",
+            expr = trace_expr_range(expr),
+            expected = expected.display(self.name_supply.name_map()).to_string()
+        )
+        .entered();
         let ir = match (expr, expected) {
             (Expr::EArray(expr), Ty::Array(elem_ty)) => {
                 let mut builder = ir::ArrayBuilder::default();
@@ -1326,6 +1342,9 @@ impl Typechecker {
                     .1
             }
             _ => {
+                // Dropping the tracing span here, so we only wrap the following events
+                // in infer_expr
+                drop(span);
                 let (ty, ir) = self.infer_expr(errors, expr);
                 if *expected != Ty::Error
                     && !matches!(ty, Ty::Error | Ty::Diverge)
@@ -1342,11 +1361,13 @@ impl Typechecker {
                 return ir;
             }
         };
-        ir.map(|it| ir::Expr {
+        let ir = ir.map(|it| ir::Expr {
             it: Box::new(it),
             at: expr.syntax().text_range(),
             ty: expected.clone(),
-        })
+        });
+        debug!(name: "checked expr", ir = ir.as_ref().map(|ir| ir.display(self.name_supply.inner()).to_string()));
+        ir
     }
 
     fn check_struct_idx(
@@ -1669,4 +1690,11 @@ fn unit_lit(range: TextRange) -> Option<ir::Expr> {
             },
         }),
     })
+}
+
+fn trace_expr_range(expr: &Expr) -> String {
+    let text_range = expr.range();
+    let start: u32 = text_range.start().into();
+    let end: u32 = text_range.end().into();
+    format!("{}-{}", start, end)
 }

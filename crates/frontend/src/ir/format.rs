@@ -4,8 +4,24 @@ use crate::ir::{
 };
 use lexpr::Value;
 
-pub fn format_ir(names: &NameSupply, ir: &Program) -> String {
+pub fn prog(names: &NameSupply, ir: &Program) -> String {
     format!("{}", Formatter { names }.program(ir))
+}
+
+pub fn expr(names: &NameSupply, expr: &Expr) -> String {
+    format!("{}", Formatter { names }.expr(expr))
+}
+
+pub fn decl(names: &NameSupply, decl: &Declaration) -> String {
+    format!("{}", Formatter { names }.decl(decl))
+}
+
+pub fn set_target(names: &NameSupply, set_target: &SetTarget) -> String {
+    format!("{}", Formatter { names }.set_target(set_target))
+}
+
+pub fn ty(names: &NameSupply, ty: &Ty) -> String {
+    format!("{}", Formatter { names }.ty(ty))
 }
 
 struct Formatter<'a> {
@@ -156,6 +172,7 @@ impl Formatter<'_> {
             ExprData::Return { expr } => Value::list(vec!["return".into(), self.expr(expr)]),
         }
     }
+
     fn program(&self, program: &Program) -> Value {
         let mut elems = vec![Value::symbol("program")];
         elems.extend(program.funcs.iter().map(|f| self.expr(&f.body)));

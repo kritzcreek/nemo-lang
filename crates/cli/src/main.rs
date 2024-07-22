@@ -2,6 +2,7 @@ use backend::compile_program;
 use clap::{Parser, Subcommand};
 use language_server::start_language_server;
 use std::{error::Error, fs, path::PathBuf};
+use tracing_subscriber;
 
 /// The nemo language
 #[derive(Debug, Parser)]
@@ -35,10 +36,12 @@ enum Commands {
 }
 
 fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
+    tracing_subscriber::fmt::init();
     let args = Cli::parse();
     match args.command {
         Commands::Compile { input_file, output } => {
             let source = fs::read_to_string(&input_file)?;
+            let _span = tracing::debug_span!("compile", file = %input_file.display()).entered();
             let wasm = compile_program(&source)?;
             let output_file = output.unwrap_or_else(|| input_file.with_extension("wasm"));
             fs::write(output_file, wasm)?;

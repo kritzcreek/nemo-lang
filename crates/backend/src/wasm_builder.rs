@@ -732,6 +732,7 @@ impl<'a> Builder<'a> {
     }
 }
 
+#[derive(Debug)]
 pub struct BodyBuilder {
     param_count: usize,
     locals: Vec<ValType>,

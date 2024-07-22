@@ -17,6 +17,10 @@ impl NameSupply {
         Self::default()
     }
 
+    pub fn inner(&self) -> &ir::NameSupply {
+        &self.0
+    }
+
     pub fn take(self) -> ir::NameSupply {
         self.0
     }

@@ -16,6 +16,10 @@ text-size = "1.1.1"
 line-index = "0.1.1"
 lexpr = "0.2.7"
 derive_ir = { path = "../derive_ir" }
+tracing = { version = "0.1.40", features = [
+    "max_level_debug",
+    "release_max_level_warn",
+] }
 
 [dev-dependencies]
 insta = { version = "1.34.0", features = ["glob"] }
