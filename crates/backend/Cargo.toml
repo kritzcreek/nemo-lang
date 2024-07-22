@@ -8,3 +8,7 @@ license = "MIT"
 text-size = "1.1.1"
 wasm-encoder = "0.209"
 frontend = { path = "../frontend" }
+tracing = { version = "0.1.40", features = [
+    "max_level_debug",
+    "release_max_level_warn",
+] }

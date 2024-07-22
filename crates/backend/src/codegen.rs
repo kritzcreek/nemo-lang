@@ -568,6 +568,7 @@ impl<'a> Codegen<'a> {
         }
     }
 
+    #[tracing::instrument(level = "debug", skip(self), ret)]
     fn instantiate_polyfunc(&mut self, name: Name, ty_params: &Substitution) -> Name {
         let new_name = {
             let poly_func = self.poly_funcs.get_mut(&name).expect("Unknown polyfunc");

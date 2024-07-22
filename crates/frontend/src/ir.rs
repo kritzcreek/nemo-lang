@@ -412,6 +412,21 @@ impl Expr {
         free_vars_inner(&mut results, self);
         results
     }
+
+    pub fn display<'a>(&'a self, names: &'a NameSupply) -> ExprDisplay<'a> {
+        ExprDisplay { names, expr: self }
+    }
+}
+
+pub struct ExprDisplay<'a> {
+    names: &'a NameSupply,
+    expr: &'a Expr,
+}
+
+impl fmt::Display for ExprDisplay<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", format::expr(self.names, &self.expr))
+    }
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -485,6 +500,17 @@ pub struct Declaration {
     pub ty: Ty,
 }
 
+pub struct DeclarationDisplay<'a> {
+    names: &'a NameSupply,
+    inner: &'a Declaration,
+}
+
+impl fmt::Display for DeclarationDisplay<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", format::decl(self.names, self.inner))
+    }
+}
+
 #[derive(Debug, PartialEq, Clone, IrBuilder)]
 pub enum DeclarationData {
     Let { binder: Name, expr: Expr },
@@ -498,6 +524,17 @@ pub struct SetTarget {
     pub it: SetTargetData,
     pub at: TextRange,
     pub ty: Ty,
+}
+
+pub struct SetTargetDisplay<'a> {
+    names: &'a NameSupply,
+    inner: &'a SetTarget,
+}
+
+impl fmt::Display for SetTargetDisplay<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", format::set_target(self.names, self.inner))
+    }
 }
 
 #[derive(Debug, PartialEq, Clone, IrBuilder)]

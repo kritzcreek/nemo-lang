@@ -18,24 +18,24 @@ impl TyErrors {
 
     pub fn report<N: HasRange>(&mut self, node: &N, error: TyErrorData) {
         self.errors.push(TyError {
-            at: node.to_range(),
+            at: node.range(),
             it: error,
         })
     }
 }
 
 pub trait HasRange {
-    fn to_range(&self) -> TextRange;
+    fn range(&self) -> TextRange;
 }
 
 impl<N: AstNode> HasRange for N {
-    fn to_range(&self) -> TextRange {
-        self.syntax().to_range()
+    fn range(&self) -> TextRange {
+        self.syntax().range()
     }
 }
 
 impl HasRange for SyntaxNode {
-    fn to_range(&self) -> TextRange {
+    fn range(&self) -> TextRange {
         let at = self.text_range();
         let mut start = at.start();
         let mut end = at.end();
@@ -58,13 +58,13 @@ impl HasRange for SyntaxNode {
 }
 
 impl HasRange for SyntaxToken {
-    fn to_range(&self) -> TextRange {
+    fn range(&self) -> TextRange {
         self.text_range()
     }
 }
 
 impl HasRange for TextRange {
-    fn to_range(&self) -> TextRange {
+    fn range(&self) -> TextRange {
         *self
     }
 }
