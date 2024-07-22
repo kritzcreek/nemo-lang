@@ -775,60 +775,6 @@ impl Typechecker {
         )
     }
 
-    fn infer_callee(
-        &mut self,
-        errors: &mut TyErrors,
-        expr: &Expr,
-        ty_args: &[Ty],
-    ) -> (Ty, Option<ir::Callee>) {
-        if let Expr::EVar(v) = expr {
-            let var_tkn = v.ident_token().unwrap();
-            if self.context.lookup_var(var_tkn.text()).is_some() {
-                if !ty_args.is_empty() {
-                    errors.report(&var_tkn, CantInstantiateFunctionRef);
-                    return (Ty::Error, None);
-                }
-                let (ty, ir) = self.infer_expr(errors, expr);
-                (ty, ir.map(ir::Callee::FuncRef))
-            } else if let Some(def) = self.context.lookup_func(var_tkn.text()) {
-                self.record_ref(&var_tkn, def.name);
-                let params: Vec<Name> = def.ty_params.iter().map(|(_, name)| *name).collect();
-                if params.len() != ty_args.len() {
-                    errors.report(expr, TyArgCountMismatch(params.len(), ty_args.len()));
-                    return (Ty::Error, None);
-                }
-                let subst = Substitution::new(&params, ty_args);
-                let ty = subst.apply_func(def.ty.clone());
-                (
-                    Ty::Func(Box::new(ty)),
-                    Some(ir::Callee::Func {
-                        name: def.name,
-                        type_args: subst,
-                    }),
-                )
-            } else if let Some(builtin) = lookup_builtin(var_tkn.text()) {
-                if builtin.ty_params.len() != ty_args.len() {
-                    errors.report(
-                        expr,
-                        TyArgCountMismatch(builtin.ty_params.len(), ty_args.len()),
-                    );
-                    return (Ty::Error, None);
-                }
-                let subst = Substitution::new(&builtin.ty_params, ty_args);
-                (
-                    Ty::Func(Box::new(subst.apply_func(builtin.ty.clone()))),
-                    Some(ir::Callee::Builtin(builtin.name)),
-                )
-            } else {
-                errors.report(expr, UnknownVar(var_tkn.text().to_string()));
-                return (Ty::Error, None);
-            }
-        } else {
-            let (ty, ir) = self.infer_expr(errors, expr);
-            (ty, ir.map(ir::Callee::FuncRef))
-        }
-    }
-
     fn infer_expr(&mut self, errors: &mut TyErrors, expr: &Expr) -> (Ty, Option<ir::Expr>) {
         self.infer_expr_inner(errors, expr)
             .unwrap_or((Ty::Error, None))
@@ -878,39 +824,7 @@ impl Typechecker {
                 }
             }
             Expr::EStruct(struct_expr) => self.check_struct(errors, struct_expr, None)?,
-            Expr::ECall(call_expr) => {
-                let func_expr = call_expr.expr()?;
-                let ty_arg_list: Vec<Ty> = call_expr
-                    .e_ty_arg_list()
-                    .map(|tas| tas.types().map(|t| self.check_ty(errors, &t)).collect())
-                    .unwrap_or_default();
-                match self.infer_callee(errors, &func_expr, &ty_arg_list) {
-                    (Ty::Func(func_ty), callee) => {
-                        let mut builder = ir::CallBuilder::default();
-                        builder.func(callee);
-                        if let Some(arg_list) = call_expr.e_arg_list() {
-                            let arg_exprs: Vec<Expr> = arg_list.exprs().collect();
-                            let arg_tys = func_ty.arguments;
-                            if arg_exprs.len() != arg_tys.len() {
-                                errors.report(
-                                    &arg_list,
-                                    ArgCountMismatch(arg_tys.len(), arg_exprs.len()),
-                                );
-                            }
-                            for (param, expected_ty) in arg_exprs.iter().zip(arg_tys.iter()) {
-                                builder.arguments(self.check_expr(errors, param, expected_ty));
-                            }
-                        }
-                        (func_ty.result, builder.build())
-                    }
-                    (ty, _) => {
-                        if ty != Ty::Error {
-                            errors.report(&func_expr, NotAFunction(ty));
-                        }
-                        return None;
-                    }
-                }
-            }
+            Expr::ECall(call_expr) => self.check_call(errors, call_expr, None)?,
             Expr::EParen(e) => {
                 let (ty, ir) = self.infer_expr(errors, &e.expr()?);
                 (ty, ir.map(|x| *x.it))
@@ -1087,6 +1001,89 @@ impl Typechecker {
         });
 
         Some((ty, ir_expr))
+    }
+
+    fn check_call(
+        &mut self,
+        errors: &mut TyErrors,
+        call_expr: &ECall,
+        expected: Option<&Ty>,
+    ) -> Option<(Ty, Option<ir::ExprData>)> {
+        let func_expr = call_expr.expr()?;
+        let ty_args: Vec<Ty> = call_expr
+            .e_ty_arg_list()
+            .map(|tas| tas.types().map(|t| self.check_ty(errors, &t)).collect())
+            .unwrap_or_default();
+        let callee = if let Expr::EVar(v) = &func_expr {
+            let var_tkn = v.ident_token().unwrap();
+            if self.context.lookup_var(var_tkn.text()).is_some() {
+                if !ty_args.is_empty() {
+                    errors.report(&var_tkn, CantInstantiateFunctionRef);
+                    return None;
+                }
+                let (ty, ir) = self.infer_expr(errors, &func_expr);
+                (ty, ir.map(ir::Callee::FuncRef))
+            } else if let Some(def) = self.context.lookup_func(var_tkn.text()) {
+                self.record_ref(&var_tkn, def.name);
+                let params: Vec<Name> = def.ty_params.iter().map(|(_, name)| *name).collect();
+                if params.len() != ty_args.len() {
+                    errors.report(&func_expr, TyArgCountMismatch(params.len(), ty_args.len()));
+                    return None;
+                }
+                let subst = Substitution::new(&params, &ty_args);
+                let ty = subst.apply_func(def.ty.clone());
+                (
+                    Ty::Func(Box::new(ty)),
+                    Some(ir::Callee::Func {
+                        name: def.name,
+                        type_args: subst,
+                    }),
+                )
+            } else if let Some(builtin) = lookup_builtin(var_tkn.text()) {
+                if builtin.ty_params.len() != ty_args.len() {
+                    errors.report(
+                        &func_expr,
+                        TyArgCountMismatch(builtin.ty_params.len(), ty_args.len()),
+                    );
+                    return None;
+                }
+                let subst = Substitution::new(&builtin.ty_params, &ty_args);
+                (
+                    Ty::Func(Box::new(subst.apply_func(builtin.ty.clone()))),
+                    Some(ir::Callee::Builtin(builtin.name)),
+                )
+            } else {
+                errors.report(&func_expr, UnknownVar(var_tkn.text().to_string()));
+                return None;
+            }
+        } else {
+            let (ty, ir) = self.infer_expr(errors, &func_expr);
+            (ty, ir.map(ir::Callee::FuncRef))
+        };
+
+        match callee {
+            (Ty::Func(func_ty), callee) => {
+                let mut builder = ir::CallBuilder::default();
+                builder.func(callee);
+                if let Some(arg_list) = call_expr.e_arg_list() {
+                    let arg_exprs: Vec<Expr> = arg_list.exprs().collect();
+                    let arg_tys = func_ty.arguments;
+                    if arg_exprs.len() != arg_tys.len() {
+                        errors.report(&arg_list, ArgCountMismatch(arg_tys.len(), arg_exprs.len()));
+                    }
+                    for (param, expected_ty) in arg_exprs.iter().zip(arg_tys.iter()) {
+                        builder.arguments(self.check_expr(errors, param, expected_ty));
+                    }
+                }
+                Some((func_ty.result, builder.build()))
+            }
+            (ty, _) => {
+                if ty != Ty::Error {
+                    errors.report(&func_expr, NotAFunction(ty));
+                }
+                return None;
+            }
+        }
     }
 
     fn check_struct(
