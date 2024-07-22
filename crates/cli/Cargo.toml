@@ -12,5 +12,8 @@ clap = { version = "4.4.12", features = ["derive"] }
 frontend = { path = "../frontend" }
 backend = { path = "../backend" }
 language-server = { path = "../language-server" }
-tracing = "0.1.40"
+tracing = { version = "0.1.40", features = [
+    "max_level_debug",
+    "release_max_level_warn",
+] }
 tracing-subscriber = "0.3.18"

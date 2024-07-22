@@ -1,4 +1,4 @@
-use super::error::{TyError, TyErrorData::*, TyErrors};
+use super::error::{HasRange, TyError, TyErrorData::*, TyErrors};
 use super::names::NameSupply;
 use crate::builtins::lookup_builtin;
 use crate::ir::{
@@ -13,7 +13,7 @@ use std::collections::{HashMap, HashSet};
 use std::mem;
 use std::rc::Rc;
 use text_size::TextRange;
-use tracing::instrument;
+use tracing::{debug, debug_span, instrument};
 
 #[derive(Debug, Clone)]
 struct StructDef {
@@ -831,14 +831,15 @@ impl Typechecker {
         }
     }
 
-    #[instrument(name="infer", skip_all, fields(expr=show_text_range(expr.syntax().text_range())))]
+    #[instrument(level = "debug", skip_all, fields(expr = trace_expr_range(expr)))]
     fn infer_expr(&mut self, errors: &mut TyErrors, expr: &Expr) -> (Ty, Option<ir::Expr>) {
         let (ty, ir) = self
             .infer_expr_inner(errors, expr)
             .unwrap_or((Ty::Error, None));
-        tracing::info!(
-            "Inferred type: {}",
-            ty.display(&self.name_supply.name_map())
+        debug!(
+            name: "inferred expr type",
+            ty = ty.display(self.name_supply.name_map()).to_string(),
+            ir = ir.as_ref().map(|ir| ir.display(&self.name_supply.inner()).to_string()),
         );
         return (ty, ir);
     }
@@ -1272,13 +1273,12 @@ impl Typechecker {
         expr: &Expr,
         expected: &Ty,
     ) -> Option<ir::Expr> {
-        let span = tracing::span!(
-            tracing::Level::INFO,
-            "check",
-            expr = show_text_range(expr.syntax().text_range()),
-            expected = expected.display(self.name_supply.name_map()).to_string(),
-        );
-        let guard = span.enter();
+        let span = debug_span!(
+            "check_expr",
+            expr = trace_expr_range(expr),
+            expected = expected.display(self.name_supply.name_map()).to_string()
+        )
+        .entered();
         let ir = match (expr, expected) {
             (Expr::EArray(expr), Ty::Array(elem_ty)) => {
                 let mut builder = ir::ArrayBuilder::default();
@@ -1342,7 +1342,9 @@ impl Typechecker {
                     .1
             }
             _ => {
-                drop(guard);
+                // Dropping the tracing span here, so we only wrap the following events
+                // in infer_expr
+                drop(span);
                 let (ty, ir) = self.infer_expr(errors, expr);
                 if *expected != Ty::Error
                     && !matches!(ty, Ty::Error | Ty::Diverge)
@@ -1359,12 +1361,13 @@ impl Typechecker {
                 return ir;
             }
         };
-        tracing::info!("✔︎");
-        ir.map(|it| ir::Expr {
+        let ir = ir.map(|it| ir::Expr {
             it: Box::new(it),
             at: expr.syntax().text_range(),
             ty: expected.clone(),
-        })
+        });
+        debug!(name: "checked expr", ir = ir.as_ref().map(|ir| ir.display(self.name_supply.inner()).to_string()));
+        ir
     }
 
     fn check_struct_idx(
@@ -1689,6 +1692,9 @@ fn unit_lit(range: TextRange) -> Option<ir::Expr> {
     })
 }
 
-fn show_text_range(range: TextRange) -> String {
-    format!("{:?}..{:?}", range.start(), range.end())
+fn trace_expr_range(expr: &Expr) -> String {
+    let text_range = expr.range();
+    let start: u32 = text_range.start().into();
+    let end: u32 = text_range.end().into();
+    format!("{}-{}", start, end)
 }
