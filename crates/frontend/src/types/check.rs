@@ -1,4 +1,8 @@
-use super::error::{TyError, TyErrorData::*, TyErrors};
+use super::error::{
+    TyError,
+    TyErrorData::{self, *},
+    TyErrors,
+};
 use super::names::NameSupply;
 use crate::builtins::lookup_builtin;
 use crate::ir::{
@@ -1025,12 +1029,19 @@ impl Typechecker {
                 (ty, ir.map(ir::Callee::FuncRef))
             } else if let Some(def) = self.context.lookup_func(var_tkn.text()) {
                 self.record_ref(&var_tkn, def.name);
-                let params: Vec<Name> = def.ty_params.iter().map(|(_, name)| *name).collect();
-                if params.len() != ty_args.len() {
-                    errors.report(&func_expr, TyArgCountMismatch(params.len(), ty_args.len()));
+                let ty_params: Vec<Name> = def.ty_params.iter().map(|(_, name)| *name).collect();
+                // NOTE(weird-control-flow)
+                if !ty_params.is_empty() && ty_args.is_empty() {
+                    return self.infer_poly_call(errors, def, call_expr, expected);
+                }
+                if ty_params.len() != ty_args.len() {
+                    errors.report(
+                        &func_expr,
+                        TyArgCountMismatch(ty_params.len(), ty_args.len()),
+                    );
                     return None;
                 }
-                let subst = Substitution::new(&params, &ty_args);
+                let subst = Substitution::new(&ty_params, &ty_args);
                 let ty = subst.apply_func(def.ty.clone());
                 (
                     Ty::Func(Box::new(ty)),
@@ -1081,9 +1092,81 @@ impl Typechecker {
                 if ty != Ty::Error {
                     errors.report(&func_expr, NotAFunction(ty));
                 }
+                None
+            }
+        }
+    }
+
+    // Calls to top-level functions get special handling as we attempt to infer
+    // instantiations for their type parameters (if the user omits them at the call-site).
+    fn infer_poly_call(
+        &mut self,
+        errors: &mut TyErrors,
+        def: Rc<FuncDef>,
+        call_expr: &ECall,
+        expected: Option<&Ty>,
+    ) -> Option<(Ty, Option<ir::ExprData>)> {
+        // Need to instantiate type parameters with fresh identifiers,
+        // so recursive calls don't mess with us
+        let fresh_subst = {
+            let mut fresh_subst = Substitution::empty();
+            for (_, n) in def.ty_params.iter() {
+                fresh_subst.insert(*n, Ty::Var(self.name_supply.gen_idx()));
+            }
+            fresh_subst
+        };
+        let func_ty = fresh_subst.apply_func(def.ty.clone());
+
+        let mut subst = Substitution::empty();
+        if let Some(expected) = expected {
+            if let Err(err) = match_ty(&mut subst, &func_ty.result, expected) {
+                errors.report(call_expr, err);
                 return None;
             }
         }
+        let args = call_expr.e_arg_list()?.exprs().collect::<Vec<_>>();
+        if args.len() != func_ty.arguments.len() {
+            errors.report(
+                call_expr,
+                ArgCountMismatch(func_ty.arguments.len(), args.len()),
+            );
+            return None;
+        }
+        let mut builder = ir::CallBuilder::default();
+        for (arg, expected_ty) in args.iter().zip(func_ty.arguments.iter()) {
+            let applied_ty = subst.apply(expected_ty.clone());
+            let ir = if applied_ty.vars().iter().any(|v| matches!(v, Name::Gen(_))) {
+                let (ty, ir) = self.infer_expr(errors, arg);
+                if ty != Ty::Error {
+                    if let Err(err) = match_ty(&mut subst, &applied_ty, &ty) {
+                        errors.report(call_expr, err);
+                    }
+                }
+                ir
+            } else {
+                self.check_expr(errors, arg, &applied_ty)
+            };
+            builder.arguments(ir);
+        }
+        let mut final_subst = Substitution::empty();
+        for (_, n) in def.ty_params.iter() {
+            let solved = subst.apply(fresh_subst.apply(Ty::Var(*n)));
+            if matches!(solved, Ty::Var(Name::Gen(_))) {
+                errors.report(&call_expr.expr().unwrap(), CantInferTypeParam(*n));
+                return None;
+            }
+            final_subst.insert(*n, solved);
+        }
+        builder.func(Some(ir::Callee::Func {
+            name: def.name,
+            type_args: final_subst,
+        }));
+        Some((
+            expected
+                .cloned()
+                .unwrap_or_else(|| subst.apply(func_ty.result)),
+            builder.build(),
+        ))
     }
 
     fn check_struct(
@@ -1126,10 +1209,10 @@ impl Typechecker {
 
         let ty_arg_list: Option<Vec<Type>> =
             struct_expr.e_ty_arg_list().map(|t| t.types().collect());
-        if def.ty_params.len() != 0 && ty_arg_list.is_none() {
+        if !def.ty_params.is_empty() && ty_arg_list.is_none() {
             // Infer instantiation
             if let Some(inferred_subst) =
-                expected.and_then(|expected| infer_struct_instantiation(&def, &expected).cloned())
+                expected.and_then(|expected| infer_struct_instantiation(&def, expected).cloned())
             {
                 subst = Some(inferred_subst)
             } else {
@@ -1137,7 +1220,7 @@ impl Typechecker {
                 return None;
             }
         } else {
-            let ty_arg_list = ty_arg_list.unwrap_or(vec![]);
+            let ty_arg_list = ty_arg_list.unwrap_or_default();
             if def.ty_params.len() != ty_arg_list.len() {
                 errors.report(
                     struct_expr,
@@ -1348,6 +1431,10 @@ impl Typechecker {
             (Expr::EMatch(match_expr), _) => {
                 self.check_match(errors, match_expr, Some(expected.clone()))
                     .1
+            }
+            (Expr::ECall(expr), _) => {
+                let (_, ir) = self.check_call(errors, expr, Some(expected))?;
+                ir
             }
             _ => {
                 let (ty, ir) = self.infer_expr(errors, expr);
@@ -1695,10 +1782,7 @@ fn unit_lit(range: TextRange) -> Option<ir::Expr> {
     })
 }
 
-fn infer_struct_instantiation<'a, 'b>(
-    def: &StructDef,
-    expected: &'a Ty,
-) -> Option<&'a Substitution> {
+fn infer_struct_instantiation<'a>(def: &StructDef, expected: &'a Ty) -> Option<&'a Substitution> {
     // Infer instantiation
     if let Ty::Cons { name, ty_args } = expected {
         if *name == def.name || def.variant.is_some_and(|v| v == *name) {
@@ -1706,4 +1790,60 @@ fn infer_struct_instantiation<'a, 'b>(
         }
     }
     None
+}
+
+// `match_ty` is non-commutative unification. Only variables on the left are allowed to be solved, and we limit
+// the set of variables that may be solved to `Name::Gen(_)`. This is used to implement inference for type
+// parameters to polymorphic functions or struct literals.
+fn match_ty(subst: &mut Substitution, definition: &Ty, inferred: &Ty) -> Result<(), TyErrorData> {
+    match (definition, inferred) {
+        (Ty::Var(n @ Name::Gen(_)), t) => {
+            // We don't solve for `Ty::Error`, because we're still hoping to
+            // solve for a real type.
+            if *t != Ty::Error && subst.insert(*n, t.clone()).is_some() {
+                // This is impossible because we applied the substitution before
+                panic!("Impossible! match_ty solved the same variable twice.")
+            }
+            Ok(())
+        }
+        (Ty::Array(t1), Ty::Array(t2)) => match_ty(subst, t1, t2),
+        (Ty::Func(t1), Ty::Func(t2)) => {
+            for (a1, a2) in t1.arguments.iter().zip(t2.arguments.iter()) {
+                // TODO: do we want the early return here?
+                match_ty(subst, a1, a2)?
+            }
+            match_ty(subst, &t1.result, &t2.result)
+        }
+        (
+            Ty::Cons {
+                name: n1,
+                ty_args: ts1,
+            },
+            Ty::Cons {
+                name: n2,
+                ty_args: ts2,
+            },
+        ) if n1 == n2 => {
+            for (k, v) in &ts1.0 {
+                match_ty(
+                    subst,
+                    v,
+                    ts2.lookup(*k)
+                        // TODO I'm not sure this won't randomly happen
+                        .expect("Two matching Cons types with different subst variables"),
+                )?
+            }
+            Ok(())
+        }
+        (t1, t2) => {
+            if t1 == t2 {
+                Ok(())
+            } else {
+                Err(TyErrorData::TypeMismatch {
+                    expected: t1.clone(),
+                    actual: t2.clone(),
+                })
+            }
+        }
+    }
 }

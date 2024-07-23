@@ -139,6 +139,7 @@ pub enum TyErrorData {
     CantReassignCapturedVariable(Name),
     ArgCountMismatch(usize, usize),
     TyArgCountMismatch(usize, usize),
+    CantInferTypeParam(Name),
     FieldTypeMismatch {
         struct_name: Name,
         field_name: Name,
@@ -193,6 +194,7 @@ fn code_for_error(err_data: &TyErrorData) -> i32 {
         TyErrorData::TypeParamInVariantStruct => 23,
         TyErrorData::CantReturnFromGlobal => 24,
         TyErrorData::CantReassignCapturedVariable(_) => 25,
+        TyErrorData::CantInferTypeParam(_) => 26,
     }
 }
 
@@ -293,6 +295,9 @@ fn error_label(err_data: &TyErrorData, name_map: &NameMap) -> String {
         TyErrorData::CantReassignCapturedVariable(n) => {
             format!("Can't reassign the captured variable '{}'. Maybe you want to box this variable in a struct?", name_map.get(n).unwrap().it)
         }
+        TyErrorData::CantInferTypeParam(n) => {
+            format!("Can't infer type parameter '{}'. Explicitly supply the instantiation", name_map.get(n).unwrap().it)
+        },
     }
 }
 
