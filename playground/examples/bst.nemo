@@ -3,18 +3,18 @@
 fn main() {
   let tree : Bst[i32, f32] = Bst {
     compare = compare_i32,
-    root = leaf#[i32, f32] (10, 3.14),
+    root = leaf(10, 3.14),
   };
 
-  while size#[i32, f32](tree) < 50 {
+  while size(tree) < 50 {
     let key = random_int(0, 100);
     let value = random();
-    set tree = insert#[i32, f32](tree, key, value);
+    set tree = insert(tree, key, value);
   };
 
   let i = 1;
   while i < 100 {
-    match lookup#[i32, f32](tree, i) {
+    match lookup(tree, i) {
       Option::None _ => { log_f32(0.0 - 1.0) },
       Option::Some found => { log_f32(found.value) },
     };
@@ -81,7 +81,7 @@ fn insert_node[k, v](
           Node {
             key = node.key,
             value = node.value,
-            left = leaf#[k, v](key, value),
+            left = leaf(key, value),
             right = node.right,
           }
         },
@@ -90,7 +90,7 @@ fn insert_node[k, v](
             key = node.key,
             value = node.value,
             left = Option::Some {
-              value = insert_node#[k, v](left.value, compare, key, value)
+              value = insert_node(left.value, compare, key, value)
             },
             right = node.right,
           }
@@ -104,7 +104,7 @@ fn insert_node[k, v](
             key = key,
             value = value,
             left = node.left,
-            right = leaf#[k, v](key, value),
+            right = leaf(key, value),
           }
         },
         Option::Some right => {
@@ -113,7 +113,7 @@ fn insert_node[k, v](
             value = node.value,
             left = node.left,
             right = Option::Some {
-              value = insert_node#[k, v](right.value, compare, key, value)
+              value = insert_node(right.value, compare, key, value)
             },
           }
         }
@@ -127,14 +127,14 @@ fn insert[k, v](tree : Bst[k, v], key : k, value : v) -> Bst[k, v] {
     Option::None _ => {
       Bst {
         compare = tree.compare,
-        root = leaf #[k, v](key, value),
+        root = leaf(key, value),
       }
     },
     Option::Some root => {
       Bst {
         compare = tree.compare,
         root = Option::Some {
-          value = insert_node #[k, v] (root.value, tree.compare, key, value),
+          value = insert_node(root.value, tree.compare, key, value),
         },
       }
     }
@@ -184,18 +184,18 @@ fn compare_i32(a : i32, b : i32) -> Ordering {
 fn size[k, v](tree : Bst[k, v]) -> i32 {
   match tree.root {
     Option::None _ => { 0 },
-    Option::Some root => { size_node#[k, v](root.value) },
+    Option::Some root => { size_node(root.value) },
   }
 }
 
 fn size_node[k, v](node : Node[k, v]) -> i32 {
   let left = match node.left {
     Option::None _ => { 0 },
-    Option::Some n => { size_node#[k, v](n.value) },
+    Option::Some n => { size_node(n.value) },
   };
   let right = match node.right {
     Option::None _ => { 0 },
-    Option::Some n => { size_node#[k, v](n.value) },
+    Option::Some n => { size_node(n.value) },
   };
   1 + left + right
 }

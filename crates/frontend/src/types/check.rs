@@ -1120,7 +1120,7 @@ impl Typechecker {
 
         let mut subst = Substitution::empty();
         if let Some(expected) = expected {
-            if let Err(err) = match_ty(&mut subst, &func_ty.result, expected) {
+            if let Err(err) = match_ty(&mut subst, func_ty.result.clone(), expected) {
                 errors.report(call_expr, err);
                 return None;
             }
@@ -1139,7 +1139,7 @@ impl Typechecker {
             let ir = if applied_ty.vars().iter().any(|v| matches!(v, Name::Gen(_))) {
                 let (ty, ir) = self.infer_expr(errors, arg);
                 if ty != Ty::Error {
-                    if let Err(err) = match_ty(&mut subst, &applied_ty, &ty) {
+                    if let Err(err) = match_ty(&mut subst, applied_ty, &ty) {
                         errors.report(arg, err);
                     }
                 }
@@ -1817,24 +1817,26 @@ fn infer_struct_instantiation<'a>(def: &StructDef, expected: &'a Ty) -> Option<&
 // `match_ty` is non-commutative unification. Only variables on the left are allowed to be solved, and we limit
 // the set of variables that may be solved to `Name::Gen(_)`. This is used to implement inference for type
 // parameters to polymorphic functions or struct literals.
-fn match_ty(subst: &mut Substitution, definition: &Ty, inferred: &Ty) -> Result<(), TyErrorData> {
+fn match_ty(subst: &mut Substitution, definition: Ty, inferred: &Ty) -> Result<(), TyErrorData> {
+    // Cow<Ty>?
+    let definition = subst.apply(definition);
     match (definition, inferred) {
         (Ty::Var(n @ Name::Gen(_)), t) => {
             // We don't solve for ERROR or DIVERGE, because we're still hoping to
             // solve for a real type.
-            if !matches!(t, Ty::Error | Ty::Diverge) && subst.insert(*n, t.clone()).is_some() {
+            if !matches!(t, Ty::Error | Ty::Diverge) && subst.insert(n, t.clone()).is_some() {
                 // This is impossible because we applied the substitution before
                 panic!("Impossible! match_ty solved the same variable twice.")
             }
             Ok(())
         }
-        (Ty::Array(t1), Ty::Array(t2)) => match_ty(subst, t1, t2),
+        (Ty::Array(t1), Ty::Array(t2)) => match_ty(subst, *t1, t2),
         (Ty::Func(t1), Ty::Func(t2)) => {
-            for (a1, a2) in t1.arguments.iter().zip(t2.arguments.iter()) {
+            for (a1, a2) in t1.arguments.into_iter().zip(t2.arguments.iter()) {
                 // TODO: do we want the early return here?
                 match_ty(subst, a1, a2)?
             }
-            match_ty(subst, &t1.result, &t2.result)
+            match_ty(subst, t1.result, &t2.result)
         }
         (
             Ty::Cons {
@@ -1845,12 +1847,12 @@ fn match_ty(subst: &mut Substitution, definition: &Ty, inferred: &Ty) -> Result<
                 name: n2,
                 ty_args: ts2,
             },
-        ) if n1 == n2 => {
-            for (k, v) in &ts1.0 {
+        ) if n1 == *n2 => {
+            for (k, v) in ts1.0 {
                 match_ty(
                     subst,
                     v,
-                    ts2.lookup(*k)
+                    ts2.lookup(k)
                         // TODO I'm not sure this won't randomly happen
                         .expect("Two matching Cons types with different subst variables"),
                 )?
@@ -1858,7 +1860,7 @@ fn match_ty(subst: &mut Substitution, definition: &Ty, inferred: &Ty) -> Result<
             Ok(())
         }
         (t1, t2) => {
-            if t1 == t2 {
+            if t1 == *t2 {
                 Ok(())
             } else {
                 Err(TyErrorData::TypeMismatch {
