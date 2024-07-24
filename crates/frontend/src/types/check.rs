@@ -1032,7 +1032,7 @@ impl Typechecker {
                 let ty_params: Vec<Name> = def.ty_params.iter().map(|(_, name)| *name).collect();
                 // NOTE(weird-control-flow)
                 if !ty_params.is_empty() && ty_args.is_empty() {
-                    return self.infer_poly_call(errors, def, call_expr, expected);
+                    return self.infer_poly_call(errors, def, &var_tkn, call_expr, expected);
                 }
                 if ty_params.len() != ty_args.len() {
                     errors.report(
@@ -1103,6 +1103,7 @@ impl Typechecker {
         &mut self,
         errors: &mut TyErrors,
         def: Rc<FuncDef>,
+        func_tkn: &SyntaxToken,
         call_expr: &ECall,
         expected: Option<&Ty>,
     ) -> Option<(Ty, Option<ir::ExprData>)> {
@@ -1127,7 +1128,7 @@ impl Typechecker {
         let args = call_expr.e_arg_list()?.exprs().collect::<Vec<_>>();
         if args.len() != func_ty.arguments.len() {
             errors.report(
-                call_expr,
+                func_tkn,
                 ArgCountMismatch(func_ty.arguments.len(), args.len()),
             );
             return None;
@@ -1139,7 +1140,7 @@ impl Typechecker {
                 let (ty, ir) = self.infer_expr(errors, arg);
                 if ty != Ty::Error {
                     if let Err(err) = match_ty(&mut subst, &applied_ty, &ty) {
-                        errors.report(call_expr, err);
+                        errors.report(arg, err);
                     }
                 }
                 ir
@@ -1152,7 +1153,7 @@ impl Typechecker {
         for (_, n) in def.ty_params.iter() {
             let solved = subst.apply(fresh_subst.apply(Ty::Var(*n)));
             if matches!(solved, Ty::Var(Name::Gen(_))) {
-                errors.report(&call_expr.expr().unwrap(), CantInferTypeParam(*n));
+                errors.report(func_tkn, CantInferTypeParam(*n));
                 return None;
             }
             final_subst.insert(*n, solved);
@@ -1205,20 +1206,28 @@ impl Typechecker {
         let mut builder = ir::StructBuilder::default();
         builder.name(Some(def.name));
 
-        let subst: Option<Substitution>;
-
         let ty_arg_list: Option<Vec<Type>> =
             struct_expr.e_ty_arg_list().map(|t| t.types().collect());
-        if !def.ty_params.is_empty() && ty_arg_list.is_none() {
+        let subst = if !def.ty_params.is_empty() && ty_arg_list.is_none() {
             // Infer instantiation
-            if let Some(inferred_subst) =
-                expected.and_then(|expected| infer_struct_instantiation(&def, expected).cloned())
-            {
-                subst = Some(inferred_subst)
-            } else {
+            let Some(expected) = expected else {
                 errors.report(struct_expr, TyArgCountMismatch(def.ty_params.len(), 0));
                 return None;
-            }
+            };
+            let Some(subst) = infer_struct_instantiation(&def, expected).cloned() else {
+                errors.report(
+                    struct_expr,
+                    TypeMismatch {
+                        expected: expected.clone(),
+                        actual: Ty::Cons {
+                            name: def.name,
+                            ty_args: Substitution::empty(),
+                        },
+                    },
+                );
+                return None;
+            };
+            Some(subst)
         } else {
             let ty_arg_list = ty_arg_list.unwrap_or_default();
             if def.ty_params.len() != ty_arg_list.len() {
@@ -1233,8 +1242,8 @@ impl Typechecker {
                 .into_iter()
                 .map(|t| self.check_ty(errors, &t))
                 .collect();
-            subst = Some(Substitution::new(&ty_arg_names, &tys));
-        }
+            Some(Substitution::new(&ty_arg_names, &tys))
+        };
         let subst = subst.unwrap_or_default();
 
         let mut seen = vec![];
@@ -1388,7 +1397,20 @@ impl Typechecker {
                 builder.build()
             }
             (Expr::EStruct(expr), ty) => {
-                let (_, ir) = self.check_struct(errors, expr, Some(ty))?;
+                let (ty, ir) = self.check_struct(errors, expr, Some(ty))?;
+                // Bit weird to duplicate this here
+                if *expected != Ty::Error
+                    && !matches!(ty, Ty::Error | Ty::Diverge)
+                    && ty.ne(expected)
+                {
+                    errors.report(
+                        expr,
+                        TypeMismatch {
+                            expected: expected.clone(),
+                            actual: ty,
+                        },
+                    );
+                }
                 ir
             }
             (Expr::EIf(expr), ty) => {
@@ -1798,9 +1820,9 @@ fn infer_struct_instantiation<'a>(def: &StructDef, expected: &'a Ty) -> Option<&
 fn match_ty(subst: &mut Substitution, definition: &Ty, inferred: &Ty) -> Result<(), TyErrorData> {
     match (definition, inferred) {
         (Ty::Var(n @ Name::Gen(_)), t) => {
-            // We don't solve for `Ty::Error`, because we're still hoping to
+            // We don't solve for ERROR or DIVERGE, because we're still hoping to
             // solve for a real type.
-            if *t != Ty::Error && subst.insert(*n, t.clone()).is_some() {
+            if !matches!(t, Ty::Error | Ty::Diverge) && subst.insert(*n, t.clone()).is_some() {
                 // This is impossible because we applied the substitution before
                 panic!("Impossible! match_ty solved the same variable twice.")
             }
