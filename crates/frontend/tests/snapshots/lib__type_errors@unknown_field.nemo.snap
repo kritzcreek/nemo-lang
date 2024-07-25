@@ -1,6 +1,5 @@
 ---
 source: crates/frontend/tests/lib.rs
-assertion_line: 104
 expression: output
 input_file: crates/frontend/tests/type_errors/unknown_field.nemo
 ---
@@ -11,7 +10,6 @@ input_file: crates/frontend/tests/type_errors/unknown_field.nemo
    │               ┬  
    │               ╰── Unknown field. F does not have a field named y
 ───╯
-
 [13] Error: Unknown field. F does not have a field named y
    ╭─[source:2:2]
    │
@@ -19,7 +17,6 @@ input_file: crates/frontend/tests/type_errors/unknown_field.nemo
    │                        ┬  
    │                        ╰── Unknown field. F does not have a field named y
 ───╯
-
 [13] Error: Unknown field. F does not have a field named y
    ╭─[source:2:2]
    │

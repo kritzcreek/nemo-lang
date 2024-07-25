@@ -1,6 +1,5 @@
 ---
 source: crates/frontend/tests/lib.rs
-assertion_line: 104
 expression: output
 input_file: crates/frontend/tests/type_errors/cant_instantiate_function_ref.nemo
 ---
@@ -11,7 +10,6 @@ input_file: crates/frontend/tests/type_errors/cant_instantiate_function_ref.nemo
    │               ─┬  
    │                ╰── Unknown variable id
 ───╯
-
 [21] Error: Can't instantiate function reference. Only top-level functions may be polymorphic at this time.
    ╭─[source:1:13]
    │

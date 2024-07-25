@@ -83,7 +83,7 @@ impl Formatter<'_> {
                     Callee::FuncRef(e) => elems.push(self.expr(e)),
                     Callee::Builtin(s) => elems.push(Value::string(*s)),
                 }
-                elems.extend(arguments.into_iter().map(|e| self.expr(e)));
+                elems.extend(arguments.iter().map(|e| self.expr(e)));
                 Value::list(elems)
             }
             ExprData::Binary { op, left, right } => Value::list(vec![
@@ -93,7 +93,7 @@ impl Formatter<'_> {
             ]),
             ExprData::Array { elems } => {
                 let mut els = vec![Value::symbol("array")];
-                els.extend(elems.into_iter().map(|e| self.expr(e)));
+                els.extend(elems.iter().map(|e| self.expr(e)));
                 Value::list(els)
             }
             ExprData::ArrayIdx { array, index } => Value::list(vec![
@@ -113,7 +113,7 @@ impl Formatter<'_> {
             ]),
             ExprData::Block { declarations, expr } => {
                 let mut elems = vec![Value::symbol("block")];
-                elems.extend(declarations.into_iter().map(|d| self.decl(d)));
+                elems.extend(declarations.iter().map(|d| self.decl(d)));
                 elems.push(self.expr(expr));
                 Value::list(elems)
             }
@@ -121,7 +121,7 @@ impl Formatter<'_> {
                 let mut elems = vec![self.name(name)];
                 elems.extend(
                     fields
-                        .into_iter()
+                        .iter()
                         .map(|(name, expr)| Value::from((self.name(name), self.expr(expr)))),
                 );
                 Value::list(elems)
@@ -141,12 +141,12 @@ impl Formatter<'_> {
                 let mut elems = vec![Value::symbol("lambda")];
                 elems.push(Value::vector(
                     captures
-                        .into_iter()
+                        .iter()
                         .map(|(n, ty)| Value::from((self.name(n), self.ty(ty)))),
                 ));
                 elems.push(Value::list(
                     params
-                        .into_iter()
+                        .iter()
                         .map(|(n, ty)| Value::from((self.name(n), self.ty(ty)))),
                 ));
                 elems.push(self.ty(return_ty));

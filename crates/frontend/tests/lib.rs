@@ -21,7 +21,7 @@ fn normalize_newlines(src: &mut String) {
     // directly, let's rather steal the contents of `src`. This makes the code
     // safe even if a panic occurs.
 
-    let mut buf = std::mem::replace(src, String::new()).into_bytes();
+    let mut buf = std::mem::take(src).into_bytes();
     let mut gap_len = 0;
     let mut tail = buf.as_mut_slice();
     loop {
@@ -63,7 +63,7 @@ fn normalize_newlines(src: &mut String) {
 }
 
 fn snapshot_type_errors(path: &Path, source: &str) -> String {
-    let CheckResult { names, errors, .. } = run_frontend(&source);
+    let CheckResult { names, errors, .. } = run_frontend(source);
     if errors
         .iter()
         .any(|e| matches!(e, CheckError::ParseError(_)))
@@ -82,7 +82,7 @@ fn snapshot_type_errors(path: &Path, source: &str) -> String {
         write!(
             &mut err_buf,
             "{}",
-            error.display(&source, &names.name_map, false)
+            error.display(source, &names.name_map, false)
         )
         .unwrap();
     }

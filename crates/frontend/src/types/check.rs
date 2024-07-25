@@ -1,4 +1,8 @@
-use super::error::{TyError, TyErrorData::*, TyErrors};
+use super::error::{
+    TyError,
+    TyErrorData::{self, *},
+    TyErrors,
+};
 use super::names::NameSupply;
 use crate::builtins::lookup_builtin;
 use crate::ir::{
@@ -775,60 +779,6 @@ impl Typechecker {
         )
     }
 
-    fn infer_callee(
-        &mut self,
-        errors: &mut TyErrors,
-        expr: &Expr,
-        ty_args: &[Ty],
-    ) -> (Ty, Option<ir::Callee>) {
-        if let Expr::EVar(v) = expr {
-            let var_tkn = v.ident_token().unwrap();
-            if self.context.lookup_var(var_tkn.text()).is_some() {
-                if !ty_args.is_empty() {
-                    errors.report(&var_tkn, CantInstantiateFunctionRef);
-                    return (Ty::Error, None);
-                }
-                let (ty, ir) = self.infer_expr(errors, expr);
-                (ty, ir.map(ir::Callee::FuncRef))
-            } else if let Some(def) = self.context.lookup_func(var_tkn.text()) {
-                self.record_ref(&var_tkn, def.name);
-                let params: Vec<Name> = def.ty_params.iter().map(|(_, name)| *name).collect();
-                if params.len() != ty_args.len() {
-                    errors.report(expr, TyArgCountMismatch(params.len(), ty_args.len()));
-                    return (Ty::Error, None);
-                }
-                let subst = Substitution::new(&params, ty_args);
-                let ty = subst.apply_func(def.ty.clone());
-                (
-                    Ty::Func(Box::new(ty)),
-                    Some(ir::Callee::Func {
-                        name: def.name,
-                        type_args: subst,
-                    }),
-                )
-            } else if let Some(builtin) = lookup_builtin(var_tkn.text()) {
-                if builtin.ty_params.len() != ty_args.len() {
-                    errors.report(
-                        expr,
-                        TyArgCountMismatch(builtin.ty_params.len(), ty_args.len()),
-                    );
-                    return (Ty::Error, None);
-                }
-                let subst = Substitution::new(&builtin.ty_params, ty_args);
-                (
-                    Ty::Func(Box::new(subst.apply_func(builtin.ty.clone()))),
-                    Some(ir::Callee::Builtin(builtin.name)),
-                )
-            } else {
-                errors.report(expr, UnknownVar(var_tkn.text().to_string()));
-                return (Ty::Error, None);
-            }
-        } else {
-            let (ty, ir) = self.infer_expr(errors, expr);
-            (ty, ir.map(ir::Callee::FuncRef))
-        }
-    }
-
     fn infer_expr(&mut self, errors: &mut TyErrors, expr: &Expr) -> (Ty, Option<ir::Expr>) {
         self.infer_expr_inner(errors, expr)
             .unwrap_or((Ty::Error, None))
@@ -852,7 +802,7 @@ impl Typechecker {
                     (Ty::Array(Box::new(elem_ty)), builder.build())
                 } else {
                     errors.report(arr, CantInferEmptyArray);
-                    (Ty::Array(Box::new(Ty::Error)), None)
+                    (Ty::Error, None)
                 }
             }
             Expr::ELit(l) => {
@@ -877,135 +827,8 @@ impl Typechecker {
                     }
                 }
             }
-            Expr::EStruct(struct_expr) => {
-                let (struct_def, struct_name_tkn) = if let Some(ty) = struct_expr
-                    .qualifier()
-                    .map(|q| q.upper_ident_token().unwrap())
-                {
-                    let alt = struct_expr.upper_ident_token()?;
-                    let struct_def = self.context.lookup_variant(ty.text()).and_then(|def| {
-                        self.record_ref(&ty, def.name);
-                        def.lookup_alternative(alt.text())
-                            .map(|alt_name| self.context.lookup_struct_name(alt_name))
-                    });
-                    (struct_def, alt)
-                } else {
-                    let tkn = struct_expr.upper_ident_token()?;
-                    (self.context.lookup_struct(tkn.text()), tkn)
-                };
-                match struct_def {
-                    None => {
-                        errors.report(
-                            &struct_name_tkn,
-                            UnknownType(struct_name_tkn.text().to_string()),
-                        );
-                        return None;
-                    }
-                    Some(def) => {
-                        let name = def.name;
-                        self.record_ref(&struct_name_tkn, name);
-                        let mut builder = ir::StructBuilder::default();
-                        builder.name(Some(name));
-
-                        let subst = if let Some(ty_arg_list) = struct_expr.e_ty_arg_list() {
-                            let ty_arg_names: Vec<Name> =
-                                def.ty_params.iter().map(|(_, name)| *name).collect();
-                            let tys: Vec<Ty> = ty_arg_list
-                                .types()
-                                .map(|t| self.check_ty(errors, &t))
-                                .collect();
-                            if ty_arg_names.len() != tys.len() {
-                                errors.report(
-                                    &ty_arg_list,
-                                    TyArgCountMismatch(ty_arg_names.len(), tys.len()),
-                                )
-                            }
-                            Substitution::new(&ty_arg_names, &tys)
-                        } else {
-                            Substitution::default()
-                        };
-
-                        let mut seen = vec![];
-                        for field in struct_expr.e_struct_fields() {
-                            let Some(field_tkn) = field.ident_token() else {
-                                continue;
-                            };
-                            let Some((field_name, ty)) =
-                                self.context.get_fields(name).get(field_tkn.text()).cloned()
-                            else {
-                                errors.report(
-                                    &field_tkn,
-                                    UnknownField {
-                                        struct_name: name,
-                                        field_name: field_tkn.text().to_string(),
-                                    },
-                                );
-                                continue;
-                            };
-                            self.record_ref(&field_tkn, field_name);
-                            seen.push(field_name);
-                            if let Some(field_expr) = field.expr() {
-                                builder.fields(
-                                    self.check_expr(errors, &field_expr, &subst.apply(ty.clone()))
-                                        .map(|e| (field_name, e)),
-                                );
-                            }
-                        }
-                        // TODO report all missing fields at once
-                        for field_name in self.context.field_defs.get(&name).unwrap().names() {
-                            if !seen.contains(&field_name) {
-                                errors.report(
-                                    &struct_name_tkn,
-                                    MissingField {
-                                        struct_name: name,
-                                        field_name,
-                                    },
-                                );
-                            }
-                        }
-                        (
-                            Ty::Cons {
-                                name: def.variant.unwrap_or(name),
-                                ty_args: subst,
-                            },
-                            builder.build(),
-                        )
-                    }
-                }
-            }
-            Expr::ECall(call_expr) => {
-                let func_expr = call_expr.expr()?;
-                let ty_arg_list: Vec<Ty> = call_expr
-                    .e_ty_arg_list()
-                    .map(|tas| tas.types().map(|t| self.check_ty(errors, &t)).collect())
-                    .unwrap_or_default();
-                match self.infer_callee(errors, &func_expr, &ty_arg_list) {
-                    (Ty::Func(func_ty), callee) => {
-                        let mut builder = ir::CallBuilder::default();
-                        builder.func(callee);
-                        if let Some(arg_list) = call_expr.e_arg_list() {
-                            let arg_exprs: Vec<Expr> = arg_list.exprs().collect();
-                            let arg_tys = func_ty.arguments;
-                            if arg_exprs.len() != arg_tys.len() {
-                                errors.report(
-                                    &arg_list,
-                                    ArgCountMismatch(arg_tys.len(), arg_exprs.len()),
-                                );
-                            }
-                            for (param, expected_ty) in arg_exprs.iter().zip(arg_tys.iter()) {
-                                builder.arguments(self.check_expr(errors, param, expected_ty));
-                            }
-                        }
-                        (func_ty.result, builder.build())
-                    }
-                    (ty, _) => {
-                        if ty != Ty::Error {
-                            errors.report(&func_expr, NotAFunction(ty));
-                        }
-                        return None;
-                    }
-                }
-            }
+            Expr::EStruct(struct_expr) => self.check_struct(errors, struct_expr, None)?,
+            Expr::ECall(call_expr) => self.check_call(errors, call_expr, None)?,
             Expr::EParen(e) => {
                 let (ty, ir) = self.infer_expr(errors, &e.expr()?);
                 (ty, ir.map(|x| *x.it))
@@ -1184,6 +1007,385 @@ impl Typechecker {
         Some((ty, ir_expr))
     }
 
+    fn check_call(
+        &mut self,
+        errors: &mut TyErrors,
+        call_expr: &ECall,
+        expected: Option<&Ty>,
+    ) -> Option<(Ty, Option<ir::ExprData>)> {
+        let func_expr = call_expr.expr()?;
+        let ty_args: Vec<Ty> = call_expr
+            .e_ty_arg_list()
+            .map(|tas| tas.types().map(|t| self.check_ty(errors, &t)).collect())
+            .unwrap_or_default();
+        let callee = if let Expr::EVar(v) = &func_expr {
+            let var_tkn = v.ident_token().unwrap();
+            if self.context.lookup_var(var_tkn.text()).is_some() {
+                if !ty_args.is_empty() {
+                    errors.report(&var_tkn, CantInstantiateFunctionRef);
+                    return None;
+                }
+                let (ty, ir) = self.infer_expr(errors, &func_expr);
+                (ty, ir.map(ir::Callee::FuncRef))
+            } else if let Some(def) = self.context.lookup_func(var_tkn.text()) {
+                self.record_ref(&var_tkn, def.name);
+                let ty_params: Vec<Name> = def.ty_params.iter().map(|(_, name)| *name).collect();
+                // NOTE(early-return-control-flow)
+                if !ty_params.is_empty() && ty_args.is_empty() {
+                    return self.infer_poly_call(errors, def, &var_tkn, call_expr, expected);
+                }
+                if ty_params.len() != ty_args.len() {
+                    errors.report(
+                        &func_expr,
+                        TyArgCountMismatch(ty_params.len(), ty_args.len()),
+                    );
+                    return None;
+                }
+                let subst = Substitution::new(&ty_params, &ty_args);
+                let ty = subst.apply_func(def.ty.clone());
+                (
+                    Ty::Func(Box::new(ty)),
+                    Some(ir::Callee::Func {
+                        name: def.name,
+                        type_args: subst,
+                    }),
+                )
+            } else if let Some(builtin) = lookup_builtin(var_tkn.text()) {
+                if builtin.ty_params.len() != ty_args.len() {
+                    errors.report(
+                        &func_expr,
+                        TyArgCountMismatch(builtin.ty_params.len(), ty_args.len()),
+                    );
+                    return None;
+                }
+                let subst = Substitution::new(&builtin.ty_params, &ty_args);
+                (
+                    Ty::Func(Box::new(subst.apply_func(builtin.ty.clone()))),
+                    Some(ir::Callee::Builtin(builtin.name)),
+                )
+            } else {
+                errors.report(&func_expr, UnknownVar(var_tkn.text().to_string()));
+                return None;
+            }
+        } else {
+            let (ty, ir) = self.infer_expr(errors, &func_expr);
+            (ty, ir.map(ir::Callee::FuncRef))
+        };
+
+        match callee {
+            (Ty::Func(func_ty), callee) => {
+                let mut builder = ir::CallBuilder::default();
+                builder.func(callee);
+                if let Some(arg_list) = call_expr.e_arg_list() {
+                    let arg_exprs: Vec<Expr> = arg_list.exprs().collect();
+                    let arg_tys = func_ty.arguments;
+                    if arg_exprs.len() != arg_tys.len() {
+                        errors.report(&arg_list, ArgCountMismatch(arg_tys.len(), arg_exprs.len()));
+                    }
+                    for (param, expected_ty) in arg_exprs.iter().zip(arg_tys.iter()) {
+                        builder.arguments(self.check_expr(errors, param, expected_ty));
+                    }
+                }
+                Some((func_ty.result, builder.build()))
+            }
+            (ty, _) => {
+                if ty != Ty::Error {
+                    errors.report(&func_expr, NotAFunction(ty));
+                }
+                None
+            }
+        }
+    }
+    fn infer_poly_struct(
+        &mut self,
+        errors: &mut TyErrors,
+        def: Rc<StructDef>,
+        struct_tkn: &SyntaxToken,
+        struct_expr: &EStruct,
+    ) -> Option<(Ty, Option<ir::ExprData>)> {
+        let fresh_subst = {
+            let mut fresh_subst = Substitution::empty();
+            for (_, n) in def.ty_params.iter() {
+                fresh_subst.insert(*n, Ty::Var(self.name_supply.gen_idx()));
+            }
+            fresh_subst
+        };
+        let mut subst = Substitution::empty();
+        let mut builder = ir::StructBuilder::default();
+        builder.name(Some(def.name));
+
+        let mut seen = vec![];
+        for field in struct_expr.e_struct_fields() {
+            let Some((name, expected_ty)) = self.lookup_struct_field(errors, def.name, &field)
+            else {
+                continue;
+            };
+            seen.push(name);
+            let Some(expr) = field.expr() else {
+                continue;
+            };
+            let applied_ty = subst.apply(fresh_subst.apply(expected_ty));
+            let ir = if applied_ty.vars().iter().any(|v| matches!(v, Name::Gen(_))) {
+                let (ty, ir) = self.infer_expr(errors, &expr);
+                if ty != Ty::Error {
+                    if let Err(err) = match_ty(&mut subst, applied_ty, &ty) {
+                        errors.report(&expr, err);
+                    }
+                }
+                ir
+            } else {
+                self.check_expr(errors, &expr, &applied_ty)
+            };
+            builder.fields(ir.map(|ir| (name, ir)));
+        }
+
+        for field_name in self.context.field_defs.get(&def.name).unwrap().names() {
+            if !seen.contains(&field_name) {
+                errors.report(
+                    struct_tkn,
+                    MissingField {
+                        struct_name: def.name,
+                        field_name,
+                    },
+                );
+            }
+        }
+
+        let mut final_subst = Substitution::empty();
+        for (_, n) in def.ty_params.iter() {
+            let solved = subst.apply(fresh_subst.apply(Ty::Var(*n)));
+            if matches!(solved, Ty::Var(Name::Gen(_))) {
+                errors.report(struct_tkn, CantInferTypeParam(*n));
+                return None;
+            }
+            final_subst.insert(*n, solved);
+        }
+        Some((
+            Ty::Cons {
+                name: def.name,
+                ty_args: final_subst,
+            },
+            builder.build(),
+        ))
+    }
+
+    // Calls to top-level functions get special handling as we attempt to infer
+    // instantiations for their type parameters (if the user omits them at the call-site).
+    fn infer_poly_call(
+        &mut self,
+        errors: &mut TyErrors,
+        def: Rc<FuncDef>,
+        func_tkn: &SyntaxToken,
+        call_expr: &ECall,
+        expected: Option<&Ty>,
+    ) -> Option<(Ty, Option<ir::ExprData>)> {
+        // Need to instantiate type parameters with fresh identifiers,
+        // so recursive calls don't mess with us
+        let fresh_subst = {
+            let mut fresh_subst = Substitution::empty();
+            for (_, n) in def.ty_params.iter() {
+                fresh_subst.insert(*n, Ty::Var(self.name_supply.gen_idx()));
+            }
+            fresh_subst
+        };
+        let func_ty = fresh_subst.apply_func(def.ty.clone());
+
+        let mut subst = Substitution::empty();
+        if let Some(expected) = expected {
+            if let Err(err) = match_ty(&mut subst, func_ty.result.clone(), expected) {
+                errors.report(call_expr, err);
+                return None;
+            }
+        }
+        let args = call_expr.e_arg_list()?.exprs().collect::<Vec<_>>();
+        if args.len() != func_ty.arguments.len() {
+            errors.report(
+                func_tkn,
+                ArgCountMismatch(func_ty.arguments.len(), args.len()),
+            );
+            return None;
+        }
+        let mut builder = ir::CallBuilder::default();
+        for (arg, expected_ty) in args.iter().zip(func_ty.arguments.iter()) {
+            let applied_ty = subst.apply(expected_ty.clone());
+            let ir = if applied_ty.vars().iter().any(|v| matches!(v, Name::Gen(_))) {
+                let (ty, ir) = self.infer_expr(errors, arg);
+                if ty != Ty::Error {
+                    if let Err(err) = match_ty(&mut subst, applied_ty, &ty) {
+                        errors.report(arg, err);
+                    }
+                }
+                ir
+            } else {
+                self.check_expr(errors, arg, &applied_ty)
+            };
+            builder.arguments(ir);
+        }
+        let mut final_subst = Substitution::empty();
+        for (_, n) in def.ty_params.iter() {
+            let solved = subst.apply(fresh_subst.apply(Ty::Var(*n)));
+            if matches!(solved, Ty::Var(Name::Gen(_))) {
+                errors.report(func_tkn, CantInferTypeParam(*n));
+                return None;
+            }
+            final_subst.insert(*n, solved);
+        }
+        builder.func(Some(ir::Callee::Func {
+            name: def.name,
+            type_args: final_subst,
+        }));
+        Some((
+            expected
+                .cloned()
+                .unwrap_or_else(|| subst.apply(func_ty.result)),
+            builder.build(),
+        ))
+    }
+
+    fn lookup_struct(
+        &mut self,
+        errors: &mut TyErrors,
+        struct_expr: &EStruct,
+    ) -> Option<(Rc<StructDef>, SyntaxToken)> {
+        let (struct_def, struct_name_tkn) = if let Some(ty) = struct_expr
+            .qualifier()
+            .map(|q| q.upper_ident_token().unwrap())
+        {
+            let alt = struct_expr.upper_ident_token()?;
+            let struct_def = self.context.lookup_variant(ty.text()).and_then(|def| {
+                self.record_ref(&ty, def.name);
+                def.lookup_alternative(alt.text())
+                    .map(|alt_name| self.context.lookup_struct_name(alt_name))
+            });
+            (struct_def, alt)
+        } else {
+            let tkn = struct_expr.upper_ident_token()?;
+            (self.context.lookup_struct(tkn.text()), tkn)
+        };
+        let def = match struct_def {
+            None => {
+                errors.report(
+                    &struct_name_tkn,
+                    UnknownType(struct_name_tkn.text().to_string()),
+                );
+                return None;
+            }
+            Some(def) => def,
+        };
+        self.record_ref(&struct_name_tkn, def.name);
+        Some((def, struct_name_tkn))
+    }
+
+    fn lookup_struct_field(
+        &mut self,
+        errors: &mut TyErrors,
+        struct_name: Name,
+        field: &EStructField,
+    ) -> Option<(Name, Ty)> {
+        let field_tkn = field.ident_token()?;
+        let Some((field_name, ty)) = self
+            .context
+            .get_fields(struct_name)
+            .get(field_tkn.text())
+            .cloned()
+        else {
+            errors.report(
+                &field_tkn,
+                UnknownField {
+                    struct_name,
+                    field_name: field_tkn.text().to_string(),
+                },
+            );
+            return None;
+        };
+        self.record_ref(&field_tkn, field_name);
+        Some((field_name, ty))
+    }
+
+    fn check_struct(
+        &mut self,
+        errors: &mut TyErrors,
+        struct_expr: &EStruct,
+        expected: Option<&Ty>,
+    ) -> Option<(Ty, Option<ir::ExprData>)> {
+        let (def, struct_name_tkn) = self.lookup_struct(errors, struct_expr)?;
+        let mut builder = ir::StructBuilder::default();
+        builder.name(Some(def.name));
+
+        let ty_arg_list: Option<Vec<Type>> =
+            struct_expr.e_ty_arg_list().map(|t| t.types().collect());
+        let subst = if !def.ty_params.is_empty() && ty_arg_list.is_none() {
+            match expected {
+                None => return self.infer_poly_struct(errors, def, &struct_name_tkn, struct_expr),
+                Some(expected) => {
+                    let Some(subst) = infer_struct_instantiation(&def, expected) else {
+                        errors.report(
+                            struct_expr,
+                            TypeMismatch {
+                                expected: expected.clone(),
+                                actual: Ty::Cons {
+                                    name: def.name,
+                                    ty_args: Substitution::empty(),
+                                },
+                            },
+                        );
+                        return None;
+                    };
+                    Some(subst.clone())
+                }
+            }
+        } else {
+            let ty_arg_list = ty_arg_list.unwrap_or_default();
+            if def.ty_params.len() != ty_arg_list.len() {
+                errors.report(
+                    struct_expr,
+                    TyArgCountMismatch(def.ty_params.len(), ty_arg_list.len()),
+                );
+                return None;
+            }
+            let ty_arg_names: Vec<Name> = def.ty_params.iter().map(|(_, name)| *name).collect();
+            let tys: Vec<Ty> = ty_arg_list
+                .into_iter()
+                .map(|t| self.check_ty(errors, &t))
+                .collect();
+            Some(Substitution::new(&ty_arg_names, &tys))
+        };
+
+        let subst = subst.unwrap_or_default();
+        let mut seen = vec![];
+        for field in struct_expr.e_struct_fields() {
+            let Some((field_name, ty)) = self.lookup_struct_field(errors, def.name, &field) else {
+                continue;
+            };
+            seen.push(field_name);
+            if let Some(field_expr) = field.expr() {
+                builder.fields(
+                    self.check_expr(errors, &field_expr, &subst.apply(ty))
+                        .map(|e| (field_name, e)),
+                );
+            }
+        }
+        // TODO report all missing fields at once
+        for field_name in self.context.field_defs.get(&def.name).unwrap().names() {
+            if !seen.contains(&field_name) {
+                errors.report(
+                    &struct_name_tkn,
+                    MissingField {
+                        struct_name: def.name,
+                        field_name,
+                    },
+                );
+            }
+        }
+        Some((
+            Ty::Cons {
+                name: def.variant.unwrap_or(def.name),
+                ty_args: subst,
+            },
+            builder.build(),
+        ))
+    }
+
     fn check_match(
         &mut self,
         errors: &mut TyErrors,
@@ -1284,6 +1486,23 @@ impl Typechecker {
                 }
                 builder.build()
             }
+            (Expr::EStruct(expr), ty) => {
+                let (ty, ir) = self.check_struct(errors, expr, Some(ty))?;
+                // Bit weird to duplicate this here
+                if *expected != Ty::Error
+                    && !matches!(ty, Ty::Error | Ty::Diverge)
+                    && ty.ne(expected)
+                {
+                    errors.report(
+                        expr,
+                        TypeMismatch {
+                            expected: expected.clone(),
+                            actual: ty,
+                        },
+                    );
+                }
+                ir
+            }
             (Expr::EIf(expr), ty) => {
                 let mut builder = ir::IfBuilder::default();
                 if let Some(condition) = expr.condition() {
@@ -1324,6 +1543,10 @@ impl Typechecker {
             (Expr::EMatch(match_expr), _) => {
                 self.check_match(errors, match_expr, Some(expected.clone()))
                     .1
+            }
+            (Expr::ECall(expr), _) => {
+                let (_, ir) = self.check_call(errors, expr, Some(expected))?;
+                ir
             }
             _ => {
                 let (ty, ir) = self.infer_expr(errors, expr);
@@ -1669,4 +1892,72 @@ fn unit_lit(range: TextRange) -> Option<ir::Expr> {
             },
         }),
     })
+}
+
+fn infer_struct_instantiation<'a>(def: &StructDef, expected: &'a Ty) -> Option<&'a Substitution> {
+    // Infer instantiation
+    if let Ty::Cons { name, ty_args } = expected {
+        if *name == def.name || def.variant.is_some_and(|v| v == *name) {
+            return Some(ty_args);
+        }
+    }
+    None
+}
+
+// `match_ty` is non-commutative unification. Only variables on the left are allowed to be solved, and we limit
+// the set of variables that may be solved to `Name::Gen(_)`. This is used to implement inference for type
+// parameters to polymorphic functions or struct literals.
+fn match_ty(subst: &mut Substitution, definition: Ty, inferred: &Ty) -> Result<(), TyErrorData> {
+    // Cow<Ty>?
+    let definition = subst.apply(definition);
+    match (definition, inferred) {
+        (Ty::Var(n @ Name::Gen(_)), t) => {
+            // We don't solve for ERROR or DIVERGE, because we're still hoping to
+            // solve for a real type.
+            if !matches!(t, Ty::Error | Ty::Diverge) && subst.insert(n, t.clone()).is_some() {
+                // This is impossible because we applied the substitution before
+                panic!("Impossible! match_ty solved the same variable twice.")
+            }
+            Ok(())
+        }
+        (Ty::Array(t1), Ty::Array(t2)) => match_ty(subst, *t1, t2),
+        (Ty::Func(t1), Ty::Func(t2)) => {
+            for (a1, a2) in t1.arguments.into_iter().zip(t2.arguments.iter()) {
+                // TODO: do we want the early return here?
+                match_ty(subst, a1, a2)?
+            }
+            match_ty(subst, t1.result, &t2.result)
+        }
+        (
+            Ty::Cons {
+                name: n1,
+                ty_args: ts1,
+            },
+            Ty::Cons {
+                name: n2,
+                ty_args: ts2,
+            },
+        ) if n1 == *n2 => {
+            for (k, v) in ts1.0 {
+                match_ty(
+                    subst,
+                    v,
+                    ts2.lookup(k)
+                        // TODO I'm not sure this won't randomly happen
+                        .expect("Two matching Cons types with different subst variables"),
+                )?
+            }
+            Ok(())
+        }
+        (t1, t2) => {
+            if t1 == *t2 {
+                Ok(())
+            } else {
+                Err(TyErrorData::TypeMismatch {
+                    expected: t1.clone(),
+                    actual: t2.clone(),
+                })
+            }
+        }
+    }
 }
