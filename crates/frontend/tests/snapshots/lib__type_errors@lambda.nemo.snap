@@ -10,7 +10,6 @@ input_file: crates/frontend/tests/type_errors/lambda.nemo
    │              ─┬  
    │               ╰── Type mismatch. Expected f32, but got i32
 ───╯
-
 [15] Error: Type mismatch. Expected i32, but got f32
    ╭─[source:1:13]
    │

@@ -802,7 +802,7 @@ impl Typechecker {
                     (Ty::Array(Box::new(elem_ty)), builder.build())
                 } else {
                     errors.report(arr, CantInferEmptyArray);
-                    (Ty::Array(Box::new(Ty::Error)), None)
+                    (Ty::Error, None)
                 }
             }
             Expr::ELit(l) => {
@@ -1030,7 +1030,7 @@ impl Typechecker {
             } else if let Some(def) = self.context.lookup_func(var_tkn.text()) {
                 self.record_ref(&var_tkn, def.name);
                 let ty_params: Vec<Name> = def.ty_params.iter().map(|(_, name)| *name).collect();
-                // NOTE(weird-control-flow)
+                // NOTE(early-return-control-flow)
                 if !ty_params.is_empty() && ty_args.is_empty() {
                     return self.infer_poly_call(errors, def, &var_tkn, call_expr, expected);
                 }
@@ -1095,6 +1095,78 @@ impl Typechecker {
                 None
             }
         }
+    }
+    fn infer_poly_struct(
+        &mut self,
+        errors: &mut TyErrors,
+        def: Rc<StructDef>,
+        struct_tkn: &SyntaxToken,
+        struct_expr: &EStruct,
+    ) -> Option<(Ty, Option<ir::ExprData>)> {
+        let fresh_subst = {
+            let mut fresh_subst = Substitution::empty();
+            for (_, n) in def.ty_params.iter() {
+                fresh_subst.insert(*n, Ty::Var(self.name_supply.gen_idx()));
+            }
+            fresh_subst
+        };
+        let mut subst = Substitution::empty();
+        let mut builder = ir::StructBuilder::default();
+        builder.name(Some(def.name));
+
+        let mut seen = vec![];
+        for field in struct_expr.e_struct_fields() {
+            let Some((name, expected_ty)) = self.lookup_struct_field(errors, def.name, &field)
+            else {
+                continue;
+            };
+            seen.push(name);
+            let Some(expr) = field.expr() else {
+                continue;
+            };
+            let applied_ty = subst.apply(fresh_subst.apply(expected_ty));
+            let ir = if applied_ty.vars().iter().any(|v| matches!(v, Name::Gen(_))) {
+                let (ty, ir) = self.infer_expr(errors, &expr);
+                if ty != Ty::Error {
+                    if let Err(err) = match_ty(&mut subst, applied_ty, &ty) {
+                        errors.report(&expr, err);
+                    }
+                }
+                ir
+            } else {
+                self.check_expr(errors, &expr, &applied_ty)
+            };
+            builder.fields(ir.map(|ir| (name, ir)));
+        }
+
+        for field_name in self.context.field_defs.get(&def.name).unwrap().names() {
+            if !seen.contains(&field_name) {
+                errors.report(
+                    struct_tkn,
+                    MissingField {
+                        struct_name: def.name,
+                        field_name,
+                    },
+                );
+            }
+        }
+
+        let mut final_subst = Substitution::empty();
+        for (_, n) in def.ty_params.iter() {
+            let solved = subst.apply(fresh_subst.apply(Ty::Var(*n)));
+            if matches!(solved, Ty::Var(Name::Gen(_))) {
+                errors.report(struct_tkn, CantInferTypeParam(*n));
+                return None;
+            }
+            final_subst.insert(*n, solved);
+        }
+        Some((
+            Ty::Cons {
+                name: def.name,
+                ty_args: final_subst,
+            },
+            builder.build(),
+        ))
     }
 
     // Calls to top-level functions get special handling as we attempt to infer
@@ -1170,12 +1242,11 @@ impl Typechecker {
         ))
     }
 
-    fn check_struct(
+    fn lookup_struct(
         &mut self,
         errors: &mut TyErrors,
         struct_expr: &EStruct,
-        expected: Option<&Ty>,
-    ) -> Option<(Ty, Option<ir::ExprData>)> {
+    ) -> Option<(Rc<StructDef>, SyntaxToken)> {
         let (struct_def, struct_name_tkn) = if let Some(ty) = struct_expr
             .qualifier()
             .map(|q| q.upper_ident_token().unwrap())
@@ -1202,32 +1273,67 @@ impl Typechecker {
             Some(def) => def,
         };
         self.record_ref(&struct_name_tkn, def.name);
+        Some((def, struct_name_tkn))
+    }
 
+    fn lookup_struct_field(
+        &mut self,
+        errors: &mut TyErrors,
+        struct_name: Name,
+        field: &EStructField,
+    ) -> Option<(Name, Ty)> {
+        let field_tkn = field.ident_token()?;
+        let Some((field_name, ty)) = self
+            .context
+            .get_fields(struct_name)
+            .get(field_tkn.text())
+            .cloned()
+        else {
+            errors.report(
+                &field_tkn,
+                UnknownField {
+                    struct_name,
+                    field_name: field_tkn.text().to_string(),
+                },
+            );
+            return None;
+        };
+        self.record_ref(&field_tkn, field_name);
+        Some((field_name, ty))
+    }
+
+    fn check_struct(
+        &mut self,
+        errors: &mut TyErrors,
+        struct_expr: &EStruct,
+        expected: Option<&Ty>,
+    ) -> Option<(Ty, Option<ir::ExprData>)> {
+        let (def, struct_name_tkn) = self.lookup_struct(errors, struct_expr)?;
         let mut builder = ir::StructBuilder::default();
         builder.name(Some(def.name));
 
         let ty_arg_list: Option<Vec<Type>> =
             struct_expr.e_ty_arg_list().map(|t| t.types().collect());
         let subst = if !def.ty_params.is_empty() && ty_arg_list.is_none() {
-            // Infer instantiation
-            let Some(expected) = expected else {
-                errors.report(struct_expr, TyArgCountMismatch(def.ty_params.len(), 0));
-                return None;
-            };
-            let Some(subst) = infer_struct_instantiation(&def, expected).cloned() else {
-                errors.report(
-                    struct_expr,
-                    TypeMismatch {
-                        expected: expected.clone(),
-                        actual: Ty::Cons {
-                            name: def.name,
-                            ty_args: Substitution::empty(),
-                        },
-                    },
-                );
-                return None;
-            };
-            Some(subst)
+            match expected {
+                None => return self.infer_poly_struct(errors, def, &struct_name_tkn, struct_expr),
+                Some(expected) => {
+                    let Some(subst) = infer_struct_instantiation(&def, expected) else {
+                        errors.report(
+                            struct_expr,
+                            TypeMismatch {
+                                expected: expected.clone(),
+                                actual: Ty::Cons {
+                                    name: def.name,
+                                    ty_args: Substitution::empty(),
+                                },
+                            },
+                        );
+                        return None;
+                    };
+                    Some(subst.clone())
+                }
+            }
         } else {
             let ty_arg_list = ty_arg_list.unwrap_or_default();
             if def.ty_params.len() != ty_arg_list.len() {
@@ -1244,33 +1350,17 @@ impl Typechecker {
                 .collect();
             Some(Substitution::new(&ty_arg_names, &tys))
         };
-        let subst = subst.unwrap_or_default();
 
+        let subst = subst.unwrap_or_default();
         let mut seen = vec![];
         for field in struct_expr.e_struct_fields() {
-            let Some(field_tkn) = field.ident_token() else {
+            let Some((field_name, ty)) = self.lookup_struct_field(errors, def.name, &field) else {
                 continue;
             };
-            let Some((field_name, ty)) = self
-                .context
-                .get_fields(def.name)
-                .get(field_tkn.text())
-                .cloned()
-            else {
-                errors.report(
-                    &field_tkn,
-                    UnknownField {
-                        struct_name: def.name,
-                        field_name: field_tkn.text().to_string(),
-                    },
-                );
-                continue;
-            };
-            self.record_ref(&field_tkn, field_name);
             seen.push(field_name);
             if let Some(field_expr) = field.expr() {
                 builder.fields(
-                    self.check_expr(errors, &field_expr, &subst.apply(ty.clone()))
+                    self.check_expr(errors, &field_expr, &subst.apply(ty))
                         .map(|e| (field_name, e)),
                 );
             }

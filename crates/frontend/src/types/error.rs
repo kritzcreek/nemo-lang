@@ -327,5 +327,5 @@ pub fn render_ty_error(
         .write(cache, &mut out_buf)
         .unwrap();
 
-    writeln!(output, "{}", str::from_utf8(&out_buf).unwrap()).unwrap();
+    write!(output, "{}", str::from_utf8(&out_buf).unwrap()).unwrap();
 }

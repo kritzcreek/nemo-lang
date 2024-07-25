@@ -1,6 +1,5 @@
 ---
 source: crates/frontend/tests/lib.rs
-assertion_line: 105
 expression: output
 input_file: crates/frontend/tests/type_errors/cant_return_from_global.nemo
 ---
@@ -11,7 +10,6 @@ input_file: crates/frontend/tests/type_errors/cant_return_from_global.nemo
    │            ────┬───  
    │                ╰───── Can't 'return' from a global definition.
 ───╯
-
 [24] Error: Can't 'return' from a global definition.
    ╭─[source:1:13]
    │

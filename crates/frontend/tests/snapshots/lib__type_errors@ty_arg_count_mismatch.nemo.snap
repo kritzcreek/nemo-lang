@@ -10,7 +10,6 @@ input_file: crates/frontend/tests/type_errors/ty_arg_count_mismatch.nemo
     │   ──┬─  
     │     ╰─── Mismatched type arg count. Expected 2 arguments, but got 1
 ────╯
-
 [22] Error: Mismatched type arg count. Expected 2 arguments, but got 1
     ╭─[source:1:13]
     │
@@ -18,7 +17,6 @@ input_file: crates/frontend/tests/type_errors/ty_arg_count_mismatch.nemo
     │   ─────────────┬────────────  
     │                ╰────────────── Mismatched type arg count. Expected 2 arguments, but got 1
 ────╯
-
 [22] Error: Mismatched type arg count. Expected 1 argument, but got 2
     ╭─[source:1:13]
     │

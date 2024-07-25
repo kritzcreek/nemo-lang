@@ -1,6 +1,5 @@
 ---
 source: crates/frontend/tests/lib.rs
-assertion_line: 104
 expression: output
 input_file: crates/frontend/tests/type_errors/non_struct_idx.nemo
 ---
@@ -11,7 +10,6 @@ input_file: crates/frontend/tests/type_errors/non_struct_idx.nemo
    │      ┬  
    │      ╰── Tried to index into a non-struct type i32
 ───╯
-
 [10] Error: Tried to index into a non-struct type i32
    ╭─[source:2:1]
    │
