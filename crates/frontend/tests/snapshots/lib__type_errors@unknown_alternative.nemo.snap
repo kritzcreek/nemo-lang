@@ -1,6 +1,5 @@
 ---
 source: crates/frontend/tests/lib.rs
-assertion_line: 104
 expression: output
 input_file: crates/frontend/tests/type_errors/unknown_alternative.nemo
 ---
@@ -11,7 +10,6 @@ input_file: crates/frontend/tests/type_errors/unknown_alternative.nemo
    │      ───┬───  
    │         ╰───── Unknown type Unknown
 ───╯
-
 [19] Error: Unknown alternative. V does not have an alternative named Unknown
    ╭─[source:2:1]
    │

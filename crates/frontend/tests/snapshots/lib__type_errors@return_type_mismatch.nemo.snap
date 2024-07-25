@@ -1,6 +1,5 @@
 ---
 source: crates/frontend/tests/lib.rs
-assertion_line: 105
 expression: output
 input_file: crates/frontend/tests/type_errors/return_type_mismatch.nemo
 ---
@@ -11,7 +10,6 @@ input_file: crates/frontend/tests/type_errors/return_type_mismatch.nemo
    │          ┬  
    │          ╰── Type mismatch. Expected unit, but got i32
 ───╯
-
 [15] Error: Type mismatch. Expected i32, but got unit
    ╭─[source:2:1]
    │

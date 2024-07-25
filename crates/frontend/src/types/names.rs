@@ -45,6 +45,10 @@ impl NameSupply {
         self.0.field_idx(token_into_id(field))
     }
 
+    pub fn gen_idx(&mut self) -> Name {
+        self.0.gen_idx()
+    }
+
     pub fn start_idx(&mut self) -> Name {
         self.0.func_idx(Id {
             it: "$start".to_string(),

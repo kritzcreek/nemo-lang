@@ -1,0 +1,33 @@
+---
+source: crates/frontend/tests/lib.rs
+expression: output
+input_file: crates/frontend/tests/type_errors/cant_infer_type_param.nemo
+---
+[17] Error: Can't infer type of an empty array
+    ╭─[source:1:13]
+    │
+ 11 │   let s = S { a = 10, b = [] };
+    │                           ─┬  
+    │                            ╰── Can't infer type of an empty array
+────╯
+[26] Error: Can't infer type parameter 'b'. Explicitly supply the instantiation
+    ╭─[source:1:13]
+    │
+ 11 │   let s = S { a = 10, b = [] };
+    │           ┬  
+    │           ╰── Can't infer type parameter 'b'. Explicitly supply the instantiation
+────╯
+[17] Error: Can't infer type of an empty array
+    ╭─[source:1:13]
+    │
+ 12 │   polyF(10, []);
+    │             ─┬  
+    │              ╰── Can't infer type of an empty array
+────╯
+[26] Error: Can't infer type parameter 'b'. Explicitly supply the instantiation
+    ╭─[source:1:13]
+    │
+ 12 │   polyF(10, []);
+    │   ──┬──  
+    │     ╰──── Can't infer type parameter 'b'. Explicitly supply the instantiation
+────╯

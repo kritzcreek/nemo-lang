@@ -1,6 +1,5 @@
 ---
 source: crates/frontend/tests/lib.rs
-assertion_line: 104
 expression: output
 input_file: crates/frontend/tests/type_errors/ty_arg_count_mismatch.nemo
 ---
@@ -11,27 +10,17 @@ input_file: crates/frontend/tests/type_errors/ty_arg_count_mismatch.nemo
     │   ──┬─  
     │     ╰─── Mismatched type arg count. Expected 2 arguments, but got 1
 ────╯
-
 [22] Error: Mismatched type arg count. Expected 2 arguments, but got 1
     ╭─[source:1:13]
     │
  16 │   Box#[i32] { a = 1, b = 2 };
-    │      ───┬──  
-    │         ╰──── Mismatched type arg count. Expected 2 arguments, but got 1
+    │   ─────────────┬────────────  
+    │                ╰────────────── Mismatched type arg count. Expected 2 arguments, but got 1
 ────╯
-
-[15] Error: Type mismatch. Expected b, but got i32
-    ╭─[source:1:13]
-    │
- 16 │   Box#[i32] { a = 1, b = 2 };
-    │                          ─┬  
-    │                           ╰── Type mismatch. Expected b, but got i32
-────╯
-
 [22] Error: Mismatched type arg count. Expected 1 argument, but got 2
     ╭─[source:1:13]
     │
  17 │   List::Nil#[i32, f32] {};
-    │            ─────┬─────  
-    │                 ╰─────── Mismatched type arg count. Expected 1 argument, but got 2
+    │   ───────────┬───────────  
+    │              ╰───────────── Mismatched type arg count. Expected 1 argument, but got 2
 ────╯

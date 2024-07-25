@@ -391,7 +391,7 @@ impl<'a> Codegen<'a> {
 
                 // Splat captures into locals
                 for (idx, (name, ty)) in captures.iter().enumerate() {
-                    let local = body_builder.new_local(*name, self.builder.val_ty(&ty));
+                    let local = body_builder.new_local(*name, self.builder.val_ty(ty));
                     lambda_instrs.push(Instruction::LocalGet(env_local));
                     lambda_instrs.push(Instruction::StructGet {
                         struct_type_index: concrete_closure_ty,

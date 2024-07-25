@@ -14,11 +14,11 @@ build-wasm-lib:
 
 run-wasm FILE:
     mkdir -p build
-    cargo run --bin nemo compile {{ FILE }} --output build/{{ without_extension(FILE) }}.wasm
-    wasm-opt --enable-reference-types --enable-gc -O3 build/{{ without_extension(FILE) }}.wasm -o build/{{ without_extension(FILE) }}_opt.wasm
-    wasm-tools print build/{{ without_extension(FILE) }}.wasm -o build/{{ without_extension(FILE) }}.wast
-    wasm-tools print build/{{ without_extension(FILE) }}_opt.wasm -o build/{{ without_extension(FILE) }}_opt.wast
-    node dev/run-wasm.mjs build/{{ without_extension(FILE) }}.wasm
+    cargo run --bin nemo compile {{ FILE }} --output build/{{ without_extension(file_name(FILE)) }}.wasm
+    wasm-opt --enable-reference-types --enable-gc -O3 build/{{ without_extension(file_name(FILE)) }}.wasm -o build/{{ without_extension(file_name(FILE)) }}_opt.wasm
+    wasm-tools print build/{{ without_extension(file_name(FILE)) }}.wasm -o build/{{ without_extension(file_name(FILE)) }}.wast
+    wasm-tools print build/{{ without_extension(file_name(FILE)) }}_opt.wasm -o build/{{ without_extension(file_name(FILE)) }}_opt.wast
+    node dev/run-wasm.mjs build/{{ without_extension(file_name(FILE)) }}.wasm
 
 dev FILE:
     RUST_BACKTRACE=1 watchexec --quiet -e nemo,rs just run-wasm {{ FILE }}

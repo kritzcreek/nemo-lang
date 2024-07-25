@@ -20,10 +20,10 @@ variant List[a] {
 
 fn map[a, b](f : fn (a) -> b, as : List[a]) -> List[b] {
   match as {
-    List::Nil l => { List::Nil#[b] {} },
+    List::Nil l => { List::Nil {} },
     List::Cons l => {
       let new_head = f(l.head);
-      List::Cons#[b] {
+      List::Cons {
         head = new_head,
         tail = map#[a, b](f, l.tail)
       }
@@ -44,9 +44,9 @@ fn for_each[a](f : fn (a) -> unit, as : List[a]) {
 }
 
 fn range(lo : i32, hi : i32) -> List[i32] {
-  let result = List::Nil#[i32]{};
+  let result : List[i32] = List::Nil {};
   while lo < hi {
-    set result = List::Cons#[i32] { head = hi, tail = result };
+    set result = List::Cons { head = hi, tail = result };
     set hi = hi - 1
   };
   result

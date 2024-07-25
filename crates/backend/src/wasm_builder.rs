@@ -550,7 +550,7 @@ impl<'a> Builder<'a> {
             })),
             mutable: false,
         }];
-        fields.extend(captures.into_iter().map(|t| FieldType {
+        fields.extend(captures.iter().map(|t| FieldType {
             // Careful! May change self.types length
             element_type: StorageType::Val(self.val_ty(t)),
             mutable: false,

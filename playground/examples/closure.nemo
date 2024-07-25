@@ -5,7 +5,7 @@ fn main() -> i32 {
     let add15 = fn (z : i32) -> i32 {
       x + y + z
     };
-    twice#[i32](add15)(12);
+    twice(add15)(12);
 }
 
 fn twice[a](f : fn(a) -> a) -> fn (a) -> a {

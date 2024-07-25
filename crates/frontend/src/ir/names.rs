@@ -50,6 +50,7 @@ pub struct NameSupply {
     typ: u32,
     typ_var: u32,
     field: u32,
+    gen: u32,
     pub name_map: HashMap<Name, Id>,
 }
 
@@ -97,6 +98,19 @@ impl NameSupply {
         self.field += 1;
         let name = Name::Field(self.field);
         self.name_map.insert(name, id);
+        name
+    }
+
+    pub fn gen_idx(&mut self) -> Name {
+        self.gen += 1;
+        let name = Name::Gen(self.gen);
+        self.name_map.insert(
+            name,
+            Id {
+                it: format!("gen{}", self.gen),
+                at: TextRange::default(),
+            },
+        );
         name
     }
 

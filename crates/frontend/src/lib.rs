@@ -8,7 +8,6 @@ pub mod types;
 
 use parser::parse_prog;
 
-use crate::ir::format::format_ir;
 pub use error::CheckError;
 pub use types::CheckResult;
 
@@ -29,9 +28,6 @@ pub fn run_frontend(source: &str) -> CheckResult<CheckError> {
     if errors.is_empty() && check_result.ir.is_none() {
         panic!("No IR generated, despite no errors")
     };
-    if let Some(ir) = &check_result.ir {
-        println!("{}", format_ir(&check_result.names, ir));
-    }
 
     CheckResult {
         errors,
