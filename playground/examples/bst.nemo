@@ -1,7 +1,7 @@
 // Inserts random numbers from 0 to 100 into a binary search tree until it
 // reaches size 50, then looks up the values for 1, 11, 21, ..., 91
 fn main() {
-  let tree : Bst[i32, f32] = Bst {
+  let tree = Bst {
     compare = compare_i32,
     root = leaf(10, 3.14),
   };
