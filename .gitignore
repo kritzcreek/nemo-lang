@@ -3,3 +3,5 @@
 /build/
 # Worktree for managing gh-pages branch
 gh-pages/
+# I use top-level nemo files for experimentation with the `just dev file.nemo` command all the time
+/*.nemo
