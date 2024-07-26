@@ -273,7 +273,6 @@ dependencies = [
  "ariadne",
  "derive_ir",
  "insta",
- "lazy_static",
  "lexpr",
  "line-index",
  "logos",
