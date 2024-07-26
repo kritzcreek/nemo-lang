@@ -574,8 +574,9 @@ impl Typechecker {
                 None => Ty::Array(Box::new(Ty::Error)),
             },
             Type::TyCons(t) => {
-                let ty_args: Vec<Ty> = t.type_args().map(|t| self.check_ty(errors, &t)).collect();
-                if let Some(ty) = t.qualifier().map(|q| q.upper_ident_token().unwrap()) {
+                let (name, ty_def) = if let Some(ty) =
+                    t.qualifier().map(|q| q.upper_ident_token().unwrap())
+                {
                     let Some(TypeDef::Variant(def)) = self.context.lookup_type(ty.text()) else {
                         errors.report(&ty, UnknownType(ty.text().to_string()));
                         return Ty::Error;
@@ -591,13 +592,7 @@ impl Typechecker {
                     };
                     self.record_ref(&alt, *name);
 
-                    let ty_param_names: Vec<Name> = def.ty_params.iter().map(|(_, n)| *n).collect();
-                    let subst = Substitution::new(&ty_param_names, &ty_args);
-
-                    Ty::Cons {
-                        name: *name,
-                        ty_args: subst,
-                    }
+                    (def.name, TypeDef::Variant(def))
                 } else {
                     let ty_name = t.upper_ident_token().unwrap();
                     let Some(def) = self.context.lookup_type(ty_name.text()) else {
@@ -606,13 +601,19 @@ impl Typechecker {
                     };
                     self.record_ref(&ty_name, def.name());
 
-                    let ty_param_names: Vec<Name> =
-                        def.ty_params().iter().map(|(_, n)| *n).collect();
-                    let subst = Substitution::new(&ty_param_names, &ty_args);
-                    Ty::Cons {
-                        name: def.name(),
-                        ty_args: subst,
-                    }
+                    (def.name(), def)
+                };
+
+                let ty_args: Vec<Ty> = t.type_args().map(|t| self.check_ty(errors, &t)).collect();
+                let ty_param_names: Vec<Name> =
+                    ty_def.ty_params().iter().map(|(_, n)| *n).collect();
+                if ty_param_names.len() != ty_args.len() {
+                    errors.report(t, TyArgCountMismatch(ty_param_names.len(), ty_args.len()));
+                    return Ty::Error;
+                }
+                Ty::Cons {
+                    name,
+                    ty_args: Substitution::new(&ty_param_names, &ty_args),
                 }
             }
             Type::TyVar(v) => {
@@ -1938,18 +1939,19 @@ fn match_ty(subst: &mut Substitution, definition: Ty, inferred: &Ty) -> Result<(
                 ty_args: ts2,
             },
         ) if n1 == *n2 => {
+            let ts1_len = ts1.0.len();
             for (k, v) in ts1.0 {
                 match_ty(
                     subst,
                     v,
                     ts2.lookup(k)
-                        // TODO I'm not sure this won't randomly happen
-                        .expect("Two matching Cons types with different subst variables"),
+                        .ok_or_else(|| ArgCountMismatch(ts1_len, ts2.0.len()))?,
                 )?
             }
             Ok(())
         }
         (t1, t2) => {
+            // TODO: How to deal with `ERROR` here? We don't want to produce follow-up errors
             if t1 == *t2 {
                 Ok(())
             } else {
