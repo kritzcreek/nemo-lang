@@ -11,7 +11,6 @@ ci:
     cargo clippy --all-targets --all-features
     cargo fmt --all --check
 
-    cargo binstall wasm-bindgen-cli wasm-opt
     just build-wasm-lib
     just build-playground
 
