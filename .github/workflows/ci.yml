@@ -8,11 +8,8 @@ jobs:
     name: CI
     runs-on: ubuntu-latest
     steps:
-      - name: Set up toolchain
-        uses: actions-rust-lang/setup-rust-toolchain@v1
-      - name: Install tools
-        uses: cargo-bins/cargo-binstall@v1.8.0
-        run: cargo binstall -y just wasm-bindgen-cli wasm-opt
-      - name: Run CI script
-        uses: actions/checkout@v4
-        run: just ci
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: cargo-bins/cargo-binstall@v1.8.0
+      - uses: actions/checkout@v4
+      - run: cargo binstall -y just wasm-bindgen-cli wasm-opt
+      - run: just ci
