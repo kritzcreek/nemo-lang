@@ -3,9 +3,17 @@ set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
 install:
     cargo install --path crates/cli
 
+ci:
+    just gen
+    git update-index -q --really-refresh
+    git diff-index --quiet HEAD crates/frontend/src/syntax/nodes.rs
+    cargo test --all
+    cargo clippy --all-targets --all-features
+    cargo fmt --all --check
+
 gen:
     cargo xtask-gen-ast
-    cargo fmt --all
+    cargo fmt -- crates/frontend/src/syntax/nodes.rs
 
 build-wasm-lib:
     cd crates/wasm-lib && cargo rustc  --crate-type cdylib --target wasm32-unknown-unknown --release
