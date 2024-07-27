@@ -10,8 +10,6 @@ ci:
     cargo test --all
     cargo clippy --all-targets --all-features
     cargo fmt --all --check
-
-    just build-wasm-lib
     just build-playground
 
 gen:
