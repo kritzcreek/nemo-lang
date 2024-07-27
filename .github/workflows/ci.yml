@@ -12,5 +12,5 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - uses: cargo-bins/cargo-binstall@v1.8.0
       - run: |
-          cargo binstall -y just wasm-bindgen-cli wasm-opt
+          cargo binstall -y --force just wasm-bindgen-cli wasm-opt
           just ci
