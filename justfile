@@ -3,9 +3,18 @@ set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
 install:
     cargo install --path crates/cli
 
+ci:
+    just gen
+    git update-index -q --really-refresh
+    git diff-index --quiet HEAD crates/frontend/src/syntax/nodes.rs
+    cargo test --all
+    cargo clippy --all-targets --all-features
+    cargo fmt --all --check
+    just build-playground
+
 gen:
     cargo xtask-gen-ast
-    cargo fmt --all
+    cargo fmt -- crates/frontend/src/syntax/nodes.rs
 
 build-wasm-lib:
     cd crates/wasm-lib && cargo rustc  --crate-type cdylib --target wasm32-unknown-unknown --release
@@ -26,8 +35,10 @@ dev FILE:
 playground: build-wasm-lib
     cd playground && npm i && npm run dev
 
-update-gh-pages: build-wasm-lib
+build-playground: build-wasm-lib
     cd playground && npm i && npm run build
+
+update-gh-pages: build-playground
     rm -r gh-pages/*
     cp -r playground/dist/* gh-pages/
 
