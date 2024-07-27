@@ -11,6 +11,10 @@ ci:
     cargo clippy --all-targets --all-features
     cargo fmt --all --check
 
+    cargo binstall wasm-bindgen-cli wasm-opt
+    just build-wasm-lib
+    just build-playground
+
 gen:
     cargo xtask-gen-ast
     cargo fmt -- crates/frontend/src/syntax/nodes.rs
@@ -34,8 +38,10 @@ dev FILE:
 playground: build-wasm-lib
     cd playground && npm i && npm run dev
 
-update-gh-pages: build-wasm-lib
+build-playground: build-wasm-lib
     cd playground && npm i && npm run build
+
+update-gh-pages: build-playground
     rm -r gh-pages/*
     cp -r playground/dist/* gh-pages/
 
