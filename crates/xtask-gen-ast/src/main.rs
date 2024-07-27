@@ -261,21 +261,14 @@ fn generate_syntax() -> Result<()> {
     let mut grammar_str = include_str!("../../frontend/src/syntax/nodes.ungram").to_string();
     normalize_newlines(&mut grammar_str);
     let grammar = Grammar::from_str(&grammar_str).unwrap();
-    println!("{:#?}", grammar);
-
     let ast = lower(&grammar);
-
-    println!("{:#?}", ast);
-
     let src = generate_nodes(&ast)?;
-
     let nodes_path = project_root()
         .join("crates")
         .join("frontend")
         .join("src")
         .join("syntax")
         .join("nodes.rs");
-
     let mut file: File = File::create(nodes_path)?;
     write!(file, "{}", src)?;
     Ok(())

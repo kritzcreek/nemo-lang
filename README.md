@@ -45,7 +45,7 @@ Features we implement "on-top"
 - Nested set targets for composite types: `set p.particles[2].vx = 10.0`
 - Block scoping
 
-# Working on the project
+## Working on the project
 
 The compiler is written in Rust, so at the minimum you'll need a [Rust toolchain].
 
