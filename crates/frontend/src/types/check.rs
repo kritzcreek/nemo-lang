@@ -569,6 +569,7 @@ impl Typechecker {
             Type::TyFloat(_) => Ty::F32,
             Type::TyBool(_) => Ty::Bool,
             Type::TyUnit(_) => Ty::Unit,
+            Type::TyBytes(_) => Ty::Bytes,
             Type::TyArray(t) => match t.elem().map(|e| self.check_ty(errors, &e)) {
                 Some(elem_ty) => Ty::Array(Box::new(elem_ty)),
                 None => Ty::Array(Box::new(Ty::Error)),
@@ -768,6 +769,18 @@ impl Typechecker {
                     errors.report(l, InvalidLiteral);
                     (Ty::I32, None)
                 }
+            }
+            Literal::LitBytes(s) => {
+                let tkn = s.bytes_lit_token().unwrap();
+                let without_quotes = tkn
+                    .text()
+                    .strip_prefix('"')
+                    .and_then(|t| t.strip_suffix('"'))
+                    .unwrap();
+                (
+                    Ty::Bytes,
+                    Some(ir::LitData::Bytes(without_quotes.to_string())),
+                )
             }
         };
         (

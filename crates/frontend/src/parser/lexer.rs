@@ -178,6 +178,9 @@ pub enum SyntaxKind {
     #[token("unit")]
     UNIT_BUILTIN,
 
+    #[token("bytes")]
+    BYTES_BUILTIN,
+
     #[regex("[a-z_][A-Za-z0-9_]*")]
     IDENT,
 
@@ -195,6 +198,9 @@ pub enum SyntaxKind {
 
     #[regex("0x[0-9a-fA-f]+")]
     HEX_LIT,
+
+    #[regex("\"[^\"]*\"")]
+    BYTES_LIT,
 
     #[token(".")]
     DOT,
@@ -297,6 +303,7 @@ pub enum SyntaxKind {
     TyFloat,
     TyBool,
     TyUnit,
+    TyBytes,
     TyArray,
     TyFn,
     TyCons,
@@ -321,6 +328,7 @@ pub enum SyntaxKind {
     LitBool,
     LitInt,
     LitFloat,
+    LitBytes,
 
     // Expressions
     ELit,
@@ -412,6 +420,7 @@ macro_rules ! T {
     [i32] => { SyntaxKind::I32_BUILTIN };
     [f32] => { SyntaxKind::F32_BUILTIN };
     [bool] => { SyntaxKind::BOOL_BUILTIN };
+    [bytes] => { SyntaxKind::BYTES_BUILTIN };
     [unit] => { SyntaxKind::UNIT_BUILTIN };
     [fn] => { SyntaxKind::FN_KW };
     [global] => { SyntaxKind::GLOBAL_KW };
@@ -431,6 +440,7 @@ macro_rules ! T {
     [binary_lit] => { SyntaxKind::BINARY_LIT };
     [hex_lit] => { SyntaxKind::HEX_LIT };
     [float_lit] => { SyntaxKind::FLOAT_LIT };
+    [bytes_lit] => { SyntaxKind::BYTES_LIT };
     [ident] => { SyntaxKind::IDENT };
     [upper_ident] => { SyntaxKind::UPPER_IDENT };
 }

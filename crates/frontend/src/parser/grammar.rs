@@ -291,6 +291,10 @@ fn lit(p: &mut Parser) -> Progress {
             p.bump_any();
             p.finish_at(c, SyntaxKind::LitFloat)
         }
+        T![bytes_lit] => {
+            p.bump_any();
+            p.finish_at(c, SyntaxKind::LitBytes)
+        }
         _ => return Progress::None,
     }
 

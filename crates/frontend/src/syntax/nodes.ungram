@@ -28,6 +28,7 @@ Type
   = TyInt
   | TyFloat
   | TyBool
+  | TyBytes
   | TyUnit
   | TyArray
   | TyVar
@@ -37,6 +38,7 @@ Type
 TyInt = 'i32'
 TyFloat = 'f32'
 TyBool = 'bool'
+TyBytes = 'bytes'
 TyUnit = 'unit'
 TyArray = '[' elem:Type ']'
 TyCons = Qualifier? 'upper_ident' type_args:Type*
@@ -48,11 +50,12 @@ TyFn = 'fn' TyArgList '->' result:Type
 TyArgList = '(' Type* ')'
 
 // Literals
-Literal = LitBool | LitFloat | LitInt
+Literal = LitBool | LitFloat | LitInt | LitBytes
 
 LitInt = 'int_lit' | 'binary_lit' | 'hex_lit'
 LitBool = 'true' | 'false'
 LitFloat = 'float_lit'
+LitBytes = 'bytes_lit'
 
 // Expressions
 Expr

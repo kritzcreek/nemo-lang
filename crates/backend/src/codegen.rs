@@ -48,6 +48,10 @@ impl<'a> Codegen<'a> {
         match ty {
             Ty::I32 | Ty::Unit | Ty::Bool => ConstExpr::i32_const(0),
             Ty::F32 => ConstExpr::f32_const(0.0),
+            Ty::Bytes => {
+                let ty_idx = self.builder.bytes_ty();
+                ConstExpr::ref_null(HeapType::Concrete(ty_idx))
+            }
             Ty::Array(t) => {
                 let ty_idx = self.builder.array_type_elem(t);
                 ConstExpr::ref_null(HeapType::Concrete(ty_idx))
@@ -72,11 +76,22 @@ impl<'a> Codegen<'a> {
         }
     }
 
-    fn compile_lit(lit: Lit) -> Vec<Instruction<'a>> {
+    fn compile_lit(&mut self, lit: Lit) -> Vec<Instruction<'a>> {
         match lit.it {
             LitData::I32(i) => vec![Instruction::I32Const(i)],
             LitData::F32(f) => vec![Instruction::F32Const(f)],
             LitData::Bool(t) => vec![Instruction::I32Const(if t { 1 } else { 0 })],
+            LitData::Bytes(s) => {
+                let bytes = s.as_bytes().to_vec();
+                vec![
+                    Instruction::I32Const(0),
+                    Instruction::I32Const(bytes.len() as i32),
+                    Instruction::ArrayNewData {
+                        array_type_index: self.builder.bytes_ty(),
+                        array_data_index: self.builder.data(bytes),
+                    },
+                ]
+            }
             LitData::Unit => vec![Instruction::I32Const(0)],
         }
     }
@@ -112,7 +127,7 @@ impl<'a> Codegen<'a> {
 
     fn compile_expr(&mut self, body: &mut BodyBuilder, expr: Expr) -> Vec<Instruction<'a>> {
         match *expr.it {
-            ExprData::Lit { lit } => Self::compile_lit(lit),
+            ExprData::Lit { lit } => self.compile_lit(lit),
             ExprData::Var { name } => match name {
                 Name::Local(_) => vec![Instruction::LocalGet(body.lookup_local(&name).unwrap())],
                 Name::Global(_) => vec![Instruction::GlobalGet(self.builder.lookup_global(&name))],
