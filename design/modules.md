@@ -11,3 +11,6 @@ means of abstraction (first class modules etc.)
 - Should enable separate compilation (tricky as I'm also considering monomorphization). Doesn't need to be implemented, but possible to add later on
 - Unambiguous name resolution for a given module without requiring access to its dependencies (improves IDE tooling). Impossible given that we do type directed resolution of struct fields?
 - Types have their own namespaces (Nested?)
+
+import <- wasm imports
+use    <- module imports

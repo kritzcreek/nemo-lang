@@ -5,11 +5,11 @@ use std::{collections::HashMap, mem};
 use frontend::ir::{FuncTy, Id, Import, Name, NameSupply, Struct, Substitution, Ty, Variant};
 use text_size::TextRange;
 use wasm_encoder::{
-    self, ArrayType, CodeSection, CompositeType, ConstExpr, DataSection, ElementSection, Elements,
-    EntityType, ExportKind, ExportSection, FieldType, FuncType, Function, FunctionSection,
-    GlobalSection, GlobalType, HeapType, ImportSection, IndirectNameMap, Instruction, Module,
-    NameMap as WasmNameMap, NameSection, RefType, StartSection, StorageType, StructType, SubType,
-    TypeSection, ValType,
+    self, ArrayType, CodeSection, CompositeType, ConstExpr, DataCountSection, DataSection,
+    ElementSection, Elements, EntityType, ExportKind, ExportSection, FieldType, FuncType, Function,
+    FunctionSection, GlobalSection, GlobalType, HeapType, ImportSection, IndirectNameMap,
+    Instruction, Module, NameMap as WasmNameMap, NameSection, RefType, StartSection, StorageType,
+    StructType, SubType, TypeSection, ValType,
 };
 
 type FuncIdx = u32;
@@ -272,6 +272,11 @@ impl<'a> Builder<'a> {
             let ix = (_ix + _import_count) as u32;
             all_local_names.append(ix, &local_names_map);
         }
+        // data_count_section
+        let data_count_section = DataCountSection {
+            count: self.datas.len() as u32,
+        };
+
         // data_section
         let mut data_section = DataSection::new();
         for data in self.datas {
@@ -293,6 +298,7 @@ impl<'a> Builder<'a> {
         module.section(&export_section);
         start_section.map(|s| module.section(&s));
         module.section(&elem_section);
+        module.section(&data_count_section);
         module.section(&code_section);
         module.section(&data_section);
         module.section(&name_section);

@@ -216,6 +216,10 @@ fn typ(p: &mut Parser) -> Progress {
             p.bump(T![bool]);
             p.finish_at(c, SyntaxKind::TyBool)
         }
+        T![bytes] => {
+            p.bump(T![bytes]);
+            p.finish_at(c, SyntaxKind::TyBytes)
+        }
         T![unit] => {
             p.bump(T![unit]);
             p.finish_at(c, SyntaxKind::TyUnit)
