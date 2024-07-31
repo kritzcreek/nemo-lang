@@ -139,6 +139,61 @@ static BUILTINS: LazyLock<HashMap<&'static str, Fn>> = LazyLock::new(|| {
             },
         },
     );
+    m.insert(
+        "bytes_get",
+        Fn {
+            name: "bytes_get",
+            ty_params: vec![],
+            ty: FuncTy {
+                arguments: vec![Ty::Bytes, Ty::I32],
+                result: Ty::I32,
+            },
+        },
+    );
+    m.insert(
+        "bytes_set",
+        Fn {
+            name: "bytes_set",
+            ty_params: vec![],
+            ty: FuncTy {
+                arguments: vec![Ty::Bytes, Ty::I32, Ty::I32],
+                result: Ty::Unit,
+            },
+        },
+    );
+    m.insert(
+        "bytes_len",
+        Fn {
+            name: "bytes_len",
+            ty_params: vec![],
+            ty: FuncTy {
+                arguments: vec![Ty::Bytes],
+                result: Ty::I32,
+            },
+        },
+    );
+    m.insert(
+        "bytes_new",
+        Fn {
+            name: "bytes_new",
+            ty_params: vec![],
+            ty: FuncTy {
+                arguments: vec![Ty::I32, Ty::I32],
+                result: Ty::Bytes,
+            },
+        },
+    );
+    m.insert(
+        "bytes_copy",
+        Fn {
+            name: "bytes_copy",
+            ty_params: vec![],
+            ty: FuncTy {
+                arguments: vec![Ty::Bytes, Ty::I32, Ty::Bytes, Ty::I32, Ty::I32],
+                result: Ty::Unit,
+            },
+        },
+    );
     m
 });
 

@@ -189,6 +189,25 @@ impl<'a> Codegen<'a> {
                         if builtin == "array_new" {
                             let array_ty = self.builder.array_type(&expr.ty);
                             instrs.push(Instruction::ArrayNew(array_ty))
+                        } else if builtin == "bytes_get" {
+                            let bytes_ty = self.builder.bytes_ty();
+                            instrs.push(Instruction::ArrayGetU(bytes_ty))
+                        } else if builtin == "bytes_set" {
+                            let bytes_ty = self.builder.bytes_ty();
+                            instrs.push(Instruction::ArraySet(bytes_ty))
+                        } else if builtin == "bytes_len" {
+                            instrs.push(Instruction::ArrayLen)
+                        } else if builtin == "bytes_new" {
+                            let bytes_ty = self.builder.bytes_ty();
+                            instrs.push(Instruction::ArrayNew(bytes_ty))
+                        } else if builtin == "bytes_copy" {
+                            let bytes_ty = self.builder.bytes_ty();
+                            instrs.push(Instruction::ArrayCopy {
+                                array_type_index_src: bytes_ty,
+                                array_type_index_dst: bytes_ty,
+                            });
+                            // unit return value
+                            instrs.push(Instruction::I32Const(0));
                         } else {
                             instrs.push(builtin_instruction(builtin))
                         }
