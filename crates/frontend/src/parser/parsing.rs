@@ -8,7 +8,6 @@ use text_size::{TextRange, TextSize};
 pub struct Parser<'a> {
     tokens: Vec<TToken<'a>>,
     pub(crate) builder: GreenNodeBuilder<'static>,
-    // TODO: Be smarter here
     pub(crate) errors: Vec<ParseError>,
 }
 

@@ -216,6 +216,10 @@ fn typ(p: &mut Parser) -> Progress {
             p.bump(T![bool]);
             p.finish_at(c, SyntaxKind::TyBool)
         }
+        T![bytes] => {
+            p.bump(T![bytes]);
+            p.finish_at(c, SyntaxKind::TyBytes)
+        }
         T![unit] => {
             p.bump(T![unit]);
             p.finish_at(c, SyntaxKind::TyUnit)
@@ -262,20 +266,6 @@ fn typ(p: &mut Parser) -> Progress {
     Progress::Made
 }
 
-// const EXPR_FIRST: [SyntaxKind; 11] = [
-//     T![true],
-//     T![false],
-//     T![int_lit],
-//     T![float_lit],
-//     T![ident],
-//     T![upper_ident],
-//     T!['('],
-//     T![if],
-//     T!['{'],
-//     T!['['],
-//     T![at_ident],
-// ];
-
 fn lit(p: &mut Parser) -> Progress {
     let c = p.checkpoint();
     match p.current() {
@@ -290,6 +280,10 @@ fn lit(p: &mut Parser) -> Progress {
         T![float_lit] => {
             p.bump_any();
             p.finish_at(c, SyntaxKind::LitFloat)
+        }
+        T![bytes_lit] => {
+            p.bump_any();
+            p.finish_at(c, SyntaxKind::LitBytes)
         }
         _ => return Progress::None,
     }

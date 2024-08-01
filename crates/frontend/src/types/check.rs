@@ -569,6 +569,7 @@ impl Typechecker {
             Type::TyFloat(_) => Ty::F32,
             Type::TyBool(_) => Ty::Bool,
             Type::TyUnit(_) => Ty::Unit,
+            Type::TyBytes(_) => Ty::Bytes,
             Type::TyArray(t) => match t.elem().map(|e| self.check_ty(errors, &e)) {
                 Some(elem_ty) => Ty::Array(Box::new(elem_ty)),
                 None => Ty::Array(Box::new(Ty::Error)),
@@ -768,6 +769,18 @@ impl Typechecker {
                     errors.report(l, InvalidLiteral);
                     (Ty::I32, None)
                 }
+            }
+            Literal::LitBytes(s) => {
+                let tkn = s.bytes_lit_token().unwrap();
+                let without_quotes = tkn
+                    .text()
+                    .strip_prefix('"')
+                    .and_then(|t| t.strip_suffix('"'))
+                    .unwrap();
+                (
+                    Ty::Bytes,
+                    Some(ir::LitData::Bytes(without_quotes.to_string())),
+                )
             }
         };
         (
@@ -1649,8 +1662,6 @@ impl Typechecker {
                     let name = self.name_supply.local_idx(&binder_tkn);
                     builder.binder(Some(name));
                     self.record_def(&binder_tkn, name);
-                    // TODO can't record this as typed because the ident token is not a syntax node
-                    // self.record_typed(, &ty)
                     self.context
                         .add_var(binder_tkn.text().to_string(), ty, name)
                 }

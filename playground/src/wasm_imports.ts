@@ -1,14 +1,14 @@
 let consoleBuffer = "";
 
 export function getConsoleBuffer(): string {
-  return consoleBuffer
+  return consoleBuffer;
 }
 
 export function clearConsoleBuffer(): void {
-  consoleBuffer = ""
+  consoleBuffer = "";
 }
 
-let cachedImports : WebAssembly.Imports | undefined = undefined;
+let cachedImports: WebAssembly.Imports | undefined = undefined;
 
 function setupWasmImports(): WebAssembly.Imports {
   const canvas = document.getElementById("output-canvas")! as HTMLCanvasElement;
@@ -56,9 +56,16 @@ function setupWasmImports(): WebAssembly.Imports {
     return Math.random();
   }
 
+  function print_char(cp: number) {
+    const s = String.fromCodePoint(cp);
+    consoleBuffer += s;
+    console.log(s);
+  }
+
   const imports = {
     env: {
       log,
+      print_char,
       random,
       clear_canvas,
       begin_path,

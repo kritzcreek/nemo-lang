@@ -16,6 +16,7 @@ pub enum Ty {
     F32,
     Unit,
     Bool,
+    Bytes,
     Array(Box<Ty>),
     Cons { name: Name, ty_args: Substitution },
     Var(Name),
@@ -34,7 +35,7 @@ impl Ty {
 
     fn vars_inner(&self, acc: &mut HashSet<Name>) {
         match self {
-            Ty::I32 | Ty::F32 | Ty::Unit | Ty::Bool | Ty::Error | Ty::Diverge => {}
+            Ty::I32 | Ty::F32 | Ty::Unit | Ty::Bool | Ty::Bytes | Ty::Error | Ty::Diverge => {}
             Ty::Array(t) => t.vars_inner(acc),
             Ty::Cons { name: _, ty_args } => {
                 for ty in ty_args.0.values() {
@@ -72,6 +73,7 @@ impl fmt::Display for TyDisplay<'_> {
             Ty::F32 => write!(f, "f32"),
             Ty::Bool => write!(f, "bool"),
             Ty::Unit => write!(f, "unit"),
+            Ty::Bytes => write!(f, "bytes"),
             Ty::Diverge => write!(f, "!"),
             Ty::Array(t) => write!(f, "[{}]", t.display(self.name_map)),
             Ty::Cons {
@@ -167,7 +169,7 @@ impl Substitution {
         }
         match ty {
             Ty::Var(n) => self.0.get(&n).cloned().unwrap_or(ty),
-            Ty::I32 | Ty::F32 | Ty::Unit | Ty::Bool | Ty::Error | Ty::Diverge => ty,
+            Ty::I32 | Ty::F32 | Ty::Unit | Ty::Bool | Ty::Bytes | Ty::Error | Ty::Diverge => ty,
             Ty::Array(t) => Ty::Array(Box::new(self.apply(*t))),
             Ty::Func(f) => Ty::Func(Box::new(self.apply_func(*f))),
             Ty::Cons { name, ty_args } => Ty::Cons {
@@ -266,6 +268,7 @@ pub enum LitData {
     I32(i32),
     F32(f32),
     Bool(bool),
+    Bytes(String),
     Unit,
 }
 
