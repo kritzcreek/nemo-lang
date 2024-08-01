@@ -105,7 +105,7 @@ pub struct Builder<'a> {
     start_fn: Option<FuncIdx>,
     substitution: Substitution,
 
-    string_ty: Option<TypeIdx>,
+    bytes_ty: Option<TypeIdx>,
     // Stores the type index for all array types we've declared so far.
     // Uses the arrays _ELEM TYPE_ as the key
     func_tys: HashMap<FuncType, TypeIdx>,
@@ -136,7 +136,7 @@ impl<'a> Builder<'a> {
             exports: vec![],
             start_fn: None,
             substitution: Substitution::new(&[], &[]),
-            string_ty: None,
+            bytes_ty: None,
         }
     }
 
@@ -442,7 +442,7 @@ impl<'a> Builder<'a> {
     }
 
     pub fn bytes_ty(&mut self) -> TypeIdx {
-        match self.string_ty {
+        match self.bytes_ty {
             Some(idx) => idx,
             None => {
                 let idx = self.types.len() as TypeIdx;
@@ -454,7 +454,7 @@ impl<'a> Builder<'a> {
                         mutable: true,
                     })),
                 });
-                self.string_ty = Some(idx);
+                self.bytes_ty = Some(idx);
                 idx
             }
         }
