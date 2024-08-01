@@ -6,14 +6,7 @@ let instantiated;
 let imports = {
   env: {
     log: (arg) => console.log(arg),
-    print: (s) => {
-      let len = instantiated.instance.exports.byte_size(s);
-      let bytes = new Uint8Array(len);
-      for (let i = 0; i < len; i++) {
-        bytes[i] = instantiated.instance.exports.byte(s, i);
-      }
-      console.log(new TextDecoder("utf-8").decode(bytes));
-    },
+    print_char: (cp) => console.log(String.fromCodePoint(cp)),
     random_float: () => Math.random(),
   },
 };
