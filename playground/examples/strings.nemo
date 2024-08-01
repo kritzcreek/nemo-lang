@@ -1,20 +1,22 @@
+// An example showing off the basic primitives for working with
+// bytes and implementing utf8 strings on top of them.
+fn main() {
+  let s = "Hello! ";
+  let s2 = "😀";
+  let s3 = concat(s, s2);
+
+  print("Byte count:");
+  log(bytes_len(s3));
+
+  print("Codepoint count:");
+  log(codepoint_len(s3));
+
+  print("Concatenated:");
+  print(s3)
+}
+
 import log : fn (i32) -> unit from log
 import print_char : fn (i32) -> unit from print_char
-
-fn bytes_eq(a: bytes, b: bytes) -> bool {
-  let len = bytes_len(a);
-  if len != bytes_len(b) {
-    return false;
-  } else {};
-  let i = 0;
-  while i < len {
-    if bytes_get(a, i) != bytes_get(b, i) {
-      return false;
-    } else {};
-    set i = i + 1;
-  };
-  true
-}
 
 fn concat(b1: bytes, b2: bytes) -> bytes {
   let len1 = bytes_len(b1);
@@ -26,27 +28,12 @@ fn concat(b1: bytes, b2: bytes) -> bytes {
   b
 }
 
-fn codepoint_len(bs : bytes) -> i32 {
-  let result = 0;
-  let i = 0;
-  let bytes_len = bytes_len(bs);
-  while i < bytes_len {
-    let b = bytes_get(bs, i);
-    if i32_and(b, 0xC0) != 0x80 {
-      set result = result + 1;
-    } else {};
-    set i = i + 1;
-  };
-  result
-}
-
 struct CodepointAtByte {
   codepoint : i32,
   byte_count : i32
 }
 
-// Assumes well formed utf8. Returns the codepoint as the fst value
-// and the number of bytes consumed as snd
+// Assumes well formed utf8
 fn codepoint_at_byte(offset : i32, bs : bytes) -> CodepointAtByte {
   let first_byte = bytes_get(bs, offset);
   // ASCII case
@@ -62,32 +49,38 @@ fn codepoint_at_byte(offset : i32, bs : bytes) -> CodepointAtByte {
       if extra_bytes == 2 {
         let res = i32_shl(i32_and(first_byte, 15), 6);
         set res = i32_shl(res + i32_and(bytes_get(bs, offset + 1), 63), 6);
-        set res =   res + i32_and(bytes_get(bs, offset + 2), 63);
+        set res = res + i32_and(bytes_get(bs, offset + 2), 63);
         CodepointAtByte { codepoint = res, byte_count = 3 }
       } else {
         let res = i32_shl(i32_and(first_byte, 7), 6);
         set res = i32_shl(res + i32_and(bytes_get(bs, offset + 1), 63), 6);
         set res = i32_shl(res + i32_and(bytes_get(bs, offset + 2), 63), 6);
-        set res =   res + i32_and(bytes_get(bs, offset + 3), 63);
+        set res = res + i32_and(bytes_get(bs, offset + 3), 63);
         CodepointAtByte { codepoint = res, byte_count = 4 }
       }
     }
   }
 }
 
-struct Box[a] {
+variant Option[a] {
+  struct None {},
+  struct Some { value : a },
+}
+
+struct MutBox[a] {
   value : a
 }
 
-fn chars(bs : bytes) -> fn () -> i32 {
-  let offset = Box { value = 0 };
-  fn () -> i32 {
+// An iterator over the codepoints in a utf8 string
+fn chars(bs : bytes) -> fn () -> Option[i32] {
+  let offset = MutBox { value = 0 };
+  fn () -> Option[i32] {
     if offset.value == bytes_len(bs) {
-      0 - 1
+      Option::None {}
     } else {
       let result = codepoint_at_byte(offset.value, bs);
       set offset.value = offset.value + result.byte_count;
-      result.codepoint
+      Option::Some { value = result.codepoint }
     }
   }
 }
@@ -95,29 +88,45 @@ fn chars(bs : bytes) -> fn () -> i32 {
 fn print(s: bytes) {
   let next = chars(s);
   while true {
-    let c = next();
-    if c + 1 == 0 {
-      // Newline
-      print_char(0x0A);
-      return {}
-    } else {
-      print_char(c)
+    match next() {
+      Option::None _ => {
+        // newline
+        print_char(0x0A);
+        return {}
+      },
+      Option::Some char => {
+        print_char(char.value)
+      }
     }
   };
 }
 
-fn main() -> i32 {
-  let s = "Hello! ";
-  let s2 = "😀";
-  let s3 = concat(s, s2);
+// The following functions aren't used in the example, but they're nice to have
+fn bytes_eq(a: bytes, b: bytes) -> bool {
+  let len = bytes_len(a);
+  if len != bytes_len(b) {
+    return false;
+  } else {};
+  let i = 0;
+  while i < len {
+    if bytes_get(a, i) != bytes_get(b, i) {
+      return false;
+    } else {};
+    set i = i + 1;
+  };
+  true
+}
 
-  print("Byte count:");
-  log(bytes_len(s3));
-
-  print("Codepoint count:");
-  log(codepoint_len(s3));
-
-  print("Concatenated:");
-  print(s3);
-  0
+fn codepoint_len(bs : bytes) -> i32 {
+  let result = 0;
+  let i = 0;
+  let bytes_len = bytes_len(bs);
+  while i < bytes_len {
+    let b = bytes_get(bs, i);
+    if i32_and(b, 0xC0) != 0x80 {
+      set result = result + 1;
+    } else {};
+    set i = i + 1;
+  };
+  result
 }
