@@ -502,23 +502,25 @@ fn twice[a](f : fn(a) -> a) -> fn (a) -> a {
         f(f(x))
     }
 }
-`,gc=`import log : fn (i32) -> unit from log
-import print_char : fn (i32) -> unit from print_char
+`,gc=`// An example showing off the basic primitives for working with
+// bytes and implementing utf8 strings on top of them.
+fn main() {
+  let s = "Hello! ";
+  let s2 = "😀";
+  let s3 = concat(s, s2);
 
-fn bytes_eq(a: bytes, b: bytes) -> bool {
-  let len = bytes_len(a);
-  if len != bytes_len(b) {
-    return false;
-  } else {};
-  let i = 0;
-  while i < len {
-    if bytes_get(a, i) != bytes_get(b, i) {
-      return false;
-    } else {};
-    set i = i + 1;
-  };
-  true
+  print("Byte count:");
+  log(bytes_len(s3));
+
+  print("Codepoint count:");
+  log(codepoint_len(s3));
+
+  print("Concatenated:");
+  print(s3)
 }
+
+import log : fn (i32) -> unit from log
+import print_char : fn (i32) -> unit from print_char
 
 fn concat(b1: bytes, b2: bytes) -> bytes {
   let len1 = bytes_len(b1);
@@ -530,27 +532,12 @@ fn concat(b1: bytes, b2: bytes) -> bytes {
   b
 }
 
-fn codepoint_len(bs : bytes) -> i32 {
-  let result = 0;
-  let i = 0;
-  let bytes_len = bytes_len(bs);
-  while i < bytes_len {
-    let b = bytes_get(bs, i);
-    if i32_and(b, 0xC0) != 0x80 {
-      set result = result + 1;
-    } else {};
-    set i = i + 1;
-  };
-  result
-}
-
 struct CodepointAtByte {
   codepoint : i32,
   byte_count : i32
 }
 
-// Assumes well formed utf8. Returns the codepoint as the fst value
-// and the number of bytes consumed as snd
+// Assumes well formed utf8
 fn codepoint_at_byte(offset : i32, bs : bytes) -> CodepointAtByte {
   let first_byte = bytes_get(bs, offset);
   // ASCII case
@@ -566,32 +553,38 @@ fn codepoint_at_byte(offset : i32, bs : bytes) -> CodepointAtByte {
       if extra_bytes == 2 {
         let res = i32_shl(i32_and(first_byte, 15), 6);
         set res = i32_shl(res + i32_and(bytes_get(bs, offset + 1), 63), 6);
-        set res =   res + i32_and(bytes_get(bs, offset + 2), 63);
+        set res = res + i32_and(bytes_get(bs, offset + 2), 63);
         CodepointAtByte { codepoint = res, byte_count = 3 }
       } else {
         let res = i32_shl(i32_and(first_byte, 7), 6);
         set res = i32_shl(res + i32_and(bytes_get(bs, offset + 1), 63), 6);
         set res = i32_shl(res + i32_and(bytes_get(bs, offset + 2), 63), 6);
-        set res =   res + i32_and(bytes_get(bs, offset + 3), 63);
+        set res = res + i32_and(bytes_get(bs, offset + 3), 63);
         CodepointAtByte { codepoint = res, byte_count = 4 }
       }
     }
   }
 }
 
-struct Box[a] {
+variant Option[a] {
+  struct None {},
+  struct Some { value : a },
+}
+
+struct MutBox[a] {
   value : a
 }
 
-fn chars(bs : bytes) -> fn () -> i32 {
-  let offset = Box { value = 0 };
-  fn () -> i32 {
+// An iterator over the codepoints in a utf8 string
+fn chars(bs : bytes) -> fn () -> Option[i32] {
+  let offset = MutBox { value = 0 };
+  fn () -> Option[i32] {
     if offset.value == bytes_len(bs) {
-      0 - 1
+      Option::None {}
     } else {
       let result = codepoint_at_byte(offset.value, bs);
       set offset.value = offset.value + result.byte_count;
-      result.codepoint
+      Option::Some { value = result.codepoint }
     }
   }
 }
@@ -599,31 +592,47 @@ fn chars(bs : bytes) -> fn () -> i32 {
 fn print(s: bytes) {
   let next = chars(s);
   while true {
-    let c = next();
-    if c + 1 == 0 {
-      // Newline
-      print_char(0x0A);
-      return {}
-    } else {
-      print_char(c)
+    match next() {
+      Option::None _ => {
+        // newline
+        print_char(0x0A);
+        return {}
+      },
+      Option::Some char => {
+        print_char(char.value)
+      }
     }
   };
 }
 
-fn main() -> i32 {
-  let s = "Hello! ";
-  let s2 = "😀";
-  let s3 = concat(s, s2);
+// The following functions aren't used in the example, but they're nice to have
+fn bytes_eq(a: bytes, b: bytes) -> bool {
+  let len = bytes_len(a);
+  if len != bytes_len(b) {
+    return false;
+  } else {};
+  let i = 0;
+  while i < len {
+    if bytes_get(a, i) != bytes_get(b, i) {
+      return false;
+    } else {};
+    set i = i + 1;
+  };
+  true
+}
 
-  print("Byte count:");
-  log(bytes_len(s3));
-
-  print("Codepoint count:");
-  log(codepoint_len(s3));
-
-  print("Concatenated:");
-  print(s3);
-  0
+fn codepoint_len(bs : bytes) -> i32 {
+  let result = 0;
+  let i = 0;
+  let bytes_len = bytes_len(bs);
+  while i < bytes_len {
+    let b = bytes_get(bs, i);
+    if i32_and(b, 0xC0) != 0x80 {
+      set result = result + 1;
+    } else {};
+    set i = i + 1;
+  };
+  result
 }
 `,kn={bouncy_shapes:hc,loop:cc,poly:fc,bst:uc,list:dc,closure:pc,strings:gc};class V{lineAt(e){if(e<0||e>this.length)throw new RangeError(`Invalid position ${e} in document of length ${this.length}`);return this.lineInner(e,!1,1,0)}line(e){if(e<1||e>this.lines)throw new RangeError(`Invalid line number ${e} in ${this.lines}-line document`);return this.lineInner(e,!0,1,0)}replace(e,t,i){[e,t]=zt(this,e,t);let s=[];return this.decompose(0,e,s,2),i.length&&i.decompose(0,i.length,s,3),this.decompose(t,this.length,s,1),We.from(s,this.length-(t-e)+i.length)}append(e){return this.replace(this.length,this.length,e)}slice(e,t=this.length){[e,t]=zt(this,e,t);let i=[];return this.decompose(e,t,i,0),We.from(i,t-e)}eq(e){if(e==this)return!0;if(e.length!=this.length||e.lines!=this.lines)return!1;let t=this.scanIdentical(e,1),i=this.length-this.scanIdentical(e,-1),s=new pi(this),r=new pi(e);for(let o=t,l=t;;){if(s.next(o),r.next(o),o=0,s.lineBreak!=r.lineBreak||s.done!=r.done||s.value!=r.value)return!1;if(l+=s.value.length,s.done||l>=i)return!0}}iter(e=1){return new pi(this,e)}iterRange(e,t=this.length){return new Tl(this,e,t)}iterLines(e,t){let i;if(e==null)i=this.iter();else{t==null&&(t=this.lines+1);let s=this.line(e).from;i=this.iterRange(s,Math.max(s,t==this.lines+1?this.length:t<=1?0:this.line(t-1).to))}return new Dl(i)}toString(){return this.sliceString(0)}toJSON(){let e=[];return this.flatten(e),e}constructor(){}static of(e){if(e.length==0)throw new RangeError("A document must have at least one line");return e.length==1&&!e[0]?V.empty:e.length<=32?new Y(e):We.from(Y.split(e,[]))}}class Y extends V{constructor(e,t=mc(e)){super(),this.text=e,this.length=t}get lines(){return this.text.length}get children(){return null}lineInner(e,t,i,s){for(let r=0;;r++){let o=this.text[r],l=s+o.length;if((t?i:l)>=e)return new yc(s,l,i,o);s=l+1,i++}}decompose(e,t,i,s){let r=e<=0&&t>=this.length?this:new Y(jr(this.text,e,t),Math.min(t,this.length)-Math.max(0,e));if(s&1){let o=i.pop(),l=hn(r.text,o.text.slice(),0,r.length);if(l.length<=32)i.push(new Y(l,o.length+r.length));else{let a=l.length>>1;i.push(new Y(l.slice(0,a)),new Y(l.slice(a)))}}else i.push(r)}replace(e,t,i){if(!(i instanceof Y))return super.replace(e,t,i);[e,t]=zt(this,e,t);let s=hn(this.text,hn(i.text,jr(this.text,0,e)),t),r=this.length+i.length-(t-e);return s.length<=32?new Y(s,r):We.from(Y.split(s,[]),r)}sliceString(e,t=this.length,i=`
 `){[e,t]=zt(this,e,t);let s="";for(let r=0,o=0;r<=t&&o<this.text.length;o++){let l=this.text[o],a=r+l.length;r>e&&o&&(s+=i),e<a&&t>r&&(s+=l.slice(Math.max(0,e-r),t-r)),r=a+1}return s}flatten(e){for(let t of this.text)e.push(t)}scanIdentical(){return 0}static split(e,t){let i=[],s=-1;for(let r of e)i.push(r),s+=r.length+1,i.length==32&&(t.push(new Y(i,s)),i=[],s=-1);return s>-1&&t.push(new Y(i,s)),t}}class We extends V{constructor(e,t){super(),this.children=e,this.length=t,this.lines=0;for(let i of e)this.lines+=i.lines}lineInner(e,t,i,s){for(let r=0;;r++){let o=this.children[r],l=s+o.length,a=i+o.lines-1;if((t?a:l)>=e)return o.lineInner(e,t,i,s);s=l+1,i=a+1}}decompose(e,t,i,s){for(let r=0,o=0;o<=t&&r<this.children.length;r++){let l=this.children[r],a=o+l.length;if(e<=a&&t>=o){let h=s&((o<=e?1:0)|(a>=t?2:0));o>=e&&a<=t&&!h?i.push(l):l.decompose(e-o,t-o,i,h)}o=a+1}}replace(e,t,i){if([e,t]=zt(this,e,t),i.lines<this.lines)for(let s=0,r=0;s<this.children.length;s++){let o=this.children[s],l=r+o.length;if(e>=r&&t<=l){let a=o.replace(e-r,t-r,i),h=this.lines-o.lines+a.lines;if(a.lines<h>>4&&a.lines>h>>6){let c=this.children.slice();return c[s]=a,new We(c,this.length-(t-e)+i.length)}return super.replace(r,l,a)}r=l+1}return super.replace(e,t,i)}sliceString(e,t=this.length,i=`
