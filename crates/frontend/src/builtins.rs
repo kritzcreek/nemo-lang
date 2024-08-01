@@ -92,6 +92,9 @@ static BUILTINS: LazyLock<HashMap<&'static str, Fn>> = LazyLock::new(|| {
     m.insert("i32_popcnt", i32_func_unary("i32_popcnt"));
     m.insert("i32_rotl", i32_func_unary("i32_rotl"));
     m.insert("i32_rotr", i32_func_unary("i32_rotr"));
+    m.insert("i32_and", i32_func_binary("i32_and"));
+    m.insert("i32_or", i32_func_binary("i32_or"));
+    m.insert("i32_xor", i32_func_binary("i32_xor"));
     m.insert("i32_rem_s", i32_func_binary("i32_rem_s"));
     m.insert("i32_shl", i32_func_binary("i32_shl"));
     m.insert("i32_shr_s", i32_func_binary("i32_shr_s"));
@@ -136,6 +139,61 @@ static BUILTINS: LazyLock<HashMap<&'static str, Fn>> = LazyLock::new(|| {
             ty: FuncTy {
                 arguments: vec![Ty::Var(Name::Gen(0)), Ty::I32],
                 result: Ty::Array(Box::new(Ty::Var(Name::Gen(0)))),
+            },
+        },
+    );
+    m.insert(
+        "bytes_get",
+        Fn {
+            name: "bytes_get",
+            ty_params: vec![],
+            ty: FuncTy {
+                arguments: vec![Ty::Bytes, Ty::I32],
+                result: Ty::I32,
+            },
+        },
+    );
+    m.insert(
+        "bytes_set",
+        Fn {
+            name: "bytes_set",
+            ty_params: vec![],
+            ty: FuncTy {
+                arguments: vec![Ty::Bytes, Ty::I32, Ty::I32],
+                result: Ty::Unit,
+            },
+        },
+    );
+    m.insert(
+        "bytes_len",
+        Fn {
+            name: "bytes_len",
+            ty_params: vec![],
+            ty: FuncTy {
+                arguments: vec![Ty::Bytes],
+                result: Ty::I32,
+            },
+        },
+    );
+    m.insert(
+        "bytes_new",
+        Fn {
+            name: "bytes_new",
+            ty_params: vec![],
+            ty: FuncTy {
+                arguments: vec![Ty::I32, Ty::I32],
+                result: Ty::Bytes,
+            },
+        },
+    );
+    m.insert(
+        "bytes_copy",
+        Fn {
+            name: "bytes_copy",
+            ty_params: vec![],
+            ty: FuncTy {
+                arguments: vec![Ty::Bytes, Ty::I32, Ty::Bytes, Ty::I32, Ty::I32],
+                result: Ty::Unit,
             },
         },
     );

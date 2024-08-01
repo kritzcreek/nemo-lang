@@ -62,10 +62,11 @@ impl Formatter<'_> {
 
     fn expr(&self, e: &Expr) -> Value {
         match e.it.as_ref() {
-            ExprData::Lit { lit } => match lit.it {
-                LitData::I32(i) => i.into(),
-                LitData::F32(f) => f.into(),
-                LitData::Bool(b) => b.into(),
+            ExprData::Lit { lit } => match &lit.it {
+                LitData::I32(i) => (*i).into(),
+                LitData::F32(f) => (*f).into(),
+                LitData::Bool(b) => (*b).into(),
+                LitData::Bytes(s) => s.as_str().into(),
                 LitData::Unit => Value::symbol("unit"),
             },
             ExprData::Var { name } => self.name(name),
