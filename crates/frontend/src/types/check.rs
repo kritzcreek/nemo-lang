@@ -1662,8 +1662,6 @@ impl Typechecker {
                     let name = self.name_supply.local_idx(&binder_tkn);
                     builder.binder(Some(name));
                     self.record_def(&binder_tkn, name);
-                    // TODO can't record this as typed because the ident token is not a syntax node
-                    // self.record_typed(, &ty)
                     self.context
                         .add_var(binder_tkn.text().to_string(), ty, name)
                 }

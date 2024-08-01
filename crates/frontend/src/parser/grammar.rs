@@ -266,20 +266,6 @@ fn typ(p: &mut Parser) -> Progress {
     Progress::Made
 }
 
-// const EXPR_FIRST: [SyntaxKind; 11] = [
-//     T![true],
-//     T![false],
-//     T![int_lit],
-//     T![float_lit],
-//     T![ident],
-//     T![upper_ident],
-//     T!['('],
-//     T![if],
-//     T!['{'],
-//     T!['['],
-//     T![at_ident],
-// ];
-
 fn lit(p: &mut Parser) -> Progress {
     let c = p.checkpoint();
     match p.current() {
