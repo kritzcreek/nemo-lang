@@ -20,13 +20,21 @@ pub struct Highlight {
 }
 
 impl Highlight {
-    pub fn new(highlight: highlight::Highlight) -> Self {
+    pub fn new(input: &str, highlight: highlight::Highlight) -> Self {
         Highlight {
             kind: format!("{:?}", highlight.kind),
-            start: highlight.range.start().into(),
-            end: highlight.range.end().into(),
+            start: utf8_offset_to_utf16_offset(input, highlight.range.start().into()),
+            end: utf8_offset_to_utf16_offset(input, highlight.range.end().into()),
         }
     }
+}
+
+// TODO: This is quadratic, do it in linear time
+fn utf8_offset_to_utf16_offset(s: &str, byte_offset: usize) -> usize {
+    s.char_indices()
+        .take_while(|(i, _)| *i < byte_offset)
+        .map(|(_, c)| c.len_utf16())
+        .sum()
 }
 
 #[wasm_bindgen(getter_with_clone)]
@@ -43,7 +51,7 @@ pub fn compile(input: &str) -> CompileResult {
     let check_result = frontend::run_frontend(input);
     let highlights = highlight::highlight(&check_result.parse, &check_result.occurrences)
         .into_iter()
-        .map(Highlight::new)
+        .map(|h| Highlight::new(input, h))
         .collect();
     let (name_map, result) = match check_result.ir {
         Some(ir) if check_result.errors.is_empty() => {
