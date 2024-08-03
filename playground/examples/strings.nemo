@@ -5,14 +5,14 @@ fn main() {
   let s2 = "😀";
   let s3 = concat(s, s2);
 
-  print("Byte count:");
+  print_bytes("Byte count:");
   log(bytes_len(s3));
 
-  print("Codepoint count:");
+  print_bytes("Codepoint count:");
   log(codepoint_len(s3));
 
-  print("Concatenated:");
-  print(s3)
+  print_bytes("Concatenated:");
+  print_bytes(s3)
 }
 
 import log : fn (i32) -> unit from log
@@ -85,8 +85,7 @@ fn chars(bs : bytes) -> fn () -> Option[i32] {
   }
 }
 
-fn print(s: bytes) {
-  let next = chars(s);
+fn print_chars(next: fn () -> Option[i32]) {
   while true {
     match next() {
       Option::None _ => {
@@ -99,6 +98,10 @@ fn print(s: bytes) {
       }
     }
   };
+}
+
+fn print_bytes(s: bytes) {
+  print_chars(chars(s))
 }
 
 // The following functions aren't used in the example, but they're nice to have
@@ -129,4 +132,53 @@ fn codepoint_len(bs : bytes) -> i32 {
     set i = i + 1;
   };
   result
+}
+
+struct Str {
+  buf : bytes,
+  offset : i32,
+  len : i32,
+}
+
+fn str_concat(a : Str, b : Str) -> Str {
+  let len = a.len + b.len;
+  let buf = bytes_new(0, len);
+  bytes_copy(buf, 0, a.buf, a.offset, a.len);
+  bytes_copy(buf, a.len, b.buf, b.offset, b.len);
+  Str { buf = buf, offset = 0, len = len }
+}
+
+fn str_eq(a : Str, b : Str) -> bool {
+  if a.len != b.len {
+    return false;
+  } else {};
+  let i = 0;
+  while i < a.len {
+    if bytes_get(a.buf, a.offset + i) != bytes_get(b.buf, b.offset + i) {
+      return false;
+    } else {};
+    set i = i + 1;
+  };
+  true
+}
+
+fn str_new(buf : bytes) -> Str {
+  Str { buf = buf, offset = 0, len = bytes_len(buf) }
+}
+
+fn str_chars(s : Str) -> fn () -> Option[i32] {
+  let offset = MutBox { value = s.offset };
+  fn () -> Option[i32] {
+    if offset.value >= s.offset + s.len {
+      Option::None {}
+    } else {
+      let result = codepoint_at_byte(offset.value, s.buf);
+      set offset.value = offset.value + result.byte_count;
+      Option::Some { value = result.codepoint }
+    }
+  }
+}
+
+fn str_print(s : Str) {
+  print_chars(str_chars(s))
 }
