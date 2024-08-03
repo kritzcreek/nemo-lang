@@ -14,3 +14,29 @@ means of abstraction (first class modules etc.)
 
 import <- wasm imports
 use    <- module imports
+
+## Syntax
+```
+use str
+
+fn main() {
+  let s : str::Str = str::new("hello");
+  str::print(s)
+}
+
+module option
+exports (Option, some, none)
+
+variant Option[a] {}
+fn some[a](t: a) -> Option[a] {}
+
+module str
+exports (Str, len, print_char)
+
+import print_char : fn (i32) -> unit from print_char
+
+struct Str {}
+
+fn len(s: Str) -> Int { }
+fn concat(s1 : Str, s2 : Str) -> Str { }
+```

@@ -1,0 +1,120 @@
+---
+source: crates/frontend/tests/lib.rs
+expression: output
+input_file: crates/frontend/tests/parsing/modules.nemo
+---
+Root@0..191
+  ModHeader@0..68
+    MODULE_KW@0..6 "module"
+    SPACE@6..7 " "
+    IDENT@7..10 "str"
+    LINEFEED@10..11 "\n"
+    EXPORTS_KW@11..18 "exports"
+    SPACE@18..19 " "
+    L_PAREN@19..20 "("
+    ModExportTy@20..23
+      UPPER_IDENT@20..23 "Str"
+    COMMA@23..24 ","
+    SPACE@24..25 " "
+    ModExportVal@25..28
+      IDENT@25..28 "len"
+    COMMA@28..29 ","
+    SPACE@29..30 " "
+    ModExportVal@30..40
+      IDENT@30..40 "print_char"
+    R_PAREN@40..41 ")"
+    ModUse@41..53
+      LINEFEED@41..42 "\n"
+      LINEFEED@42..43 "\n"
+      USE_KW@43..46 "use"
+      SPACE@46..47 " "
+      IDENT@47..53 "option"
+    ModUse@53..68
+      LINEFEED@53..54 "\n"
+      USE_KW@54..57 "use"
+      SPACE@57..58 " "
+      IDENT@58..68 "prim_bytes"
+  TopImport@68..122
+    LINEFEED@68..69 "\n"
+    LINEFEED@69..70 "\n"
+    IMPORT_KW@70..76 "import"
+    SPACE@76..77 " "
+    ImpInternal@77..88
+      IDENT@77..87 "print_char"
+      SPACE@87..88 " "
+    COLON@88..89 ":"
+    SPACE@89..90 " "
+    TyFn@90..107
+      FN_KW@90..92 "fn"
+      SPACE@92..93 " "
+      TyArgList@93..99
+        L_PAREN@93..94 "("
+        TyInt@94..97
+          I32_BUILTIN@94..97 "i32"
+        R_PAREN@97..98 ")"
+        SPACE@98..99 " "
+      ARROW@99..101 "->"
+      SPACE@101..102 " "
+      TyUnit@102..107
+        UNIT_BUILTIN@102..106 "unit"
+        SPACE@106..107 " "
+    FROM_KW@107..111 "from"
+    SPACE@111..112 " "
+    ImpExternal@112..122
+      IDENT@112..122 "print_char"
+  TopStruct@122..137
+    LINEFEED@122..123 "\n"
+    LINEFEED@123..124 "\n"
+    STRUCT_KW@124..130 "struct"
+    SPACE@130..131 " "
+    UPPER_IDENT@131..134 "Str"
+    SPACE@134..135 " "
+    L_BRACE@135..136 "{"
+    R_BRACE@136..137 "}"
+  TopFn@137..157
+    LINEFEED@137..138 "\n"
+    LINEFEED@138..139 "\n"
+    FN_KW@139..141 "fn"
+    SPACE@141..142 " "
+    IDENT@142..145 "len"
+    L_PAREN@145..146 "("
+    Param@146..152
+      IDENT@146..147 "s"
+      COLON@147..148 ":"
+      SPACE@148..149 " "
+      TyCons@149..152
+        UPPER_IDENT@149..152 "Str"
+    R_PAREN@152..153 ")"
+    SPACE@153..154 " "
+    EBlock@154..157
+      L_BRACE@154..155 "{"
+      SPACE@155..156 " "
+      R_BRACE@156..157 "}"
+  TopFn@157..191
+    LINEFEED@157..158 "\n"
+    FN_KW@158..160 "fn"
+    SPACE@160..161 " "
+    IDENT@161..167 "concat"
+    L_PAREN@167..168 "("
+    Param@168..178
+      IDENT@168..170 "s1"
+      SPACE@170..171 " "
+      COLON@171..172 ":"
+      SPACE@172..173 " "
+      TyCons@173..176
+        UPPER_IDENT@173..176 "Str"
+      COMMA@176..177 ","
+      SPACE@177..178 " "
+    Param@178..186
+      IDENT@178..180 "s2"
+      SPACE@180..181 " "
+      COLON@181..182 ":"
+      SPACE@182..183 " "
+      TyCons@183..186
+        UPPER_IDENT@183..186 "Str"
+    R_PAREN@186..187 ")"
+    SPACE@187..188 " "
+    EBlock@188..191
+      L_BRACE@188..189 "{"
+      SPACE@189..190 " "
+      R_BRACE@190..191 "}"

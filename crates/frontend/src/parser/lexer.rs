@@ -121,6 +121,15 @@ pub enum SyntaxKind {
     #[regex("\n|\r\n")]
     LINEFEED,
 
+    #[token("module")]
+    MODULE_KW,
+
+    #[token("exports")]
+    EXPORTS_KW,
+
+    #[token("use")]
+    USE_KW,
+
     #[token("fn")]
     FN_KW,
 
@@ -201,6 +210,9 @@ pub enum SyntaxKind {
 
     #[regex("\"[^\"]*\"")]
     BYTES_LIT,
+
+    #[token("...")]
+    DOTDOTDOT,
 
     #[token(".")]
     DOT,
@@ -309,6 +321,14 @@ pub enum SyntaxKind {
     TyCons,
     TyVar,
 
+    // Modules
+    ModHeader,
+    ModUse,
+    ModExports,
+    ModExportVal,
+    ModExportTy,
+    ModExportAll,
+
     // Top level
     TopGlobal,
     TopFn,
@@ -410,6 +430,7 @@ macro_rules ! T {
     [==] => { SyntaxKind::DOUBLE_EQUALS };
     [!=] => { SyntaxKind::NOT_EQUALS };
     [.] => { SyntaxKind::DOT };
+    [dotdotdot] => { SyntaxKind::DOTDOTDOT };
     [::] => { SyntaxKind::DOUBLE_COLON };
     [:] => { SyntaxKind::COLON };
     [=] => { SyntaxKind::EQUALS };
@@ -422,6 +443,9 @@ macro_rules ! T {
     [bool] => { SyntaxKind::BOOL_BUILTIN };
     [bytes] => { SyntaxKind::BYTES_BUILTIN };
     [unit] => { SyntaxKind::UNIT_BUILTIN };
+    [module] => { SyntaxKind::MODULE_KW };
+    [exports] => { SyntaxKind::EXPORTS_KW };
+    [use] => { SyntaxKind::USE_KW };
     [fn] => { SyntaxKind::FN_KW };
     [global] => { SyntaxKind::GLOBAL_KW };
     [import] => { SyntaxKind::IMPORT_KW };

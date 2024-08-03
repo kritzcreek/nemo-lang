@@ -16,6 +16,7 @@ impl Progress {
 }
 
 pub fn prog(p: &mut Parser) {
+    module_header(p);
     while !p.at(SyntaxKind::EOF) {
         if !toplevel(p).made_progress() {
             let c = p.checkpoint();
@@ -27,6 +28,52 @@ pub fn prog(p: &mut Parser) {
             p.finish_at(c, SyntaxKind::Error)
         }
     }
+}
+
+fn module_header(p: &mut Parser) -> Progress {
+    let c = p.checkpoint();
+    if !p.eat(T![module]) {
+        return Progress::None;
+    }
+    p.expect(T![ident]);
+    p.expect(T![exports]);
+    p.expect(T!['(']);
+    if p.at(T![dotdotdot]) {
+        let c = p.checkpoint();
+        p.bump(T![dotdotdot]);
+        p.finish_at(c, SyntaxKind::ModExportAll);
+        p.expect(T![')']);
+        return Progress::Made;
+    }
+    while !p.at(SyntaxKind::EOF) && !p.at(T![')']) {
+        if !mod_export_item(p).made_progress() {
+            p.error("expected an export")
+        }
+        if !p.eat(T![,]) {
+            break;
+        }
+    }
+    p.expect(T![')']);
+    while !p.at(SyntaxKind::EOF) && p.at(T![use]) {
+        let c = p.checkpoint();
+        p.bump(T![use]);
+        p.expect(T![ident]);
+        p.finish_at(c, SyntaxKind::ModUse);
+    }
+    p.finish_at(c, SyntaxKind::ModHeader);
+    Progress::Made
+}
+
+fn mod_export_item(p: &mut Parser) -> Progress {
+    let c = p.checkpoint();
+    if p.eat(T![ident]) {
+        p.finish_at(c, SyntaxKind::ModExportVal);
+    } else if p.eat(T![upper_ident]) {
+        p.finish_at(c, SyntaxKind::ModExportTy);
+    } else {
+        return Progress::None;
+    }
+    Progress::Made
 }
 
 const TOP_LEVEL_FIRST: [SyntaxKind; 4] = [T![global], T![fn], T![import], T![struct]];
