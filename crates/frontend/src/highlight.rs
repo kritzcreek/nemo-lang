@@ -119,3 +119,23 @@ pub fn highlight(root: &Root, occurrences: &OccurrenceMap) -> Vec<Highlight> {
     highlights.sort_by_key(|hl| hl.range.start());
     highlights
 }
+
+pub fn translate_to_utf16(
+    input: &str,
+    highlights: Vec<Highlight>,
+) -> Vec<(usize, usize, HighlightKind)> {
+    let mut prev_tkn_end = 0;
+    let mut utf16_offset = 0;
+    highlights
+        .into_iter()
+        .map(|h| {
+            let tkn_start = h.range.start().into();
+            let tkn_end = h.range.end().into();
+            utf16_offset += str::encode_utf16(&input[prev_tkn_end..tkn_start]).count();
+            let utf16_start = utf16_offset;
+            utf16_offset += str::encode_utf16(&input[tkn_start..tkn_end]).count();
+            prev_tkn_end = tkn_end;
+            (utf16_start, utf16_offset, h.kind)
+        })
+        .collect()
+}
