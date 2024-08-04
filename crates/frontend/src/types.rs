@@ -1,6 +1,7 @@
 mod check;
 mod error;
 mod names;
+mod module;
 
 use crate::ir::{ModuleId, Name, NameSupply, Program};
 use crate::syntax::{token_ptr::SyntaxTokenPtr, Root};
