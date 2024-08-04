@@ -1,10 +1,12 @@
-use super::error::{
-    TyError,
-    TyErrorData::{self, *},
-    TyErrors,
-};
 use super::names::NameSupply;
-use crate::{builtins::lookup_builtin, ir::{ModuleId, NameTag}};
+use super::{
+    error::{
+        TyError,
+        TyErrorData::{self, *},
+        TyErrors,
+    },
+    Interface,
+};
 use crate::ir::{
     self, ExprBuilder, FuncTy, LambdaBuilder, LitBuilder, Name, PatVarBuilder, ReturnBuilder,
     Substitution, Ty, VarBuilder,
@@ -13,6 +15,10 @@ use crate::parser::SyntaxKind;
 use crate::syntax::token_ptr::SyntaxTokenPtr;
 use crate::syntax::*;
 use crate::T;
+use crate::{
+    builtins::lookup_builtin,
+    ir::{ModuleId, NameTag},
+};
 use std::collections::{HashMap, HashSet};
 use std::mem;
 use std::rc::Rc;
@@ -23,14 +29,14 @@ struct StructDef {
     name: Name,
     span: TextRange,
     variant: Option<Name>,
-    ty_params: Vec<(String, Name)>,
+    ty_params: Vec<Name>,
 }
 
 #[derive(Debug, Clone)]
 struct VariantDef {
     name: Name,
     span: TextRange,
-    ty_params: Vec<(String, Name)>,
+    ty_params: Vec<Name>,
     // TODO: The ordering of these alternatives needs to be deterministic
     alternatives: HashMap<String, Name>,
 }
@@ -54,7 +60,7 @@ impl TypeDef {
         }
     }
 
-    fn ty_params(&self) -> &[(String, Name)] {
+    fn ty_params(&self) -> &[Name] {
         match self {
             TypeDef::Struct(x) => &x.ty_params,
             TypeDef::Variant(x) => &x.ty_params,
@@ -81,7 +87,7 @@ impl StructFields {
 #[derive(Debug, Clone)]
 struct FuncDef {
     name: Name,
-    ty_params: Vec<(String, Name)>,
+    ty_params: Vec<Name>,
     ty: FuncTy,
 }
 
@@ -95,12 +101,14 @@ struct Ctx {
     // so that we can typecheck early returns
     return_type: Option<Rc<Ty>>,
 
-    // Basically "static" data. Once we've walked all type definitions
-    // and function headers this data is fixed.
+    // Basically "static" data. Once we've walked all uses,
+    // type definitions, and function headers this data is fixed.
     functions: HashMap<String, Rc<FuncDef>>,
     types_names: HashMap<String, Name>,
     type_defs: HashMap<Name, TypeDef>,
     field_defs: HashMap<Name, StructFields>,
+
+    uses: HashMap<ModuleId, Interface>,
 }
 
 impl Ctx {
@@ -114,6 +122,7 @@ impl Ctx {
             type_defs: HashMap::new(),
             types_names: HashMap::new(),
             field_defs: HashMap::new(),
+            uses: HashMap::new(),
         }
     }
 
@@ -154,7 +163,7 @@ impl Ctx {
         self.type_vars.clear()
     }
 
-    fn add_func(&mut self, v: String, name: Name, ty_params: Vec<(String, Name)>, ty: FuncTy) {
+    fn add_func(&mut self, v: String, name: Name, ty_params: Vec<Name>, ty: FuncTy) {
         self.functions.insert(
             v,
             Rc::new(FuncDef {
@@ -292,10 +301,10 @@ impl Typechecker {
         assert!(previous_ref.is_none())
     }
 
-    pub fn infer_program(&mut self, root: &Root) -> (Option<ir::Program>, Vec<TyError>) {
+    pub fn infer_program(&mut self, root: &Root) -> (Option<ir::Program>, Interface, Vec<TyError>) {
         let mut errors: TyErrors = TyErrors::new();
         let ir = self.infer_program_inner(&mut errors, root);
-        (ir, errors.errors)
+        (ir, Interface::default(), errors.errors)
     }
 
     pub fn infer_program_inner(
@@ -375,11 +384,11 @@ impl Typechecker {
         })
     }
 
-    fn check_ty_param(&mut self, ty_param: &ParamTy) -> (String, Name) {
+    fn check_ty_param(&mut self, ty_param: &ParamTy) -> Name {
         let tkn = ty_param.ident_token().unwrap();
         let name = self.name_supply.type_var(&tkn);
         self.record_def(&tkn, name);
-        (tkn.text().to_string(), name)
+        name
     }
 
     fn check_type_definitions(
@@ -419,7 +428,7 @@ impl Typechecker {
                     let variant_name = self.name_supply.type_idx(&tkn);
                     self.record_def(&tkn, variant_name);
 
-                    let ty_params: Vec<(String, Name)> =
+                    let ty_params: Vec<Name> =
                         v.type_params().map(|p| self.check_ty_param(&p)).collect();
 
                     let mut alternatives = HashMap::new();
@@ -474,8 +483,9 @@ impl Typechecker {
             };
 
             self.context.clear_type_vars();
-            for (s, n) in &def.ty_params {
-                self.context.add_type_var(s.clone(), *n)
+            for n in &def.ty_params {
+                let s = self.name_supply.resolve(*n).expect("unresolved type var");
+                self.context.add_type_var(s.to_string(), *n)
             }
             for field in s.struct_fields() {
                 let Some(field_name) = field.ident_token() else {
@@ -529,7 +539,7 @@ impl Typechecker {
                     let name = self.name_supply.type_var(&tkn);
                     self.record_def(&tkn, name);
                     self.context.add_type_var(tkn.to_string(), name);
-                    ty_args.push((tkn.to_string(), name))
+                    ty_args.push(name)
                 }
 
                 let mut arguments = vec![];
@@ -600,15 +610,14 @@ impl Typechecker {
                 };
 
                 let ty_args: Vec<Ty> = t.type_args().map(|t| self.check_ty(errors, &t)).collect();
-                let ty_param_names: Vec<Name> =
-                    ty_def.ty_params().iter().map(|(_, n)| *n).collect();
+                let ty_param_names = ty_def.ty_params();
                 if ty_param_names.len() != ty_args.len() {
                     errors.report(t, TyArgCountMismatch(ty_param_names.len(), ty_args.len()));
                     return Ty::Error;
                 }
                 Ty::Cons {
                     name,
-                    ty_args: Substitution::new(&ty_param_names, &ty_args),
+                    ty_args: Substitution::new(ty_param_names, &ty_args),
                 }
             }
             Type::TyVar(v) => {
@@ -694,10 +703,13 @@ impl Typechecker {
 
                 let func_ty = def.ty.clone();
                 self.context.enter_block();
-                for (v, name) in def.ty_params.iter() {
+                for name in &def.ty_params {
                     builder.ty_params(Some(*name));
-                    // TODO ideally we shouldn't need to clone here
-                    self.context.add_type_var(v.clone(), *name);
+                    let v = self
+                        .name_supply
+                        .resolve(*name)
+                        .expect("Failed to resolve type parameter name");
+                    self.context.add_type_var(v.to_owned(), *name);
                 }
 
                 for (param, ty) in top_fn.params().zip(func_ty.arguments.into_iter()) {
@@ -1037,7 +1049,7 @@ impl Typechecker {
                 (ty, ir.map(ir::Callee::FuncRef))
             } else if let Some(def) = self.context.lookup_func(var_tkn.text()) {
                 self.record_ref(&var_tkn, def.name);
-                let ty_params: Vec<Name> = def.ty_params.iter().map(|(_, name)| *name).collect();
+                let ty_params: &[Name] = &def.ty_params;
                 // NOTE(early-return-control-flow)
                 if !ty_params.is_empty() && ty_args.is_empty() {
                     return self.infer_poly_call(errors, def, &var_tkn, call_expr, expected);
@@ -1049,7 +1061,7 @@ impl Typechecker {
                     );
                     return None;
                 }
-                let subst = Substitution::new(&ty_params, &ty_args);
+                let subst = Substitution::new(ty_params, &ty_args);
                 let ty = subst.apply_func(def.ty.clone());
                 (
                     Ty::Func(Box::new(ty)),
@@ -1113,7 +1125,7 @@ impl Typechecker {
     ) -> Option<(Ty, Option<ir::ExprData>)> {
         let fresh_subst = {
             let mut fresh_subst = Substitution::empty();
-            for (_, n) in def.ty_params.iter() {
+            for n in &def.ty_params {
                 fresh_subst.insert(*n, Ty::Var(self.name_supply.gen_idx()));
             }
             fresh_subst
@@ -1160,7 +1172,7 @@ impl Typechecker {
         }
 
         let mut final_subst = Substitution::empty();
-        for (_, n) in def.ty_params.iter() {
+        for n in &def.ty_params {
             let solved = subst.apply(fresh_subst.apply(Ty::Var(*n)));
             if matches!(solved, Ty::Var(name) if name.tag == NameTag::Gen) {
                 errors.report(struct_tkn, CantInferTypeParam(*n));
@@ -1191,7 +1203,7 @@ impl Typechecker {
         // so recursive calls don't mess with us
         let fresh_subst = {
             let mut fresh_subst = Substitution::empty();
-            for (_, n) in def.ty_params.iter() {
+            for n in def.ty_params.iter() {
                 fresh_subst.insert(*n, Ty::Var(self.name_supply.gen_idx()));
             }
             fresh_subst
@@ -1230,7 +1242,7 @@ impl Typechecker {
             builder.arguments(ir);
         }
         let mut final_subst = Substitution::empty();
-        for (_, n) in def.ty_params.iter() {
+        for n in def.ty_params.iter() {
             let solved = subst.apply(fresh_subst.apply(Ty::Var(*n)));
             if matches!(solved, Ty::Var(name) if name.tag == NameTag::Gen) {
                 errors.report(func_tkn, CantInferTypeParam(*n));
@@ -1351,12 +1363,12 @@ impl Typechecker {
                 );
                 return None;
             }
-            let ty_arg_names: Vec<Name> = def.ty_params.iter().map(|(_, name)| *name).collect();
+            let ty_arg_names: &[Name] = &def.ty_params;
             let tys: Vec<Ty> = ty_arg_list
                 .into_iter()
                 .map(|t| self.check_ty(errors, &t))
                 .collect();
-            Some(Substitution::new(&ty_arg_names, &tys))
+            Some(Substitution::new(ty_arg_names, &tys))
         };
 
         let subst = subst.unwrap_or_default();
@@ -1917,7 +1929,14 @@ fn match_ty(subst: &mut Substitution, definition: Ty, inferred: &Ty) -> Result<(
     // Cow<Ty>?
     let definition = subst.apply(definition);
     match (definition, inferred) {
-        (Ty::Var(n @ Name { tag: NameTag::Gen, ..}), t) => {
+        (
+            Ty::Var(
+                n @ Name {
+                    tag: NameTag::Gen, ..
+                },
+            ),
+            t,
+        ) => {
             // We don't solve for ERROR or DIVERGE, because we're still hoping to
             // solve for a real type.
             if !matches!(t, Ty::Error | Ty::Diverge) && subst.insert(n, t.clone()).is_some() {

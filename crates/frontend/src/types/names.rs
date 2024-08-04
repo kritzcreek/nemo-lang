@@ -59,6 +59,10 @@ impl NameSupply {
         )
     }
 
+    pub fn resolve(&self, name: Name) -> Option<&str> {
+        self.0.resolve(name)
+    }
+
     pub fn name_map(&self) -> &NameMap {
         &self.0.name_map
     }

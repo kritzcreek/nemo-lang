@@ -35,6 +35,7 @@ pub fn run_frontend(source: &str) -> CheckResult<CheckError> {
         errors,
         names: check_result.names,
         occurrences: check_result.occurrences,
+        interface: check_result.interface,
         ir: check_result.ir,
         parse: check_result.parse,
     }

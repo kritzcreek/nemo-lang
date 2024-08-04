@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt, num::NonZeroU16, u16};
+use std::{collections::HashMap, fmt, num::NonZeroU16};
 
 use text_size::TextRange;
 
@@ -156,5 +156,9 @@ impl NameSupply {
 
     pub fn lookup(&self, name: Name) -> Option<&Id> {
         self.name_map.get(&name)
+    }
+
+    pub fn resolve(&self, name: Name) -> Option<&str> {
+        self.lookup(name).map(|id| id.it.as_str())
     }
 }
