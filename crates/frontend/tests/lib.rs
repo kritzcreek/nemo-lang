@@ -79,12 +79,7 @@ fn snapshot_type_errors(path: &Path, source: &str) -> String {
 
     let mut err_buf = String::new();
     for error in errors {
-        write!(
-            &mut err_buf,
-            "{}",
-            error.display(source, &names.name_map, false)
-        )
-        .unwrap();
+        write!(&mut err_buf, "{}", error.display(source, &names, false)).unwrap();
     }
     err_buf
 }

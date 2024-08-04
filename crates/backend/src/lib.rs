@@ -9,10 +9,7 @@ pub fn compile_program(source: &str) -> Result<Vec<u8>, String> {
 
     if !check_result.errors.is_empty() {
         for err in &check_result.errors {
-            eprintln!(
-                "{}",
-                err.display(source, &check_result.names.name_map, true)
-            );
+            eprintln!("{}", err.display(source, &check_result.names, true));
         }
         return Err(format!(
             "Compiling failed with {} errors",

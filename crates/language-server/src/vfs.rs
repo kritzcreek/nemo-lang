@@ -1,3 +1,4 @@
+use frontend::ir::Ctx;
 use frontend::run_frontend;
 use frontend::types::CheckResult;
 use frontend::CheckError;
@@ -10,7 +11,7 @@ use std::path::{Path, PathBuf};
 #[derive(Debug)]
 pub struct FileData {
     pub content: String,
-    pub check_result: CheckResult<CheckError>,
+    pub check_result: CheckResult<Ctx, CheckError>,
     pub line_index: LineIndex,
 }
 

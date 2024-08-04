@@ -3,15 +3,15 @@ use std::fmt::Write;
 
 use crate::wasm_builder::{BodyBuilder, Builder};
 use frontend::ir::{
-    Callee, Declaration, DeclarationData, Expr, ExprData, Func, Id, Lit, LitData, ModuleId, Name,
-    NameSupply, NameTag, Op, OpData, Pattern, PatternData, Program, SetTarget, SetTargetData,
-    Substitution, Ty, TypeDef,
+    Callee, Ctx, Declaration, DeclarationData, Expr, ExprData, Func, Lit, LitData, ModuleId, Name,
+    NameTag, Op, OpData, Pattern, PatternData, Program, SetTarget, SetTargetData, Substitution, Ty,
+    TypeDef,
 };
 use text_size::TextRange;
 use wasm_encoder::{BlockType, ConstExpr, HeapType, Instruction, RefType, ValType};
 
-pub fn codegen(program: Program, name_supply: NameSupply) -> (Vec<u8>, NameSupply) {
-    let builder = Builder::new(name_supply);
+pub fn codegen(program: Program, ctx: Ctx) -> (Vec<u8>, Ctx) {
+    let builder = Builder::new(ctx);
     let mut codegen = Codegen {
         builder,
         poly_funcs: HashMap::new(),
@@ -292,12 +292,10 @@ impl<'a> Codegen<'a> {
             } => {
                 let mut instrs = vec![];
 
-                let gen_name = self.builder.name_supply.local_idx(
+                let (gen_name, _) = self.builder.name_supply().local_idx(
                     ModuleId::CODEGEN,
-                    Id {
-                        it: "$match_scrutinee".to_string(),
-                        at: scrutinee.at,
-                    },
+                    "$match_scrutinee",
+                    scrutinee.at,
                 );
                 let scrutinee_ty = self.builder.val_ty(&scrutinee.ty);
                 let scrutinee_local = body.new_local(gen_name, scrutinee_ty);
@@ -397,12 +395,10 @@ impl<'a> Codegen<'a> {
                 let (func_name, func_idx) = self
                     .builder
                     .declare_anon_func(expr.at, closure_info.closure_func_ty);
-                let env_name = self.builder.name_supply.local_idx(
+                let (env_name, _) = self.builder.name_supply().local_idx(
                     ModuleId::CODEGEN,
-                    Id {
-                        at: TextRange::empty(0.into()),
-                        it: "env".to_string(),
-                    },
+                    "env",
+                    TextRange::default(),
                 );
                 let mut func_params = vec![(
                     env_name,
@@ -614,26 +610,15 @@ impl<'a> Codegen<'a> {
             if let Some(existing) = poly_func.instances.get(&tys) {
                 return *existing;
             }
-            let definition = self
-                .builder
-                .name_supply
-                .lookup(name)
-                .expect("Unknown polyfunc");
-            let mut it = format!("{}#", definition.it);
+            let func_name = self.builder.ctx.display_name(name);
+            let mut it = format!("{}#", func_name);
             for param in &tys {
-                write!(
-                    &mut it,
-                    "_{}",
-                    param.display(&self.builder.name_supply.name_map)
-                )
-                .unwrap()
+                write!(&mut it, "_{}", param.display(&self.builder.ctx)).unwrap()
             }
-            let new_name = self.builder.name_supply.func_idx(
+            let (new_name, _) = self.builder.name_supply().func_idx(
                 ModuleId::CODEGEN,
-                Id {
-                    it,
-                    at: definition.at,
-                },
+                &func_name,
+                TextRange::default(),
             );
             poly_func.instances.insert(tys, new_name);
             new_name
@@ -711,10 +696,14 @@ impl<'a> Codegen<'a> {
                     }
                 }
             }
+            let (start_fn, _) = self.builder.name_supply().func_idx(
+                ModuleId::CODEGEN,
+                "start",
+                TextRange::default(),
+            );
             let start_locals = start_body.get_locals();
-            self.builder.declare_start(program.start_fn);
-            self.builder
-                .fill_func(program.start_fn, start_locals, start_instrs);
+            self.builder.declare_start(start_fn);
+            self.builder.fill_func(start_fn, start_locals, start_instrs);
         }
 
         for func in program.funcs {
@@ -730,14 +719,12 @@ impl<'a> Codegen<'a> {
             let body = self.compile_expr(&mut body_builder, func.body);
             let locals = body_builder.get_locals();
             self.builder.fill_func(func.name, locals, body);
-            self.builder.declare_export(
-                func.name,
-                self.builder.resolve_name(func.name).it.to_string(),
-            );
+            self.builder
+                .declare_export(func.name, self.builder.resolve_name(func.name));
         }
     }
 
-    pub fn finish(self) -> (Vec<u8>, NameSupply) {
+    pub fn finish(self) -> (Vec<u8>, Ctx) {
         self.builder.finish()
     }
 }

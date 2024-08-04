@@ -1,69 +1,55 @@
-use crate::ir::{self, Id, ModuleId, Name, NameMap};
+use crate::ir::{self, ModuleId, Name, Symbol};
 use crate::syntax::SyntaxToken;
-use text_size::TextRange;
 
-#[derive(Debug, Clone)]
-pub struct NameSupply(ir::NameSupply, ModuleId);
-
-fn token_into_id(tkn: &SyntaxToken) -> Id {
-    Id {
-        it: tkn.text().to_string(),
-        at: tkn.text_range(),
-    }
-}
+#[derive(Debug)]
+pub struct NameSupply(ir::MutableNameSupply, ModuleId);
 
 impl NameSupply {
     pub fn new(module: ModuleId) -> Self {
-        Self(ir::NameSupply::default(), module)
+        Self(ir::MutableNameSupply::new(), module)
     }
 
-    pub fn take(self) -> ir::NameSupply {
-        self.0
+    pub fn take(self) -> (ir::MutableNameSupply, ModuleId) {
+        (self.0, self.1)
     }
 
-    pub fn local_idx(&mut self, local: &SyntaxToken) -> Name {
-        self.0.local_idx(self.1, token_into_id(local))
+    pub fn local_idx(&self, tkn: &SyntaxToken) -> (Name, Symbol) {
+        self.0.local_idx(self.1, tkn.text(), tkn.text_range())
     }
 
-    pub fn global_idx(&mut self, global: &SyntaxToken) -> Name {
-        self.0.global_idx(self.1, token_into_id(global))
+    pub fn global_idx(&self, tkn: &SyntaxToken) -> (Name, Symbol) {
+        self.0.global_idx(self.1, tkn.text(), tkn.text_range())
     }
 
-    pub fn func_idx(&mut self, func: &SyntaxToken) -> Name {
-        self.0.func_idx(self.1, token_into_id(func))
+    pub fn func_idx(&self, tkn: &SyntaxToken) -> (Name, Symbol) {
+        self.0.func_idx(self.1, tkn.text(), tkn.text_range())
     }
 
-    pub fn type_idx(&mut self, typ: &SyntaxToken) -> Name {
-        self.0.type_idx(self.1, token_into_id(typ))
+    pub fn type_idx(&mut self, tkn: &SyntaxToken) -> (Name, Symbol) {
+        self.0.type_idx(self.1, tkn.text(), tkn.text_range())
     }
 
-    pub fn type_var(&mut self, typ_var: &SyntaxToken) -> Name {
-        self.0.type_var(self.1, token_into_id(typ_var))
+    pub fn type_var(&mut self, tkn: &SyntaxToken) -> (Name, Symbol) {
+        self.0.type_var_idx(self.1, tkn.text(), tkn.text_range())
     }
 
-    pub fn field_idx(&mut self, field: &SyntaxToken) -> Name {
-        self.0.field_idx(self.1, token_into_id(field))
+    pub fn field_idx(&self, tkn: &SyntaxToken) -> (Name, Symbol) {
+        self.0.field_idx(self.1, tkn.text(), tkn.text_range())
     }
 
-    pub fn gen_idx(&mut self) -> Name {
-        self.0.gen_idx(self.1)
+    pub fn gen_idx(&self, it: &str) -> Name {
+        self.0.gen_idx(self.1, it).0
     }
 
-    pub fn start_idx(&mut self) -> Name {
-        self.0.func_idx(
-            self.1,
-            Id {
-                it: "$start".to_string(),
-                at: TextRange::default(),
-            },
-        )
+    pub fn resolve(&self, name: Name) -> ir::Symbol {
+        self.0.lookup(name).it
     }
 
-    pub fn resolve(&self, name: Name) -> Option<&str> {
-        self.0.resolve(name)
+    pub fn get_or_intern(&self, s: &str) -> ir::Symbol {
+        self.0.get_or_intern(s)
     }
 
-    pub fn name_map(&self) -> &NameMap {
-        &self.0.name_map
-    }
+    // pub fn name_map(&self) -> &NameMap {
+    //     &self.0.name_map
+    // }
 }

@@ -3,7 +3,7 @@ use std::iter;
 use std::{collections::HashMap, mem};
 
 use frontend::ir::{
-    FuncTy, Id, Import, ModuleId, Name, NameSupply, NameTag, Struct, Substitution, Ty, Variant,
+    Ctx, FuncTy, Import, ModuleId, MutableNameSupply, Name, Struct, Substitution, Ty, Variant,
 };
 use text_size::TextRange;
 use wasm_encoder::{
@@ -97,7 +97,7 @@ pub struct ClosureInfo {
 
 #[derive(Debug)]
 pub struct Builder<'a> {
-    pub(crate) name_supply: NameSupply,
+    pub(crate) ctx: Ctx,
     funcs: HashMap<Name, FuncData<'a>>,
     globals: HashMap<Name, GlobalData>,
     types: Vec<SubType>,
@@ -121,9 +121,9 @@ pub struct Builder<'a> {
 }
 
 impl<'a> Builder<'a> {
-    pub fn new(name_supply: NameSupply) -> Builder<'a> {
+    pub fn new(ctx: Ctx) -> Builder<'a> {
         Builder {
-            name_supply,
+            ctx,
             funcs: HashMap::new(),
             globals: HashMap::new(),
             datas: vec![],
@@ -142,17 +142,21 @@ impl<'a> Builder<'a> {
         }
     }
 
-    fn _print_funcs(&self) {
-        for (name, id) in self.name_supply.name_map.iter() {
-            if name.tag == NameTag::Func {
-                eprintln!("$fn:{:?}->{} = {id:?}", name.module, name.idx)
-            }
-        }
+    pub fn name_supply(&self) -> &MutableNameSupply {
+        &self.ctx.get_name_supply(ModuleId::CODEGEN)
     }
 
-    pub fn finish(self) -> (Vec<u8>, NameSupply) {
+    // fn _print_funcs(&self) {
+    //     for (name, id) in self.name_supply().name_map.iter() {
+    //         if name.tag == NameTag::Func {
+    //             eprintln!("$fn:{:?}->{} = {id:?}", name.module, name.idx)
+    //         }
+    //     }
+    // }
+
+    pub fn finish(self) -> (Vec<u8>, Ctx) {
         let mut module = Module::new();
-        let names = self.name_supply;
+        let ctx = self.ctx;
         // self._print_funcs();
 
         // type_section
@@ -169,17 +173,17 @@ impl<'a> Builder<'a> {
 
         for (name, info) in self.structs {
             for (tys, type_idx) in &info.instances {
-                let mut it = names.lookup(name).unwrap().it.clone();
+                let mut it = ctx.display_name(name);
                 if !tys.is_empty() {
                     it.push('#');
                 }
                 for param in tys {
-                    write!(&mut it, "_{}", param.display(&names.name_map)).unwrap()
+                    write!(&mut it, "_{}", param.display(&ctx)).unwrap()
                 }
                 type_names.append(*type_idx, &it);
                 let mut field_names = WasmNameMap::new();
                 for (field, _) in info.definition.fields.iter() {
-                    field_names.append(info.field_idx(*field), &names.lookup(name).unwrap().it)
+                    field_names.append(info.field_idx(*field), &ctx.display_name(name))
                 }
                 all_field_names.append(*type_idx, &field_names);
             }
@@ -187,12 +191,12 @@ impl<'a> Builder<'a> {
 
         for (name, info) in self.variants {
             for (tys, type_idx) in info.instances {
-                let mut it = names.lookup(name).unwrap().it.clone();
+                let mut it = ctx.display_name(name);
                 if !tys.is_empty() {
                     it.push('#');
                 }
                 for param in tys {
-                    write!(&mut it, "_{}", param.display(&names.name_map)).unwrap()
+                    write!(&mut it, "_{}", param.display(&ctx)).unwrap()
                 }
                 type_names.append(type_idx, &it);
             }
@@ -208,7 +212,7 @@ impl<'a> Builder<'a> {
         let mut import_indices = vec![];
         for (name, data) in imports {
             import_section.import(&data.ns, &data.func, EntityType::Function(data.ty_idx));
-            function_names.append(data.index, &names.lookup(name).unwrap().it);
+            function_names.append(data.index, &ctx.display_name(name));
             import_indices.push(data.index);
         }
         // function_section
@@ -217,7 +221,7 @@ impl<'a> Builder<'a> {
         let mut function_indices = vec![];
         funcs.sort_by_key(|(_, v)| v.index);
         for (name, func) in funcs.iter() {
-            function_names.append(func.index, &names.lookup(*name).unwrap().it);
+            function_names.append(func.index, &ctx.display_name(*name));
             function_section.function(func.ty);
             function_indices.push(func.index);
         }
@@ -231,7 +235,7 @@ impl<'a> Builder<'a> {
         let mut global_names = WasmNameMap::new();
         for data in globals {
             global_section.global(data.ty, &data.init);
-            global_names.append(data.index, &names.lookup(data.name).unwrap().it)
+            global_names.append(data.index, &ctx.display_name(data.name))
         }
         // export_section
         let mut export_section = ExportSection::new();
@@ -257,7 +261,7 @@ impl<'a> Builder<'a> {
                 names: local_names,
             }) = func.locals
             else {
-                panic!("No locals for function {}", names.lookup(name).unwrap().it)
+                panic!("No locals for function {}", ctx.display_name(name))
             };
             let mut func_body = Function::new_with_locals_types(locals);
             for instr in func.body.unwrap() {
@@ -268,7 +272,7 @@ impl<'a> Builder<'a> {
 
             let mut local_names_map = WasmNameMap::new();
             for (index, name) in local_names {
-                local_names_map.append(index, &names.lookup(name).unwrap().it);
+                local_names_map.append(index, &ctx.display_name(name));
             }
 
             let ix = (_ix + _import_count) as u32;
@@ -304,14 +308,15 @@ impl<'a> Builder<'a> {
         module.section(&code_section);
         module.section(&data_section);
         module.section(&name_section);
-        (module.finish(), names)
+        (module.finish(), ctx)
     }
 
-    pub fn resolve_name(&self, name: Name) -> Id {
-        self.name_supply
-            .lookup(name)
-            .cloned()
-            .unwrap_or_else(|| panic!("Failed to resolve: {name:?}"))
+    pub fn resolve_name(&self, name: Name) -> String {
+        self.ctx.display_name(name)
+    }
+
+    pub fn resolve_name_range(&self, name: Name) -> (String, TextRange) {
+        self.ctx.resolve(name)
     }
 
     pub fn declare_variant(&mut self, ty: Variant) {
@@ -423,7 +428,7 @@ impl<'a> Builder<'a> {
         } else {
             panic!(
                 "tried to get heap type {} before declaring it",
-                self.resolve_name(name).it
+                self.resolve_name(name)
             )
         }
     }
@@ -438,7 +443,7 @@ impl<'a> Builder<'a> {
         self.structs.get(&name).unwrap_or_else(|| {
             panic!(
                 "Tried to get struct type before declaring it: {}",
-                self.resolve_name(name).it
+                self.resolve_name(name)
             )
         })
     }
@@ -687,14 +692,9 @@ impl<'a> Builder<'a> {
 
     pub fn declare_anon_func(&mut self, at: TextRange, ty: TypeIdx) -> (Name, FuncIdx) {
         let index = (self.imports.len() + self.funcs.len()) as u32;
-        let name = self.name_supply.func_idx(
-            ModuleId::CODEGEN,
-            Id {
-                // TODO: Use surrounding function name or something?
-                it: format!("closure-{index}"),
-                at,
-            },
-        );
+        let (name, _) =
+            self.name_supply()
+                .func_idx(ModuleId::CODEGEN, &format!("closure-{index}"), at);
         self.funcs.insert(
             name,
             FuncData {
@@ -732,14 +732,10 @@ impl<'a> Builder<'a> {
         if let Some(idx) = self.func_refs.get(&name) {
             return *idx;
         }
-        let Id { it, at } = self.resolve_name(name);
-        let func_name = self.name_supply.func_idx(
-            ModuleId::CODEGEN,
-            Id {
-                it: format!("{it}#ref"),
-                at,
-            },
-        );
+        let (it, at) = self.resolve_name_range(name);
+        let (func_name, _) =
+            self.name_supply()
+                .func_idx(ModuleId::CODEGEN, &format!("{it}#ref"), at);
         let mut instrs: Vec<Instruction> = (0..ty.arguments.len())
             .map(|i| Instruction::LocalGet(i as u32 + 1))
             .collect();

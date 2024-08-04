@@ -1,6 +1,46 @@
-use std::{collections::HashMap, fmt, num::NonZeroU16};
+use std::{
+    cell::{Cell, RefCell},
+    fmt,
+    num::NonZeroU16,
+};
+use string_interner::{DefaultStringInterner, DefaultSymbol};
 
 use text_size::TextRange;
+
+#[derive(Debug)]
+pub struct Ctx {
+    // Indexed by ModuleId
+    name_supplies: Vec<MutableNameSupply>,
+}
+
+impl Ctx {
+    pub fn new(module_count: u16) -> Ctx {
+        // TODO: Should zero initialize all of these
+        let mut name_supplies = Vec::with_capacity(module_count as usize);
+        name_supplies.push(MutableNameSupply::new());
+        name_supplies.push(MutableNameSupply::new());
+        // TODO
+        name_supplies.push(MutableNameSupply::new());
+        Ctx { name_supplies }
+    }
+    pub fn set_name_supply(&mut self, module: ModuleId, supply: MutableNameSupply) {
+        self.name_supplies[(module.0.get() - 1) as usize] = supply
+    }
+    pub fn get_name_supply(&self, module: ModuleId) -> &MutableNameSupply {
+        &self.name_supplies[(module.0.get() - 1) as usize]
+    }
+    pub fn resolve(&self, name: Name) -> (String, TextRange) {
+        let supply = self.get_name_supply(name.module);
+        let id = supply.lookup(name);
+        (supply.lookup_symbol(id.it), id.at)
+    }
+    pub fn display_name(&self, name: Name) -> String {
+        self.resolve(name).0
+    }
+    pub fn fmt_name(&self, f: &mut fmt::Formatter<'_>, name: Name) -> fmt::Result {
+        write!(f, "{}", self.display_name(name))
+    }
+}
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub struct Id {
@@ -24,6 +64,7 @@ pub struct ModuleId(NonZeroU16);
 
 impl ModuleId {
     pub fn new(id: u16) -> Self {
+        debug_assert!(id > 2, "module ids 1 and 2 are reserved");
         Self(NonZeroU16::new(id).expect("ModuleId must be non-zero"))
     }
 
@@ -38,127 +79,70 @@ pub struct Name {
     pub idx: u32,
 }
 
-impl Name {
-    pub fn display<'a>(&'a self, name_map: &'a NameMap) -> NameDisplay<'a> {
-        NameDisplay {
-            name: self,
-            name_map,
+pub type Symbol = DefaultSymbol;
+
+#[derive(Debug, Copy, Clone)]
+pub struct CompactId {
+    pub it: Symbol,
+    pub at: TextRange,
+}
+
+#[derive(Debug)]
+pub struct MutableNameSupply {
+    supply: Cell<u32>,
+    name_map: RefCell<Vec<CompactId>>,
+    strings: RefCell<DefaultStringInterner>,
+}
+
+impl MutableNameSupply {
+    pub fn new() -> Self {
+        Self {
+            supply: Cell::new(0),
+            name_map: RefCell::new(Vec::new()),
+            strings: RefCell::new(DefaultStringInterner::default()),
         }
     }
-}
-
-pub struct NameDisplay<'a> {
-    name: &'a Name,
-    name_map: &'a NameMap,
-}
-
-impl fmt::Display for NameDisplay<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.name_map.get(self.name).unwrap().it)
+    pub fn new_name(
+        &self,
+        tag: NameTag,
+        module: ModuleId,
+        it: &str,
+        at: TextRange,
+    ) -> (Name, Symbol) {
+        let idx = self.supply.get();
+        self.supply.set(idx + 1);
+        let it = self.strings.borrow_mut().get_or_intern(it);
+        self.name_map.borrow_mut().push(CompactId { it, at });
+        (Name { tag, module, idx }, it)
     }
-}
-
-pub type NameMap = HashMap<Name, Id>;
-
-#[derive(Debug, Clone, Default)]
-pub struct NameSupply {
-    supply: u32,
-    pub name_map: HashMap<Name, Id>,
-}
-
-impl NameSupply {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn local_idx(&self, module: ModuleId, it: &str, at: TextRange) -> (Name, Symbol) {
+        self.new_name(NameTag::Local, module, it, at)
     }
-
-    pub fn local_idx(&mut self, module: ModuleId, id: Id) -> Name {
-        self.supply += 1;
-        let name = Name {
-            tag: NameTag::Local,
-            module,
-            idx: self.supply,
-        };
-        self.name_map.insert(name, id);
-        name
+    pub fn global_idx(&self, module: ModuleId, it: &str, at: TextRange) -> (Name, Symbol) {
+        self.new_name(NameTag::Global, module, it, at)
     }
-
-    pub fn global_idx(&mut self, module: ModuleId, id: Id) -> Name {
-        self.supply += 1;
-        let name = Name {
-            tag: NameTag::Global,
-            module,
-            idx: self.supply,
-        };
-        self.name_map.insert(name, id);
-        name
+    pub fn func_idx(&self, module: ModuleId, it: &str, at: TextRange) -> (Name, Symbol) {
+        self.new_name(NameTag::Func, module, it, at)
     }
-
-    pub fn func_idx(&mut self, module: ModuleId, id: Id) -> Name {
-        self.supply += 1;
-        let name = Name {
-            tag: NameTag::Func,
-            module,
-            idx: self.supply,
-        };
-        self.name_map.insert(name, id);
-        name
+    pub fn type_idx(&self, module: ModuleId, it: &str, at: TextRange) -> (Name, Symbol) {
+        self.new_name(NameTag::Type, module, it, at)
     }
-
-    pub fn type_idx(&mut self, module: ModuleId, id: Id) -> Name {
-        self.supply += 1;
-        let name = Name {
-            tag: NameTag::Type,
-            module,
-            idx: self.supply,
-        };
-        self.name_map.insert(name, id);
-        name
+    pub fn type_var_idx(&self, module: ModuleId, it: &str, at: TextRange) -> (Name, Symbol) {
+        self.new_name(NameTag::TypeVar, module, it, at)
     }
-
-    pub fn type_var(&mut self, module: ModuleId, id: Id) -> Name {
-        self.supply += 1;
-        let name = Name {
-            tag: NameTag::TypeVar,
-            module,
-            idx: self.supply,
-        };
-        self.name_map.insert(name, id);
-        name
+    pub fn field_idx(&self, module: ModuleId, it: &str, at: TextRange) -> (Name, Symbol) {
+        self.new_name(NameTag::Field, module, it, at)
     }
-
-    pub fn field_idx(&mut self, module: ModuleId, id: Id) -> Name {
-        self.supply += 1;
-        let name = Name {
-            tag: NameTag::Field,
-            module,
-            idx: self.supply,
-        };
-        self.name_map.insert(name, id);
-        name
+    pub fn gen_idx(&self, module: ModuleId, it: &str) -> (Name, Symbol) {
+        self.new_name(NameTag::Gen, module, it, TextRange::default())
     }
-
-    pub fn gen_idx(&mut self, module: ModuleId) -> Name {
-        self.supply += 1;
-        let name = Name {
-            tag: NameTag::Gen,
-            module,
-            idx: self.supply,
-        };
-        self.name_map.insert(
-            name,
-            Id {
-                it: format!("gen{}", self.supply),
-                at: TextRange::default(),
-            },
-        );
-        name
+    pub fn get_or_intern(&self, s: &str) -> Symbol {
+        self.strings.borrow_mut().get_or_intern(s)
     }
-
-    pub fn lookup(&self, name: Name) -> Option<&Id> {
-        self.name_map.get(&name)
+    pub fn lookup(&self, name: Name) -> CompactId {
+        *self.name_map.borrow().get(name.idx as usize).unwrap()
     }
-
-    pub fn resolve(&self, name: Name) -> Option<&str> {
-        self.lookup(name).map(|id| id.it.as_str())
+    pub fn lookup_symbol(&self, sym: Symbol) -> String {
+        self.strings.borrow().resolve(sym).unwrap().to_string()
     }
 }
