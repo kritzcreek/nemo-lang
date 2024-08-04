@@ -3,7 +3,9 @@ use std::fmt::Write;
 
 use crate::wasm_builder::{BodyBuilder, Builder};
 use frontend::ir::{
-    Callee, Declaration, DeclarationData, Expr, ExprData, Func, Id, Lit, LitData, ModuleId, Name, NameSupply, NameTag, Op, OpData, Pattern, PatternData, Program, SetTarget, SetTargetData, Substitution, Ty, TypeDef
+    Callee, Declaration, DeclarationData, Expr, ExprData, Func, Id, Lit, LitData, ModuleId, Name,
+    NameSupply, NameTag, Op, OpData, Pattern, PatternData, Program, SetTarget, SetTargetData,
+    Substitution, Ty, TypeDef,
 };
 use text_size::TextRange;
 use wasm_encoder::{BlockType, ConstExpr, HeapType, Instruction, RefType, ValType};
@@ -290,10 +292,13 @@ impl<'a> Codegen<'a> {
             } => {
                 let mut instrs = vec![];
 
-                let gen_name = self.builder.name_supply.local_idx(ModuleId::GEN, Id {
-                    it: "$match_scrutinee".to_string(),
-                    at: scrutinee.at,
-                });
+                let gen_name = self.builder.name_supply.local_idx(
+                    ModuleId::CODEGEN,
+                    Id {
+                        it: "$match_scrutinee".to_string(),
+                        at: scrutinee.at,
+                    },
+                );
                 let scrutinee_ty = self.builder.val_ty(&scrutinee.ty);
                 let scrutinee_local = body.new_local(gen_name, scrutinee_ty);
                 instrs.extend(self.compile_expr(body, scrutinee));
@@ -392,10 +397,13 @@ impl<'a> Codegen<'a> {
                 let (func_name, func_idx) = self
                     .builder
                     .declare_anon_func(expr.at, closure_info.closure_func_ty);
-                let env_name = self.builder.name_supply.local_idx(ModuleId::GEN, Id {
-                    at: TextRange::empty(0.into()),
-                    it: "env".to_string(),
-                });
+                let env_name = self.builder.name_supply.local_idx(
+                    ModuleId::CODEGEN,
+                    Id {
+                        at: TextRange::empty(0.into()),
+                        it: "env".to_string(),
+                    },
+                );
                 let mut func_params = vec![(
                     env_name,
                     ValType::Ref(RefType {
@@ -592,8 +600,7 @@ impl<'a> Codegen<'a> {
                     | NameTag::Type
                     | NameTag::TypeVar
                     | NameTag::Field
-                    | NameTag::Gen =>
-                        unreachable!("can't set a non local/global variable")
+                    | NameTag::Gen => unreachable!("can't set a non local/global variable"),
                 };
                 instrs
             }
@@ -621,10 +628,13 @@ impl<'a> Codegen<'a> {
                 )
                 .unwrap()
             }
-            let new_name = self.builder.name_supply.func_idx(ModuleId::GEN, Id {
-                it,
-                at: definition.at,
-            });
+            let new_name = self.builder.name_supply.func_idx(
+                ModuleId::CODEGEN,
+                Id {
+                    it,
+                    at: definition.at,
+                },
+            );
             poly_func.instances.insert(tys, new_name);
             new_name
         };

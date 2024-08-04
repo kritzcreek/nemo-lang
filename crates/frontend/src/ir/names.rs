@@ -27,7 +27,8 @@ impl ModuleId {
         Self(NonZeroU16::new(id).expect("ModuleId must be non-zero"))
     }
 
-    pub const GEN: Self = Self(NonZeroU16::MAX);
+    pub const PRIM: Self = ModuleId(unsafe { NonZeroU16::new_unchecked(1) });
+    pub const CODEGEN: Self = ModuleId(unsafe { NonZeroU16::new_unchecked(2) });
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
@@ -136,11 +137,11 @@ impl NameSupply {
         name
     }
 
-    pub fn gen_idx(&mut self) -> Name {
+    pub fn gen_idx(&mut self, module: ModuleId) -> Name {
         self.supply += 1;
         let name = Name {
             tag: NameTag::Gen,
-            module: ModuleId::GEN,
+            module,
             idx: self.supply,
         };
         self.name_map.insert(

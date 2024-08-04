@@ -46,14 +46,17 @@ impl NameSupply {
     }
 
     pub fn gen_idx(&mut self) -> Name {
-        self.0.gen_idx()
+        self.0.gen_idx(self.1)
     }
 
     pub fn start_idx(&mut self) -> Name {
-        self.0.func_idx(self.1, Id {
-            it: "$start".to_string(),
-            at: TextRange::default(),
-        })
+        self.0.func_idx(
+            self.1,
+            Id {
+                it: "$start".to_string(),
+                at: TextRange::default(),
+            },
+        )
     }
 
     pub fn name_map(&self) -> &NameMap {

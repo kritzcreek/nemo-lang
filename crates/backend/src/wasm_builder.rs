@@ -2,7 +2,9 @@ use std::fmt::Write;
 use std::iter;
 use std::{collections::HashMap, mem};
 
-use frontend::ir::{FuncTy, Id, Import, ModuleId, Name, NameSupply, NameTag, Struct, Substitution, Ty, Variant};
+use frontend::ir::{
+    FuncTy, Id, Import, ModuleId, Name, NameSupply, NameTag, Struct, Substitution, Ty, Variant,
+};
 use text_size::TextRange;
 use wasm_encoder::{
     self, ArrayType, CodeSection, CompositeType, ConstExpr, DataCountSection, DataSection,
@@ -685,11 +687,14 @@ impl<'a> Builder<'a> {
 
     pub fn declare_anon_func(&mut self, at: TextRange, ty: TypeIdx) -> (Name, FuncIdx) {
         let index = (self.imports.len() + self.funcs.len()) as u32;
-        let name = self.name_supply.func_idx(ModuleId::GEN, Id {
-            // TODO: Use surrounding function name or something?
-            it: format!("closure-{index}"),
-            at,
-        });
+        let name = self.name_supply.func_idx(
+            ModuleId::CODEGEN,
+            Id {
+                // TODO: Use surrounding function name or something?
+                it: format!("closure-{index}"),
+                at,
+            },
+        );
         self.funcs.insert(
             name,
             FuncData {
@@ -728,10 +733,13 @@ impl<'a> Builder<'a> {
             return *idx;
         }
         let Id { it, at } = self.resolve_name(name);
-        let func_name = self.name_supply.func_idx(ModuleId::GEN, Id {
-            it: format!("{it}#ref"),
-            at,
-        });
+        let func_name = self.name_supply.func_idx(
+            ModuleId::CODEGEN,
+            Id {
+                it: format!("{it}#ref"),
+                at,
+            },
+        );
         let mut instrs: Vec<Instruction> = (0..ty.arguments.len())
             .map(|i| Instruction::LocalGet(i as u32 + 1))
             .collect();

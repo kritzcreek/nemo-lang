@@ -53,7 +53,11 @@ fn i32_func_binary(name: &'static str) -> Fn {
 }
 
 // Should be initialized after namemap/context is created
-static TODO_NAME: Name = Name { tag: NameTag::Gen, idx: 0, module: ModuleId::GEN };
+static TODO_NAME: Name = Name {
+    tag: NameTag::Gen,
+    idx: 0,
+    module: ModuleId::PRIM,
+};
 
 static BUILTINS: LazyLock<HashMap<&'static str, Fn>> = LazyLock::new(|| {
     let mut m = HashMap::new();
