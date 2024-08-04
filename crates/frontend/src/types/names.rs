@@ -1,9 +1,9 @@
-use crate::ir::{self, Id, Name, NameMap};
+use crate::ir::{self, Id, ModuleId, Name, NameMap};
 use crate::syntax::SyntaxToken;
 use text_size::TextRange;
 
-#[derive(Debug, Clone, Default)]
-pub struct NameSupply(ir::NameSupply);
+#[derive(Debug, Clone)]
+pub struct NameSupply(ir::NameSupply, ModuleId);
 
 fn token_into_id(tkn: &SyntaxToken) -> Id {
     Id {
@@ -13,8 +13,8 @@ fn token_into_id(tkn: &SyntaxToken) -> Id {
 }
 
 impl NameSupply {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(module: ModuleId) -> Self {
+        Self(ir::NameSupply::default(), module)
     }
 
     pub fn take(self) -> ir::NameSupply {
@@ -22,27 +22,27 @@ impl NameSupply {
     }
 
     pub fn local_idx(&mut self, local: &SyntaxToken) -> Name {
-        self.0.local_idx(token_into_id(local))
+        self.0.local_idx(self.1, token_into_id(local))
     }
 
     pub fn global_idx(&mut self, global: &SyntaxToken) -> Name {
-        self.0.global_idx(token_into_id(global))
+        self.0.global_idx(self.1, token_into_id(global))
     }
 
     pub fn func_idx(&mut self, func: &SyntaxToken) -> Name {
-        self.0.func_idx(token_into_id(func))
+        self.0.func_idx(self.1, token_into_id(func))
     }
 
     pub fn type_idx(&mut self, typ: &SyntaxToken) -> Name {
-        self.0.type_idx(token_into_id(typ))
+        self.0.type_idx(self.1, token_into_id(typ))
     }
 
     pub fn type_var(&mut self, typ_var: &SyntaxToken) -> Name {
-        self.0.type_var(token_into_id(typ_var))
+        self.0.type_var(self.1, token_into_id(typ_var))
     }
 
     pub fn field_idx(&mut self, field: &SyntaxToken) -> Name {
-        self.0.field_idx(token_into_id(field))
+        self.0.field_idx(self.1, token_into_id(field))
     }
 
     pub fn gen_idx(&mut self) -> Name {
@@ -50,7 +50,7 @@ impl NameSupply {
     }
 
     pub fn start_idx(&mut self) -> Name {
-        self.0.func_idx(Id {
+        self.0.func_idx(self.1, Id {
             it: "$start".to_string(),
             at: TextRange::default(),
         })

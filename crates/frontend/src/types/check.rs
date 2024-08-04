@@ -4,7 +4,7 @@ use super::error::{
     TyErrors,
 };
 use super::names::NameSupply;
-use crate::builtins::lookup_builtin;
+use crate::{builtins::lookup_builtin, ir::{ModuleId, NameTag}};
 use crate::ir::{
     self, ExprBuilder, FuncTy, LambdaBuilder, LitBuilder, Name, PatVarBuilder, ReturnBuilder,
     Substitution, Ty, VarBuilder,
@@ -269,17 +269,11 @@ pub struct Typechecker {
     context: Ctx,
 }
 
-impl Default for Typechecker {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl Typechecker {
-    pub fn new() -> Typechecker {
+    pub fn new(module: ModuleId) -> Typechecker {
         Typechecker {
             occurrences: HashMap::new(),
-            name_supply: NameSupply::new(),
+            name_supply: NameSupply::new(module),
             context: Ctx::new(),
         }
     }
@@ -1139,7 +1133,7 @@ impl Typechecker {
                 continue;
             };
             let applied_ty = subst.apply(fresh_subst.apply(expected_ty));
-            let ir = if applied_ty.vars().iter().any(|v| matches!(v, Name::Gen(_))) {
+            let ir = if applied_ty.vars().iter().any(|v| v.tag == NameTag::Gen) {
                 let (ty, ir) = self.infer_expr(errors, &expr);
                 if ty != Ty::Error {
                     if let Err(err) = match_ty(&mut subst, applied_ty, &ty) {
@@ -1168,7 +1162,7 @@ impl Typechecker {
         let mut final_subst = Substitution::empty();
         for (_, n) in def.ty_params.iter() {
             let solved = subst.apply(fresh_subst.apply(Ty::Var(*n)));
-            if matches!(solved, Ty::Var(Name::Gen(_))) {
+            if matches!(solved, Ty::Var(name) if name.tag == NameTag::Gen) {
                 errors.report(struct_tkn, CantInferTypeParam(*n));
                 return None;
             }
@@ -1222,7 +1216,7 @@ impl Typechecker {
         let mut builder = ir::CallBuilder::default();
         for (arg, expected_ty) in args.iter().zip(func_ty.arguments.iter()) {
             let applied_ty = subst.apply(expected_ty.clone());
-            let ir = if applied_ty.vars().iter().any(|v| matches!(v, Name::Gen(_))) {
+            let ir = if applied_ty.vars().iter().any(|v| v.tag == NameTag::Gen) {
                 let (ty, ir) = self.infer_expr(errors, arg);
                 if ty != Ty::Error {
                     if let Err(err) = match_ty(&mut subst, applied_ty, &ty) {
@@ -1238,7 +1232,7 @@ impl Typechecker {
         let mut final_subst = Substitution::empty();
         for (_, n) in def.ty_params.iter() {
             let solved = subst.apply(fresh_subst.apply(Ty::Var(*n)));
-            if matches!(solved, Ty::Var(Name::Gen(_))) {
+            if matches!(solved, Ty::Var(name) if name.tag == NameTag::Gen) {
                 errors.report(func_tkn, CantInferTypeParam(*n));
                 return None;
             }
@@ -1923,7 +1917,7 @@ fn match_ty(subst: &mut Substitution, definition: Ty, inferred: &Ty) -> Result<(
     // Cow<Ty>?
     let definition = subst.apply(definition);
     match (definition, inferred) {
-        (Ty::Var(n @ Name::Gen(_)), t) => {
+        (Ty::Var(n @ Name { tag: NameTag::Gen, ..}), t) => {
             // We don't solve for ERROR or DIVERGE, because we're still hoping to
             // solve for a real type.
             if !matches!(t, Ty::Error | Ty::Diverge) && subst.insert(n, t.clone()).is_some() {

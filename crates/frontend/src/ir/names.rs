@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt};
+use std::{collections::HashMap, fmt, num::NonZeroU16, u16};
 
 use text_size::TextRange;
 
@@ -8,16 +8,33 @@ pub struct Id {
     pub at: TextRange,
 }
 
-// Should we have spanned names as well?
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
-pub enum Name {
-    Global(u32),
-    Local(u32),
-    Func(u32),
-    Type(u32),
-    TypeVar(u32),
-    Field(u32),
-    Gen(u32),
+pub enum NameTag {
+    Local,
+    Global,
+    Func,
+    Type,
+    TypeVar,
+    Field,
+    Gen,
+}
+
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
+pub struct ModuleId(NonZeroU16);
+
+impl ModuleId {
+    pub fn new(id: u16) -> Self {
+        Self(NonZeroU16::new(id).expect("ModuleId must be non-zero"))
+    }
+
+    pub const GEN: Self = Self(NonZeroU16::MAX);
+}
+
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
+pub struct Name {
+    pub tag: NameTag,
+    pub module: ModuleId,
+    pub idx: u32,
 }
 
 impl Name {
@@ -44,13 +61,7 @@ pub type NameMap = HashMap<Name, Id>;
 
 #[derive(Debug, Clone, Default)]
 pub struct NameSupply {
-    local: u32,
-    global: u32,
-    func: u32,
-    typ: u32,
-    typ_var: u32,
-    field: u32,
-    gen: u32,
+    supply: u32,
     pub name_map: HashMap<Name, Id>,
 }
 
@@ -59,55 +70,83 @@ impl NameSupply {
         Self::default()
     }
 
-    pub fn local_idx(&mut self, id: Id) -> Name {
-        self.local += 1;
-        let name = Name::Local(self.local);
+    pub fn local_idx(&mut self, module: ModuleId, id: Id) -> Name {
+        self.supply += 1;
+        let name = Name {
+            tag: NameTag::Local,
+            module,
+            idx: self.supply,
+        };
         self.name_map.insert(name, id);
         name
     }
 
-    pub fn global_idx(&mut self, id: Id) -> Name {
-        self.global += 1;
-        let name = Name::Global(self.global);
+    pub fn global_idx(&mut self, module: ModuleId, id: Id) -> Name {
+        self.supply += 1;
+        let name = Name {
+            tag: NameTag::Global,
+            module,
+            idx: self.supply,
+        };
         self.name_map.insert(name, id);
         name
     }
 
-    pub fn func_idx(&mut self, id: Id) -> Name {
-        self.func += 1;
-        let name = Name::Func(self.func);
+    pub fn func_idx(&mut self, module: ModuleId, id: Id) -> Name {
+        self.supply += 1;
+        let name = Name {
+            tag: NameTag::Func,
+            module,
+            idx: self.supply,
+        };
         self.name_map.insert(name, id);
         name
     }
 
-    pub fn type_idx(&mut self, id: Id) -> Name {
-        self.typ += 1;
-        let name = Name::Type(self.typ);
+    pub fn type_idx(&mut self, module: ModuleId, id: Id) -> Name {
+        self.supply += 1;
+        let name = Name {
+            tag: NameTag::Type,
+            module,
+            idx: self.supply,
+        };
         self.name_map.insert(name, id);
         name
     }
 
-    pub fn type_var(&mut self, id: Id) -> Name {
-        self.typ_var += 1;
-        let name = Name::TypeVar(self.typ_var);
+    pub fn type_var(&mut self, module: ModuleId, id: Id) -> Name {
+        self.supply += 1;
+        let name = Name {
+            tag: NameTag::TypeVar,
+            module,
+            idx: self.supply,
+        };
         self.name_map.insert(name, id);
         name
     }
 
-    pub fn field_idx(&mut self, id: Id) -> Name {
-        self.field += 1;
-        let name = Name::Field(self.field);
+    pub fn field_idx(&mut self, module: ModuleId, id: Id) -> Name {
+        self.supply += 1;
+        let name = Name {
+            tag: NameTag::Field,
+            module,
+            idx: self.supply,
+        };
         self.name_map.insert(name, id);
         name
     }
 
     pub fn gen_idx(&mut self) -> Name {
-        self.gen += 1;
-        let name = Name::Gen(self.gen);
+        self.supply += 1;
+        let name = Name {
+            tag: NameTag::Gen,
+            module: ModuleId::GEN,
+            idx: self.supply,
+        };
         self.name_map.insert(
             name,
             Id {
-                it: format!("gen{}", self.gen),
+                it: format!("gen{}", self.supply),
                 at: TextRange::default(),
             },
         );

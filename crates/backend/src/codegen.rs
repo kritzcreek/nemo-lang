@@ -3,8 +3,7 @@ use std::fmt::Write;
 
 use crate::wasm_builder::{BodyBuilder, Builder};
 use frontend::ir::{
-    Callee, Declaration, DeclarationData, Expr, ExprData, Func, Id, Lit, LitData, Name, NameSupply,
-    Op, OpData, Pattern, PatternData, Program, SetTarget, SetTargetData, Substitution, Ty, TypeDef,
+    Callee, Declaration, DeclarationData, Expr, ExprData, Func, Id, Lit, LitData, ModuleId, Name, NameSupply, NameTag, Op, OpData, Pattern, PatternData, Program, SetTarget, SetTargetData, Substitution, Ty, TypeDef
 };
 use text_size::TextRange;
 use wasm_encoder::{BlockType, ConstExpr, HeapType, Instruction, RefType, ValType};
@@ -128,10 +127,10 @@ impl<'a> Codegen<'a> {
     fn compile_expr(&mut self, body: &mut BodyBuilder, expr: Expr) -> Vec<Instruction<'a>> {
         match *expr.it {
             ExprData::Lit { lit } => self.compile_lit(lit),
-            ExprData::Var { name } => match name {
-                Name::Local(_) => vec![Instruction::LocalGet(body.lookup_local(&name).unwrap())],
-                Name::Global(_) => vec![Instruction::GlobalGet(self.builder.lookup_global(&name))],
-                Name::Func(_) => {
+            ExprData::Var { name } => match name.tag {
+                NameTag::Local => vec![Instruction::LocalGet(body.lookup_local(&name).unwrap())],
+                NameTag::Global => vec![Instruction::GlobalGet(self.builder.lookup_global(&name))],
+                NameTag::Func => {
                     let Ty::Func(ty) = &expr.ty else {
                         unreachable!("Non-function type for function reference")
                     };
@@ -291,7 +290,7 @@ impl<'a> Codegen<'a> {
             } => {
                 let mut instrs = vec![];
 
-                let gen_name = self.builder.name_supply.local_idx(Id {
+                let gen_name = self.builder.name_supply.local_idx(ModuleId::GEN, Id {
                     it: "$match_scrutinee".to_string(),
                     at: scrutinee.at,
                 });
@@ -393,7 +392,7 @@ impl<'a> Codegen<'a> {
                 let (func_name, func_idx) = self
                     .builder
                     .declare_anon_func(expr.at, closure_info.closure_func_ty);
-                let env_name = self.builder.name_supply.local_idx(Id {
+                let env_name = self.builder.name_supply.local_idx(ModuleId::GEN, Id {
                     at: TextRange::empty(0.into()),
                     it: "env".to_string(),
                 });
@@ -582,20 +581,19 @@ impl<'a> Codegen<'a> {
             }
             SetTargetData::SetVar { name } => {
                 let mut instrs = self.compile_expr(body, expr);
-                match name {
-                    Name::Global(_) => {
+                match name.tag {
+                    NameTag::Global => {
                         instrs.push(Instruction::GlobalSet(self.builder.lookup_global(&name)));
                     }
-                    Name::Local(_) => {
+                    NameTag::Local => {
                         instrs.push(Instruction::LocalSet(body.lookup_local(&name).unwrap()));
                     }
-                    Name::Func(_)
-                    | Name::Type(_)
-                    | Name::TypeVar(_)
-                    | Name::Field(_)
-                    | Name::Gen(_) => {
+                    NameTag::Func
+                    | NameTag::Type
+                    | NameTag::TypeVar
+                    | NameTag::Field
+                    | NameTag::Gen =>
                         unreachable!("can't set a non local/global variable")
-                    }
                 };
                 instrs
             }
@@ -623,7 +621,7 @@ impl<'a> Codegen<'a> {
                 )
                 .unwrap()
             }
-            let new_name = self.builder.name_supply.func_idx(Id {
+            let new_name = self.builder.name_supply.func_idx(ModuleId::GEN, Id {
                 it,
                 at: definition.at,
             });

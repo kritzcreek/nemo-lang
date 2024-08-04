@@ -1,4 +1,4 @@
-use crate::ir::Name;
+use crate::ir::NameTag;
 use crate::parser::SyntaxKind;
 use crate::syntax::{AstNode, Root};
 use crate::types::OccurrenceMap;
@@ -82,38 +82,38 @@ pub fn highlight(root: &Root, occurrences: &OccurrenceMap) -> Vec<Highlight> {
 
     for (ptr, occurrence) in occurrences {
         let name = *occurrence.name();
-        match name {
-            Name::Global(_) => {
+        match name.tag {
+            NameTag::Global => {
                 highlights.push(Highlight {
                     range: ptr.0,
                     kind: HighlightKind::Global,
                 });
             }
-            Name::Local(_) => {
+            NameTag::Local => {
                 highlights.push(Highlight {
                     range: ptr.0,
                     kind: HighlightKind::Local,
                 });
             }
-            Name::Func(_) => {
+            NameTag::Func => {
                 highlights.push(Highlight {
                     range: ptr.0,
                     kind: HighlightKind::Function,
                 });
             }
-            Name::Type(_) | Name::TypeVar(_) => {
+            NameTag::Type | NameTag::TypeVar => {
                 highlights.push(Highlight {
                     range: ptr.0,
                     kind: HighlightKind::Type,
                 });
             }
-            Name::Field(_) => {
+            NameTag::Field => {
                 highlights.push(Highlight {
                     range: ptr.0,
                     kind: HighlightKind::Property,
                 });
             }
-            Name::Gen(_) => {}
+            NameTag::Gen => {}
         }
     }
     highlights.sort_by_key(|hl| hl.range.start());

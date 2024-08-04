@@ -2,7 +2,7 @@ use std::fmt::Write;
 use std::iter;
 use std::{collections::HashMap, mem};
 
-use frontend::ir::{FuncTy, Id, Import, Name, NameSupply, Struct, Substitution, Ty, Variant};
+use frontend::ir::{FuncTy, Id, Import, ModuleId, Name, NameSupply, NameTag, Struct, Substitution, Ty, Variant};
 use text_size::TextRange;
 use wasm_encoder::{
     self, ArrayType, CodeSection, CompositeType, ConstExpr, DataCountSection, DataSection,
@@ -142,8 +142,8 @@ impl<'a> Builder<'a> {
 
     fn _print_funcs(&self) {
         for (name, id) in self.name_supply.name_map.iter() {
-            if let Name::Func(n) = name {
-                eprintln!("$fn:{n} = {id:?}")
+            if name.tag == NameTag::Func {
+                eprintln!("$fn:{:?}->{} = {id:?}", name.module, name.idx)
             }
         }
     }
@@ -685,7 +685,7 @@ impl<'a> Builder<'a> {
 
     pub fn declare_anon_func(&mut self, at: TextRange, ty: TypeIdx) -> (Name, FuncIdx) {
         let index = (self.imports.len() + self.funcs.len()) as u32;
-        let name = self.name_supply.func_idx(Id {
+        let name = self.name_supply.func_idx(ModuleId::GEN, Id {
             // TODO: Use surrounding function name or something?
             it: format!("closure-{index}"),
             at,
@@ -728,7 +728,7 @@ impl<'a> Builder<'a> {
             return *idx;
         }
         let Id { it, at } = self.resolve_name(name);
-        let func_name = self.name_supply.func_idx(Id {
+        let func_name = self.name_supply.func_idx(ModuleId::GEN, Id {
             it: format!("{it}#ref"),
             at,
         });

@@ -2,7 +2,7 @@ mod check;
 mod error;
 mod names;
 
-use crate::ir::{Name, NameSupply, Program};
+use crate::ir::{ModuleId, Name, NameSupply, Program};
 use crate::syntax::{token_ptr::SyntaxTokenPtr, Root};
 use check::Typechecker;
 use std::collections::HashMap;
@@ -19,8 +19,8 @@ pub struct CheckResult<E> {
     pub parse: Root,
 }
 
-pub fn check_prog(prog: Root) -> CheckResult<TyError> {
-    let mut checker = Typechecker::new();
+pub fn check_prog(prog: Root, module: ModuleId) -> CheckResult<TyError> {
+    let mut checker = Typechecker::new(module);
     let (ir, errors) = checker.infer_program(&prog);
     CheckResult {
         errors,

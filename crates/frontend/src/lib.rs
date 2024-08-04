@@ -15,9 +15,11 @@ pub use types::CheckResult;
 /// If there are any errors, the generated IR should _not_ be used. It's returned here for
 /// debugging purposes.
 pub fn run_frontend(source: &str) -> CheckResult<CheckError> {
+    // TODO:
+    let module = ir::ModuleId::new(42);
     let (parse_root, parse_errors) = parse_prog(source).take();
     let mut errors = vec![];
-    let check_result = types::check_prog(parse_root);
+    let check_result = types::check_prog(parse_root, module);
 
     for error in parse_errors {
         errors.push(CheckError::ParseError(error));

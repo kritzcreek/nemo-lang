@@ -3,7 +3,7 @@ mod names;
 
 use core::fmt;
 use derive_ir::IrBuilder;
-pub use names::{Id, Name, NameMap, NameSupply};
+pub use names::{Id, Name, NameTag, ModuleId, NameMap, NameSupply};
 use std::{
     collections::{BTreeMap, HashMap, HashSet},
     fmt::Debug,
@@ -335,7 +335,7 @@ impl Expr {
             match &*expr.it {
                 ExprData::Lit { .. } => {}
                 ExprData::Var { name } => {
-                    if let Name::Local(_) = name {
+                    if let NameTag::Local = name.tag {
                         // We don't want to override an existing entry for a variable that gets re-assigned
                         current.entry(*name).or_insert_with(|| FreeVarInfo {
                             ty: &expr.ty,
