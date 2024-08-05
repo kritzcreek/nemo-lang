@@ -38,12 +38,12 @@ struct VariantDef {
     span: TextRange,
     ty_params: Vec<Name>,
     // TODO: The ordering of these alternatives needs to be deterministic
-    alternatives: HashMap<String, Name>,
+    alternatives: HashMap<Symbol, Name>,
 }
 
 impl VariantDef {
-    pub fn lookup_alternative(&self, name: &str) -> Option<Name> {
-        self.alternatives.get(name).copied()
+    pub fn lookup_alternative(&self, name: Symbol) -> Option<Name> {
+        self.alternatives.get(&name).copied()
     }
 }
 
@@ -274,8 +274,8 @@ pub type OccurrenceMap = HashMap<SyntaxTokenPtr, Occurrence<Name>>;
 
 pub struct Typechecker {
     pub occurrences: OccurrenceMap, // Write only
-    pub name_supply: NameSupply,    // Should use internal mutability?
-    context: Ctx,                   // Can be split into mutable and immutable parts
+    pub name_supply: NameSupply,
+    context: Ctx, // Can be split into mutable and immutable parts
 }
 
 impl Typechecker {
@@ -455,7 +455,7 @@ impl Typechecker {
                                 variant: Some(variant_name),
                             })),
                         );
-                        alternatives.insert(tkn.text().to_string(), alt_name);
+                        alternatives.insert(alt_sym, alt_name);
                         struct_defs.push((alt_name, s))
                     }
 
@@ -588,7 +588,7 @@ impl Typechecker {
                     let Some(alt) = t.upper_ident_token() else {
                         return Ty::Error;
                     };
-                    let Some(name) = def.alternatives.get(alt.text()) else {
+                    let Some(name) = def.alternatives.get(&self.sym(alt.text())) else {
                         errors.report(&alt, UnknownType(format!("{}::{}", ty.text(), alt.text())));
                         return Ty::Error;
                     };
@@ -1265,7 +1265,7 @@ impl Typechecker {
                 .lookup_variant(self.sym(ty.text()))
                 .and_then(|def| {
                     self.record_ref(&ty, def.name);
-                    def.lookup_alternative(alt.text())
+                    def.lookup_alternative(self.sym(alt.text()))
                         .map(|alt_name| self.context.lookup_struct_name(alt_name))
                 });
             (struct_def, alt)
@@ -1799,7 +1799,7 @@ impl Typechecker {
                 builder.variant(Some(def.name));
                 match expected {
                     Ty::Cons { name: s, ty_args } if def.name == *s => {
-                        if let Some(struct_name) = def.alternatives.get(ctor.text()) {
+                        if let Some(struct_name) = def.alternatives.get(&self.sym(ctor.text())) {
                             self.record_ref(&ctor, *struct_name);
                             builder.alternative(Some(*struct_name));
                             let (name, sym) = self.name_supply.local_idx(&var);

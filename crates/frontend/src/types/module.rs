@@ -1,5 +1,4 @@
-use crate::ir;
-use crate::ir::Name;
+use crate::ir::{self, Name};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Hash)]
