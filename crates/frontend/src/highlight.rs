@@ -1,6 +1,6 @@
 use crate::ir::NameTag;
 use crate::parser::SyntaxKind;
-use crate::syntax::{AstNode, Root};
+use crate::syntax::{AstNode, Module};
 use crate::types::OccurrenceMap;
 use crate::T;
 use text_size::TextRange;
@@ -24,9 +24,9 @@ pub struct Highlight {
     pub kind: HighlightKind,
 }
 
-pub fn highlight(root: &Root, occurrences: &OccurrenceMap) -> Vec<Highlight> {
+pub fn highlight(module: &Module, occurrences: &OccurrenceMap) -> Vec<Highlight> {
     let mut highlights = Vec::new();
-    for node in root.syntax().descendants_with_tokens() {
+    for node in module.syntax().descendants_with_tokens() {
         match node.kind() {
             T![let]
             | T![set]

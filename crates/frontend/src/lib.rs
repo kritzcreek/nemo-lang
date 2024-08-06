@@ -20,8 +20,12 @@ pub fn run_frontend(source: &str) -> CheckResult<Ctx, CheckError> {
     let module_id = ir::ModuleId::new(3);
     let mut ctx = Ctx::new(3);
     let (parse_root, parse_errors) = parse_prog(source).take();
+    let modules: Vec<syntax::Module> = parse_root.modules().collect();
     let mut errors = vec![];
-    let check_result = types::check_prog(parse_root, module_id);
+    if modules.len() != 1 {
+        todo!("multi-module support")
+    }
+    let check_result = types::check_module(modules[0].clone(), module_id);
     ctx.set_name_supply(module_id, check_result.names);
 
     for error in parse_errors {

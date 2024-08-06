@@ -16,8 +16,15 @@ impl Progress {
 }
 
 pub fn prog(p: &mut Parser) {
-    module_header(p);
     while !p.at(SyntaxKind::EOF) {
+        module(p);
+    }
+}
+
+fn module(p: &mut Parser) {
+    let c = p.checkpoint();
+    module_header(p);
+    while !p.at(SyntaxKind::EOF) && !p.at(T![module]) {
         if !toplevel(p).made_progress() {
             let c = p.checkpoint();
             // RECOVERY
@@ -28,6 +35,7 @@ pub fn prog(p: &mut Parser) {
             p.finish_at(c, SyntaxKind::Error)
         }
     }
+    p.finish_at(c, SyntaxKind::Module)
 }
 
 fn module_header(p: &mut Parser) -> Progress {
@@ -76,7 +84,14 @@ fn mod_export_item(p: &mut Parser) -> Progress {
     Progress::Made
 }
 
-const TOP_LEVEL_FIRST: [SyntaxKind; 4] = [T![global], T![fn], T![import], T![struct]];
+const TOP_LEVEL_FIRST: [SyntaxKind; 6] = [
+    T![global],
+    T![fn],
+    T![import],
+    T![struct],
+    T![variant],
+    T![module],
+];
 fn toplevel(p: &mut Parser) -> Progress {
     match p.current() {
         T![global] => {

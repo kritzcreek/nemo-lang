@@ -1,4 +1,6 @@
-Root = ModHeader TopLevel*
+Root = Module*
+
+Module = ModHeader TopLevel*
 
 ModHeader = 'module' 'ident' ModExports ModUse*
 

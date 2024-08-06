@@ -301,25 +301,25 @@ impl Typechecker {
         assert!(previous_ref.is_none())
     }
 
-    pub fn infer_program(&mut self, root: &Root) -> (Option<ir::Program>, Interface, Vec<TyError>) {
+    pub fn infer_module(&mut self, module: &Module) -> (Option<ir::Program>, Interface, Vec<TyError>) {
         let mut errors: TyErrors = TyErrors::new();
-        let ir = self.infer_program_inner(&mut errors, root);
+        let ir = self.infer_module_inner(&mut errors, module);
         (ir, Interface::default(), errors.errors)
     }
 
-    pub fn infer_program_inner(
+    pub fn infer_module_inner(
         &mut self,
         errors: &mut TyErrors,
-        root: &Root,
+        module: &Module,
     ) -> Option<ir::Program> {
         self.context.enter_block();
 
-        let types = self.check_type_definitions(errors, root);
-        let imports = self.check_imports(errors, root);
-        self.check_function_headers(errors, root);
+        let types = self.check_type_definitions(errors, module);
+        let imports = self.check_imports(errors, module);
+        self.check_function_headers(errors, module);
 
-        let globals = self.check_globals(errors, root);
-        let functions = self.check_function_bodies(errors, root);
+        let globals = self.check_globals(errors, module);
+        let functions = self.check_function_bodies(errors, module);
 
         self.context.leave_block();
 
@@ -335,9 +335,9 @@ impl Typechecker {
         self.name_supply.get_or_intern(s)
     }
 
-    fn check_imports(&mut self, errors: &mut TyErrors, root: &Root) -> Option<Vec<ir::Import>> {
+    fn check_imports(&mut self, errors: &mut TyErrors, module: &Module) -> Option<Vec<ir::Import>> {
         let mut imports = vec![];
-        for top_level in root.top_levels() {
+        for top_level in module.top_levels() {
             if let TopLevel::TopImport(i) = top_level {
                 let Some(internal_name_tkn) = i.imp_internal().and_then(|x| x.ident_token()) else {
                     continue;
@@ -396,12 +396,12 @@ impl Typechecker {
     fn check_type_definitions(
         &mut self,
         errors: &mut TyErrors,
-        root: &Root,
+        module: &Module,
     ) -> Option<Vec<ir::TypeDef>> {
         // Because types can be mutually recursive we need two passes:
         // - 1. Forward declare all types and their "shapes"
         let mut struct_defs = vec![];
-        for top_level in root.top_levels() {
+        for top_level in module.top_levels() {
             match top_level {
                 TopLevel::TopStruct(s) => {
                     let Some(tkn) = s.upper_ident_token() else {
@@ -524,8 +524,8 @@ impl Typechecker {
         Some(type_defs)
     }
 
-    fn check_function_headers(&mut self, errors: &mut TyErrors, root: &Root) {
-        for top_level in root.top_levels() {
+    fn check_function_headers(&mut self, errors: &mut TyErrors, module: &Module) {
+        for top_level in module.top_levels() {
             if let TopLevel::TopFn(top_fn) = top_level {
                 let Some(fn_name_tkn) = top_fn.ident_token() else {
                     continue;
@@ -643,9 +643,9 @@ impl Typechecker {
         }
     }
 
-    fn check_globals(&mut self, errors: &mut TyErrors, root: &Root) -> Vec<ir::Global> {
+    fn check_globals(&mut self, errors: &mut TyErrors, module: &Module) -> Vec<ir::Global> {
         let mut globals = vec![];
-        for top_level in root.top_levels() {
+        for top_level in module.top_levels() {
             if let TopLevel::TopGlobal(top_global) = top_level {
                 let (ty, ir) = match (
                     top_global.ty().map(|t| self.check_ty(errors, &t)),
@@ -681,10 +681,10 @@ impl Typechecker {
     fn check_function_bodies(
         &mut self,
         errors: &mut TyErrors,
-        root: &Root,
+        module: &Module,
     ) -> Option<Vec<ir::Func>> {
         let mut funcs = Some(vec![]);
-        for top_level in root.top_levels() {
+        for top_level in module.top_levels() {
             if let TopLevel::TopFn(top_fn) = top_level {
                 let mut builder = ir::FuncBuilder::default();
                 let Some(func_name) = top_fn.ident_token() else {

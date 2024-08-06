@@ -9,6 +9,15 @@ pub struct Root {
     pub(crate) syntax: SyntaxNode,
 }
 impl Root {
+    pub fn modules(&self) -> AstChildren<Module> {
+        support::children(&self.syntax)
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Module {
+    pub(crate) syntax: SyntaxNode,
+}
+impl Module {
     pub fn mod_header(&self) -> Option<ModHeader> {
         support::child(&self.syntax)
     }
@@ -872,6 +881,21 @@ pub enum SetTargetExpr {
 impl AstNode for Root {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == Root
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+impl AstNode for Module {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == Module
     }
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         if Self::can_cast(syntax.kind()) {
@@ -2218,6 +2242,11 @@ impl std::fmt::Display for SetTargetExpr {
     }
 }
 impl std::fmt::Display for Root {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for Module {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
     }

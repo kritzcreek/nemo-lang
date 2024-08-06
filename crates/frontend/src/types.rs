@@ -4,7 +4,8 @@ mod module;
 mod names;
 
 use crate::ir::{ModuleId, MutableNameSupply, Name, Program};
-use crate::syntax::{token_ptr::SyntaxTokenPtr, Root};
+use crate::syntax::Module;
+use crate::syntax::token_ptr::SyntaxTokenPtr;
 use check::Typechecker;
 use std::collections::HashMap;
 
@@ -19,12 +20,12 @@ pub struct CheckResult<N, E> {
     pub names: N,
     pub interface: Interface,
     pub ir: Option<Program>,
-    pub parse: Root,
+    pub parse: Module,
 }
 
-pub fn check_prog(prog: Root, module: ModuleId) -> CheckResult<MutableNameSupply, TyError> {
-    let mut checker = Typechecker::new(module);
-    let (ir, interface, errors) = checker.infer_program(&prog);
+pub fn check_module(module: Module, module_id: ModuleId) -> CheckResult<MutableNameSupply, TyError> {
+    let mut checker = Typechecker::new(module_id);
+    let (ir, interface, errors) = checker.infer_module(&module);
     let (names, _) = checker.name_supply.take();
     CheckResult {
         errors,
@@ -32,6 +33,6 @@ pub fn check_prog(prog: Root, module: ModuleId) -> CheckResult<MutableNameSupply
         names,
         ir,
         interface,
-        parse: prog,
+        parse: module,
     }
 }

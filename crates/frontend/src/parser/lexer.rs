@@ -321,14 +321,6 @@ pub enum SyntaxKind {
     TyCons,
     TyVar,
 
-    // Modules
-    ModHeader,
-    ModUse,
-    ModExports,
-    ModExportVal,
-    ModExportTy,
-    ModExportAll,
-
     // Top level
     TopGlobal,
     TopFn,
@@ -379,6 +371,15 @@ pub enum SyntaxKind {
     SetTarget,
     SetStruct,
     SetArray,
+
+    // Modules
+    Module,
+    ModHeader,
+    ModUse,
+    ModExports,
+    ModExportVal,
+    ModExportTy,
+    ModExportAll,
 
     // Root
     Root,
