@@ -1,42 +1,43 @@
 ---
 source: crates/frontend/tests/lib.rs
-assertion_line: 132
+assertion_line: 129
 expression: output
 input_file: crates/frontend/tests/parsing/if.nemo
 ---
 Root@0..35
-  TopGlobal@0..35
-    GLOBAL_KW@0..6 "global"
-    SPACE@6..7 " "
-    IDENT@7..8 "_"
-    SPACE@8..9 " "
-    EQUALS@9..10 "="
-    SPACE@10..11 " "
-    EIf@11..35
-      IF_KW@11..13 "if"
-      SPACE@13..14 " "
-      ELit@14..19
-        LitBool@14..19
-          TRUE_KW@14..18 "true"
-          SPACE@18..19 " "
-      EBlock@19..25
-        L_BRACE@19..20 "{"
-        SPACE@20..21 " "
-        DExpr@21..23
-          ELit@21..23
-            LitInt@21..23
-              INT_LIT@21..22 "1"
-              SPACE@22..23 " "
-        R_BRACE@23..24 "}"
-        SPACE@24..25 " "
-      ELSE_KW@25..29 "else"
-      SPACE@29..30 " "
-      EBlock@30..35
-        L_BRACE@30..31 "{"
-        SPACE@31..32 " "
-        DExpr@32..34
-          ELit@32..34
-            LitInt@32..34
-              INT_LIT@32..33 "3"
-              SPACE@33..34 " "
-        R_BRACE@34..35 "}"
+  Module@0..35
+    TopGlobal@0..35
+      GLOBAL_KW@0..6 "global"
+      SPACE@6..7 " "
+      IDENT@7..8 "_"
+      SPACE@8..9 " "
+      EQUALS@9..10 "="
+      SPACE@10..11 " "
+      EIf@11..35
+        IF_KW@11..13 "if"
+        SPACE@13..14 " "
+        ELit@14..19
+          LitBool@14..19
+            TRUE_KW@14..18 "true"
+            SPACE@18..19 " "
+        EBlock@19..25
+          L_BRACE@19..20 "{"
+          SPACE@20..21 " "
+          DExpr@21..23
+            ELit@21..23
+              LitInt@21..23
+                INT_LIT@21..22 "1"
+                SPACE@22..23 " "
+          R_BRACE@23..24 "}"
+          SPACE@24..25 " "
+        ELSE_KW@25..29 "else"
+        SPACE@29..30 " "
+        EBlock@30..35
+          L_BRACE@30..31 "{"
+          SPACE@31..32 " "
+          DExpr@32..34
+            ELit@32..34
+              LitInt@32..34
+                INT_LIT@32..33 "3"
+                SPACE@33..34 " "
+          R_BRACE@34..35 "}"

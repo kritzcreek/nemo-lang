@@ -1,6 +1,5 @@
-use crate::ir::NameMap;
-use crate::parser::ParseError;
 use crate::types::TyError;
+use crate::{ir::Ctx, parser::ParseError};
 use line_index::{LineCol, LineIndex};
 use std::fmt;
 use text_size::TextRange;
@@ -15,13 +14,13 @@ impl CheckError {
     pub fn display<'src, 'err>(
         &'err self,
         source: &'src str,
-        name_map: &'src NameMap,
+        ctx: &'src Ctx,
         colors: bool,
     ) -> DisplayCheckError<'src, 'err> {
         DisplayCheckError {
             source,
             error: self,
-            name_map,
+            ctx,
             colors,
         }
     }
@@ -33,10 +32,10 @@ impl CheckError {
         }
     }
 
-    pub fn message(&self, name_map: &NameMap) -> String {
+    pub fn message(&self, ctx: &Ctx) -> String {
         match self {
             CheckError::ParseError(err) => err.it.clone(),
-            CheckError::TypeError(err) => err.message(name_map),
+            CheckError::TypeError(err) => err.message(ctx),
         }
     }
 
@@ -51,7 +50,7 @@ impl CheckError {
 pub struct DisplayCheckError<'a, 'b> {
     error: &'b CheckError,
     source: &'a str,
-    name_map: &'a NameMap,
+    ctx: &'a Ctx,
     colors: bool,
 }
 
@@ -62,11 +61,7 @@ impl fmt::Display for DisplayCheckError<'_, '_> {
                 write!(f, "{}", err.display(self.source, self.colors))
             }
             CheckError::TypeError(err) => {
-                write!(
-                    f,
-                    "{}",
-                    err.display(self.source, self.name_map, self.colors)
-                )
+                write!(f, "{}", err.display(self.source, self.ctx, self.colors))
             }
         }
     }

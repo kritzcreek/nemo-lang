@@ -57,7 +57,7 @@ While developing the compiler a couple of other tools are useful/necessary to ha
 
 The easiest way I've found to install them is using [cargo-binstall]:
 ```sh
-cargo binstall just wasm-bindgen-cli wasm-tools wasm-opt
+cargo binstall just wasm-bindgen-cli wasm-tools wasm-opt watchexec-cli
 ```
 
 Additionally you'll need a version of Node > 22.0.0 if you'd like to run the generated Wasm code outside of the browser. (You could probably also make Deno work)

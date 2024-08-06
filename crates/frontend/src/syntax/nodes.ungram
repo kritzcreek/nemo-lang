@@ -1,4 +1,16 @@
-Root = TopLevel*
+Root = Module*
+
+Module = ModHeader TopLevel*
+
+ModHeader = 'module' 'ident' ModExports ModUse*
+
+ModExports = ModExport*
+ModExport = ModExportVal | ModExportTy | ModExportAll
+ModExportVal = 'ident'
+ModExportTy = 'upper_ident'
+ModExportAll = 'dotdotdot'
+
+ModUse = 'ident'
 
 // TopLevel
 TopLevel

@@ -1,0 +1,12 @@
+module str
+exports (Str, len, print_char)
+
+use option
+use prim_bytes
+
+import print_char : fn (i32) -> unit from print_char
+
+struct Str {}
+
+fn len(s: Str) { }
+fn concat(s1 : Str, s2 : Str) { }

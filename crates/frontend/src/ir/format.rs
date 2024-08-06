@@ -1,24 +1,26 @@
 use crate::ir::{
-    Callee, Declaration, DeclarationData, Expr, ExprData, LitData, Name, NameSupply, Program,
-    SetTarget, SetTargetData, Ty,
+    Callee, Declaration, DeclarationData, Expr, ExprData, LitData, Name, Program, SetTarget,
+    SetTargetData, Ty,
 };
 use lexpr::Value;
 
-pub fn format_ir(names: &NameSupply, ir: &Program) -> String {
+use super::Ctx;
+
+pub fn format_ir(names: &Ctx, ir: &Program) -> String {
     format!("{}", Formatter { names }.program(ir))
 }
 
 struct Formatter<'a> {
-    names: &'a NameSupply,
+    names: &'a Ctx,
 }
 
 impl Formatter<'_> {
     fn name(&self, n: &Name) -> Value {
-        Value::symbol(self.names.lookup(*n).unwrap().it.as_ref())
+        Value::symbol(self.names.display_name(*n).as_ref())
     }
 
     fn ty(&self, ty: &Ty) -> Value {
-        ty.display(&self.names.name_map).to_string().into()
+        ty.display(&self.names).to_string().into()
     }
 
     fn set_target(&self, set_target: &SetTarget) -> Value {

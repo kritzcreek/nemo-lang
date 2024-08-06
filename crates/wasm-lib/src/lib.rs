@@ -48,12 +48,12 @@ pub fn compile(input: &str) -> CompileResult {
     .into_iter()
     .map(|(start, end, kind)| Highlight::new(start, end, kind))
     .collect();
-    let (name_map, result) = match check_result.ir {
+    let (ctx, result) = match check_result.ir {
         Some(ir) if check_result.errors.is_empty() => {
-            let (wasm, names) = codegen(ir, check_result.names);
-            (names.name_map, Ok(wasm))
+            let (wasm, ctx) = codegen(ir, check_result.names);
+            (ctx, Ok(wasm))
         }
-        _ => (check_result.names.name_map, Err(check_result.errors)),
+        _ => (check_result.names, Err(check_result.errors)),
     };
 
     match result {
@@ -74,7 +74,7 @@ pub fn compile(input: &str) -> CompileResult {
             errors: errors
                 .into_iter()
                 .map(|e| Diagnostic {
-                    message: e.message(&name_map),
+                    message: e.message(&ctx),
                     start: e.at().start().into(),
                     end: e.at().end().into(),
                 })
