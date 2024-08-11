@@ -20,7 +20,7 @@ impl Formatter<'_> {
     }
 
     fn ty(&self, ty: &Ty) -> Value {
-        ty.display(&self.names).to_string().into()
+        ty.display(self.names).to_string().into()
     }
 
     fn set_target(&self, set_target: &SetTarget) -> Value {

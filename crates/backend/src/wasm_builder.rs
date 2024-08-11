@@ -143,7 +143,7 @@ impl<'a> Builder<'a> {
     }
 
     pub fn name_supply(&self) -> &MutableNameSupply {
-        &self.ctx.get_name_supply(ModuleId::CODEGEN)
+        self.ctx.get_name_supply(ModuleId::CODEGEN)
     }
 
     // fn _print_funcs(&self) {

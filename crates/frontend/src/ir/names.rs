@@ -94,6 +94,12 @@ pub struct MutableNameSupply {
     strings: RefCell<DefaultStringInterner>,
 }
 
+impl Default for MutableNameSupply {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl MutableNameSupply {
     pub fn new() -> Self {
         Self {

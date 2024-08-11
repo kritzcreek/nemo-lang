@@ -7,7 +7,7 @@ use super::{
     },
     Interface,
 };
-use super::{FuncDef, StructDef, StructFields, TypeDef, VariantDef};
+use super::{FuncDef, StructDef, TypeDef, VariantDef};
 use crate::ir::{
     self, ExprBuilder, FuncTy, LambdaBuilder, LitBuilder, Name, PatVarBuilder, ReturnBuilder,
     Substitution, Symbol, Ty, VarBuilder,
@@ -40,7 +40,6 @@ struct Ctx {
     functions: HashMap<Symbol, Rc<FuncDef>>,
     types_names: HashMap<Symbol, Name>,
     type_defs: HashMap<Name, TypeDef>,
-    field_defs: HashMap<Name, StructFields>,
 }
 
 impl Ctx {
@@ -53,7 +52,6 @@ impl Ctx {
             functions: HashMap::new(),
             type_defs: HashMap::new(),
             types_names: HashMap::new(),
-            field_defs: HashMap::new(),
         }
     }
 
@@ -139,6 +137,7 @@ impl Ctx {
     }
 
     fn lookup_type_def(&self, name: Name) -> Option<TypeDef> {
+        // TODO: Get rid of clone
         self.type_defs.get(&name).cloned()
     }
 
@@ -150,7 +149,7 @@ impl Ctx {
         Some(def)
     }
 
-    fn lookup_struct(&self, ty: Symbol) -> Option<Rc<StructDef>> {
+    fn lookup_struct(&self, ty: Symbol) -> Option<StructDef> {
         let def = self.lookup_type(ty)?;
         match def {
             TypeDef::Struct(s) => Some(s),
@@ -158,18 +157,20 @@ impl Ctx {
         }
     }
 
-    fn lookup_struct_name(&self, name: Name) -> Rc<StructDef> {
+    fn lookup_struct_name(&self, name: Name) -> StructDef {
         let Some(TypeDef::Struct(d)) = self.lookup_type_def(name) else {
             panic!("inferred unknown struct name")
         };
         d.clone()
     }
 
-    fn get_fields(&self, name: Name) -> &HashMap<Symbol, (Name, Ty)> {
-        &self.field_defs.get(&name).unwrap().fields
+    fn set_fields(&mut self, name: Name, fields: HashMap<Symbol, (Name, Ty)>) {
+        if let Some(TypeDef::Struct(def)) = self.type_defs.get_mut(&name) {
+            def.fields = fields;
+        }
     }
 
-    fn lookup_variant(&self, ty: Symbol) -> Option<Rc<VariantDef>> {
+    fn lookup_variant(&self, ty: Symbol) -> Option<VariantDef> {
         let def = self.lookup_type(ty)?;
         match def {
             TypeDef::Variant(s) => Some(s),
@@ -244,7 +245,10 @@ impl Typechecker {
 
     fn mk_interface(&self, errors: &mut TyErrors, module: &Module) -> Interface {
         let mut interface = Interface::default();
-        for export in module.mod_header().unwrap().mod_exports() {
+        let Some(header) = module.mod_header() else {
+            return interface;
+        };
+        for export in header.mod_exports() {
             match export {
                 ModExport::ModExportVal(n) => {
                     let name = self.sym(n.ident_token().unwrap().text());
@@ -262,15 +266,14 @@ impl Typechecker {
                     let name = self.sym(n.upper_ident_token().unwrap().text());
                     match self.context.lookup_type(name) {
                         Some(TypeDef::Struct(def)) => {
-                            interface.structs.insert(name, (*def).clone());
+                            interface.structs.insert(name, def.clone());
                         }
                         Some(TypeDef::Variant(def)) => {
-                            interface.variants.insert(name, (*def).clone());
+                            interface.variants.insert(name, def.clone());
                             for (alt_sym, alt_name) in &def.alternatives {
-                                interface.structs.insert(
-                                    *alt_sym,
-                                    (*self.context.lookup_struct_name(*alt_name)).clone(),
-                                );
+                                interface
+                                    .structs
+                                    .insert(*alt_sym, self.context.lookup_struct_name(*alt_name));
                             }
                         }
                         None => errors.report(
@@ -392,12 +395,13 @@ impl Typechecker {
                     self.context.declare_type_def(
                         sym,
                         name,
-                        TypeDef::Struct(Rc::new(StructDef {
+                        TypeDef::Struct(StructDef {
                             name,
                             span: s.syntax().text_range(),
                             ty_params,
                             variant: None,
-                        })),
+                            fields: HashMap::new(),
+                        }),
                     );
                     struct_defs.push((name, s))
                 }
@@ -426,12 +430,13 @@ impl Typechecker {
                         self.context.declare_type_def(
                             alt_sym,
                             alt_name,
-                            TypeDef::Struct(Rc::new(StructDef {
+                            TypeDef::Struct(StructDef {
                                 name: alt_name,
                                 span: s.syntax().text_range(),
                                 ty_params: ty_params.clone(),
                                 variant: Some(variant_name),
-                            })),
+                                fields: HashMap::new(),
+                            }),
                         );
                         alternatives.insert(alt_sym, alt_name);
                         struct_defs.push((alt_name, s))
@@ -440,12 +445,12 @@ impl Typechecker {
                     self.context.declare_type_def(
                         variant_sym,
                         variant_name,
-                        TypeDef::Variant(Rc::new(VariantDef {
+                        TypeDef::Variant(VariantDef {
                             name: variant_name,
                             span: v.syntax().text_range(),
                             ty_params,
                             alternatives,
-                        })),
+                        }),
                     );
                 }
                 _ => {}
@@ -458,10 +463,7 @@ impl Typechecker {
                 panic!("Impossible! Failed to look up a struct def");
             };
 
-            let mut fields = StructFields {
-                fields: HashMap::new(),
-            };
-
+            let mut fields = HashMap::new();
             self.context.clear_type_vars();
             for n in &def.ty_params {
                 let s = self.name_supply.resolve(*n);
@@ -478,10 +480,10 @@ impl Typechecker {
                 let (name, sym) = self.name_supply.field_idx(&field_name);
                 self.record_def(&field_name, name);
 
-                fields.fields.insert(sym, (name, ty));
+                fields.insert(sym, (name, ty));
             }
             self.context.clear_type_vars();
-            self.context.field_defs.insert(name, fields);
+            self.context.set_fields(name, fields);
         }
         let mut type_defs = vec![];
         for (name, def) in self.context.type_defs.iter() {
@@ -495,7 +497,7 @@ impl Typechecker {
                     name: *name,
                     span: s.span,
                     variant: s.variant,
-                    fields: self.context.field_defs.get(name).unwrap().to_ir(),
+                    fields: s.fields.values().cloned().collect(),
                 })),
             }
         }
@@ -1085,7 +1087,7 @@ impl Typechecker {
     fn infer_poly_struct(
         &mut self,
         errors: &mut TyErrors,
-        def: Rc<StructDef>,
+        def: &StructDef,
         struct_tkn: &SyntaxToken,
         struct_expr: &EStruct,
     ) -> Option<(Ty, Option<ir::ExprData>)> {
@@ -1125,13 +1127,13 @@ impl Typechecker {
             builder.fields(ir.map(|ir| (name, ir)));
         }
 
-        for field_name in self.context.field_defs.get(&def.name).unwrap().names() {
-            if !seen.contains(&field_name) {
+        for (field_name, _) in self.context.lookup_struct_name(def.name).fields.values() {
+            if !seen.contains(field_name) {
                 errors.report(
                     struct_tkn,
                     MissingField {
                         struct_name: def.name,
-                        field_name,
+                        field_name: *field_name,
                     },
                 );
             }
@@ -1232,7 +1234,7 @@ impl Typechecker {
         &mut self,
         errors: &mut TyErrors,
         struct_expr: &EStruct,
-    ) -> Option<(Rc<StructDef>, SyntaxToken)> {
+    ) -> Option<(StructDef, SyntaxToken)> {
         let (struct_def, struct_name_tkn) = if let Some(ty) = struct_expr
             .qualifier()
             .map(|q| q.upper_ident_token().unwrap())
@@ -1274,7 +1276,8 @@ impl Typechecker {
         let field_tkn = field.ident_token()?;
         let Some((field_name, ty)) = self
             .context
-            .get_fields(struct_name)
+            .lookup_struct_name(struct_name)
+            .fields
             .get(&self.sym(field_tkn.text()))
             .cloned()
         else {
@@ -1305,7 +1308,7 @@ impl Typechecker {
             struct_expr.e_ty_arg_list().map(|t| t.types().collect());
         let subst = if !def.ty_params.is_empty() && ty_arg_list.is_none() {
             match expected {
-                None => return self.infer_poly_struct(errors, def, &struct_name_tkn, struct_expr),
+                None => return self.infer_poly_struct(errors, &def, &struct_name_tkn, struct_expr),
                 Some(expected) => {
                     let Some(subst) = infer_struct_instantiation(&def, expected) else {
                         errors.report(
@@ -1355,13 +1358,13 @@ impl Typechecker {
             }
         }
         // TODO report all missing fields at once
-        for field_name in self.context.field_defs.get(&def.name).unwrap().names() {
-            if !seen.contains(&field_name) {
+        for (field_name, _) in self.context.lookup_struct_name(def.name).fields.values() {
+            if !seen.contains(field_name) {
                 errors.report(
                     &struct_name_tkn,
                     MissingField {
                         struct_name: def.name,
-                        field_name,
+                        field_name: *field_name,
                     },
                 );
             }
@@ -1578,7 +1581,8 @@ impl Typechecker {
                         s,
                         ty_args,
                         self.context
-                            .get_fields(*name)
+                            .lookup_struct_name(*name)
+                            .fields
                             .get(&self.sym(field_name_tkn.text()))
                             .cloned(),
                     ),

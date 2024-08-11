@@ -2,7 +2,7 @@ use rowan::TextRange;
 
 use crate::ir::{Ctx, FuncTy, Name, Symbol, Ty};
 use core::fmt;
-use std::{collections::HashMap, rc::Rc};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub struct StructDef {
@@ -10,6 +10,7 @@ pub struct StructDef {
     pub span: TextRange,
     pub variant: Option<Name>,
     pub ty_params: Vec<Name>,
+    pub fields: HashMap<Symbol, (Name, Ty)>,
 }
 
 impl StructDef {
@@ -39,6 +40,19 @@ impl<'a> fmt::Display for StructDefDisplay<'a> {
         if let Some(variant) = self.def.variant {
             write!(f, " <: {}", self.ctx.display_name(variant))?;
         }
+        write!(f, " {{")?;
+        for (i, (name, ty)) in self.def.fields.values().enumerate() {
+            if i != 0 {
+                write!(f, ", ")?;
+            }
+            write!(
+                f,
+                "{}: {}",
+                self.ctx.display_name(*name),
+                ty.display(self.ctx)
+            )?;
+        }
+        write!(f, "}}")?;
         Ok(())
     }
 }
@@ -94,8 +108,8 @@ impl<'a> fmt::Display for VariantDefDisplay<'a> {
 
 #[derive(Debug, Clone)]
 pub enum TypeDef {
-    Struct(Rc<StructDef>),
-    Variant(Rc<VariantDef>),
+    Struct(StructDef),
+    Variant(VariantDef),
 }
 impl TypeDef {
     pub fn name(&self) -> Name {
