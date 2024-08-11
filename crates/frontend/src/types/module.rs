@@ -1,13 +1,8 @@
 use rowan::TextRange;
 
-use crate::ir::{FuncTy, Name, Symbol, Ty};
+use crate::ir::{Ctx, FuncTy, Name, Symbol, Ty};
+use core::fmt;
 use std::{collections::HashMap, rc::Rc};
-
-#[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub enum Visibility {
-    Public,
-    Private,
-}
 
 #[derive(Debug, Clone)]
 pub struct StructDef {
@@ -15,6 +10,37 @@ pub struct StructDef {
     pub span: TextRange,
     pub variant: Option<Name>,
     pub ty_params: Vec<Name>,
+}
+
+impl StructDef {
+    pub fn display<'a>(&'a self, ctx: &'a Ctx) -> StructDefDisplay<'a> {
+        StructDefDisplay { def: self, ctx }
+    }
+}
+
+pub struct StructDefDisplay<'a> {
+    def: &'a StructDef,
+    ctx: &'a Ctx,
+}
+
+impl<'a> fmt::Display for StructDefDisplay<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "struct {}", self.ctx.display_name(self.def.name))?;
+        if !self.def.ty_params.is_empty() {
+            write!(f, "[")?;
+            for (i, ty_param) in self.def.ty_params.iter().enumerate() {
+                if i != 0 {
+                    write!(f, ", ")?;
+                }
+                write!(f, "{}", self.ctx.display_name(*ty_param))?;
+            }
+            write!(f, "]")?;
+        }
+        if let Some(variant) = self.def.variant {
+            write!(f, " <: {}", self.ctx.display_name(variant))?;
+        }
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -29,6 +55,40 @@ pub struct VariantDef {
 impl VariantDef {
     pub fn lookup_alternative(&self, name: Symbol) -> Option<Name> {
         self.alternatives.get(&name).copied()
+    }
+
+    pub fn display<'a>(&'a self, ctx: &'a Ctx) -> VariantDefDisplay<'a> {
+        VariantDefDisplay { def: self, ctx }
+    }
+}
+
+pub struct VariantDefDisplay<'a> {
+    def: &'a VariantDef,
+    ctx: &'a Ctx,
+}
+
+impl<'a> fmt::Display for VariantDefDisplay<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "variant {}", self.ctx.display_name(self.def.name))?;
+        if !self.def.ty_params.is_empty() {
+            write!(f, "[")?;
+            for (i, ty_param) in self.def.ty_params.iter().enumerate() {
+                if i != 0 {
+                    write!(f, ", ")?;
+                }
+                write!(f, "{}", self.ctx.display_name(*ty_param))?;
+            }
+            write!(f, "]")?;
+        }
+        write!(f, " {{")?;
+        for (i, (_, name)) in self.def.alternatives.iter().enumerate() {
+            if i != 0 {
+                write!(f, ", ")?;
+            }
+            write!(f, "{}", self.ctx.display_name(*name))?;
+        }
+        write!(f, "}}")?;
+        Ok(())
     }
 }
 
@@ -76,11 +136,80 @@ pub struct FuncDef {
     pub ty: FuncTy,
 }
 
+impl FuncDef {
+    pub fn display<'a>(&'a self, ctx: &'a Ctx) -> FuncDefDisplay<'a> {
+        FuncDefDisplay { def: self, ctx }
+    }
+}
+
+pub struct FuncDefDisplay<'a> {
+    def: &'a FuncDef,
+    ctx: &'a Ctx,
+}
+
+impl<'a> fmt::Display for FuncDefDisplay<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "fn {}", self.ctx.display_name(self.def.name))?;
+        if !self.def.ty_params.is_empty() {
+            write!(f, "[")?;
+            for (i, ty_param) in self.def.ty_params.iter().enumerate() {
+                if i != 0 {
+                    write!(f, ", ")?;
+                }
+                write!(f, "{}", self.ctx.display_name(*ty_param))?;
+            }
+            write!(f, "]")?;
+        }
+        write!(f, "(")?;
+        for (i, ty) in self.def.ty.arguments.iter().enumerate() {
+            if i != 0 {
+                write!(f, ", ")?;
+            }
+            write!(f, "{}", ty.display(self.ctx))?;
+        }
+        write!(f, ")")?;
+        write!(f, " -> {}", self.def.ty.result.display(self.ctx))?;
+        Ok(())
+    }
+}
+
 /// Contains all information needed to type check another module that uses
 /// this module
 #[derive(Debug, Default)]
 pub struct Interface {
-    pub structs: HashMap<Symbol, (StructDef, Visibility)>,
-    pub variants: HashMap<Symbol, (VariantDef, Visibility)>,
-    pub functions: HashMap<Symbol, (FuncDef, Visibility)>,
+    pub structs: HashMap<Symbol, StructDef>,
+    pub variants: HashMap<Symbol, VariantDef>,
+    pub functions: HashMap<Symbol, FuncDef>,
+}
+
+impl Interface {
+    pub fn display<'a>(&'a self, ctx: &'a crate::ir::Ctx) -> InterfaceDisplay<'a> {
+        InterfaceDisplay {
+            interface: self,
+            ctx,
+        }
+    }
+}
+
+pub struct InterfaceDisplay<'a> {
+    interface: &'a Interface,
+    ctx: &'a Ctx,
+}
+
+impl<'a> fmt::Display for InterfaceDisplay<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "Structs:")?;
+        for def in self.interface.structs.values() {
+            writeln!(f, "  {}", def.display(self.ctx))?;
+        }
+        writeln!(f, "Variants:")?;
+        for def in self.interface.variants.values() {
+            writeln!(f, "  {}", def.display(self.ctx))?;
+        }
+        writeln!(f, "Functions:")?;
+        for def in self.interface.functions.values() {
+            writeln!(f, "  {}", def.display(self.ctx))?;
+        }
+        Ok(())
+    }
 }

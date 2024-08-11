@@ -28,6 +28,8 @@ pub fn run_frontend(source: &str) -> CheckResult<Ctx, CheckError> {
     let check_result = types::check_module(modules[0].clone(), module_id);
     ctx.set_name_supply(module_id, check_result.names);
 
+    println!("{}", check_result.interface.display(&ctx));
+
     for error in parse_errors {
         errors.push(CheckError::ParseError(error));
     }

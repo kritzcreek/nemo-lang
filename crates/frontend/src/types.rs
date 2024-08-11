@@ -11,7 +11,7 @@ use std::collections::HashMap;
 
 pub use check::{Occurrence, OccurrenceMap};
 pub use error::TyError;
-pub use module::{FuncDef, Interface, StructDef, StructFields, TypeDef, VariantDef, Visibility};
+pub use module::{FuncDef, Interface, StructDef, StructFields, TypeDef, VariantDef};
 
 #[derive(Debug)]
 pub struct CheckResult<N, E> {

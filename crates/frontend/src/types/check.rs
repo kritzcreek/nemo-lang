@@ -238,10 +238,54 @@ impl Typechecker {
     ) -> (Option<ir::Program>, Interface, Vec<TyError>) {
         let mut errors: TyErrors = TyErrors::new();
         let ir = self.infer_module_inner(&mut errors, module);
-        (ir, Interface::default(), errors.errors)
+        let interface = self.mk_interface(&mut errors, module);
+        (ir, interface, errors.errors)
     }
 
-    pub fn infer_module_inner(
+    fn mk_interface(&self, errors: &mut TyErrors, module: &Module) -> Interface {
+        let mut interface = Interface::default();
+        for export in module.mod_header().unwrap().mod_exports() {
+            match export {
+                ModExport::ModExportVal(n) => {
+                    let name = self.sym(n.ident_token().unwrap().text());
+                    match self.context.lookup_func(name) {
+                        Some(f) => {
+                            interface.functions.insert(name, (*f).clone());
+                        }
+                        None => errors.report(
+                            &n,
+                            UnknownFunction(n.ident_token().unwrap().text().to_string()),
+                        ),
+                    }
+                }
+                ModExport::ModExportTy(n) => {
+                    let name = self.sym(n.upper_ident_token().unwrap().text());
+                    match self.context.lookup_type(name) {
+                        Some(TypeDef::Struct(def)) => {
+                            interface.structs.insert(name, (*def).clone());
+                        }
+                        Some(TypeDef::Variant(def)) => {
+                            interface.variants.insert(name, (*def).clone());
+                            for (alt_sym, alt_name) in &def.alternatives {
+                                interface.structs.insert(
+                                    *alt_sym,
+                                    (*self.context.lookup_struct_name(*alt_name)).clone(),
+                                );
+                            }
+                        }
+                        None => errors.report(
+                            &n,
+                            UnknownType(n.upper_ident_token().unwrap().text().to_string()),
+                        ),
+                    }
+                }
+                ModExport::ModExportAll(_) => todo!("Can't export all yet"),
+            }
+        }
+        interface
+    }
+
+    fn infer_module_inner(
         &mut self,
         errors: &mut TyErrors,
         module: &Module,

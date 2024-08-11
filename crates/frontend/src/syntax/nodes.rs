@@ -36,19 +36,10 @@ impl ModHeader {
     pub fn ident_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T![ident])
     }
-    pub fn mod_exports(&self) -> Option<ModExports> {
-        support::child(&self.syntax)
-    }
-    pub fn mod_uses(&self) -> AstChildren<ModUse> {
+    pub fn mod_exports(&self) -> AstChildren<ModExport> {
         support::children(&self.syntax)
     }
-}
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct ModExports {
-    pub(crate) syntax: SyntaxNode,
-}
-impl ModExports {
-    pub fn mod_exports(&self) -> AstChildren<ModExport> {
+    pub fn mod_uses(&self) -> AstChildren<ModUse> {
         support::children(&self.syntax)
     }
 }
@@ -911,21 +902,6 @@ impl AstNode for Module {
 impl AstNode for ModHeader {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == ModHeader
-    }
-    fn cast(syntax: SyntaxNode) -> Option<Self> {
-        if Self::can_cast(syntax.kind()) {
-            Some(Self { syntax })
-        } else {
-            None
-        }
-    }
-    fn syntax(&self) -> &SyntaxNode {
-        &self.syntax
-    }
-}
-impl AstNode for ModExports {
-    fn can_cast(kind: SyntaxKind) -> bool {
-        kind == ModExports
     }
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         if Self::can_cast(syntax.kind()) {
@@ -2252,11 +2228,6 @@ impl std::fmt::Display for Module {
     }
 }
 impl std::fmt::Display for ModHeader {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        std::fmt::Display::fmt(self.syntax(), f)
-    }
-}
-impl std::fmt::Display for ModExports {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
     }
