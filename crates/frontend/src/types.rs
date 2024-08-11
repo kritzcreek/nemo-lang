@@ -4,14 +4,14 @@ mod module;
 mod names;
 
 use crate::ir::{ModuleId, MutableNameSupply, Name, Program};
-use crate::syntax::Module;
 use crate::syntax::token_ptr::SyntaxTokenPtr;
+use crate::syntax::Module;
 use check::Typechecker;
 use std::collections::HashMap;
 
 pub use check::{Occurrence, OccurrenceMap};
 pub use error::TyError;
-pub use module::{Interface, Visibility};
+pub use module::{FuncDef, Interface, StructDef, StructFields, TypeDef, VariantDef, Visibility};
 
 #[derive(Debug)]
 pub struct CheckResult<N, E> {
@@ -23,7 +23,10 @@ pub struct CheckResult<N, E> {
     pub parse: Module,
 }
 
-pub fn check_module(module: Module, module_id: ModuleId) -> CheckResult<MutableNameSupply, TyError> {
+pub fn check_module(
+    module: Module,
+    module_id: ModuleId,
+) -> CheckResult<MutableNameSupply, TyError> {
     let mut checker = Typechecker::new(module_id);
     let (ir, interface, errors) = checker.infer_module(&module);
     let (names, _) = checker.name_supply.take();

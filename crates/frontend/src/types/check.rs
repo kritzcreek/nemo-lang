@@ -7,6 +7,7 @@ use super::{
     },
     Interface,
 };
+use super::{FuncDef, StructDef, StructFields, TypeDef, VariantDef};
 use crate::ir::{
     self, ExprBuilder, FuncTy, LambdaBuilder, LitBuilder, Name, PatVarBuilder, ReturnBuilder,
     Substitution, Symbol, Ty, VarBuilder,
@@ -24,73 +25,6 @@ use std::mem;
 use std::rc::Rc;
 use text_size::TextRange;
 
-#[derive(Debug, Clone)]
-struct StructDef {
-    name: Name,
-    span: TextRange,
-    variant: Option<Name>,
-    ty_params: Vec<Name>,
-}
-
-#[derive(Debug, Clone)]
-struct VariantDef {
-    name: Name,
-    span: TextRange,
-    ty_params: Vec<Name>,
-    // TODO: The ordering of these alternatives needs to be deterministic
-    alternatives: HashMap<Symbol, Name>,
-}
-
-impl VariantDef {
-    pub fn lookup_alternative(&self, name: Symbol) -> Option<Name> {
-        self.alternatives.get(&name).copied()
-    }
-}
-
-#[derive(Debug, Clone)]
-enum TypeDef {
-    Struct(Rc<StructDef>),
-    Variant(Rc<VariantDef>),
-}
-impl TypeDef {
-    fn name(&self) -> Name {
-        match self {
-            TypeDef::Struct(x) => x.name,
-            TypeDef::Variant(x) => x.name,
-        }
-    }
-
-    fn ty_params(&self) -> &[Name] {
-        match self {
-            TypeDef::Struct(x) => &x.ty_params,
-            TypeDef::Variant(x) => &x.ty_params,
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-struct StructFields {
-    // TODO: The ordering of these fields needs to be deterministic
-    fields: HashMap<Symbol, (Name, Ty)>,
-}
-
-impl StructFields {
-    fn to_ir(&self) -> Vec<(Name, Ty)> {
-        self.fields.values().cloned().collect()
-    }
-
-    fn names(&self) -> Vec<Name> {
-        self.fields.values().map(|(n, _)| *n).collect()
-    }
-}
-
-#[derive(Debug, Clone)]
-struct FuncDef {
-    name: Name,
-    ty_params: Vec<Name>,
-    ty: FuncTy,
-}
-
 // NOTE: We could consider passing an explicit Ctx around,
 // but we'd need to make it immutable and persistent
 #[derive(Debug)]
@@ -107,8 +41,6 @@ struct Ctx {
     types_names: HashMap<Symbol, Name>,
     type_defs: HashMap<Name, TypeDef>,
     field_defs: HashMap<Name, StructFields>,
-
-    uses: HashMap<ModuleId, Interface>,
 }
 
 impl Ctx {
@@ -122,7 +54,6 @@ impl Ctx {
             type_defs: HashMap::new(),
             types_names: HashMap::new(),
             field_defs: HashMap::new(),
-            uses: HashMap::new(),
         }
     }
 
@@ -301,7 +232,10 @@ impl Typechecker {
         assert!(previous_ref.is_none())
     }
 
-    pub fn infer_module(&mut self, module: &Module) -> (Option<ir::Program>, Interface, Vec<TyError>) {
+    pub fn infer_module(
+        &mut self,
+        module: &Module,
+    ) -> (Option<ir::Program>, Interface, Vec<TyError>) {
         let mut errors: TyErrors = TyErrors::new();
         let ir = self.infer_module_inner(&mut errors, module);
         (ir, Interface::default(), errors.errors)
