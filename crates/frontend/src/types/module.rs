@@ -203,6 +203,43 @@ impl Interface {
             ctx,
         }
     }
+
+    // TODO: make this more efficient
+    pub fn lookup_type_name(&self, name: Name) -> Option<TypeDef> {
+        self.structs
+            .values()
+            .find(|x| x.name == name)
+            .map(|x| TypeDef::Struct(x.clone()))
+            .or_else(|| {
+                self.variants
+                    .values()
+                    .find(|x| x.name == name)
+                    .map(|x| TypeDef::Variant(x.clone()))
+            })
+    }
+
+    pub fn lookup_type(&self, name: Symbol) -> Option<TypeDef> {
+        self.structs
+            .get(&name)
+            .map(|x| TypeDef::Struct(x.clone()))
+            .or_else(|| {
+                self.variants
+                    .get(&name)
+                    .map(|x| TypeDef::Variant(x.clone()))
+            })
+    }
+
+    pub fn lookup_struct(&self, name: Symbol) -> Option<StructDef> {
+        if let Some(TypeDef::Struct(def)) = self.lookup_type(name) {
+            Some(def)
+        } else {
+            None
+        }
+    }
+
+    pub fn lookup_func(&self, name: Symbol) -> Option<FuncDef> {
+        self.functions.get(&name).cloned()
+    }
 }
 
 pub struct InterfaceDisplay<'a> {

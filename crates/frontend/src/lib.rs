@@ -16,16 +16,13 @@ pub use types::CheckResult;
 /// If there are any errors, the generated IR should _not_ be used. It's returned here for
 /// debugging purposes.
 pub fn run_frontend(source: &str) -> CheckResult<Ctx, CheckError> {
-    // TODO
+    // TODO wooooot?
     let module_id = ir::ModuleId::new(3);
     let mut ctx = Ctx::new(3);
     let (parse_root, parse_errors) = parse_prog(source).take();
     let modules: Vec<syntax::Module> = parse_root.modules().collect();
     let mut errors = vec![];
-    if modules.len() != 1 {
-        todo!("multi-module support")
-    }
-    let check_result = types::check_module(modules[0].clone(), module_id);
+    let check_result = types::check_module(modules[0].clone(), module_id, vec![]);
     ctx.set_name_supply(module_id, check_result.names);
 
     println!("{}", check_result.interface.display(&ctx));

@@ -25,10 +25,11 @@ use std::mem;
 use std::rc::Rc;
 use text_size::TextRange;
 
-// NOTE: We could consider passing an explicit Ctx around,
-// but we'd need to make it immutable and persistent
+// NOTE: We could consider splitting into context and scope
+// to split into an immutable and mutable part during expr/decl
+// checking
 #[derive(Debug)]
-struct Ctx {
+struct TyCtx {
     values: Vec<HashMap<Symbol, (Ty, Name)>>,
     type_vars: HashMap<Symbol, Name>,
     // We keep track of the return type of the current function
@@ -40,11 +41,12 @@ struct Ctx {
     functions: HashMap<Symbol, Rc<FuncDef>>,
     types_names: HashMap<Symbol, Name>,
     type_defs: HashMap<Name, TypeDef>,
+    uses: HashMap<Symbol, Interface>,
 }
 
-impl Ctx {
-    fn new() -> Ctx {
-        Ctx {
+impl TyCtx {
+    fn new() -> TyCtx {
+        TyCtx {
             values: vec![],
             type_vars: HashMap::new(),
             return_type: None,
@@ -52,6 +54,7 @@ impl Ctx {
             functions: HashMap::new(),
             type_defs: HashMap::new(),
             types_names: HashMap::new(),
+            uses: HashMap::new(),
         }
     }
 
@@ -80,16 +83,8 @@ impl Ctx {
         })
     }
 
-    fn add_type_var(&mut self, v: Symbol, name: Name) {
-        self.type_vars.insert(v, name);
-    }
-
-    fn lookup_type_var(&self, v: Symbol) -> Option<Name> {
-        self.type_vars.get(&v).copied()
-    }
-
-    fn clear_type_vars(&mut self) {
-        self.type_vars.clear()
+    fn lookup_func(&self, name: Symbol) -> Option<Rc<FuncDef>> {
+        self.functions.get(&name).cloned()
     }
 
     fn add_func(&mut self, v: Symbol, name: Name, ty_params: Vec<Name>, ty: FuncTy) {
@@ -103,8 +98,16 @@ impl Ctx {
         );
     }
 
-    fn lookup_func(&self, name: Symbol) -> Option<Rc<FuncDef>> {
-        self.functions.get(&name).cloned()
+    fn add_type_var(&mut self, v: Symbol, name: Name) {
+        self.type_vars.insert(v, name);
+    }
+
+    fn lookup_type_var(&self, v: Symbol) -> Option<Name> {
+        self.type_vars.get(&v).copied()
+    }
+
+    fn clear_type_vars(&mut self) {
+        self.type_vars.clear()
     }
 
     fn return_type(&self) -> Option<Rc<Ty>> {
@@ -185,6 +188,28 @@ impl Ctx {
     fn leave_block(&mut self) {
         self.values.pop().expect("Tried to pop from an empty Ctx");
     }
+
+    fn add_use(&mut self, name: Symbol, interface: Interface) {
+        self.uses.insert(name, interface);
+    }
+
+    fn lookup_qual_struct(&self, q: Symbol, v: Symbol) -> Option<StructDef> {
+        self.uses
+            .get(&q)
+            .and_then(|interface| interface.lookup_struct(v))
+    }
+
+    fn lookup_qual_type(&self, q: Symbol, v: Symbol) -> Option<TypeDef> {
+        self.uses
+            .get(&q)
+            .and_then(|interface| interface.lookup_type(v))
+    }
+
+    fn lookup_qual_func(&self, q: Symbol, v: Symbol) -> Option<FuncDef> {
+        self.uses
+            .get(&q)
+            .and_then(|interface| interface.lookup_func(v))
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -207,15 +232,20 @@ pub type OccurrenceMap = HashMap<SyntaxTokenPtr, Occurrence<Name>>;
 pub struct Typechecker {
     pub occurrences: OccurrenceMap, // Write only
     pub name_supply: NameSupply,
-    context: Ctx, // Can be split into mutable and immutable parts
+    context: TyCtx, // Can be split into mutable and immutable parts
 }
 
 impl Typechecker {
-    pub fn new(module: ModuleId) -> Typechecker {
+    pub fn new(module: ModuleId, deps: Vec<(String, Interface)>) -> Typechecker {
+        let mut context = TyCtx::new();
+        let name_supply = NameSupply::new(module);
+        for (name, interface) in deps {
+            context.add_use(name_supply.get_or_intern(&name), interface);
+        }
         Typechecker {
             occurrences: HashMap::new(),
-            name_supply: NameSupply::new(module),
-            context: Ctx::new(),
+            name_supply,
+            context,
         }
     }
 

@@ -26,8 +26,9 @@ pub struct CheckResult<N, E> {
 pub fn check_module(
     module: Module,
     module_id: ModuleId,
+    dependencies: Vec<(String, Interface)>,
 ) -> CheckResult<MutableNameSupply, TyError> {
-    let mut checker = Typechecker::new(module_id);
+    let mut checker = Typechecker::new(module_id, dependencies);
     let (ir, interface, errors) = checker.infer_module(&module);
     let (names, _) = checker.name_supply.take();
     CheckResult {
