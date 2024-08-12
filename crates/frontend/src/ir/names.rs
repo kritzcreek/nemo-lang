@@ -7,20 +7,24 @@ use string_interner::{DefaultStringInterner, DefaultSymbol};
 
 use text_size::TextRange;
 
+use crate::types::Interface;
+
+// Indexed by ModuleId
 #[derive(Debug)]
 pub struct Ctx {
     // Indexed by ModuleId
+    interfaces: Vec<Interface>,
     name_supplies: Vec<MutableNameSupply>,
 }
 
 impl Ctx {
     pub fn new(module_count: u16) -> Ctx {
         // TODO: Should zero initialize all of these
-        let mut name_supplies = Vec::with_capacity(module_count as usize);
-        name_supplies.push(MutableNameSupply::new());
-        name_supplies.push(MutableNameSupply::new());
-        // TODO
-        name_supplies.push(MutableNameSupply::new());
+        let mut name_supplies =
+            Vec::with_capacity((module_count + ModuleId::FIRST_NON_RESERVED.get() - 1) as usize);
+        for _ in 0..module_count {
+            name_supplies.push(MutableNameSupply::new())
+        }
         Ctx { name_supplies }
     }
     pub fn set_name_supply(&mut self, module: ModuleId, supply: MutableNameSupply) {
@@ -70,6 +74,25 @@ impl ModuleId {
 
     pub const PRIM: Self = ModuleId(unsafe { NonZeroU16::new_unchecked(1) });
     pub const CODEGEN: Self = ModuleId(unsafe { NonZeroU16::new_unchecked(2) });
+    const FIRST_NON_RESERVED: NonZeroU16 = unsafe { NonZeroU16::new_unchecked(3) };
+}
+
+impl Into<u16> for ModuleId {
+    fn into(self) -> u16 {
+        self.0.get()
+    }
+}
+
+pub struct ModuleIdGen(NonZeroU16);
+impl ModuleIdGen {
+    pub fn new() -> Self {
+        Self(ModuleId::FIRST_NON_RESERVED)
+    }
+    pub fn next(&mut self) -> ModuleId {
+        let tmp = ModuleId(self.0);
+        self.0 = self.0.checked_add(1).unwrap();
+        tmp
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]

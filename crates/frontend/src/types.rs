@@ -3,7 +3,7 @@ mod error;
 mod module;
 mod names;
 
-use crate::ir::{ModuleId, MutableNameSupply, Name, Program};
+use crate::ir::{Ctx, ModuleId, MutableNameSupply, Name, Program};
 use crate::syntax::token_ptr::SyntaxTokenPtr;
 use crate::syntax::Module;
 use check::Typechecker;
@@ -24,6 +24,7 @@ pub struct CheckResult<N, E> {
 }
 
 pub fn check_module(
+    ctx: &Ctx,
     module: Module,
     module_id: ModuleId,
     dependencies: Vec<(String, Interface)>,

@@ -2,6 +2,7 @@ pub mod builtins;
 mod error;
 pub mod highlight;
 pub mod ir;
+mod module_dag;
 pub mod parser;
 pub mod syntax;
 pub mod types;
@@ -16,35 +17,41 @@ pub use types::CheckResult;
 /// If there are any errors, the generated IR should _not_ be used. It's returned here for
 /// debugging purposes.
 pub fn run_frontend(source: &str) -> CheckResult<Ctx, CheckError> {
-    // TODO wooooot?
-    let module_id = ir::ModuleId::new(3);
-    let mut ctx = Ctx::new(3);
+    // TODO
     let (parse_root, parse_errors) = parse_prog(source).take();
-    let modules: Vec<syntax::Module> = parse_root.modules().collect();
     let mut errors = vec![];
-    let check_result = types::check_module(modules[0].clone(), module_id, vec![]);
-    ctx.set_name_supply(module_id, check_result.names);
-
-    println!("{}", check_result.interface.display(&ctx));
-
     for error in parse_errors {
         errors.push(CheckError::ParseError(error));
     }
-    for error in check_result.errors {
-        errors.push(CheckError::TypeError(error));
+    let modules = module_dag::toposort_modules(parse_root.clone());
+    let mut ctx = Ctx::new(modules.len() as u16);
+    for (id, module) in modules {
+        dbg!(
+            id,
+            module.mod_header().unwrap().ident_token().unwrap().text()
+        );
+        let check_result = types::check_module(&ctx, module, id);
+        ctx.set_name_supply(id, check_result.names);
+        for error in check_result.errors {
+            errors.push(CheckError::TypeError(error));
+        }
     }
-    if errors.is_empty() && check_result.ir.is_none() {
-        panic!("No IR generated, despite no errors")
-    };
+    // dbg!(errors);
+    dbg!(ctx);
+    return todo!();
 
-    CheckResult {
-        errors,
-        names: ctx,
-        occurrences: check_result.occurrences,
-        interface: check_result.interface,
-        ir: check_result.ir,
-        parse: check_result.parse,
-    }
+    // if errors.is_empty() && check_result.ir.is_none() {
+    // panic!("No IR generated, despite no errors")
+    // };
+    //
+    // CheckResult {
+    // errors,
+    // names: ctx,
+    // occurrences: check_result.occurrences,
+    // interface: check_result.interface,
+    // ir: check_result.ir,
+    // parse: check_result.parse,
+    // }
 }
 
 /// Checks the given program, and prints any parse or type errors.
