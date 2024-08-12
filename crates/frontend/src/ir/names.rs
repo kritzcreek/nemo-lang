@@ -13,25 +13,42 @@ use crate::types::Interface;
 #[derive(Debug)]
 pub struct Ctx {
     // Indexed by ModuleId
+    module_names: Vec<String>,
     interfaces: Vec<Interface>,
     name_supplies: Vec<MutableNameSupply>,
 }
 
 impl Ctx {
     pub fn new(module_count: u16) -> Ctx {
-        // TODO: Should zero initialize all of these
-        let mut name_supplies =
-            Vec::with_capacity((module_count + ModuleId::FIRST_NON_RESERVED.get() - 1) as usize);
-        for _ in 0..module_count {
-            name_supplies.push(MutableNameSupply::new())
+        // Includes the reserved modules
+        let all_module_count = (module_count + ModuleId::FIRST_NON_RESERVED.get() - 1) as usize;
+
+        let mut name_supplies = Vec::with_capacity(all_module_count);
+        let mut module_names = Vec::with_capacity(all_module_count);
+        let mut interfaces = Vec::with_capacity(all_module_count);
+        // TODO: Should add proper values for reserved modules
+        for _ in 0..name_supplies.capacity() {
+            name_supplies.push(MutableNameSupply::new());
+            module_names.push("NOT INITIALIZED".to_string());
+            interfaces.push(Interface::default());
         }
-        Ctx { name_supplies }
+        Ctx {
+            module_names,
+            interfaces,
+            name_supplies,
+        }
     }
     pub fn set_name_supply(&mut self, module: ModuleId, supply: MutableNameSupply) {
         self.name_supplies[(module.0.get() - 1) as usize] = supply
     }
     pub fn get_name_supply(&self, module: ModuleId) -> &MutableNameSupply {
         &self.name_supplies[(module.0.get() - 1) as usize]
+    }
+    pub fn get_interface(&self, module: ModuleId) -> &Interface {
+        &self.interfaces[(module.0.get() - 1) as usize]
+    }
+    pub fn get_module_name(&self, module: ModuleId) -> &str {
+        &self.module_names[(module.0.get() - 1) as usize]
     }
     pub fn resolve(&self, name: Name) -> (String, TextRange) {
         let supply = self.get_name_supply(name.module);

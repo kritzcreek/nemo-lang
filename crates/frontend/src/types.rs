@@ -3,7 +3,7 @@ mod error;
 mod module;
 mod names;
 
-use crate::ir::{Ctx, ModuleId, MutableNameSupply, Name, Program};
+use crate::ir::{Ctx, ModuleId, ModuleIdGen, MutableNameSupply, Name, Program};
 use crate::syntax::token_ptr::SyntaxTokenPtr;
 use crate::syntax::Module;
 use check::Typechecker;
@@ -27,8 +27,21 @@ pub fn check_module(
     ctx: &Ctx,
     module: Module,
     module_id: ModuleId,
-    dependencies: Vec<(String, Interface)>,
 ) -> CheckResult<MutableNameSupply, TyError> {
+    let mut dependencies: Vec<(String, Interface)> = vec![];
+    // TODO horrible
+    let mut module_id_gen = ModuleIdGen::new();
+    loop {
+        let next = module_id_gen.next();
+        if next == module_id {
+            break;
+        }
+        dependencies.push((
+            ctx.get_module_name(next).to_owned(),
+            // TODO: scream emoji
+            ctx.get_interface(next).clone(),
+        ));
+    }
     let mut checker = Typechecker::new(module_id, dependencies);
     let (ir, interface, errors) = checker.infer_module(&module);
     let (names, _) = checker.name_supply.take();

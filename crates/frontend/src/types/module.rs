@@ -189,7 +189,7 @@ impl<'a> fmt::Display for FuncDefDisplay<'a> {
 
 /// Contains all information needed to type check another module that uses
 /// this module
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct Interface {
     pub structs: HashMap<Symbol, StructDef>,
     pub variants: HashMap<Symbol, VariantDef>,
