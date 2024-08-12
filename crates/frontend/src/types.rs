@@ -32,14 +32,14 @@ pub fn check_module(
     // TODO horrible
     let mut module_id_gen = ModuleIdGen::new();
     loop {
-        let next = module_id_gen.next();
-        if next == module_id {
+        let id = module_id_gen.next();
+        if id == module_id {
             break;
         }
         dependencies.push((
-            ctx.get_module_name(next).to_owned(),
+            ctx.get_module_name(id).to_owned(),
             // TODO: scream emoji
-            ctx.get_interface(next).clone(),
+            ctx.get_interface(id).clone(),
         ));
     }
     let mut checker = Typechecker::new(module_id, dependencies);

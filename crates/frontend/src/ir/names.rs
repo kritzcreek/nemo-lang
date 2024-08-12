@@ -38,6 +38,12 @@ impl Ctx {
             name_supplies,
         }
     }
+    pub fn set_module_name(&mut self, module: ModuleId, name: String) {
+        self.module_names[(module.0.get() - 1) as usize] = name
+    }
+    pub fn set_interface(&mut self, module: ModuleId, interface: Interface) {
+        self.interfaces[(module.0.get() - 1) as usize] = interface
+    }
     pub fn set_name_supply(&mut self, module: ModuleId, supply: MutableNameSupply) {
         self.name_supplies[(module.0.get() - 1) as usize] = supply
     }

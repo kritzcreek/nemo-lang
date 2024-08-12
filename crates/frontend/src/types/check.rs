@@ -239,6 +239,7 @@ impl Typechecker {
     pub fn new(module: ModuleId, deps: Vec<(String, Interface)>) -> Typechecker {
         let mut context = TyCtx::new();
         let name_supply = NameSupply::new(module);
+        dbg!(&module, &deps);
         for (name, interface) in deps {
             context.add_use(name_supply.get_or_intern(&name), interface);
         }
