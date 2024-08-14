@@ -10,9 +10,8 @@ fn mod_name(module: &Module) -> String {
     module
         .mod_header()
         .and_then(|h| h.ident_token())
-        .unwrap()
-        .text()
-        .to_string()
+        .map(|t| t.text().to_string())
+        .unwrap_or("DEFAULT_MODULE_NAME".to_string())
 }
 
 pub fn toposort_modules(root: Root) -> Vec<(ModuleId, String, Module)> {
@@ -31,7 +30,10 @@ pub fn toposort_modules(root: Root) -> Vec<(ModuleId, String, Module)> {
     let mut ts: TopologicalSort<ModuleId> = TopologicalSort::new();
     for (_, module) in module_id_map.values() {
         let module_id = module_name_map[&mod_name(module)];
-        for mod_use in module.mod_header().unwrap().mod_uses() {
+        let Some(header) = module.mod_header() else {
+            continue;
+        };
+        for mod_use in header.mod_uses() {
             let import_name_tkn = mod_use.ident_token().unwrap();
             let import_id = module_name_map[import_name_tkn.text()];
             ts.add_dependency(import_id, module_id)

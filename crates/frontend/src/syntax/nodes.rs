@@ -354,6 +354,9 @@ pub struct TyCons {
     pub(crate) syntax: SyntaxNode,
 }
 impl TyCons {
+    pub fn mod_qualifier(&self) -> Option<ModQualifier> {
+        support::child(&self.syntax)
+    }
     pub fn qualifier(&self) -> Option<Qualifier> {
         support::child(&self.syntax)
     }
@@ -380,6 +383,18 @@ impl TyFn {
     }
     pub fn result(&self) -> Option<Type> {
         support::child(&self.syntax)
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ModQualifier {
+    pub(crate) syntax: SyntaxNode,
+}
+impl ModQualifier {
+    pub fn ident_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![ident])
+    }
+    pub fn coloncolon_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![::])
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -468,6 +483,9 @@ pub struct EVar {
     pub(crate) syntax: SyntaxNode,
 }
 impl EVar {
+    pub fn mod_qualifier(&self) -> Option<ModQualifier> {
+        support::child(&self.syntax)
+    }
     pub fn ident_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T![ident])
     }
@@ -1262,6 +1280,21 @@ impl AstNode for TyCons {
 impl AstNode for TyFn {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == TyFn
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+impl AstNode for ModQualifier {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == ModQualifier
     }
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         if Self::can_cast(syntax.kind()) {
@@ -2348,6 +2381,11 @@ impl std::fmt::Display for TyCons {
     }
 }
 impl std::fmt::Display for TyFn {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for ModQualifier {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
     }

@@ -253,6 +253,18 @@ fn qualifier(p: &mut Parser) -> Progress {
     }
 }
 
+fn mod_qualifier(p: &mut Parser) -> Progress {
+    if p.at(T![ident]) && p.nth_at(1, T![::]) {
+        let c = p.checkpoint();
+        p.bump(T![ident]);
+        p.bump(T![::]);
+        p.finish_at(c, SyntaxKind::ModQualifier);
+        Progress::Made
+    } else {
+        Progress::None
+    }
+}
+
 fn typ_annot(p: &mut Parser) -> Progress {
     if !p.eat(SyntaxKind::COLON) {
         return Progress::None;
@@ -287,14 +299,15 @@ fn typ(p: &mut Parser) -> Progress {
             p.finish_at(c, SyntaxKind::TyUnit)
         }
         T![ident] => {
-            p.bump(T![ident]);
-            p.finish_at(c, SyntaxKind::TyVar)
+            if mod_qualifier(p).made_progress() {
+                ty_cons(p, c);
+            } else {
+                p.bump(T![ident]);
+                p.finish_at(c, SyntaxKind::TyVar)
+            }
         }
         T![upper_ident] => {
-            qualifier(p);
-            p.expect(T![upper_ident]);
-            ty_arg_list(p);
-            p.finish_at(c, SyntaxKind::TyCons)
+            ty_cons(p, c);
         }
         T!['['] => {
             p.bump(T!['[']);
@@ -326,6 +339,13 @@ fn typ(p: &mut Parser) -> Progress {
     }
 
     Progress::Made
+}
+
+fn ty_cons(p: &mut Parser, c: Checkpoint) {
+    qualifier(p);
+    p.expect(T![upper_ident]);
+    ty_arg_list(p);
+    p.finish_at(c, SyntaxKind::TyCons)
 }
 
 fn lit(p: &mut Parser) -> Progress {
@@ -609,30 +629,33 @@ fn atom(p: &mut Parser) -> Progress {
         return Progress::Made;
     }
 
-    match p.current() {
-        T!['('] => {
-            p.bump(T!['(']);
+    if p.eat(T!['(']) {
+        if !expr(p).made_progress() {
+            p.error("expected an expression")
+        }
+        p.expect(T![')']);
+        p.finish_at(c, SyntaxKind::EParen);
+        return Progress::Made;
+    }
+
+    if p.eat(T!['[']) {
+        while !p.at(SyntaxKind::EOF) && !p.at(T![']']) {
             if !expr(p).made_progress() {
-                p.error("expected an expression")
-            }
-            p.expect(T![')']);
-            p.finish_at(c, SyntaxKind::EParen);
-        }
-        T!['['] => {
-            p.bump(T!['[']);
-            while !p.at(SyntaxKind::EOF) && !p.at(T![']']) {
-                if !expr(p).made_progress() {
-                    break;
-                }
-
-                if !p.at(T![']']) && !p.expect(T![,]) {
-                    break;
-                }
+                break;
             }
 
-            p.expect(T![']']);
-            p.finish_at(c, SyntaxKind::EArray)
+            if !p.at(T![']']) && !p.expect(T![,]) {
+                break;
+            }
         }
+
+        p.expect(T![']']);
+        p.finish_at(c, SyntaxKind::EArray);
+        return Progress::Made;
+    }
+
+    let qualified = mod_qualifier(p);
+    match p.current() {
         T![upper_ident] => {
             qualifier(p);
             p.expect(T![upper_ident]);
@@ -661,7 +684,12 @@ fn atom(p: &mut Parser) -> Progress {
             p.bump(T![ident]);
             p.finish_at(c, SyntaxKind::EVar)
         }
-        _ => return Progress::None,
+        _ => {
+            if qualified.made_progress() {
+                p.error("expected a qualified identifier")
+            }
+            return qualified;
+        }
     }
 
     Progress::Made

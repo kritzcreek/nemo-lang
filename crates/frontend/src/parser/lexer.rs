@@ -309,6 +309,7 @@ pub enum SyntaxKind {
     EArgList,
     ETyArgList,
     Qualifier,
+    ModQualifier,
 
     // Types
     TyInt,

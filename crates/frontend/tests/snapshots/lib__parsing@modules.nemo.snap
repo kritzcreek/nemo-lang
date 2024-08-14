@@ -1,11 +1,10 @@
 ---
 source: crates/frontend/tests/lib.rs
-assertion_line: 129
 expression: output
 input_file: crates/frontend/tests/parsing/modules.nemo
 ---
-Root@0..191
-  Module@0..191
+Root@0..290
+  Module@0..290
     ModHeader@0..68
       MODULE_KW@0..6 "module"
       SPACE@6..7 " "
@@ -64,59 +63,121 @@ Root@0..191
       SPACE@111..112 " "
       ImpExternal@112..122
         IDENT@112..122 "print_char"
-    TopStruct@122..137
+    TopGlobal@122..173
       LINEFEED@122..123 "\n"
       LINEFEED@123..124 "\n"
-      STRUCT_KW@124..130 "struct"
+      GLOBAL_KW@124..130 "global"
       SPACE@130..131 " "
-      UPPER_IDENT@131..134 "Str"
+      IDENT@131..132 "s"
+      SPACE@132..133 " "
+      COLON@133..134 ":"
       SPACE@134..135 " "
-      L_BRACE@135..136 "{"
-      R_BRACE@136..137 "}"
-    TopFn@137..157
-      LINEFEED@137..138 "\n"
-      LINEFEED@138..139 "\n"
-      FN_KW@139..141 "fn"
-      SPACE@141..142 " "
-      IDENT@142..145 "len"
-      L_PAREN@145..146 "("
-      Param@146..152
-        IDENT@146..147 "s"
-        COLON@147..148 ":"
-        SPACE@148..149 " "
-        TyCons@149..152
-          UPPER_IDENT@149..152 "Str"
-      R_PAREN@152..153 ")"
-      SPACE@153..154 " "
-      EBlock@154..157
-        L_BRACE@154..155 "{"
-        SPACE@155..156 " "
-        R_BRACE@156..157 "}"
-    TopFn@157..191
-      LINEFEED@157..158 "\n"
-      FN_KW@158..160 "fn"
-      SPACE@160..161 " "
-      IDENT@161..167 "concat"
-      L_PAREN@167..168 "("
-      Param@168..178
-        IDENT@168..170 "s1"
-        SPACE@170..171 " "
-        COLON@171..172 ":"
-        SPACE@172..173 " "
-        TyCons@173..176
-          UPPER_IDENT@173..176 "Str"
-        COMMA@176..177 ","
-        SPACE@177..178 " "
-      Param@178..186
-        IDENT@178..180 "s2"
-        SPACE@180..181 " "
-        COLON@181..182 ":"
-        SPACE@182..183 " "
-        TyCons@183..186
-          UPPER_IDENT@183..186 "Str"
-      R_PAREN@186..187 ")"
-      SPACE@187..188 " "
-      EBlock@188..191
-        L_BRACE@188..189 "{"
-        SPACE@189..190 " "
-        R_BRACE@190..191 "}"
+      TyCons@135..155
+        ModQualifier@135..143
+          IDENT@135..141 "option"
+          DOUBLE_COLON@141..143 "::"
+        UPPER_IDENT@143..149 "Option"
+        L_BRACKET@149..150 "["
+        TyInt@150..153
+          I32_BUILTIN@150..153 "i32"
+        R_BRACKET@153..154 "]"
+        SPACE@154..155 " "
+      EQUALS@155..156 "="
+      SPACE@156..157 " "
+      ECall@157..173
+        EVar@157..169
+          ModQualifier@157..165
+            IDENT@157..163 "option"
+            DOUBLE_COLON@163..165 "::"
+          IDENT@165..169 "some"
+        EArgList@169..173
+          L_PAREN@169..170 "("
+          ELit@170..172
+            LitInt@170..172
+              INT_LIT@170..172 "10"
+          R_PAREN@172..173 ")"
+    TopGlobal@173..221
+      LINEFEED@173..174 "\n"
+      GLOBAL_KW@174..180 "global"
+      SPACE@180..181 " "
+      IDENT@181..183 "s2"
+      SPACE@183..184 " "
+      EQUALS@184..185 "="
+      SPACE@185..186 " "
+      EStruct@186..221
+        ModQualifier@186..194
+          IDENT@186..192 "option"
+          DOUBLE_COLON@192..194 "::"
+        Qualifier@194..202
+          UPPER_IDENT@194..200 "Option"
+          DOUBLE_COLON@200..202 "::"
+        UPPER_IDENT@202..206 "Some"
+        SPACE@206..207 " "
+        L_BRACE@207..208 "{"
+        SPACE@208..209 " "
+        EStructField@209..220
+          IDENT@209..214 "value"
+          SPACE@214..215 " "
+          EQUALS@215..216 "="
+          SPACE@216..217 " "
+          ELit@217..220
+            LitInt@217..220
+              INT_LIT@217..219 "10"
+              SPACE@219..220 " "
+        R_BRACE@220..221 "}"
+    TopStruct@221..236
+      LINEFEED@221..222 "\n"
+      LINEFEED@222..223 "\n"
+      STRUCT_KW@223..229 "struct"
+      SPACE@229..230 " "
+      UPPER_IDENT@230..233 "Str"
+      SPACE@233..234 " "
+      L_BRACE@234..235 "{"
+      R_BRACE@235..236 "}"
+    TopFn@236..256
+      LINEFEED@236..237 "\n"
+      LINEFEED@237..238 "\n"
+      FN_KW@238..240 "fn"
+      SPACE@240..241 " "
+      IDENT@241..244 "len"
+      L_PAREN@244..245 "("
+      Param@245..251
+        IDENT@245..246 "s"
+        COLON@246..247 ":"
+        SPACE@247..248 " "
+        TyCons@248..251
+          UPPER_IDENT@248..251 "Str"
+      R_PAREN@251..252 ")"
+      SPACE@252..253 " "
+      EBlock@253..256
+        L_BRACE@253..254 "{"
+        SPACE@254..255 " "
+        R_BRACE@255..256 "}"
+    TopFn@256..290
+      LINEFEED@256..257 "\n"
+      FN_KW@257..259 "fn"
+      SPACE@259..260 " "
+      IDENT@260..266 "concat"
+      L_PAREN@266..267 "("
+      Param@267..277
+        IDENT@267..269 "s1"
+        SPACE@269..270 " "
+        COLON@270..271 ":"
+        SPACE@271..272 " "
+        TyCons@272..275
+          UPPER_IDENT@272..275 "Str"
+        COMMA@275..276 ","
+        SPACE@276..277 " "
+      Param@277..285
+        IDENT@277..279 "s2"
+        SPACE@279..280 " "
+        COLON@280..281 ":"
+        SPACE@281..282 " "
+        TyCons@282..285
+          UPPER_IDENT@282..285 "Str"
+      R_PAREN@285..286 ")"
+      SPACE@286..287 " "
+      EBlock@287..290
+        L_BRACE@287..288 "{"
+        SPACE@288..289 " "
+        R_BRACE@289..290 "}"
