@@ -6,8 +6,8 @@ let instantiated;
 let imports = {
   env: {
     log: (arg) => console.log(arg),
-    print_char: (cp) => console.log(String.fromCodePoint(cp)),
-    random_float: () => Math.random(),
+    print_char: (cp) => process.stdout.write(String.fromCodePoint(cp)),
+    random: () => Math.random(),
   },
 };
 
