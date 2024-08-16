@@ -7,11 +7,14 @@ pub mod parser;
 pub mod syntax;
 pub mod types;
 
+use std::collections::HashMap;
+
 use ir::Ctx;
 use parser::parse_prog;
 
 pub use error::CheckError;
 pub use types::CheckResult;
+use types::Interface;
 
 /// Runs the full frontend on `source` and returns the generated IR and other structures.
 /// If there are any errors, the generated IR should _not_ be used. It's returned here for
@@ -25,7 +28,10 @@ pub fn run_frontend(source: &str) -> CheckResult<Ctx, CheckError> {
     }
     let modules = module_dag::toposort_modules(parse_root.clone());
     let mut ctx = Ctx::new(modules.len() as u16);
+    let mut ir = Some(ir::Program::default());
+    let mut modul = None;
     for (id, name, module) in modules {
+        modul = Some(module.clone());
         let check_result = types::check_module(&ctx, module, id);
         ctx.set_module_name(id, name);
         ctx.set_interface(id, check_result.interface.clone());
@@ -33,26 +39,28 @@ pub fn run_frontend(source: &str) -> CheckResult<Ctx, CheckError> {
         for error in check_result.errors {
             errors.push(CheckError::TypeError(error));
         }
+        if let Some(ref mut ir) = ir {
+            if let Some(module_ir) = check_result.ir {
+                ir.imports.extend(module_ir.imports);
+                ir.globals.extend(module_ir.globals);
+                ir.types.extend(module_ir.types);
+                ir.funcs.extend(module_ir.funcs);
+            }
+        }
     }
-    for err in &errors {
-        eprintln!("{}", err.display(source, &ctx, true));
-    }
-    // dbg!(errors);
-    // dbg!(ctx);
-    return todo!();
+    if errors.is_empty() && ir.is_none() {
+        panic!("No IR generated, despite no errors")
+    };
 
-    // if errors.is_empty() && check_result.ir.is_none() {
-    // panic!("No IR generated, despite no errors")
-    // };
-    //
-    // CheckResult {
-    // errors,
-    // names: ctx,
-    // occurrences: check_result.occurrences,
-    // interface: check_result.interface,
-    // ir: check_result.ir,
-    // parse: check_result.parse,
-    // }
+    CheckResult {
+        errors,
+        names: ctx,
+        ir,
+        // TODO
+        occurrences: HashMap::new(),
+        interface: Interface::default(),
+        parse: modul.unwrap(),
+    }
 }
 
 /// Checks the given program, and prints any parse or type errors.

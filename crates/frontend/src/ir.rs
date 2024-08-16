@@ -601,7 +601,7 @@ impl Func {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Default)]
 pub struct Program {
     pub imports: Vec<Import>,
     pub types: Vec<TypeDef>,
