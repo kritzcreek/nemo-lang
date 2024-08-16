@@ -193,19 +193,19 @@ impl TyCtx {
         self.uses.insert(name, interface);
     }
 
-    fn lookup_qual_struct(&self, q: Symbol, v: Symbol) -> Option<StructDef> {
+    fn lookup_qual_struct(&self, q: Symbol, v: &str) -> Option<StructDef> {
         self.uses
             .get(&q)
             .and_then(|interface| interface.lookup_struct(v))
     }
 
-    fn lookup_qual_type(&self, q: Symbol, v: Symbol) -> Option<TypeDef> {
+    fn lookup_qual_type(&self, q: Symbol, v: &str) -> Option<TypeDef> {
         self.uses
             .get(&q)
             .and_then(|interface| interface.lookup_type(v))
     }
 
-    fn lookup_qual_func(&self, q: Symbol, v: Symbol) -> Option<FuncDef> {
+    fn lookup_qual_func(&self, q: Symbol, v: &str) -> Option<FuncDef> {
         self.uses
             .get(&q)
             .and_then(|interface| interface.lookup_func(v))
@@ -236,10 +236,12 @@ pub struct Typechecker {
 }
 
 impl Typechecker {
-    pub fn new(module: ModuleId, deps: Vec<(String, Interface)>) -> Typechecker {
+    pub fn new(module: ModuleId, deps: Vec<(String, Interface)>, ctx: &ir::Ctx) -> Typechecker {
         let mut context = TyCtx::new();
         let name_supply = NameSupply::new(module);
-        dbg!(&module, &deps);
+        for dep in &deps {
+            println!("[use {}]:\n{}", dep.0, dep.1.display(ctx))
+        }
         for (name, interface) in deps {
             context.add_use(name_supply.get_or_intern(&name), interface);
         }
@@ -282,10 +284,11 @@ impl Typechecker {
         for export in header.mod_exports() {
             match export {
                 ModExport::ModExportVal(n) => {
-                    let name = self.sym(n.ident_token().unwrap().text());
+                    let str_name = n.ident_token().unwrap().text().to_string();
+                    let name = self.sym(&str_name);
                     match self.context.lookup_func(name) {
                         Some(f) => {
-                            interface.functions.insert(name, (*f).clone());
+                            interface.functions.insert(str_name, (*f).clone());
                         }
                         None => errors.report(
                             &n,
@@ -294,17 +297,19 @@ impl Typechecker {
                     }
                 }
                 ModExport::ModExportTy(n) => {
-                    let name = self.sym(n.upper_ident_token().unwrap().text());
+                    let str_name = n.upper_ident_token().unwrap().text().to_string();
+                    let name = self.sym(&str_name);
                     match self.context.lookup_type(name) {
                         Some(TypeDef::Struct(def)) => {
-                            interface.structs.insert(name, def.clone());
+                            interface.structs.insert(str_name, def.clone());
                         }
                         Some(TypeDef::Variant(def)) => {
-                            interface.variants.insert(name, def.clone());
+                            interface.variants.insert(str_name, def.clone());
                             for (alt_sym, alt_name) in &def.alternatives {
+                                let str_name = self.name_supply.lookup_symbol(*alt_sym);
                                 interface
                                     .structs
-                                    .insert(*alt_sym, self.context.lookup_struct_name(*alt_name));
+                                    .insert(str_name, self.context.lookup_struct_name(*alt_name));
                             }
                         }
                         None => errors.report(

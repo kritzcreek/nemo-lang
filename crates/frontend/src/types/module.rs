@@ -191,9 +191,9 @@ impl<'a> fmt::Display for FuncDefDisplay<'a> {
 /// this module
 #[derive(Debug, Default, Clone)]
 pub struct Interface {
-    pub structs: HashMap<Symbol, StructDef>,
-    pub variants: HashMap<Symbol, VariantDef>,
-    pub functions: HashMap<Symbol, FuncDef>,
+    pub structs: HashMap<String, StructDef>,
+    pub variants: HashMap<String, VariantDef>,
+    pub functions: HashMap<String, FuncDef>,
 }
 
 impl Interface {
@@ -218,18 +218,14 @@ impl Interface {
             })
     }
 
-    pub fn lookup_type(&self, name: Symbol) -> Option<TypeDef> {
+    pub fn lookup_type(&self, name: &str) -> Option<TypeDef> {
         self.structs
-            .get(&name)
+            .get(name)
             .map(|x| TypeDef::Struct(x.clone()))
-            .or_else(|| {
-                self.variants
-                    .get(&name)
-                    .map(|x| TypeDef::Variant(x.clone()))
-            })
+            .or_else(|| self.variants.get(name).map(|x| TypeDef::Variant(x.clone())))
     }
 
-    pub fn lookup_struct(&self, name: Symbol) -> Option<StructDef> {
+    pub fn lookup_struct(&self, name: &str) -> Option<StructDef> {
         if let Some(TypeDef::Struct(def)) = self.lookup_type(name) {
             Some(def)
         } else {
@@ -237,8 +233,8 @@ impl Interface {
         }
     }
 
-    pub fn lookup_func(&self, name: Symbol) -> Option<FuncDef> {
-        self.functions.get(&name).cloned()
+    pub fn lookup_func(&self, name: &str) -> Option<FuncDef> {
+        self.functions.get(name).cloned()
     }
 }
 

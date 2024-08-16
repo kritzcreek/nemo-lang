@@ -27,7 +27,6 @@ pub fn run_frontend(source: &str) -> CheckResult<Ctx, CheckError> {
     let mut ctx = Ctx::new(modules.len() as u16);
     for (id, name, module) in modules {
         let check_result = types::check_module(&ctx, module, id);
-        dbg!(id, &name);
         ctx.set_module_name(id, name);
         ctx.set_interface(id, check_result.interface.clone());
         ctx.set_name_supply(id, check_result.names);

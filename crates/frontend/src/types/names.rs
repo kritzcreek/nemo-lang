@@ -45,6 +45,10 @@ impl NameSupply {
         self.0.lookup(name).it
     }
 
+    pub fn lookup_symbol(&self, sym: ir::Symbol) -> String {
+        self.0.lookup_symbol(sym)
+    }
+
     pub fn get_or_intern(&self, s: &str) -> ir::Symbol {
         self.0.get_or_intern(s)
     }

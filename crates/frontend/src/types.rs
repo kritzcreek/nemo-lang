@@ -42,7 +42,7 @@ pub fn check_module(
             ctx.get_interface(id).clone(),
         ));
     }
-    let mut checker = Typechecker::new(module_id, dependencies);
+    let mut checker = Typechecker::new(module_id, dependencies, ctx);
     let (ir, interface, errors) = checker.infer_module(&module);
     let (names, _) = checker.name_supply.take();
     CheckResult {
