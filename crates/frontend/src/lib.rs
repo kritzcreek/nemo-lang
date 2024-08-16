@@ -34,6 +34,9 @@ pub fn run_frontend(source: &str) -> CheckResult<Ctx, CheckError> {
             errors.push(CheckError::TypeError(error));
         }
     }
+    for err in &errors {
+        eprintln!("{}", err.display(source, &ctx, true));
+    }
     // dbg!(errors);
     // dbg!(ctx);
     return todo!();

@@ -63,12 +63,12 @@ pub struct VariantDef {
     pub span: TextRange,
     pub ty_params: Vec<Name>,
     // TODO: The ordering of these alternatives needs to be deterministic
-    pub alternatives: HashMap<Symbol, Name>,
+    pub alternatives: HashMap<String, Name>,
 }
 
 impl VariantDef {
-    pub fn lookup_alternative(&self, name: Symbol) -> Option<Name> {
-        self.alternatives.get(&name).copied()
+    pub fn lookup_alternative(&self, name: &str) -> Option<Name> {
+        self.alternatives.get(name).copied()
     }
 
     pub fn display<'a>(&'a self, ctx: &'a Ctx) -> VariantDefDisplay<'a> {
