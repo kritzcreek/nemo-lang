@@ -163,7 +163,7 @@ impl TyCtx {
         d.clone()
     }
 
-    fn set_fields(&mut self, name: Name, fields: HashMap<Symbol, (Name, Ty)>) {
+    fn set_fields(&mut self, name: Name, fields: HashMap<String, (Name, Ty)>) {
         if let Some(TypeDef::Struct(def)) = self.type_defs.get_mut(&name) {
             def.fields = fields;
         }
@@ -503,10 +503,10 @@ impl Typechecker {
                     Some(field_ty) => self.check_ty(errors, &field_ty),
                     None => Ty::Error,
                 };
-                let (name, sym) = self.name_supply.field_idx(&field_name);
+                let (name, _) = self.name_supply.field_idx(&field_name);
                 self.record_def(&field_name, name);
 
-                fields.insert(sym, (name, ty));
+                fields.insert(field_name.text().to_string(), (name, ty));
             }
             self.context.clear_type_vars();
             self.context.set_fields(name, fields);
@@ -1335,7 +1335,7 @@ impl Typechecker {
             .context
             .lookup_struct_name(struct_name)
             .fields
-            .get(&self.sym(field_tkn.text()))
+            .get(field_tkn.text())
             .cloned()
         else {
             errors.report(
@@ -1654,7 +1654,7 @@ impl Typechecker {
                         self.context
                             .lookup_struct_name(*name)
                             .fields
-                            .get(&self.sym(field_name_tkn.text()))
+                            .get(field_name_tkn.text())
                             .cloned(),
                     ),
                     TypeDef::Variant(_) => {

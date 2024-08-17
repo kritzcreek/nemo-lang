@@ -10,7 +10,7 @@ pub struct StructDef {
     pub span: TextRange,
     pub variant: Option<Name>,
     pub ty_params: Vec<Name>,
-    pub fields: HashMap<Symbol, (Name, Ty)>,
+    pub fields: HashMap<String, (Name, Ty)>,
 }
 
 impl StructDef {
@@ -210,17 +210,21 @@ impl Interface {
         self.struct_names
             .get(name)
             .map(|n| TypeDef::Struct(self.structs.get(n).unwrap().clone()))
-            .or_else(|| self.variant_names.get(name).map(|n|
-                TypeDef::Variant(self.variants.get(n).unwrap().clone()))
-            )
+            .or_else(|| {
+                self.variant_names
+                    .get(name)
+                    .map(|n| TypeDef::Variant(self.variants.get(n).unwrap().clone()))
+            })
     }
     pub fn lookup_type_name(&self, name: Name) -> Option<TypeDef> {
         self.structs
             .get(&name)
             .map(|n| TypeDef::Struct(n.clone()))
-            .or_else(|| self.variants.get(&name).map(|n|
-                TypeDef::Variant(n.clone())
-            ))
+            .or_else(|| {
+                self.variants
+                    .get(&name)
+                    .map(|n| TypeDef::Variant(n.clone()))
+            })
     }
 
     pub fn lookup_func(&self, name: &str) -> Option<FuncDef> {

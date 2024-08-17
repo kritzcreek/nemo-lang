@@ -504,12 +504,13 @@ fn match_branch(p: &mut Parser) -> Progress {
 fn pattern(p: &mut Parser) -> Progress {
     let c = p.checkpoint();
     match p.current() {
-        T![ident] => {
+        T![ident] if p.nth(1) != T![::] => {
             p.bump(T![ident]);
             p.finish_at(c, SyntaxKind::PatVar);
             Progress::Made
         }
-        T![upper_ident] => {
+        _ => {
+            mod_qualifier(p);
             qualifier(p);
             p.expect(T![upper_ident]);
             p.expect(T![ident]);
