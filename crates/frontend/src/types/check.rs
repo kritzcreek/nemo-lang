@@ -141,7 +141,11 @@ impl TyCtx {
 
     fn lookup_type_def(&self, name: Name) -> Option<TypeDef> {
         // TODO: Get rid of clone
-        self.type_defs.get(&name).cloned()
+        self.type_defs.get(&name).cloned().or_else(|| {
+            self.uses
+                .values()
+                .find_map(|iface| iface.lookup_type_name(name))
+        })
     }
 
     fn lookup_type(&self, v: Symbol) -> Option<TypeDef> {
