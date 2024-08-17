@@ -191,46 +191,36 @@ impl<'a> fmt::Display for FuncDefDisplay<'a> {
 /// this module
 #[derive(Debug, Default, Clone)]
 pub struct Interface {
-    pub structs: HashMap<String, StructDef>,
-    pub variants: HashMap<String, VariantDef>,
+    pub structs: HashMap<Name, StructDef>,
+    pub struct_names: HashMap<String, Name>,
+    pub variants: HashMap<Name, VariantDef>,
+    pub variant_names: HashMap<String, Name>,
     pub functions: HashMap<String, FuncDef>,
 }
 
 impl Interface {
-    pub fn display<'a>(&'a self, ctx: &'a crate::ir::Ctx) -> InterfaceDisplay<'a> {
+    pub fn display<'a>(&'a self, ctx: &'a Ctx) -> InterfaceDisplay<'a> {
         InterfaceDisplay {
             interface: self,
             ctx,
         }
     }
 
-    // TODO: make this more efficient
+    pub fn lookup_type(&self, name: &str) -> Option<TypeDef> {
+        self.struct_names
+            .get(name)
+            .map(|n| TypeDef::Struct(self.structs.get(n).unwrap().clone()))
+            .or_else(|| self.variant_names.get(name).map(|n|
+                TypeDef::Variant(self.variants.get(n).unwrap().clone()))
+            )
+    }
     pub fn lookup_type_name(&self, name: Name) -> Option<TypeDef> {
         self.structs
-            .values()
-            .find(|x| x.name == name)
-            .map(|x| TypeDef::Struct(x.clone()))
-            .or_else(|| {
-                self.variants
-                    .values()
-                    .find(|x| x.name == name)
-                    .map(|x| TypeDef::Variant(x.clone()))
-            })
-    }
-
-    pub fn lookup_type(&self, name: &str) -> Option<TypeDef> {
-        self.structs
-            .get(name)
-            .map(|x| TypeDef::Struct(x.clone()))
-            .or_else(|| self.variants.get(name).map(|x| TypeDef::Variant(x.clone())))
-    }
-
-    pub fn lookup_struct(&self, name: &str) -> Option<StructDef> {
-        if let Some(TypeDef::Struct(def)) = self.lookup_type(name) {
-            Some(def)
-        } else {
-            None
-        }
+            .get(&name)
+            .map(|n| TypeDef::Struct(n.clone()))
+            .or_else(|| self.variants.get(&name).map(|n|
+                TypeDef::Variant(n.clone())
+            ))
     }
 
     pub fn lookup_func(&self, name: &str) -> Option<FuncDef> {
@@ -244,7 +234,7 @@ pub struct InterfaceDisplay<'a> {
 }
 
 impl<'a> fmt::Display for InterfaceDisplay<'a> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "Structs:")?;
         for def in self.interface.structs.values() {
             writeln!(f, "  {}", def.display(self.ctx))?;

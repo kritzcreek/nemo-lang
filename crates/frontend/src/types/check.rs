@@ -152,14 +152,6 @@ impl TyCtx {
         Some(def)
     }
 
-    fn lookup_struct(&self, ty: Symbol) -> Option<StructDef> {
-        let def = self.lookup_type(ty)?;
-        match def {
-            TypeDef::Struct(s) => Some(s),
-            _ => None,
-        }
-    }
-
     fn lookup_struct_name(&self, name: Name) -> StructDef {
         let Some(TypeDef::Struct(d)) = self.lookup_type_def(name) else {
             panic!("inferred unknown struct name")
@@ -170,14 +162,6 @@ impl TyCtx {
     fn set_fields(&mut self, name: Name, fields: HashMap<Symbol, (Name, Ty)>) {
         if let Some(TypeDef::Struct(def)) = self.type_defs.get_mut(&name) {
             def.fields = fields;
-        }
-    }
-
-    fn lookup_variant(&self, ty: Symbol) -> Option<VariantDef> {
-        let def = self.lookup_type(ty)?;
-        match def {
-            TypeDef::Variant(s) => Some(s),
-            _ => None,
         }
     }
 
@@ -193,10 +177,10 @@ impl TyCtx {
         self.uses.insert(name, interface);
     }
 
-    fn lookup_qual_struct(&self, q: Symbol, v: &str) -> Option<StructDef> {
+    fn lookup_qual_type_name(&self, q: Symbol, n: Name) -> Option<TypeDef> {
         self.uses
             .get(&q)
-            .and_then(|interface| interface.lookup_struct(v))
+            .and_then(|interface| interface.lookup_type_name(n))
     }
 
     fn lookup_qual_type(&self, q: Symbol, v: &str) -> Option<TypeDef> {
@@ -301,13 +285,16 @@ impl Typechecker {
                     let name = self.sym(&str_name);
                     match self.context.lookup_type(name) {
                         Some(TypeDef::Struct(def)) => {
-                            interface.structs.insert(str_name, def.clone());
+                            interface.struct_names.insert(str_name, def.name);
+                            interface.structs.insert(def.name, def.clone());
                         }
                         Some(TypeDef::Variant(def)) => {
-                            interface.variants.insert(str_name, def.clone());
+                            interface.variant_names.insert(str_name, def.name);
+                            interface.variants.insert(def.name, def.clone());
                             for (alt_str, alt_name) in &def.alternatives {
+                                interface.struct_names.insert(alt_str.clone(), *alt_name);
                                 interface.structs.insert(
-                                    alt_str.clone(),
+                                    *alt_name,
                                     self.context.lookup_struct_name(*alt_name),
                                 );
                             }
@@ -579,35 +566,62 @@ impl Typechecker {
         }
     }
 
-    fn lookup_variant(
+    fn lookup_type(
         &mut self,
         errors: &mut TyErrors,
-        mod_qual_tkn: Option<SyntaxToken>,
-        variant_tkn: SyntaxToken,
-        alt_tkn: SyntaxToken,
+        mod_qualifier: Option<ModQualifier>,
+        qualifier: Option<Qualifier>,
+        ty_tkn: &SyntaxToken,
     ) -> Option<TypeDef> {
-        let opt_def = if let Some(mod_qual_tkn) = mod_qual_tkn {
-            self.context
-                .lookup_qual_type(self.sym(mod_qual_tkn.text()), variant_tkn.text())
+        let mod_qualifier_tkn = mod_qualifier.map(|q| q.ident_token().unwrap());
+        if let Some(variant_tkn) =
+            qualifier.map(|q| q.upper_ident_token().unwrap())
+        {
+            let opt_def = if let Some(ref mod_qual_tkn) = mod_qualifier_tkn {
+                self.context
+                    .lookup_qual_type(self.sym(mod_qual_tkn.text()), variant_tkn.text())
+            } else {
+                self.context.lookup_type(self.sym(variant_tkn.text()))
+            };
+            let Some(TypeDef::Variant(def)) = opt_def else {
+                // TODO: Non-variant type error?
+                errors.report(&variant_tkn, UnknownType(variant_tkn.text().to_string()));
+                return None;
+            };
+            self.record_ref(&variant_tkn, def.name);
+
+            let Some(name) = def.alternatives.get(ty_tkn.text()) else {
+                errors.report(
+                    ty_tkn,
+                    UnknownType(format!("{}::{}", variant_tkn.text(), ty_tkn.text())),
+                );
+                return None;
+            };
+            self.record_ref(ty_tkn, *name);
+            let opt_struct_def = if let Some(mod_qual_tkn) = mod_qualifier_tkn {
+                self.context
+                    .lookup_qual_type_name(self.sym(mod_qual_tkn.text()), *name)
+            } else {
+                self.context.lookup_type_def(*name)
+            };
+
+            assert!(matches!(opt_struct_def, Some(TypeDef::Struct(_))), "Non-struct typedef");
+            opt_struct_def
         } else {
-            self.context.lookup_type(self.sym(variant_tkn.text()))
-        };
-        let Some(TypeDef::Variant(def)) = opt_def else {
-            errors.report(&variant_tkn, UnknownType(variant_tkn.text().to_string()));
-            return None;
-        };
-        self.record_ref(&variant_tkn, def.name);
-
-        let Some(name) = def.alternatives.get(alt_tkn.text()) else {
-            errors.report(
-                &alt_tkn,
-                UnknownType(format!("{}::{}", variant_tkn.text(), alt_tkn.text())),
-            );
-            return None;
-        };
-        self.record_ref(&alt_tkn, *name);
-
-        Some(TypeDef::Variant(def))
+            let ty_name = ty_tkn.text();
+            let opt_def = if let Some(mod_qual) = mod_qualifier_tkn {
+                self.context
+                    .lookup_qual_type(self.sym(mod_qual.text()), ty_name)
+            } else {
+                self.context.lookup_type(self.sym(ty_name))
+            };
+            let Some(def) = opt_def else {
+                errors.report(ty_tkn, UnknownType(ty_name.to_string()));
+                return None;
+            };
+            self.record_ref(ty_tkn, def.name());
+            Some(def)
+        }
     }
 
     fn check_ty(&mut self, errors: &mut TyErrors, ty: &Type) -> Ty {
@@ -622,34 +636,12 @@ impl Typechecker {
                 None => Ty::Array(Box::new(Ty::Error)),
             },
             Type::TyCons(t) => {
-                let mod_qual = t.mod_qualifier().map(|q| q.ident_token().unwrap());
-                let ty_def = if let Some(variant_tkn) =
-                    t.qualifier().map(|q| q.upper_ident_token().unwrap())
-                {
-                    let Some(alt_tkn) = t.upper_ident_token() else {
-                        return Ty::Error;
-                    };
-                    let Some(def) = self.lookup_variant(errors, mod_qual, variant_tkn, alt_tkn)
-                    else {
-                        return Ty::Error;
-                    };
-                    def
-                } else {
-                    let ty_name = t.upper_ident_token().unwrap();
-                    let opt_def = if let Some(mod_qual) = mod_qual {
-                        self.context
-                            .lookup_qual_type(self.sym(mod_qual.text()), ty_name.text())
-                    } else {
-                        self.context.lookup_type(self.sym(ty_name.text()))
-                    };
-                    let Some(def) = opt_def else {
-                        errors.report(&ty_name, UnknownType(ty_name.text().to_string()));
-                        return Ty::Error;
-                    };
-                    self.record_ref(&ty_name, def.name());
-                    def
+                let Some(ty_tkn) = t.upper_ident_token() else {
+                    return Ty::Error
                 };
-
+                let Some(ty_def) = self.lookup_type(errors, t.mod_qualifier(), t.qualifier(), &ty_tkn) else {
+                    return Ty::Error
+                };
                 let ty_args: Vec<Ty> = t.type_args().map(|t| self.check_ty(errors, &t)).collect();
                 let ty_param_names = ty_def.ty_params();
                 if ty_param_names.len() != ty_args.len() {
@@ -1326,43 +1318,6 @@ impl Typechecker {
         ))
     }
 
-    fn lookup_struct(
-        &mut self,
-        errors: &mut TyErrors,
-        struct_expr: &EStruct,
-    ) -> Option<(StructDef, SyntaxToken)> {
-        let (struct_def, struct_name_tkn) = if let Some(ty) = struct_expr
-            .qualifier()
-            .map(|q| q.upper_ident_token().unwrap())
-        {
-            let alt = struct_expr.upper_ident_token()?;
-            let struct_def = self
-                .context
-                .lookup_variant(self.sym(ty.text()))
-                .and_then(|def| {
-                    self.record_ref(&ty, def.name);
-                    def.lookup_alternative(alt.text())
-                        .map(|alt_name| self.context.lookup_struct_name(alt_name))
-                });
-            (struct_def, alt)
-        } else {
-            let tkn = struct_expr.upper_ident_token()?;
-            (self.context.lookup_struct(self.sym(tkn.text())), tkn)
-        };
-        let def = match struct_def {
-            None => {
-                errors.report(
-                    &struct_name_tkn,
-                    UnknownType(struct_name_tkn.text().to_string()),
-                );
-                return None;
-            }
-            Some(def) => def,
-        };
-        self.record_ref(&struct_name_tkn, def.name);
-        Some((def, struct_name_tkn))
-    }
-
     fn lookup_struct_field(
         &mut self,
         errors: &mut TyErrors,
@@ -1396,7 +1351,15 @@ impl Typechecker {
         struct_expr: &EStruct,
         expected: Option<&Ty>,
     ) -> Option<(Ty, Option<ir::ExprData>)> {
-        let (def, struct_name_tkn) = self.lookup_struct(errors, struct_expr)?;
+        let struct_name_tkn = struct_expr.upper_ident_token()?;
+        let TypeDef::Struct(def) = self.lookup_type(errors, struct_expr.mod_qualifier(), struct_expr.qualifier(), &struct_name_tkn)? else {
+            // TODO: Report struct expr of variant type?
+            errors.report(
+                &struct_name_tkn,
+                UnknownType(struct_name_tkn.text().to_string()),
+            );
+            return None
+        };
         let mut builder = ir::StructBuilder::default();
         builder.name(Some(def.name));
 
@@ -1576,7 +1539,7 @@ impl Typechecker {
             }
             (Expr::EStruct(expr), ty) => {
                 let (ty, ir) = self.check_struct(errors, expr, Some(ty))?;
-                // Bit weird to duplicate this here
+                // A bit weird to duplicate this here
                 if *expected != Ty::Error
                     && !matches!(ty, Ty::Error | Ty::Diverge)
                     && ty.ne(expected)
@@ -1865,44 +1828,30 @@ impl Typechecker {
     ) -> Option<ir::Pattern> {
         let ir = match pattern {
             Pattern::PatVariant(pat) => {
-                let ty = pat.qualifier()?.upper_ident_token()?;
-                let ctor = pat.upper_ident_token()?;
-                let var = pat.ident_token()?;
-                let mut builder = ir::PatVariantBuilder::default();
-                let Some(def) = self.context.lookup_variant(self.sym(ty.text())) else {
-                    errors.report(&ty, UnknownType(ty.text().to_string()));
+                let ty_tkn = pat.upper_ident_token()?;
+                let TypeDef::Struct(def) = self.lookup_type(errors, pat.mod_qualifier(), pat.qualifier(), &ty_tkn)? else {
+                    errors.report(&ty_tkn, UnknownType(ty_tkn.text().to_string()));
                     return None;
                 };
-                self.record_ref(&ty, def.name);
-                builder.variant(Some(def.name));
                 match expected {
-                    Ty::Cons { name: s, ty_args } if def.name == *s => {
-                        if let Some(struct_name) = def.alternatives.get(ctor.text()) {
-                            self.record_ref(&ctor, *struct_name);
-                            builder.alternative(Some(*struct_name));
-                            let (name, sym) = self.name_supply.local_idx(&var);
-                            self.context.add_var(
-                                sym,
-                                // TODO Think about this clone
-                                Ty::Cons {
-                                    name: *struct_name,
-                                    ty_args: ty_args.clone(),
-                                },
-                                name,
-                            );
-                            builder.binder(Some(name));
-                            self.record_def(&var, name);
-                            builder.build()
-                        } else {
-                            errors.report(
-                                &ctor,
-                                UnknownAlternative {
-                                    variant_name: def.name,
-                                    alternative: ctor.text().to_string(),
-                                },
-                            );
-                            None
-                        }
+                    Ty::Cons { name: s, ty_args } if def.name == *s || def.variant == Some(*s) => {
+                        let var = pat.ident_token()?;
+                        let mut builder = ir::PatVariantBuilder::default();
+                        builder.variant(def.variant);
+                        builder.alternative(Some(def.name));
+                        let (name, sym) = self.name_supply.local_idx(&var);
+                        self.context.add_var(
+                            sym,
+                            // TODO Think about this clone
+                            Ty::Cons {
+                                name: def.name,
+                                ty_args: ty_args.clone(),
+                            },
+                            name,
+                        );
+                        builder.binder(Some(name));
+                        self.record_def(&var, name);
+                        builder.build()
                     }
                     Ty::Error => None,
                     _ => {
@@ -1917,7 +1866,7 @@ impl Typechecker {
                 }
             }
             Pattern::PatVar(v) => {
-                let ident_tkn = v.ident_token().unwrap();
+                let ident_tkn = v.ident_token()?;
                 let (name, sym) = self.name_supply.local_idx(&ident_tkn);
                 self.context.add_var(sym, expected.clone(), name);
                 self.record_def(&ident_tkn, name);
@@ -2048,7 +1997,7 @@ fn match_ty(subst: &mut Substitution, definition: Ty, inferred: &Ty) -> Result<(
             if t1 == *t2 {
                 Ok(())
             } else {
-                Err(TyErrorData::TypeMismatch {
+                Err(TypeMismatch {
                     expected: t1.clone(),
                     actual: t2.clone(),
                 })

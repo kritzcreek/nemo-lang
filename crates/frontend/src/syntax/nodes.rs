@@ -510,6 +510,9 @@ pub struct EStruct {
     pub(crate) syntax: SyntaxNode,
 }
 impl EStruct {
+    pub fn mod_qualifier(&self) -> Option<ModQualifier> {
+        support::child(&self.syntax)
+    }
     pub fn qualifier(&self) -> Option<Qualifier> {
         support::child(&self.syntax)
     }
@@ -800,6 +803,9 @@ pub struct PatVariant {
     pub(crate) syntax: SyntaxNode,
 }
 impl PatVariant {
+    pub fn mod_qualifier(&self) -> Option<ModQualifier> {
+        support::child(&self.syntax)
+    }
     pub fn qualifier(&self) -> Option<Qualifier> {
         support::child(&self.syntax)
     }

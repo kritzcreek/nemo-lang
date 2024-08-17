@@ -98,7 +98,7 @@ ETyArgList = Type*
 
 EBinary = lhs:Expr op:('+' | '-') rhs:Expr
 
-EStruct = Qualifier? 'upper_ident' ETyArgList? '{' EStructField* '}'
+EStruct = ModQualifier? Qualifier? 'upper_ident' ETyArgList? '{' EStructField* '}'
 EStructField = 'ident' '=' Expr
 
 EStructIdx = Expr '.' 'ident'
@@ -131,5 +131,5 @@ Pattern
   = PatVariant
   | PatVar
 
-PatVariant = Qualifier 'upper_ident' 'ident'
+PatVariant = ModQualifier? Qualifier 'upper_ident' 'ident'
 PatVar = 'ident'
