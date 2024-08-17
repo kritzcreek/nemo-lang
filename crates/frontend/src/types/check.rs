@@ -293,10 +293,9 @@ impl Typechecker {
                             interface.variants.insert(def.name, def.clone());
                             for (alt_str, alt_name) in &def.alternatives {
                                 interface.struct_names.insert(alt_str.clone(), *alt_name);
-                                interface.structs.insert(
-                                    *alt_name,
-                                    self.context.lookup_struct_name(*alt_name),
-                                );
+                                interface
+                                    .structs
+                                    .insert(*alt_name, self.context.lookup_struct_name(*alt_name));
                             }
                         }
                         None => errors.report(
@@ -574,9 +573,7 @@ impl Typechecker {
         ty_tkn: &SyntaxToken,
     ) -> Option<TypeDef> {
         let mod_qualifier_tkn = mod_qualifier.map(|q| q.ident_token().unwrap());
-        if let Some(variant_tkn) =
-            qualifier.map(|q| q.upper_ident_token().unwrap())
-        {
+        if let Some(variant_tkn) = qualifier.map(|q| q.upper_ident_token().unwrap()) {
             let opt_def = if let Some(ref mod_qual_tkn) = mod_qualifier_tkn {
                 self.context
                     .lookup_qual_type(self.sym(mod_qual_tkn.text()), variant_tkn.text())
@@ -605,7 +602,10 @@ impl Typechecker {
                 self.context.lookup_type_def(*name)
             };
 
-            assert!(matches!(opt_struct_def, Some(TypeDef::Struct(_))), "Non-struct typedef");
+            assert!(
+                matches!(opt_struct_def, Some(TypeDef::Struct(_))),
+                "Non-struct typedef"
+            );
             opt_struct_def
         } else {
             let ty_name = ty_tkn.text();
@@ -637,10 +637,12 @@ impl Typechecker {
             },
             Type::TyCons(t) => {
                 let Some(ty_tkn) = t.upper_ident_token() else {
-                    return Ty::Error
+                    return Ty::Error;
                 };
-                let Some(ty_def) = self.lookup_type(errors, t.mod_qualifier(), t.qualifier(), &ty_tkn) else {
-                    return Ty::Error
+                let Some(ty_def) =
+                    self.lookup_type(errors, t.mod_qualifier(), t.qualifier(), &ty_tkn)
+                else {
+                    return Ty::Error;
                 };
                 let ty_args: Vec<Ty> = t.type_args().map(|t| self.check_ty(errors, &t)).collect();
                 let ty_param_names = ty_def.ty_params();
@@ -1352,13 +1354,19 @@ impl Typechecker {
         expected: Option<&Ty>,
     ) -> Option<(Ty, Option<ir::ExprData>)> {
         let struct_name_tkn = struct_expr.upper_ident_token()?;
-        let TypeDef::Struct(def) = self.lookup_type(errors, struct_expr.mod_qualifier(), struct_expr.qualifier(), &struct_name_tkn)? else {
+        let TypeDef::Struct(def) = self.lookup_type(
+            errors,
+            struct_expr.mod_qualifier(),
+            struct_expr.qualifier(),
+            &struct_name_tkn,
+        )?
+        else {
             // TODO: Report struct expr of variant type?
             errors.report(
                 &struct_name_tkn,
                 UnknownType(struct_name_tkn.text().to_string()),
             );
-            return None
+            return None;
         };
         let mut builder = ir::StructBuilder::default();
         builder.name(Some(def.name));
@@ -1829,7 +1837,9 @@ impl Typechecker {
         let ir = match pattern {
             Pattern::PatVariant(pat) => {
                 let ty_tkn = pat.upper_ident_token()?;
-                let TypeDef::Struct(def) = self.lookup_type(errors, pat.mod_qualifier(), pat.qualifier(), &ty_tkn)? else {
+                let TypeDef::Struct(def) =
+                    self.lookup_type(errors, pat.mod_qualifier(), pat.qualifier(), &ty_tkn)?
+                else {
                     errors.report(&ty_tkn, UnknownType(ty_tkn.text().to_string()));
                     return None;
                 };

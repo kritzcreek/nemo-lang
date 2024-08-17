@@ -9,7 +9,7 @@ pub fn compile_program(source: &str) -> Result<Vec<u8>, String> {
 
     if !check_result.errors.is_empty() {
         for err in &check_result.errors {
-            eprintln!("{}", err.display(source, &check_result.names, true));
+            eprintln!("{}", err.display(source, &check_result.ctx, true));
         }
         return Err(format!(
             "Compiling failed with {} errors",
@@ -19,7 +19,7 @@ pub fn compile_program(source: &str) -> Result<Vec<u8>, String> {
 
     let (wasm, _) = codegen(
         check_result.ir.expect("No IR despite no check errors"),
-        check_result.names,
+        check_result.ctx,
     );
     Ok(wasm)
 }

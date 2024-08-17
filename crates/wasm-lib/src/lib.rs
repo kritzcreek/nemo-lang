@@ -43,17 +43,18 @@ pub fn compile(input: &str) -> CompileResult {
     let check_result = frontend::run_frontend(input);
     let highlights = highlight::translate_to_utf16(
         input,
-        highlight::highlight(&check_result.parse, &check_result.occurrences),
+        vec![],
+        // highlight::highlight(&check_result.parse, &check_result.occurrences),
     )
     .into_iter()
     .map(|(start, end, kind)| Highlight::new(start, end, kind))
     .collect();
     let (ctx, result) = match check_result.ir {
         Some(ir) if check_result.errors.is_empty() => {
-            let (wasm, ctx) = codegen(ir, check_result.names);
+            let (wasm, ctx) = codegen(ir, check_result.ctx);
             (ctx, Ok(wasm))
         }
-        _ => (check_result.names, Err(check_result.errors)),
+        _ => (check_result.ctx, Err(check_result.errors)),
     };
 
     match result {

@@ -1,6 +1,5 @@
-use frontend::run_frontend;
-use frontend::types::CheckResult;
 use frontend::{parser::parse_prog, CheckError};
+use frontend::{run_frontend, FrontendResult};
 use insta::{assert_snapshot, glob};
 use std::fmt::Write;
 use std::fs;
@@ -63,7 +62,7 @@ fn normalize_newlines(src: &mut String) {
 }
 
 fn snapshot_type_errors(path: &Path, source: &str) -> String {
-    let CheckResult { names, errors, .. } = run_frontend(source);
+    let FrontendResult { ctx, errors, .. } = run_frontend(source);
     if errors
         .iter()
         .any(|e| matches!(e, CheckError::ParseError(_)))
@@ -79,7 +78,7 @@ fn snapshot_type_errors(path: &Path, source: &str) -> String {
 
     let mut err_buf = String::new();
     for error in errors {
-        write!(&mut err_buf, "{}", error.display(source, &names, false)).unwrap();
+        write!(&mut err_buf, "{}", error.display(source, &ctx, false)).unwrap();
     }
     err_buf
 }

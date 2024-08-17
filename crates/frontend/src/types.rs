@@ -14,20 +14,16 @@ pub use error::TyError;
 pub use module::{FuncDef, Interface, StructDef, StructFields, TypeDef, VariantDef};
 
 #[derive(Debug)]
-pub struct CheckResult<N, E> {
-    pub errors: Vec<E>,
+pub struct CheckResult {
+    pub errors: Vec<TyError>,
     pub occurrences: HashMap<SyntaxTokenPtr, Occurrence<Name>>,
-    pub names: N,
+    pub names: MutableNameSupply,
     pub interface: Interface,
     pub ir: Option<Program>,
     pub parse: Module,
 }
 
-pub fn check_module(
-    ctx: &Ctx,
-    module: Module,
-    module_id: ModuleId,
-) -> CheckResult<MutableNameSupply, TyError> {
+pub fn check_module(ctx: &Ctx, module: Module, module_id: ModuleId) -> CheckResult {
     let mut dependencies: Vec<(String, Interface)> = vec![];
     // TODO horrible
     let mut module_id_gen = ModuleIdGen::new();

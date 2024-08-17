@@ -7,31 +7,54 @@ pub mod parser;
 pub mod syntax;
 pub mod types;
 
-use std::collections::HashMap;
-
-use ir::Ctx;
+use ir::{Ctx, ModuleId, ModuleIdGen};
 use parser::parse_prog;
 
 pub use error::CheckError;
+use syntax::Module;
 pub use types::CheckResult;
-use types::Interface;
+
+#[derive(Debug)]
+pub struct FrontendResult {
+    pub ir: Option<ir::Program>,
+    pub ctx: Ctx,
+    pub errors: Vec<CheckError>,
+}
 
 /// Runs the full frontend on `source` and returns the generated IR and other structures.
 /// If there are any errors, the generated IR should _not_ be used. It's returned here for
 /// debugging purposes.
-pub fn run_frontend(source: &str) -> CheckResult<Ctx, CheckError> {
+pub fn run_frontend(source: &str) -> FrontendResult {
     // TODO
     let (parse_root, parse_errors) = parse_prog(source).take();
     let mut errors = vec![];
     for error in parse_errors {
         errors.push(CheckError::ParseError(error));
     }
+    // Special case for single module without module header
+    let parsed_modules: Vec<Module> = parse_root.modules().collect();
+    if parsed_modules.len() == 1 {
+        let module_id = ModuleIdGen::new().next();
+        let module = parsed_modules.into_iter().next().unwrap();
+        let check_result = types::check_module(&Ctx::new(1), module, module_id);
+        let mut ctx = Ctx::new(1);
+        ctx.set_module_name(module_id, "main".to_owned());
+        ctx.set_interface(module_id, check_result.interface.clone());
+        ctx.set_name_supply(module_id, check_result.names);
+        for error in check_result.errors {
+            errors.push(CheckError::TypeError(error));
+        }
+        return FrontendResult {
+            ir: check_result.ir,
+            ctx,
+            errors,
+        };
+    }
+
     let modules = module_dag::toposort_modules(parse_root.clone());
     let mut ctx = Ctx::new(modules.len() as u16);
     let mut ir = Some(ir::Program::default());
-    let mut modul = None;
     for (id, name, module) in modules {
-        modul = Some(module.clone());
         let check_result = types::check_module(&ctx, module, id);
         ctx.set_module_name(id, name);
         ctx.set_interface(id, check_result.interface.clone());
@@ -52,15 +75,7 @@ pub fn run_frontend(source: &str) -> CheckResult<Ctx, CheckError> {
         panic!("No IR generated, despite no errors")
     };
 
-    CheckResult {
-        errors,
-        names: ctx,
-        ir,
-        // TODO
-        occurrences: HashMap::new(),
-        interface: Interface::default(),
-        parse: modul.unwrap(),
-    }
+    FrontendResult { errors, ctx, ir }
 }
 
 /// Checks the given program, and prints any parse or type errors.
@@ -69,7 +84,7 @@ pub fn check_program(source: &str) -> Result<(), String> {
     let check_result = run_frontend(source);
     if !check_result.errors.is_empty() {
         for err in &check_result.errors {
-            eprintln!("{}", err.display(source, &check_result.names, true));
+            eprintln!("{}", err.display(source, &check_result.ctx, true));
         }
         return Err(format!(
             "Check failed with {} errors",
