@@ -1,7 +1,7 @@
 pub mod vfs;
 
 use frontend::highlight::HighlightKind;
-use frontend::ir::NameMap;
+use frontend::ir::Ctx;
 use frontend::CheckError;
 use line_index::{LineCol, LineIndex, TextRange};
 use lsp_server::{Connection, ExtractError, Message, Notification, Request, RequestId, Response};
@@ -135,12 +135,11 @@ fn main_loop(
                                     result_id: None,
                                     items: file_data
                                         .check_result
-                                        .errors
-                                        .iter()
+                                        .errors()
                                         .map(|e| {
                                             make_diagnostic(
-                                                e,
-                                                &file_data.check_result.names.name_map,
+                                                &e,
+                                                &file_data.check_result.ctx,
                                                 &file_data.line_index,
                                             )
                                         })
@@ -274,7 +273,7 @@ fn main_loop(
     Ok(())
 }
 
-fn make_diagnostic(error: &CheckError, name_map: &NameMap, line_index: &LineIndex) -> Diagnostic {
+fn make_diagnostic(error: &CheckError, ctx: &Ctx, line_index: &LineIndex) -> Diagnostic {
     let (start, end) = error.line_col(line_index);
     Diagnostic {
         range: Range {
@@ -291,7 +290,7 @@ fn make_diagnostic(error: &CheckError, name_map: &NameMap, line_index: &LineInde
         code: None,
         code_description: None,
         source: Some("nemo".to_string()),
-        message: error.message(name_map),
+        message: error.message(ctx),
         related_information: None,
         tags: None,
         data: None,
@@ -303,10 +302,13 @@ pub const HIGHLIGHT_NAMES: [&str; 7] = [
 ];
 
 fn semantic_tokens_new(file_data: &FileData) -> Vec<SemanticToken> {
-    let hls = frontend::highlight::highlight(
-        &file_data.check_result.parse,
-        &file_data.check_result.occurrences,
-    );
+    let mut hls = vec![];
+    for module in &file_data.check_result.modules {
+        hls.extend(frontend::highlight::highlight(
+            &module.parse,
+            &module.occurrences,
+        ));
+    }
     let mut tokens = vec![];
     let mut prev_token_line_col: LineCol = LineCol { line: 0, col: 0 };
 
@@ -362,18 +364,15 @@ fn find_definition(file_data: &FileData, position: &Position) -> Option<Range> {
         line: position.line,
         col: position.character,
     })?;
-    let (_, occurrence) = file_data
-        .check_result
-        .occurrences
-        .iter()
-        .find(|(node_ptr, _)| node_ptr.0.contains(offset))?;
+    let (_, occurrence) = file_data.check_result.modules.iter().find_map(|module| {
+        module
+            .occurrences
+            .iter()
+            .find(|(node_ptr, _)| node_ptr.0.contains(offset))
+    })?;
     let name = occurrence.name();
-    file_data
-        .check_result
-        .names
-        .name_map
-        .get(name)
-        .and_then(|def| resolve_text_range(&def.at, &file_data.line_index))
+    let range = file_data.check_result.ctx.resolve(*name).1;
+    resolve_text_range(&range, &file_data.line_index)
 }
 
 // fn hover(file_data: &FileData, position: &Position) -> Option<Hover> {

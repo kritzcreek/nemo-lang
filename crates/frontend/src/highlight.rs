@@ -1,6 +1,6 @@
-use crate::ir::Name;
+use crate::ir::NameTag;
 use crate::parser::SyntaxKind;
-use crate::syntax::{AstNode, Root};
+use crate::syntax::{AstNode, Module};
 use crate::types::OccurrenceMap;
 use crate::T;
 use text_size::TextRange;
@@ -24,9 +24,9 @@ pub struct Highlight {
     pub kind: HighlightKind,
 }
 
-pub fn highlight(root: &Root, occurrences: &OccurrenceMap) -> Vec<Highlight> {
+pub fn highlight(module: &Module, occurrences: &OccurrenceMap) -> Vec<Highlight> {
     let mut highlights = Vec::new();
-    for node in root.syntax().descendants_with_tokens() {
+    for node in module.syntax().descendants_with_tokens() {
         match node.kind() {
             T![let]
             | T![set]
@@ -40,6 +40,9 @@ pub fn highlight(root: &Root, occurrences: &OccurrenceMap) -> Vec<Highlight> {
             | T![variant]
             | T![struct]
             | T![import]
+            | T![use]
+            | T![module]
+            | T![exports]
             | T![from] => {
                 highlights.push(Highlight {
                     range: node.text_range(),
@@ -82,38 +85,38 @@ pub fn highlight(root: &Root, occurrences: &OccurrenceMap) -> Vec<Highlight> {
 
     for (ptr, occurrence) in occurrences {
         let name = *occurrence.name();
-        match name {
-            Name::Global(_) => {
+        match name.tag {
+            NameTag::Global => {
                 highlights.push(Highlight {
                     range: ptr.0,
                     kind: HighlightKind::Global,
                 });
             }
-            Name::Local(_) => {
+            NameTag::Local => {
                 highlights.push(Highlight {
                     range: ptr.0,
                     kind: HighlightKind::Local,
                 });
             }
-            Name::Func(_) => {
+            NameTag::Func => {
                 highlights.push(Highlight {
                     range: ptr.0,
                     kind: HighlightKind::Function,
                 });
             }
-            Name::Type(_) | Name::TypeVar(_) => {
+            NameTag::Type | NameTag::TypeVar => {
                 highlights.push(Highlight {
                     range: ptr.0,
                     kind: HighlightKind::Type,
                 });
             }
-            Name::Field(_) => {
+            NameTag::Field => {
                 highlights.push(Highlight {
                     range: ptr.0,
                     kind: HighlightKind::Property,
                 });
             }
-            Name::Gen(_) => {}
+            NameTag::Gen => {}
         }
     }
     highlights.sort_by_key(|hl| hl.range.start());

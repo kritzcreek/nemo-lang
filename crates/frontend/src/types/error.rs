@@ -1,4 +1,4 @@
-use crate::ir::{Name, NameMap, Ty};
+use crate::ir::{Ctx, Name, Ty};
 use crate::syntax::{AstNode, SyntaxNode, SyntaxToken};
 use ariadne::{Config, Label, Report, ReportKind, Source};
 use core::fmt;
@@ -79,12 +79,12 @@ impl TyError {
     pub fn display<'err, 'src>(
         &'err self,
         source: &'src str,
-        name_map: &'src NameMap,
+        ctx: &'src Ctx,
         colors: bool,
     ) -> TyErrorDisplay<'src, 'err> {
         TyErrorDisplay {
             source,
-            name_map,
+            ctx,
             ty_error: self,
             colors,
         }
@@ -96,21 +96,21 @@ impl TyError {
         (start, end)
     }
 
-    pub fn message(&self, name_map: &NameMap) -> String {
-        error_label(&self.it, name_map)
+    pub fn message(&self, ctx: &Ctx) -> String {
+        error_label(&self.it, ctx)
     }
 }
 
 pub struct TyErrorDisplay<'src, 'err> {
     ty_error: &'err TyError,
     source: &'src str,
-    name_map: &'src NameMap,
+    ctx: &'src Ctx,
     colors: bool,
 }
 
 impl fmt::Display for TyErrorDisplay<'_, '_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        render_ty_error(self.source, self.name_map, self.ty_error, self.colors, f);
+        render_ty_error(self.source, self.ctx, self.ty_error, self.colors, f);
         Ok(())
     }
 }
@@ -119,12 +119,11 @@ impl fmt::Display for TyErrorDisplay<'_, '_> {
 pub enum TyErrorData {
     MissingNode(String),
     InvalidLiteral,
-    InvalidOperator,
     CantInferEmptyArray,
     CantInstantiateFunctionRef,
     TypeParamInVariantStruct,
     CantReturnFromGlobal,
-    Message(String),
+    InvalidOperator(String, Ty, Ty),
     UnknownVar(String),
     UnknownFunction(String),
     UnknownType(String),
@@ -171,8 +170,7 @@ fn code_for_error(err_data: &TyErrorData) -> i32 {
     match err_data {
         TyErrorData::MissingNode(_) => 1,
         TyErrorData::InvalidLiteral => 2,
-        TyErrorData::InvalidOperator => 3,
-        TyErrorData::Message(_) => 4,
+        TyErrorData::InvalidOperator(_, _, _) => 3,
         TyErrorData::UnknownVar(_) => 5,
         TyErrorData::UnknownFunction(_) => 6,
         TyErrorData::UnknownType(_) => 7,
@@ -198,15 +196,17 @@ fn code_for_error(err_data: &TyErrorData) -> i32 {
     }
 }
 
-fn error_label(err_data: &TyErrorData, name_map: &NameMap) -> String {
+fn error_label(err_data: &TyErrorData, ctx: &Ctx) -> String {
     match err_data {
         TyErrorData::MissingNode(n) => format!("Internal/Parse error: Expected a node labeled {n}"),
         TyErrorData::InvalidLiteral => "Invalid literal couldn't be parsed".to_string(),
-        TyErrorData::InvalidOperator => "The impossible happened! An invalid operator".to_string(),
+        TyErrorData::InvalidOperator(op, lhs, rhs) => format!("Invalid operator {} for lhs of type {} and rhs of type {}", op,
+            lhs.display(ctx),
+            rhs.display(ctx)
+        ),
         TyErrorData::CantInferEmptyArray => "Can't infer type of an empty array".to_string(),
         TyErrorData::CantInstantiateFunctionRef => "Can't instantiate function reference. Only top-level functions may be polymorphic at this time.".to_string(),
         TyErrorData::CantReturnFromGlobal => "Can't 'return' from a global definition.".to_string(),
-        TyErrorData::Message(m) => m.clone(),
         TyErrorData::UnknownVar(v) => format!("Unknown variable {v}"),
         TyErrorData::UnknownFunction(f) => format!("Unknown function {f}"),
         TyErrorData::UnknownType(t) => format!("Unknown type {t}"),
@@ -215,20 +215,20 @@ fn error_label(err_data: &TyErrorData, name_map: &NameMap) -> String {
         }
         TyErrorData::NonArrayIdx(ty) => format!(
             "Tried to index into a non-array type {}",
-            ty.display(name_map)
+            ty.display(ctx)
         ),
         TyErrorData::NonStructIdx(ty) => format!(
             "Tried to index into a non-struct type {}",
-            ty.display(name_map)
+            ty.display(ctx)
         ),
         TyErrorData::NotAFunction(ty) => format!(
             "Can't a call a value of type {} as a function",
-            ty.display(name_map)
+            ty.display(ctx)
         ),
         TyErrorData::NonFunctionImport { name, ty } => format!(
             "Can't import a non-function value. {} is of type {}",
-            name_map.get(name).unwrap().it,
-            ty.display(name_map)
+            ctx.display_name(*name),
+            ty.display(ctx)
         ),
         TyErrorData::ArgCountMismatch(expected, actual) => format!(
             "Mismatched arg count. Expected {expected} {}, but got {actual}",
@@ -253,57 +253,57 @@ fn error_label(err_data: &TyErrorData, name_map: &NameMap) -> String {
             actual,
         } => format!(
             "Mismatched field type. {}.{} expects {}, but got {}",
-            name_map.get(struct_name).unwrap().it,
-            name_map.get(field_name).unwrap().it,
-            expected.display(name_map),
-            actual.display(name_map)
+            ctx.display_name(*struct_name),
+            ctx.display_name(*field_name),
+            expected.display(ctx),
+            actual.display(ctx)
         ),
         TyErrorData::UnknownAlternative {
             variant_name,
             alternative,
         } => format!(
             "Unknown alternative. {} does not have an alternative named {alternative}",
-            name_map.get(variant_name).unwrap().it
+                ctx.display_name(*variant_name),
         ),
         TyErrorData::UnknownField {
             struct_name,
             field_name,
         } => format!(
             "Unknown field. {} does not have a field named {field_name}",
-            name_map.get(struct_name).unwrap().it
+            ctx.display_name(*struct_name)
         ),
         TyErrorData::MissingField {
             struct_name,
             field_name,
         } => format!(
             "Missing field. {}.{} was not provided",
-            name_map.get(struct_name).unwrap().it,
-            name_map.get(field_name).unwrap().it
+            ctx.display_name(*struct_name),
+            ctx.display_name(*field_name)
         ),
         TyErrorData::TypeMismatch { expected, actual } => format!(
             "Type mismatch. Expected {}, but got {}",
-            expected.display(name_map),
-            actual.display(name_map)
+            expected.display(ctx),
+            actual.display(ctx)
         ),
         TyErrorData::PatternTypeMismatch { expected } => format!(
             "This pattern can't match a value of type {}",
-            expected.display(name_map),
+            expected.display(ctx),
         ),
         TyErrorData::TypeParamInVariantStruct => {
             "Can't declare type parameters for structs in a variant.".to_string()
         }
         TyErrorData::CantReassignCapturedVariable(n) => {
-            format!("Can't reassign the captured variable '{}'. Maybe you want to box this variable in a struct?", name_map.get(n).unwrap().it)
+            format!("Can't reassign the captured variable '{}'. Maybe you want to box this variable in a struct?", ctx.display_name(*n))
         }
         TyErrorData::CantInferTypeParam(n) => {
-            format!("Can't infer type parameter '{}'. Explicitly supply the instantiation", name_map.get(n).unwrap().it)
+            format!("Can't infer type parameter '{}'. Explicitly supply the instantiation", ctx.display_name(*n))
         },
     }
 }
 
 pub fn render_ty_error(
     source: &str,
-    name_map: &NameMap,
+    ctx: &Ctx,
     ty_error: &TyError,
     colors: bool,
     output: &mut fmt::Formatter,
@@ -314,13 +314,13 @@ pub fn render_ty_error(
 
     Report::build(ReportKind::Error, file_name, 12)
         .with_code(code_for_error(&ty_error.it))
-        .with_message(error_label(&ty_error.it, name_map))
+        .with_message(error_label(&ty_error.it, ctx))
         .with_label(
             Label::new((
                 file_name,
                 ty_error.at.start().into()..ty_error.at.end().into(),
             ))
-            .with_message(error_label(&ty_error.it, name_map)),
+            .with_message(error_label(&ty_error.it, ctx)),
         )
         .with_config(Config::default().with_color(colors))
         .finish()

@@ -1,4 +1,15 @@
-Root = TopLevel*
+Root = Module*
+
+Module = ModHeader TopLevel*
+
+ModHeader = 'module' 'ident' ModExport* ModUse*
+
+ModExport = ModExportVal | ModExportTy | ModExportAll
+ModExportVal = 'ident'
+ModExportTy = 'upper_ident'
+ModExportAll = 'dotdotdot'
+
+ModUse = 'ident'
 
 // TopLevel
 TopLevel
@@ -41,9 +52,10 @@ TyBool = 'bool'
 TyBytes = 'bytes'
 TyUnit = 'unit'
 TyArray = '[' elem:Type ']'
-TyCons = Qualifier? 'upper_ident' type_args:Type*
+TyCons = ModQualifier? Qualifier? 'upper_ident' type_args:Type*
 TyVar = 'ident'
 
+ModQualifier = 'ident' '::'
 Qualifier = 'upper_ident' '::'
 
 TyFn = 'fn' TyArgList '->' result:Type
@@ -75,7 +87,7 @@ Expr
   | EReturn
 
 ELit = Literal
-EVar = 'ident'
+EVar = ModQualifier? 'ident'
 EArray = '[' Expr* ']'
 EParen = '(' Expr ')'
 EArrayIdx = Expr '[' index:Expr ']'
@@ -86,7 +98,7 @@ ETyArgList = Type*
 
 EBinary = lhs:Expr op:('+' | '-') rhs:Expr
 
-EStruct = Qualifier? 'upper_ident' ETyArgList? '{' EStructField* '}'
+EStruct = ModQualifier? Qualifier? 'upper_ident' ETyArgList? '{' EStructField* '}'
 EStructField = 'ident' '=' Expr
 
 EStructIdx = Expr '.' 'ident'
@@ -119,5 +131,5 @@ Pattern
   = PatVariant
   | PatVar
 
-PatVariant = Qualifier 'upper_ident' 'ident'
+PatVariant = ModQualifier? Qualifier 'upper_ident' 'ident'
 PatVar = 'ident'
