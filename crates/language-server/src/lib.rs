@@ -302,44 +302,46 @@ pub const HIGHLIGHT_NAMES: [&str; 7] = [
 ];
 
 fn semantic_tokens_new(file_data: &FileData) -> Vec<SemanticToken> {
-    return vec![];
-    // let hls = frontend::highlight::highlight(
-    //     &file_data.check_result.parse,
-    //     &file_data.check_result.occurrences,
-    // );
-    // let mut tokens = vec![];
-    // let mut prev_token_line_col: LineCol = LineCol { line: 0, col: 0 };
+    let mut hls = vec![];
+    for module in &file_data.check_result.modules {
+        hls.extend(frontend::highlight::highlight(
+            &module.parse,
+            &module.occurrences,
+        ));
+    }
+    let mut tokens = vec![];
+    let mut prev_token_line_col: LineCol = LineCol { line: 0, col: 0 };
 
-    // for hl in hls {
-    //     let line_col = file_data.line_index.line_col(hl.range.start());
-    //     let delta_line = line_col.line - prev_token_line_col.line;
-    //     let delta_start = if delta_line == 0 {
-    //         line_col.col - prev_token_line_col.col
-    //     } else {
-    //         line_col.col
-    //     };
-    //     let length = hl.range.len().into();
-    //     let token_type = match hl.kind {
-    //         HighlightKind::Keyword => 0,
-    //         HighlightKind::Type => 1,
-    //         HighlightKind::Function => 2,
-    //         HighlightKind::Operator => 3,
-    //         HighlightKind::Property => 4,
-    //         HighlightKind::Literal => 5,
-    //         HighlightKind::Comment => 6,
-    //         HighlightKind::Local | HighlightKind::Global => continue,
-    //     };
-    //     tokens.push(SemanticToken {
-    //         delta_line,
-    //         delta_start,
-    //         length,
-    //         token_type,
-    //         token_modifiers_bitset: 0,
-    //     });
-    //     prev_token_line_col = line_col;
-    // }
+    for hl in hls {
+        let line_col = file_data.line_index.line_col(hl.range.start());
+        let delta_line = line_col.line - prev_token_line_col.line;
+        let delta_start = if delta_line == 0 {
+            line_col.col - prev_token_line_col.col
+        } else {
+            line_col.col
+        };
+        let length = hl.range.len().into();
+        let token_type = match hl.kind {
+            HighlightKind::Keyword => 0,
+            HighlightKind::Type => 1,
+            HighlightKind::Function => 2,
+            HighlightKind::Operator => 3,
+            HighlightKind::Property => 4,
+            HighlightKind::Literal => 5,
+            HighlightKind::Comment => 6,
+            HighlightKind::Local | HighlightKind::Global => continue,
+        };
+        tokens.push(SemanticToken {
+            delta_line,
+            delta_start,
+            length,
+            token_type,
+            token_modifiers_bitset: 0,
+        });
+        prev_token_line_col = line_col;
+    }
 
-    // tokens
+    tokens
 }
 
 fn resolve_text_range(range: &TextRange, line_index: &LineIndex) -> Option<Range> {
@@ -358,19 +360,19 @@ fn resolve_text_range(range: &TextRange, line_index: &LineIndex) -> Option<Range
 }
 
 fn find_definition(file_data: &FileData, position: &Position) -> Option<Range> {
-    return None;
-    // let offset = file_data.line_index.offset(LineCol {
-    //     line: position.line,
-    //     col: position.character,
-    // })?;
-    // let (_, occurrence) = file_data
-    //     .check_result
-    //     .occurrences
-    //     .iter()
-    //     .find(|(node_ptr, _)| node_ptr.0.contains(offset))?;
-    // let name = occurrence.name();
-    // let range = file_data.check_result.names.resolve(*name).1;
-    // resolve_text_range(&range, &file_data.line_index)
+    let offset = file_data.line_index.offset(LineCol {
+        line: position.line,
+        col: position.character,
+    })?;
+    let (_, occurrence) = file_data.check_result.modules.iter().find_map(|module| {
+        module
+            .occurrences
+            .iter()
+            .find(|(node_ptr, _)| node_ptr.0.contains(offset))
+    })?;
+    let name = occurrence.name();
+    let range = file_data.check_result.ctx.resolve(*name).1;
+    resolve_text_range(&range, &file_data.line_index)
 }
 
 // fn hover(file_data: &FileData, position: &Position) -> Option<Hover> {

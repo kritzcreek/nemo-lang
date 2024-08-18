@@ -34,7 +34,7 @@ pub struct FrontendResult {
 }
 
 impl FrontendResult {
-    pub fn errors<'a>(&'a self) -> impl Iterator<Item = CheckError<'a>> {
+    pub fn errors(&self) -> impl Iterator<Item = CheckError> {
         self.parse_errors.iter().map(CheckError::ParseError).chain(
             self.modules
                 .iter()
@@ -43,7 +43,7 @@ impl FrontendResult {
     }
 
     pub fn has_errors(&self) -> bool {
-        self.parse_errors.len() > 0
+        !self.parse_errors.is_empty()
             || self
                 .modules
                 .iter()
@@ -86,7 +86,7 @@ pub fn run_frontend(source: &str) -> FrontendResult {
     let parsed_modules: Vec<Module> = parse_root.modules().collect();
     let modules = if parsed_modules.len() == 1 {
         vec![(
-            ModuleIdGen::new().next(),
+            ModuleIdGen::new().next_id(),
             "main".to_owned(),
             parsed_modules[0].clone(),
         )]

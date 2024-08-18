@@ -100,9 +100,9 @@ impl ModuleId {
     const FIRST_NON_RESERVED: NonZeroU16 = unsafe { NonZeroU16::new_unchecked(3) };
 }
 
-impl Into<u16> for ModuleId {
-    fn into(self) -> u16 {
-        self.0.get()
+impl From<ModuleId> for u16 {
+    fn from(val: ModuleId) -> Self {
+        val.0.get()
     }
 }
 
@@ -111,10 +111,16 @@ impl ModuleIdGen {
     pub fn new() -> Self {
         Self(ModuleId::FIRST_NON_RESERVED)
     }
-    pub fn next(&mut self) -> ModuleId {
+    pub fn next_id(&mut self) -> ModuleId {
         let tmp = ModuleId(self.0);
         self.0 = self.0.checked_add(1).unwrap();
         tmp
+    }
+}
+
+impl Default for ModuleIdGen {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

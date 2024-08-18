@@ -503,14 +503,18 @@ fn match_branch(p: &mut Parser) -> Progress {
 
 fn pattern(p: &mut Parser) -> Progress {
     let c = p.checkpoint();
+    let is_mod_qualified = mod_qualifier(p).made_progress();
     match p.current() {
-        T![ident] if p.nth(1) != T![::] => {
+        T![ident] => {
+            if is_mod_qualified {
+                p.error("Can only qualify variant patterns");
+                return Progress::Made;
+            }
             p.bump(T![ident]);
             p.finish_at(c, SyntaxKind::PatVar);
             Progress::Made
         }
-        _ => {
-            mod_qualifier(p);
+        T![upper_ident] => {
             qualifier(p);
             p.expect(T![upper_ident]);
             p.expect(T![ident]);

@@ -20,7 +20,7 @@ pub fn toposort_modules(root: Root) -> Vec<(ModuleId, String, Module)> {
         let mut module_name_map = HashMap::new();
         let mut module_id_map = HashMap::new();
         for module in root.modules() {
-            let id = id_gen.next();
+            let id = id_gen.next_id();
             module_name_map.insert(mod_name(&module), id);
             module_id_map.insert(id, (mod_name(&module), module.clone()));
         }
@@ -39,10 +39,9 @@ pub fn toposort_modules(root: Root) -> Vec<(ModuleId, String, Module)> {
             ts.add_dependency(import_id, module_id)
         }
     }
-    ts.into_iter()
-        .map(|id| {
-            let (name, module) = module_id_map.remove(&id).unwrap();
-            (id, name, module)
-        })
-        .collect()
+    ts.map(|id| {
+        let (name, module) = module_id_map.remove(&id).unwrap();
+        (id, name, module)
+    })
+    .collect()
 }

@@ -28,7 +28,7 @@ pub fn check_module(ctx: &Ctx, module: Module, module_id: ModuleId) -> CheckResu
     // TODO horrible
     let mut module_id_gen = ModuleIdGen::new();
     loop {
-        let id = module_id_gen.next();
+        let id = module_id_gen.next_id();
         if id == module_id {
             break;
         }

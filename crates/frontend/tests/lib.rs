@@ -1,5 +1,5 @@
+use frontend::run_frontend;
 use frontend::{parser::parse_prog, CheckError};
-use frontend::{run_frontend, FrontendResult};
 use insta::{assert_snapshot, glob};
 use std::fmt::Write;
 use std::fs;
