@@ -606,3 +606,12 @@ pub struct Program {
     pub globals: Vec<Global>,
     pub funcs: Vec<Func>,
 }
+
+impl Program {
+    pub fn merge(&mut self, other: Program) {
+        self.imports.extend(other.imports);
+        self.types.extend(other.types);
+        self.globals.extend(other.globals);
+        self.funcs.extend(other.funcs);
+    }
+}

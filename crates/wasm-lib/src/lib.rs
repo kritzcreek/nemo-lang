@@ -49,12 +49,20 @@ pub fn compile(input: &str) -> CompileResult {
     .into_iter()
     .map(|(start, end, kind)| Highlight::new(start, end, kind))
     .collect();
-    let (ctx, result) = match check_result.ir {
-        Some(ir) if check_result.errors.is_empty() => {
-            let (wasm, ctx) = codegen(ir, check_result.ctx);
-            (ctx, Ok(wasm))
-        }
-        _ => (check_result.ctx, Err(check_result.errors)),
+    let result = if check_result.has_errors() {
+        let errors = check_result
+            .errors()
+            .map(|e| Diagnostic {
+                message: e.message(&check_result.ctx),
+                start: e.at().start().into(),
+                end: e.at().end().into(),
+            })
+            .collect();
+        Err(errors)
+    } else {
+        let (ctx, ir) = check_result.consume();
+        let (wasm, _) = codegen(ir.expect("No IR despite no errors"), ctx);
+        Ok(wasm)
     };
 
     match result {
@@ -72,14 +80,7 @@ pub fn compile(input: &str) -> CompileResult {
             wasm: vec![],
             wast: "".to_string(),
             highlights,
-            errors: errors
-                .into_iter()
-                .map(|e| Diagnostic {
-                    message: e.message(&ctx),
-                    start: e.at().start().into(),
-                    end: e.at().end().into(),
-                })
-                .collect(),
+            errors,
         },
     }
 }

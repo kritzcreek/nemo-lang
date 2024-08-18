@@ -135,11 +135,10 @@ fn main_loop(
                                     result_id: None,
                                     items: file_data
                                         .check_result
-                                        .errors
-                                        .iter()
+                                        .errors()
                                         .map(|e| {
                                             make_diagnostic(
-                                                e,
+                                                &e,
                                                 &file_data.check_result.ctx,
                                                 &file_data.line_index,
                                             )

@@ -62,9 +62,9 @@ fn normalize_newlines(src: &mut String) {
 }
 
 fn snapshot_type_errors(path: &Path, source: &str) -> String {
-    let FrontendResult { ctx, errors, .. } = run_frontend(source);
-    if errors
-        .iter()
+    let result = run_frontend(source);
+    if result
+        .errors()
         .any(|e| matches!(e, CheckError::ParseError(_)))
     {
         panic!(
@@ -72,13 +72,18 @@ fn snapshot_type_errors(path: &Path, source: &str) -> String {
             path.display()
         )
     }
-    if errors.is_empty() {
+    if !result.has_errors() {
         panic!("{} was expected to fail, but didn't", path.display())
     }
 
     let mut err_buf = String::new();
-    for error in errors {
-        write!(&mut err_buf, "{}", error.display(source, &ctx, false)).unwrap();
+    for error in result.errors() {
+        write!(
+            &mut err_buf,
+            "{}",
+            error.display(source, &result.ctx, false)
+        )
+        .unwrap();
     }
     err_buf
 }

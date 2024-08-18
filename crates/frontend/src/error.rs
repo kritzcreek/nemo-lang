@@ -4,13 +4,13 @@ use line_index::{LineCol, LineIndex};
 use std::fmt;
 use text_size::TextRange;
 
-#[derive(Debug)]
-pub enum CheckError {
-    ParseError(ParseError),
-    TypeError(TyError),
+#[derive(Debug, Clone)]
+pub enum CheckError<'a> {
+    ParseError(&'a ParseError),
+    TypeError(&'a TyError),
 }
 
-impl CheckError {
+impl<'a> CheckError<'a> {
     pub fn display<'src, 'err>(
         &'err self,
         source: &'src str,
@@ -19,7 +19,7 @@ impl CheckError {
     ) -> DisplayCheckError<'src, 'err> {
         DisplayCheckError {
             source,
-            error: self,
+            error: self.clone(),
             ctx,
             colors,
         }
@@ -48,7 +48,7 @@ impl CheckError {
 }
 
 pub struct DisplayCheckError<'a, 'b> {
-    error: &'b CheckError,
+    error: CheckError<'b>,
     source: &'a str,
     ctx: &'a Ctx,
     colors: bool,
