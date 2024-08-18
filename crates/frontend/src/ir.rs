@@ -3,9 +3,7 @@ mod names;
 
 use core::fmt;
 use derive_ir::IrBuilder;
-pub use names::{
-    CompactId, Ctx, Id, ModuleId, ModuleIdGen, MutableNameSupply, Name, NameTag, Symbol,
-};
+pub use names::{CompactId, Ctx, Id, ModuleId, ModuleIdGen, Name, NameSupply, NameTag, Symbol};
 use std::{
     collections::{BTreeMap, HashMap, HashSet},
     fmt::Debug,

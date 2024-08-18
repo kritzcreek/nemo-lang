@@ -3,7 +3,7 @@ mod error;
 mod module;
 mod names;
 
-use crate::ir::{Ctx, ModuleId, ModuleIdGen, MutableNameSupply, Name, Program};
+use crate::ir::{Ctx, ModuleId, ModuleIdGen, Name, NameSupply, Program};
 use crate::syntax::token_ptr::SyntaxTokenPtr;
 use crate::syntax::Module;
 use check::Typechecker;
@@ -17,7 +17,7 @@ pub use module::{FuncDef, Interface, StructDef, StructFields, TypeDef, VariantDe
 pub struct CheckResult {
     pub errors: Vec<TyError>,
     pub occurrences: HashMap<SyntaxTokenPtr, Occurrence<Name>>,
-    pub names: MutableNameSupply,
+    pub names: NameSupply,
     pub interface: Interface,
     pub ir: Option<Program>,
     pub parse: Module,

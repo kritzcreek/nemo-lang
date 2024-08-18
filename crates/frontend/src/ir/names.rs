@@ -15,7 +15,7 @@ pub struct Ctx {
     // Indexed by ModuleId
     module_names: Vec<String>,
     interfaces: Vec<Interface>,
-    name_supplies: Vec<MutableNameSupply>,
+    name_supplies: Vec<NameSupply>,
 }
 
 impl Ctx {
@@ -28,7 +28,7 @@ impl Ctx {
         let mut interfaces = Vec::with_capacity(all_module_count);
         // TODO: Should add proper values for reserved modules
         for _ in 0..name_supplies.capacity() {
-            name_supplies.push(MutableNameSupply::new());
+            name_supplies.push(NameSupply::new());
             module_names.push("NOT INITIALIZED".to_string());
             interfaces.push(Interface::default());
         }
@@ -44,10 +44,10 @@ impl Ctx {
     pub fn set_interface(&mut self, module: ModuleId, interface: Interface) {
         self.interfaces[(module.0.get() - 1) as usize] = interface
     }
-    pub fn set_name_supply(&mut self, module: ModuleId, supply: MutableNameSupply) {
+    pub fn set_name_supply(&mut self, module: ModuleId, supply: NameSupply) {
         self.name_supplies[(module.0.get() - 1) as usize] = supply
     }
-    pub fn get_name_supply(&self, module: ModuleId) -> &MutableNameSupply {
+    pub fn get_name_supply(&self, module: ModuleId) -> &NameSupply {
         &self.name_supplies[(module.0.get() - 1) as usize]
     }
     pub fn get_interface(&self, module: ModuleId) -> &Interface {
@@ -134,19 +134,19 @@ pub struct CompactId {
 }
 
 #[derive(Debug)]
-pub struct MutableNameSupply {
+pub struct NameSupply {
     supply: Cell<u32>,
     name_map: RefCell<Vec<CompactId>>,
     strings: RefCell<DefaultStringInterner>,
 }
 
-impl Default for MutableNameSupply {
+impl Default for NameSupply {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl MutableNameSupply {
+impl NameSupply {
     pub fn new() -> Self {
         Self {
             supply: Cell::new(0),

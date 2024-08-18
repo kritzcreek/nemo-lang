@@ -2,14 +2,14 @@ use crate::ir::{self, ModuleId, Name, Symbol};
 use crate::syntax::SyntaxToken;
 
 #[derive(Debug)]
-pub struct NameSupply(ir::MutableNameSupply, ModuleId);
+pub struct NameSupply(ir::NameSupply, ModuleId);
 
 impl NameSupply {
     pub fn new(module: ModuleId) -> Self {
-        Self(ir::MutableNameSupply::new(), module)
+        Self(ir::NameSupply::new(), module)
     }
 
-    pub fn take(self) -> (ir::MutableNameSupply, ModuleId) {
+    pub fn take(self) -> (ir::NameSupply, ModuleId) {
         (self.0, self.1)
     }
 

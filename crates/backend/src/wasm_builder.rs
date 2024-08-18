@@ -3,7 +3,7 @@ use std::iter;
 use std::{collections::HashMap, mem};
 
 use frontend::ir::{
-    Ctx, FuncTy, Import, ModuleId, MutableNameSupply, Name, Struct, Substitution, Ty, Variant,
+    Ctx, FuncTy, Import, ModuleId, Name, NameSupply, Struct, Substitution, Ty, Variant,
 };
 use text_size::TextRange;
 use wasm_encoder::{
@@ -142,7 +142,7 @@ impl<'a> Builder<'a> {
         }
     }
 
-    pub fn name_supply(&self) -> &MutableNameSupply {
+    pub fn name_supply(&self) -> &NameSupply {
         self.ctx.get_name_supply(ModuleId::CODEGEN)
     }
 
