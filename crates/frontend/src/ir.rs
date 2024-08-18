@@ -3,7 +3,7 @@ mod names;
 
 use core::fmt;
 use derive_ir::IrBuilder;
-pub use names::{Id, Name, NameMap, NameSupply};
+pub use names::{CompactId, Ctx, Id, ModuleId, ModuleIdGen, Name, NameSupply, NameTag, Symbol};
 use std::{
     collections::{BTreeMap, HashMap, HashSet},
     fmt::Debug,
@@ -29,8 +29,8 @@ pub enum Ty {
 }
 
 impl Ty {
-    pub fn display<'a>(&'a self, name_map: &'a NameMap) -> TyDisplay<'a> {
-        TyDisplay { ty: self, name_map }
+    pub fn display<'a>(&'a self, ctx: &'a Ctx) -> TyDisplay<'a> {
+        TyDisplay { ty: self, ctx }
     }
 
     fn vars_inner(&self, acc: &mut HashSet<Name>) {
@@ -63,7 +63,7 @@ impl Ty {
 
 pub struct TyDisplay<'a> {
     ty: &'a Ty,
-    name_map: &'a NameMap,
+    ctx: &'a Ctx,
 }
 
 impl fmt::Display for TyDisplay<'_> {
@@ -75,26 +75,26 @@ impl fmt::Display for TyDisplay<'_> {
             Ty::Unit => write!(f, "unit"),
             Ty::Bytes => write!(f, "bytes"),
             Ty::Diverge => write!(f, "!"),
-            Ty::Array(t) => write!(f, "[{}]", t.display(self.name_map)),
+            Ty::Array(t) => write!(f, "[{}]", t.display(self.ctx)),
             Ty::Cons {
                 name: t,
                 ty_args: args,
             } => {
-                write!(f, "{}", self.name_map.get(t).unwrap().it)?;
+                self.ctx.fmt_name(f, *t)?;
                 if !args.is_empty() {
                     write!(f, "[")?;
                     for (idx, arg) in args.tys().into_iter().enumerate() {
                         if idx != 0 {
                             write!(f, ", ")?
                         }
-                        write!(f, "{}", arg.display(self.name_map))?;
+                        write!(f, "{}", arg.display(self.ctx))?;
                     }
                     write!(f, "]")?;
                 };
                 Ok(())
             }
-            Ty::Var(v) => write!(f, "{}", self.name_map.get(v).unwrap().it),
-            Ty::Func(func_ty) => func_ty.display(self.name_map).fmt(f),
+            Ty::Var(v) => self.ctx.fmt_name(f, *v),
+            Ty::Func(func_ty) => func_ty.display(self.ctx).fmt(f),
             Ty::Error => write!(f, "ERROR"),
         }
     }
@@ -107,17 +107,14 @@ pub struct FuncTy {
 }
 
 impl FuncTy {
-    pub fn display<'a>(&'a self, name_map: &'a NameMap) -> FuncTyDisplay<'a> {
-        FuncTyDisplay {
-            func_ty: self,
-            name_map,
-        }
+    pub fn display<'a>(&'a self, ctx: &'a Ctx) -> FuncTyDisplay<'a> {
+        FuncTyDisplay { func_ty: self, ctx }
     }
 }
 
 pub struct FuncTyDisplay<'a> {
     func_ty: &'a FuncTy,
-    name_map: &'a NameMap,
+    ctx: &'a Ctx,
 }
 
 impl fmt::Display for FuncTyDisplay<'_> {
@@ -128,10 +125,10 @@ impl fmt::Display for FuncTyDisplay<'_> {
             self.func_ty
                 .arguments
                 .iter()
-                .map(|a| format!("{}", a.display(self.name_map)))
+                .map(|a| format!("{}", a.display(self.ctx)))
                 .collect::<Vec<String>>()
                 .join(", "),
-            self.func_ty.result.display(self.name_map)
+            self.func_ty.result.display(self.ctx)
         )
     }
 }
@@ -335,7 +332,7 @@ impl Expr {
             match &*expr.it {
                 ExprData::Lit { .. } => {}
                 ExprData::Var { name } => {
-                    if let Name::Local(_) = name {
+                    if let NameTag::Local = name.tag {
                         // We don't want to override an existing entry for a variable that gets re-assigned
                         current.entry(*name).or_insert_with(|| FreeVarInfo {
                             ty: &expr.ty,
@@ -602,11 +599,19 @@ impl Func {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Default)]
 pub struct Program {
     pub imports: Vec<Import>,
     pub types: Vec<TypeDef>,
     pub globals: Vec<Global>,
     pub funcs: Vec<Func>,
-    pub start_fn: Name,
+}
+
+impl Program {
+    pub fn merge(&mut self, other: Program) {
+        self.imports.extend(other.imports);
+        self.types.extend(other.types);
+        self.globals.extend(other.globals);
+        self.funcs.extend(other.funcs);
+    }
 }

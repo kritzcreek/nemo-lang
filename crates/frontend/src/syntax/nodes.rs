@@ -9,8 +9,74 @@ pub struct Root {
     pub(crate) syntax: SyntaxNode,
 }
 impl Root {
+    pub fn modules(&self) -> AstChildren<Module> {
+        support::children(&self.syntax)
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Module {
+    pub(crate) syntax: SyntaxNode,
+}
+impl Module {
+    pub fn mod_header(&self) -> Option<ModHeader> {
+        support::child(&self.syntax)
+    }
     pub fn top_levels(&self) -> AstChildren<TopLevel> {
         support::children(&self.syntax)
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ModHeader {
+    pub(crate) syntax: SyntaxNode,
+}
+impl ModHeader {
+    pub fn module_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![module])
+    }
+    pub fn ident_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![ident])
+    }
+    pub fn mod_exports(&self) -> AstChildren<ModExport> {
+        support::children(&self.syntax)
+    }
+    pub fn mod_uses(&self) -> AstChildren<ModUse> {
+        support::children(&self.syntax)
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ModUse {
+    pub(crate) syntax: SyntaxNode,
+}
+impl ModUse {
+    pub fn ident_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![ident])
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ModExportVal {
+    pub(crate) syntax: SyntaxNode,
+}
+impl ModExportVal {
+    pub fn ident_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![ident])
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ModExportTy {
+    pub(crate) syntax: SyntaxNode,
+}
+impl ModExportTy {
+    pub fn upper_ident_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![upper_ident])
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ModExportAll {
+    pub(crate) syntax: SyntaxNode,
+}
+impl ModExportAll {
+    pub fn dotdotdot_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![dotdotdot])
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -288,6 +354,9 @@ pub struct TyCons {
     pub(crate) syntax: SyntaxNode,
 }
 impl TyCons {
+    pub fn mod_qualifier(&self) -> Option<ModQualifier> {
+        support::child(&self.syntax)
+    }
     pub fn qualifier(&self) -> Option<Qualifier> {
         support::child(&self.syntax)
     }
@@ -314,6 +383,18 @@ impl TyFn {
     }
     pub fn result(&self) -> Option<Type> {
         support::child(&self.syntax)
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ModQualifier {
+    pub(crate) syntax: SyntaxNode,
+}
+impl ModQualifier {
+    pub fn ident_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![ident])
+    }
+    pub fn coloncolon_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![::])
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -402,6 +483,9 @@ pub struct EVar {
     pub(crate) syntax: SyntaxNode,
 }
 impl EVar {
+    pub fn mod_qualifier(&self) -> Option<ModQualifier> {
+        support::child(&self.syntax)
+    }
     pub fn ident_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T![ident])
     }
@@ -426,6 +510,9 @@ pub struct EStruct {
     pub(crate) syntax: SyntaxNode,
 }
 impl EStruct {
+    pub fn mod_qualifier(&self) -> Option<ModQualifier> {
+        support::child(&self.syntax)
+    }
     pub fn qualifier(&self) -> Option<Qualifier> {
         support::child(&self.syntax)
     }
@@ -716,6 +803,9 @@ pub struct PatVariant {
     pub(crate) syntax: SyntaxNode,
 }
 impl PatVariant {
+    pub fn mod_qualifier(&self) -> Option<ModQualifier> {
+        support::child(&self.syntax)
+    }
     pub fn qualifier(&self) -> Option<Qualifier> {
         support::child(&self.syntax)
     }
@@ -742,6 +832,12 @@ pub enum TopLevel {
     TopStruct(TopStruct),
     TopVariant(TopVariant),
     TopFn(TopFn),
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum ModExport {
+    ModExportVal(ModExportVal),
+    ModExportTy(ModExportTy),
+    ModExportAll(ModExportAll),
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Type {
@@ -800,6 +896,96 @@ pub enum SetTargetExpr {
 impl AstNode for Root {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == Root
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+impl AstNode for Module {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == Module
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+impl AstNode for ModHeader {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == ModHeader
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+impl AstNode for ModUse {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == ModUse
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+impl AstNode for ModExportVal {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == ModExportVal
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+impl AstNode for ModExportTy {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == ModExportTy
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+impl AstNode for ModExportAll {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == ModExportAll
     }
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         if Self::can_cast(syntax.kind()) {
@@ -1100,6 +1286,21 @@ impl AstNode for TyCons {
 impl AstNode for TyFn {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == TyFn
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+impl AstNode for ModQualifier {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == ModQualifier
     }
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         if Self::can_cast(syntax.kind()) {
@@ -1615,6 +1816,45 @@ impl AstNode for TopLevel {
         }
     }
 }
+impl From<ModExportVal> for ModExport {
+    fn from(node: ModExportVal) -> ModExport {
+        ModExport::ModExportVal(node)
+    }
+}
+impl From<ModExportTy> for ModExport {
+    fn from(node: ModExportTy) -> ModExport {
+        ModExport::ModExportTy(node)
+    }
+}
+impl From<ModExportAll> for ModExport {
+    fn from(node: ModExportAll) -> ModExport {
+        ModExport::ModExportAll(node)
+    }
+}
+impl AstNode for ModExport {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        match kind {
+            ModExportVal | ModExportTy | ModExportAll => true,
+            _ => false,
+        }
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        let res = match syntax.kind() {
+            ModExportVal => ModExport::ModExportVal(ModExportVal { syntax }),
+            ModExportTy => ModExport::ModExportTy(ModExportTy { syntax }),
+            ModExportAll => ModExport::ModExportAll(ModExportAll { syntax }),
+            _ => return None,
+        };
+        Some(res)
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        match self {
+            ModExport::ModExportVal(it) => &it.syntax,
+            ModExport::ModExportTy(it) => &it.syntax,
+            ModExport::ModExportAll(it) => &it.syntax,
+        }
+    }
+}
 impl From<TyInt> for Type {
     fn from(node: TyInt) -> Type {
         Type::TyInt(node)
@@ -1981,6 +2221,11 @@ impl std::fmt::Display for TopLevel {
         std::fmt::Display::fmt(self.syntax(), f)
     }
 }
+impl std::fmt::Display for ModExport {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
 impl std::fmt::Display for Type {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
@@ -2012,6 +2257,36 @@ impl std::fmt::Display for SetTargetExpr {
     }
 }
 impl std::fmt::Display for Root {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for Module {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for ModHeader {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for ModUse {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for ModExportVal {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for ModExportTy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for ModExportAll {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
     }
@@ -2112,6 +2387,11 @@ impl std::fmt::Display for TyCons {
     }
 }
 impl std::fmt::Display for TyFn {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for ModQualifier {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
     }

@@ -1,5 +1,4 @@
 use frontend::run_frontend;
-use frontend::types::CheckResult;
 use frontend::{parser::parse_prog, CheckError};
 use insta::{assert_snapshot, glob};
 use std::fmt::Write;
@@ -63,9 +62,9 @@ fn normalize_newlines(src: &mut String) {
 }
 
 fn snapshot_type_errors(path: &Path, source: &str) -> String {
-    let CheckResult { names, errors, .. } = run_frontend(source);
-    if errors
-        .iter()
+    let result = run_frontend(source);
+    if result
+        .errors()
         .any(|e| matches!(e, CheckError::ParseError(_)))
     {
         panic!(
@@ -73,16 +72,16 @@ fn snapshot_type_errors(path: &Path, source: &str) -> String {
             path.display()
         )
     }
-    if errors.is_empty() {
+    if !result.has_errors() {
         panic!("{} was expected to fail, but didn't", path.display())
     }
 
     let mut err_buf = String::new();
-    for error in errors {
+    for error in result.errors() {
         write!(
             &mut err_buf,
             "{}",
-            error.display(source, &names.name_map, false)
+            error.display(source, &result.ctx, false)
         )
         .unwrap();
     }

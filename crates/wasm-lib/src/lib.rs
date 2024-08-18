@@ -41,19 +41,31 @@ pub struct CompileResult {
 pub fn compile(input: &str) -> CompileResult {
     console_error_panic_hook::set_once();
     let check_result = frontend::run_frontend(input);
-    let highlights = highlight::translate_to_utf16(
-        input,
-        highlight::highlight(&check_result.parse, &check_result.occurrences),
-    )
-    .into_iter()
-    .map(|(start, end, kind)| Highlight::new(start, end, kind))
-    .collect();
-    let (name_map, result) = match check_result.ir {
-        Some(ir) if check_result.errors.is_empty() => {
-            let (wasm, names) = codegen(ir, check_result.names);
-            (names.name_map, Ok(wasm))
-        }
-        _ => (check_result.names.name_map, Err(check_result.errors)),
+    let mut highlights = vec![];
+    for module in &check_result.modules {
+        highlights.extend(
+            highlight::translate_to_utf16(
+                input,
+                highlight::highlight(&module.parse, &module.occurrences),
+            )
+            .into_iter()
+            .map(|(start, end, kind)| Highlight::new(start, end, kind)),
+        );
+    }
+    let result = if check_result.has_errors() {
+        let errors = check_result
+            .errors()
+            .map(|e| Diagnostic {
+                message: e.message(&check_result.ctx),
+                start: e.at().start().into(),
+                end: e.at().end().into(),
+            })
+            .collect();
+        Err(errors)
+    } else {
+        let (ctx, ir) = check_result.consume();
+        let (wasm, _) = codegen(ir.expect("No IR despite no errors"), ctx);
+        Ok(wasm)
     };
 
     match result {
@@ -71,14 +83,7 @@ pub fn compile(input: &str) -> CompileResult {
             wasm: vec![],
             wast: "".to_string(),
             highlights,
-            errors: errors
-                .into_iter()
-                .map(|e| Diagnostic {
-                    message: e.message(&name_map),
-                    start: e.at().start().into(),
-                    end: e.at().end().into(),
-                })
-                .collect(),
+            errors,
         },
     }
 }

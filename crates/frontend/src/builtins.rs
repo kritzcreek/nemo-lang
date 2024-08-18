@@ -1,4 +1,4 @@
-use crate::ir::{FuncTy, Name, Ty};
+use crate::ir::{FuncTy, ModuleId, Name, NameTag, Ty};
 use std::collections::HashMap;
 use std::sync::LazyLock;
 
@@ -51,6 +51,13 @@ fn i32_func_binary(name: &'static str) -> Fn {
         },
     }
 }
+
+// Should be initialized after namemap/context is created
+static TODO_NAME: Name = Name {
+    tag: NameTag::Gen,
+    idx: 0,
+    module: ModuleId::PRIM,
+};
 
 static BUILTINS: LazyLock<HashMap<&'static str, Fn>> = LazyLock::new(|| {
     let mut m = HashMap::new();
@@ -124,9 +131,9 @@ static BUILTINS: LazyLock<HashMap<&'static str, Fn>> = LazyLock::new(|| {
         "array_len",
         Fn {
             name: "array_len",
-            ty_params: vec![Name::Gen(0)],
+            ty_params: vec![TODO_NAME],
             ty: FuncTy {
-                arguments: vec![Ty::Array(Box::new(Ty::Var(Name::Gen(0))))],
+                arguments: vec![Ty::Array(Box::new(Ty::Var(TODO_NAME)))],
                 result: Ty::I32,
             },
         },
@@ -135,10 +142,10 @@ static BUILTINS: LazyLock<HashMap<&'static str, Fn>> = LazyLock::new(|| {
         "array_new",
         Fn {
             name: "array_new",
-            ty_params: vec![Name::Gen(0)],
+            ty_params: vec![TODO_NAME],
             ty: FuncTy {
-                arguments: vec![Ty::Var(Name::Gen(0)), Ty::I32],
-                result: Ty::Array(Box::new(Ty::Var(Name::Gen(0)))),
+                arguments: vec![Ty::Var(TODO_NAME), Ty::I32],
+                result: Ty::Array(Box::new(Ty::Var(TODO_NAME))),
             },
         },
     );
