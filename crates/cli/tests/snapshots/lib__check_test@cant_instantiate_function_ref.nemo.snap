@@ -1,0 +1,32 @@
+---
+source: crates/cli/tests/lib.rs
+info:
+  program: nemo
+  args:
+    - check
+    - /Users/christoph/code/nemo-lang/crates/cli/tests/check/cant_instantiate_function_ref.nemo
+input_file: crates/cli/tests/check/cant_instantiate_function_ref.nemo
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+No func refs for polymorphic functions yet. Allow instantiate in the future?
+[31m[05] Error:[0m Unknown variable id
+   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0msource:1:13[38;5;246m][0m
+   [38;5;246m│[0m
+ [38;5;246m6 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249ml[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249m [0m[38;5;249mm[0m[38;5;249my[0m[38;5;249m_[0m[38;5;249mi[0m[38;5;249md[0m[38;5;249m [0m[38;5;249m=[0m[38;5;249m [0mid[38;5;249m;[0m
+ [38;5;240m  │[0m               ─┬  
+ [38;5;240m  │[0m                ╰── Unknown variable id
+[38;5;246m───╯[0m
+
+[31m[21] Error:[0m Can't instantiate function reference. Only top-level functions may be polymorphic at this time.
+   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0msource:1:13[38;5;246m][0m
+   [38;5;246m│[0m
+ [38;5;246m7 │[0m [38;5;249m [0m[38;5;249m [0mmy_id[38;5;249m#[0m[38;5;249m[[0m[38;5;249mi[0m[38;5;249m3[0m[38;5;249m2[0m[38;5;249m][0m[38;5;249m([0m[38;5;249m1[0m[38;5;249m0[0m[38;5;249m)[0m
+ [38;5;240m  │[0m   ──┬──  
+ [38;5;240m  │[0m     ╰──── Can't instantiate function reference. Only top-level functions may be polymorphic at this time.
+[38;5;246m───╯[0m
+
+Error: "Check failed with 2 errors"

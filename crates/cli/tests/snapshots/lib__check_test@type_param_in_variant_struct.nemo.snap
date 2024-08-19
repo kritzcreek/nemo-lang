@@ -1,0 +1,23 @@
+---
+source: crates/cli/tests/lib.rs
+info:
+  program: nemo
+  args:
+    - check
+    - /Users/christoph/code/nemo-lang/crates/cli/tests/check/type_param_in_variant_struct.nemo
+input_file: crates/cli/tests/check/type_param_in_variant_struct.nemo
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+[31m[23] Error:[0m Can't declare type parameters for structs in a variant.
+   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0msource:1:13[38;5;246m][0m
+   [38;5;246m│[0m
+ [38;5;246m2 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249ms[0m[38;5;249mt[0m[38;5;249mr[0m[38;5;249mu[0m[38;5;249mc[0m[38;5;249mt[0m[38;5;249m [0mNone[38;5;249m[[0m[38;5;249ma[0m[38;5;249m][0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m}[0m
+ [38;5;240m  │[0m          ──┬─  
+ [38;5;240m  │[0m            ╰─── Can't declare type parameters for structs in a variant.
+[38;5;246m───╯[0m
+
+Error: "Check failed with 1 errors"

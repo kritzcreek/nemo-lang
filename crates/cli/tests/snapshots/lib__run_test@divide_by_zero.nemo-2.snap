@@ -1,5 +1,5 @@
 ---
-source: crates/backend/tests/lib.rs
+source: crates/cli/tests/lib.rs
 info:
   program: deno
   args:
@@ -7,7 +7,7 @@ info:
     - "--allow-read"
     - "../../dev/wasm-runner.ts"
     - tests/build/passing/divide_by_zero.wasm
-input_file: crates/backend/tests/failing/divide_by_zero.nemo
+input_file: crates/cli/tests/run/divide_by_zero.nemo
 ---
 success: false
 exit_code: 1

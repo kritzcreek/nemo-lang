@@ -1,0 +1,23 @@
+---
+source: crates/cli/tests/lib.rs
+info:
+  program: nemo
+  args:
+    - check
+    - /Users/christoph/code/nemo-lang/crates/cli/tests/check/invalid_literal.nemo
+input_file: crates/cli/tests/check/invalid_literal.nemo
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+[31m[02] Error:[0m Invalid literal couldn't be parsed
+   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0msource:1:13[38;5;246m][0m
+   [38;5;246m│[0m
+ [38;5;246m1 │[0m [38;5;249mg[0m[38;5;249ml[0m[38;5;249mo[0m[38;5;249mb[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249m [0m[38;5;249mx[0m[38;5;249m [0m[38;5;249m=[0m[38;5;249m [0m1000000000000000000000000000000000000000000000000000000000000
+ [38;5;240m  │[0m            ──────────────────────────────┬──────────────────────────────  
+ [38;5;240m  │[0m                                          ╰──────────────────────────────── Invalid literal couldn't be parsed
+[38;5;246m───╯[0m
+
+Error: "Check failed with 1 errors"

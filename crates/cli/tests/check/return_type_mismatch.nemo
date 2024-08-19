@@ -1,0 +1,7 @@
+fn main() {
+  return 1
+}
+
+fn func() -> i32 {
+  return {}
+}
