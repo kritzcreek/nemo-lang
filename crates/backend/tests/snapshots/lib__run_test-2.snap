@@ -1,0 +1,20 @@
+---
+source: crates/backend/tests/lib.rs
+info:
+  program: deno
+  args:
+    - run
+    - "--allow-read"
+    - "../../dev/wasm-runner.ts"
+    - tests/build/passing/divide_by_zero.wasm
+input_file: crates/backend/tests/failing/divide_by_zero.nemo
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+[0m[1m[31merror[0m: Uncaught (in promise) RuntimeError: divide by zero
+    at [0m[1m[3mmain[0m ([0m[36mwasm://wasm/5f03433e[0m:[0m[33m1[0m:[0m[33m68[0m)
+    at [0m[36mfile:///Users/christoph/code/nemo-lang/dev/wasm-runner.ts[0m:[0m[33m22[0m:[0m[33m13[0m
+    at [0m[1m[3meventLoopTick[0m ([0m[36mext:core/01_core.js[0m:[0m[33m168[0m:[0m[33m7[0m)

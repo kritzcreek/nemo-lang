@@ -1,0 +1,20 @@
+---
+source: crates/backend/tests/lib.rs
+info:
+  program: deno
+  args:
+    - run
+    - "--allow-read"
+    - "../../dev/wasm-runner.ts"
+    - tests/build/passing/structs.wasm
+input_file: crates/backend/tests/passing/structs.nemo
+---
+success: true
+exit_code: 0
+----- stdout -----
+1
+2
+3
+0
+
+----- stderr -----

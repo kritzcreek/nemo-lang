@@ -1,0 +1,16 @@
+---
+source: crates/backend/tests/lib.rs
+info:
+  program: nemo
+  args:
+    - compile
+    - /Users/christoph/code/nemo-lang/crates/backend/tests/failing/divide_by_zero.nemo
+    - "--output"
+    - tests/build/passing/divide_by_zero.wasm
+input_file: crates/backend/tests/failing/divide_by_zero.nemo
+---
+success: true
+exit_code: 0
+----- stdout -----
+
+----- stderr -----

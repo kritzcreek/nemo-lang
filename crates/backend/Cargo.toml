@@ -8,3 +8,7 @@ license = "MIT"
 text-size = "1.1.1"
 wasm-encoder = "0.209"
 frontend = { path = "../frontend" }
+
+[dev-dependencies]
+insta = { version = "1.34.0", features = ["glob"] }
+insta-cmd = "0.6.0"

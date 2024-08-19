@@ -1,0 +1,16 @@
+---
+source: crates/backend/tests/lib.rs
+info:
+  program: nemo
+  args:
+    - compile
+    - /Users/christoph/code/nemo-lang/crates/backend/tests/passing/structs.nemo
+    - "--output"
+    - tests/build/passing/structs.wasm
+input_file: crates/backend/tests/passing/structs.nemo
+---
+success: true
+exit_code: 0
+----- stdout -----
+
+----- stderr -----

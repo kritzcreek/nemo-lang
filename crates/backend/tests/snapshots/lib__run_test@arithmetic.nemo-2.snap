@@ -1,0 +1,33 @@
+---
+source: crates/backend/tests/lib.rs
+info:
+  program: deno
+  args:
+    - run
+    - "--allow-read"
+    - "../../dev/wasm-runner.ts"
+    - tests/build/passing/arithmetic.wasm
+input_file: crates/backend/tests/passing/arithmetic.nemo
+---
+success: true
+exit_code: 0
+----- stdout -----
+2
+1
+-1
+0
+6
+6
+0
+1
+2.200000047683716
+0.9999998807907104
+-0.9999998807907104
+0
+6.5099992752075195
+6.5099992752075195
+0.6774193644523621
+1.476190447807312
+0
+
+----- stderr -----

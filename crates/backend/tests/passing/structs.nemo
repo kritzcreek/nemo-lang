@@ -1,0 +1,13 @@
+import log : fn (i32) -> unit from log
+
+struct Point {
+  x : i32,
+  y : i32,
+}
+
+fn main() {
+  let point = Point { x = 1, y = 2 };
+  log(point.x);
+  log(point.y);
+  log(point.x + point.y);
+}
