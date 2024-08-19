@@ -41,12 +41,12 @@ fn deno() -> Command {
 }
 
 fn run_test(path: &Path) {
-    assert_cmd_snapshot!(cli().args(&compile_args(path)));
-    assert_cmd_snapshot!(deno().env("NO_COLOR", "1").args(&run_args(path)));
+    assert_cmd_snapshot!(cli().args(compile_args(path)));
+    assert_cmd_snapshot!(deno().env("NO_COLOR", "1").args(run_args(path)));
 }
 
 fn check_test(path: &Path) {
-    assert_cmd_snapshot!(cli().args(&check_args(path)));
+    assert_cmd_snapshot!(cli().args(check_args(path)));
 }
 
 macro_rules! apply_common_filters {
