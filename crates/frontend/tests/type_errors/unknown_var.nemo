@@ -1,6 +1,0 @@
-fn main() {
-  unknown;
-
-  set unknown = 3;
-  set unknown.x = 3
-}

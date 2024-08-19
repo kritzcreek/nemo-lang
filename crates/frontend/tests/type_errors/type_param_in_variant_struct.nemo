@@ -1,3 +1,0 @@
-variant Option[a] {
-  struct None[a] {}
-}

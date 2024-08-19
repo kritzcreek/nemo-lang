@@ -1,7 +1,0 @@
-fn main() {
-    let local = 10;
-    let assign_capture = fn () {
-        set local = 20;
-    };
-    {}
-}

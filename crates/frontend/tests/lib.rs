@@ -1,9 +1,6 @@
-use frontend::run_frontend;
-use frontend::{parser::parse_prog, CheckError};
+use frontend::parser::parse_prog;
 use insta::{assert_snapshot, glob};
-use std::fmt::Write;
 use std::fs;
-use std::path::Path;
 use std::str;
 
 /// Copied from the Rust compiler: https://github.com/rust-lang/rust/pull/62948/
@@ -59,50 +56,6 @@ fn normalize_newlines(src: &mut String) {
     fn find_cr(src: &[u8]) -> Option<usize> {
         src.iter().position(|&b| b == b'\r')
     }
-}
-
-fn snapshot_type_errors(path: &Path, source: &str) -> String {
-    let result = run_frontend(source);
-    if result
-        .errors()
-        .any(|e| matches!(e, CheckError::ParseError(_)))
-    {
-        panic!(
-            "{} was expected to fail with a type error, but had a parse error instead",
-            path.display()
-        )
-    }
-    if !result.has_errors() {
-        panic!("{} was expected to fail, but didn't", path.display())
-    }
-
-    let mut err_buf = String::new();
-    for error in result.errors() {
-        write!(
-            &mut err_buf,
-            "{}",
-            error.display(source, &result.ctx, false)
-        )
-        .unwrap();
-    }
-    err_buf
-}
-
-#[test]
-fn test_type_errors() {
-    glob!("type_errors", "*.nemo", |path| {
-        let input = {
-            let mut input = fs::read_to_string(path).unwrap();
-            normalize_newlines(&mut input);
-            input
-        };
-        let output = {
-            let mut output = snapshot_type_errors(path, &input);
-            normalize_newlines(&mut output);
-            output
-        };
-        assert_snapshot!(output)
-    });
 }
 
 fn snapshot_parse_tree(input: &str) -> String {

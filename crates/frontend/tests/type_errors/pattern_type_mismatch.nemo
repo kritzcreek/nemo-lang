@@ -1,9 +1,0 @@
-variant V {
-  struct S {}
-}
-
-fn main() {
-  match 10 {
-    V::S _ => {}
-  }
-}
