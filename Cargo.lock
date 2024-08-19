@@ -99,8 +99,6 @@ name = "backend"
 version = "0.1.0"
 dependencies = [
  "frontend",
- "insta",
- "insta-cmd",
  "text-size",
  "wasm-encoder",
 ]
@@ -192,6 +190,8 @@ dependencies = [
  "backend",
  "clap",
  "frontend",
+ "insta",
+ "insta-cmd",
  "language-server",
 ]
 

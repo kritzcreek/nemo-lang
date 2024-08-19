@@ -12,3 +12,7 @@ clap = { version = "4.4.12", features = ["derive"] }
 frontend = { path = "../frontend" }
 backend = { path = "../backend" }
 language-server = { path = "../language-server" }
+
+[dev-dependencies]
+insta = { version = "1.34.0", features = ["glob"] }
+insta-cmd = "0.6.0"
