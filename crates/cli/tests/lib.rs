@@ -51,7 +51,7 @@ fn deno() -> Command {
 
 fn run_test(path: &Path) {
     let (args, out_path) = compile_args(path);
-    assert_cmd_snapshot!(cli().args(args));
+    assert_cmd_snapshot!(cli().env("RUST_BACKTRACE", "0").args(args));
     assert_cmd_snapshot!(deno().env("NO_COLOR", "1").args(run_args(out_path)));
 }
 

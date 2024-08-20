@@ -6,7 +6,9 @@ info:
     - compile
     - tests/run/closures.nemo
     - "--output"
-    - tests/build/passing/closures.wasm
+    - tests/build/closures.wasm
+  env:
+    RUST_BACKTRACE: "0"
 input_file: crates/cli/tests/run/closures.nemo
 ---
 success: false
@@ -16,17 +18,4 @@ exit_code: 101
 ----- stderr -----
 thread 'main' panicked at crates/frontend/src/lib.rs:105:13:
 No IR generated, despite no errors
-stack backtrace:
-   0: rust_begin_unwind
-             at /rustc/3f5fd8dd41153bc5fdca9427e9e05be2c767ba23/library/std/src/panicking.rs:652:5
-   1: core::panicking::panic_fmt
-             at /rustc/3f5fd8dd41153bc5fdca9427e9e05be2c767ba23/library/core/src/panicking.rs:72:14
-   2: frontend::run_frontend
-             at /Users/christoph/code/nemo-lang/crates/frontend/src/lib.rs:105:13
-   3: backend::compile_program
-             at /Users/christoph/code/nemo-lang/crates/backend/src/lib.rs:8:24
-   4: nemo::main
-             at ./src/main.rs:42:24
-   5: core::ops::function::FnOnce::call_once
-             at /rustc/3f5fd8dd41153bc5fdca9427e9e05be2c767ba23/library/core/src/ops/function.rs:250:5
-note: Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose backtrace.
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
