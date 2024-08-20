@@ -1,7 +1,51 @@
-global _ = Vec { }
-global _ = Vec { x = 10 }
-global _ = Vec { x = 10, y = 1.0 }
-global _ = Vec { x = 10, y = 1.0, }
-global _ = v.x
-global _ = v.x.y
-global _ = v[0].y
+import log : fn(i32) -> unit from log
+
+struct BoxInt { x : i32 }
+struct Box[a] { x : a }
+
+struct NestedInt { x : BoxInt }
+struct Nested[a] { x : Box[a] }
+
+variant Option[a] {
+  struct None {},
+  struct Some { val : a },
+}
+// Rec is just a non-empty linked list
+struct RecInt { head : i32, tail : Option[RecInt] }
+struct Rec[a] { head : a, tail : Option[Rec[a]] }
+
+fn for_reci(r : RecInt, f : fn(i32) -> unit) {
+  f(r.head);
+  match r.tail {
+    Option::None _ => {},
+    Option::Some t => { for_reci(t.val, f) },
+  }
+}
+
+fn for_rec[a](r : Rec[a], f : fn(a) -> unit) {
+  f(r.head);
+  match r.tail {
+    Option::None _ => {},
+    Option::Some t => { for_rec(t.val, f) },
+  }
+}
+
+fn main() {
+  let bi = BoxInt { x = 5 };
+  log(bi.x);
+
+  let b = Box { x = 6 };
+  log(b.x);
+
+  let ni = NestedInt { x = bi };
+  log(ni.x.x);
+
+  let n = Nested { x = b };
+  log(n.x.x);
+
+  let ri = RecInt { head = 1, tail = Option::Some { val = RecInt { head = 2, tail = Option::None {} } } };
+  for_reci(ri, log);
+
+  let r = Rec { head = 1, tail = Option::Some { val = Rec { head = 2, tail = Option::None {} } } };
+  for_rec(r, log);
+}
