@@ -1,0 +1,29 @@
+---
+source: crates/cli/tests/lib.rs
+info:
+  program: deno
+  args:
+    - run
+    - "--allow-read"
+    - "../../dev/wasm-runner.ts"
+    - tests/build/expr_postfix.wasm
+  env:
+    NO_COLOR: "1"
+input_file: crates/cli/tests/run/expr_postfix.nemo
+---
+success: true
+exit_code: 0
+----- stdout -----
+42
+1
+1
+2
+2
+1
+0
+10
+42
+42
+0
+
+----- stderr -----

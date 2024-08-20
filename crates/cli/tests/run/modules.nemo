@@ -1,0 +1,35 @@
+module dep
+exports (S, V, f, log)
+
+import log : fn (i32) -> unit from log
+
+struct S {
+  x : i32,
+}
+
+variant V {
+  struct S { y : i32 },
+}
+
+fn f(s : S, x : i32) {
+  set s.x = s.x + x;
+}
+
+module main
+exports (main)
+
+use dep
+
+import log : fn (i32) -> unit from log
+
+fn main() {
+  let s : dep::S = dep::S { x = 10 };
+  dep::f(s, 12);
+  dep::log(s.x);
+
+  let v : dep::V = dep::V::S { y = 12 };
+  match v {
+    dep::V::S s => { log(s.y) },
+    _ => { dep::log(123123) },
+  };
+}

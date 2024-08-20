@@ -1,7 +1,0 @@
-global _ = {}
-global _ = {1}
-global _ = {
-    1;
-    x;
-    2
-}

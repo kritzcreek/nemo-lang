@@ -1,3 +1,6 @@
 [alias]
 xtask-gen-ast = "run --package xtask-gen-ast"
 build-wasm = "rustc  --crate-type cdylib --target wasm32-unknown-unknown --release"
+
+[env]
+RUST_BACKTRACE = "1"

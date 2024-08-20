@@ -1,0 +1,18 @@
+---
+source: crates/cli/tests/lib.rs
+info:
+  program: nemo
+  args:
+    - compile
+    - tests/run/divide_by_zero.nemo
+    - "--output"
+    - tests/build/divide_by_zero.wasm
+  env:
+    RUST_BACKTRACE: "0"
+input_file: crates/cli/tests/run/divide_by_zero.nemo
+---
+success: true
+exit_code: 0
+----- stdout -----
+
+----- stderr -----

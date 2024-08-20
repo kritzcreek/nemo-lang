@@ -27,10 +27,10 @@ run-wasm FILE:
     wasm-opt --enable-reference-types --enable-gc --enable-bulk-memory -O3 build/{{ without_extension(file_name(FILE)) }}.wasm -o build/{{ without_extension(file_name(FILE)) }}_opt.wasm
     wasm-tools print build/{{ without_extension(file_name(FILE)) }}.wasm -o build/{{ without_extension(file_name(FILE)) }}.wast
     wasm-tools print build/{{ without_extension(file_name(FILE)) }}_opt.wasm -o build/{{ without_extension(file_name(FILE)) }}_opt.wast
-    node dev/run-wasm.mjs build/{{ without_extension(file_name(FILE)) }}.wasm
+    deno run --allow-read dev/wasm-runner.ts build/{{ without_extension(file_name(FILE)) }}.wasm
 
 dev FILE:
-    RUST_BACKTRACE=1 watchexec --quiet --no-vcs-ignore -e nemo,rs,mjs just run-wasm {{ FILE }}
+    watchexec --quiet --no-vcs-ignore -e nemo,rs,mjs just run-wasm {{ FILE }}
 
 playground: build-wasm-lib
     cd playground && npm i && npm run dev

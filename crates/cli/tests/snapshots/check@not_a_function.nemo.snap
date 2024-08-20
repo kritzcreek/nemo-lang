@@ -1,0 +1,23 @@
+---
+source: crates/cli/tests/lib.rs
+info:
+  program: nemo
+  args:
+    - check
+    - tests/check/not_a_function.nemo
+input_file: crates/cli/tests/check/not_a_function.nemo
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+[31m[16] Error:[0m Can't a call a value of type i32 as a function
+   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0msource:2:1[38;5;246m][0m
+   [38;5;246m│[0m
+ [38;5;246m3 │[0m [38;5;249m [0m[38;5;249m [0mx[38;5;249m([0m[38;5;249m0[0m[38;5;249m)[0m
+ [38;5;240m  │[0m   ┬  
+ [38;5;240m  │[0m   ╰── Can't a call a value of type i32 as a function
+[38;5;246m───╯[0m
+
+Error: "Check failed with 1 errors"

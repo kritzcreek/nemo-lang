@@ -1,0 +1,6 @@
+import log : fn (i32) -> unit from log
+
+fn main() {
+  if true { log(1) } else { log(2) };
+  if false { log(1) } else { log(2) };
+}

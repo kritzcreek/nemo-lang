@@ -1,0 +1,16 @@
+import log : fn (i32) -> unit from log
+import logb : fn (bool) -> unit from log
+import logf : fn (f32) -> unit from log
+
+fn main() {
+  log(0);
+  log(4242);
+  log(0b01010101);
+  log(0xDeAdBeE);
+  log(0x1aAbB2cC);
+  logb(true);
+  logb(false);
+  logf(0.0);
+  logf(0.1234);
+  logf(1234.1234);
+}
