@@ -1,0 +1,31 @@
+---
+source: crates/cli/tests/lib.rs
+info:
+  program: nemo
+  args:
+    - check
+    - tests/check/field_type_mismatch.nemo
+input_file: crates/cli/tests/check/field_type_mismatch.nemo
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+[31m[15] Error:[0m Type mismatch. Expected i32, but got bool
+   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0msource:2:2[38;5;246m][0m
+   [38;5;246m│[0m
+ [38;5;246m6 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249mF[0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m [0m[38;5;249mx[0m[38;5;249m [0m[38;5;249m=[0m[38;5;249m [0mtrue [38;5;249m}[0m
+ [38;5;240m  │[0m           ──┬──  
+ [38;5;240m  │[0m             ╰──── Type mismatch. Expected i32, but got bool
+[38;5;246m───╯[0m
+
+[31m[15] Error:[0m Type mismatch. Expected unit, but got F
+   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0msource:2:2[38;5;246m][0m
+   [38;5;246m│[0m
+ [38;5;246m6 │[0m [38;5;249m [0m[38;5;249m [0mF { x = true }
+ [38;5;240m  │[0m   ───────┬──────  
+ [38;5;240m  │[0m          ╰──────── Type mismatch. Expected unit, but got F
+[38;5;246m───╯[0m
+
+Error: "Check failed with 2 errors"

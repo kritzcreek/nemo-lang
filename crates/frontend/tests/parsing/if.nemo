@@ -1,1 +1,0 @@
-global _ = if true { 1 } else { 3 }

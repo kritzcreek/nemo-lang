@@ -1,0 +1,23 @@
+---
+source: crates/cli/tests/lib.rs
+info:
+  program: nemo
+  args:
+    - check
+    - tests/check/non_function_import.nemo
+input_file: crates/cli/tests/check/non_function_import.nemo
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+[31m[18] Error:[0m Can't import a non-function value. internal is of type i32
+   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0msource:1:13[38;5;246m][0m
+   [38;5;246m│[0m
+ [38;5;246m1 │[0m [38;5;249mi[0m[38;5;249mm[0m[38;5;249mp[0m[38;5;249mo[0m[38;5;249mr[0m[38;5;249mt[0m[38;5;249m [0m[38;5;249mi[0m[38;5;249mn[0m[38;5;249mt[0m[38;5;249me[0m[38;5;249mr[0m[38;5;249mn[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249m [0m[38;5;249m:[0m[38;5;249m [0mi32 [38;5;249mf[0m[38;5;249mr[0m[38;5;249mo[0m[38;5;249mm[0m[38;5;249m [0m[38;5;249me[0m[38;5;249mx[0m[38;5;249mt[0m[38;5;249me[0m[38;5;249mr[0m[38;5;249mn[0m[38;5;249ma[0m[38;5;249ml[0m
+ [38;5;240m  │[0m                   ──┬─  
+ [38;5;240m  │[0m                     ╰─── Can't import a non-function value. internal is of type i32
+[38;5;246m───╯[0m
+
+Error: "Check failed with 1 errors"

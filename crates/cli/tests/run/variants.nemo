@@ -1,0 +1,45 @@
+variant Enum {
+  struct A {},
+  struct B {},
+  struct C {},
+}
+
+variant Shape {
+  struct Circle { radius : f32 },
+  struct Rectangle { len : f32, width : f32 },
+}
+
+import print_char : fn (i32) -> unit from print_char
+import logf : fn (f32) -> unit from log
+
+fn print_enum(e : Enum) {
+  let c = match e {
+    Enum::A _ => { bytes_get("a", 0) },
+    Enum::B _ => { bytes_get("b", 0) },
+    Enum::C _ => { bytes_get("c", 0) },
+  };
+  print_char(c);
+  print_char(10);
+  {};
+}
+
+fn print_shape(s : Shape) {
+  match s {
+    Shape::Circle c => {
+      logf(c.radius);
+    },
+    Shape::Rectangle r => {
+      logf(r.len);
+      logf(r.width);
+    },
+  };
+}
+
+fn main() {
+  print_enum(Enum::A {});
+  print_enum(Enum::B {});
+  print_enum(Enum::C {});
+
+  print_shape(Shape::Circle { radius = 2.0 });
+  print_shape(Shape::Rectangle { len = 3.0, width = 4.0 });
+}
