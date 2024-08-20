@@ -1,0 +1,27 @@
+---
+source: crates/cli/tests/lib.rs
+info:
+  program: nemo
+  args:
+    - compile
+    - tests/run/variants.nemo
+    - "--output"
+    - tests/build/variants.wasm
+  env:
+    RUST_BACKTRACE: "0"
+input_file: crates/cli/tests/run/variants.nemo
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+[31m[22] Error:[0m Mismatched type arg count. Expected 1 argument, but got 0
+    [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0msource:1:13[38;5;246m][0m
+    [38;5;246m│[0m
+ [38;5;246m15 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249mR[0m[38;5;249mo[0m[38;5;249mp[0m[38;5;249me[0m[38;5;249m:[0m[38;5;249m:[0m[38;5;249mN[0m[38;5;249mo[0m[38;5;249md[0m[38;5;249me[0m[38;5;249m [0m[38;5;249mn[0m[38;5;249mo[0m[38;5;249md[0m[38;5;249me[0m[38;5;249m [0m[38;5;249m=[0m[38;5;249m>[0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m [0marray_len[38;5;249m([0m[38;5;249mn[0m[38;5;249mo[0m[38;5;249md[0m[38;5;249me[0m[38;5;249m.[0m[38;5;249mc[0m[38;5;249mh[0m[38;5;249mi[0m[38;5;249ml[0m[38;5;249md[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mn[0m[38;5;249m)[0m[38;5;249m [0m[38;5;249m+[0m[38;5;249m [0m[38;5;249mn[0m[38;5;249mo[0m[38;5;249md[0m[38;5;249me[0m[38;5;249m.[0m[38;5;249ml[0m[38;5;249me[0m[38;5;249mn[0m[38;5;249m [0m[38;5;249m}[0m[38;5;249m,[0m
+ [38;5;240m   │[0m                        ────┬────  
+ [38;5;240m   │[0m                            ╰────── Mismatched type arg count. Expected 1 argument, but got 0
+[38;5;246m────╯[0m
+
+Error: "Compiling failed with 1 errors"

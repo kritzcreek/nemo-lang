@@ -49,13 +49,13 @@ fn deno() -> Command {
     Command::new("deno")
 }
 
-fn run_test(path: &Path) {
+fn run(path: &Path) {
     let (args, out_path) = compile_args(path);
     assert_cmd_snapshot!(cli().env("RUST_BACKTRACE", "0").args(args));
     assert_cmd_snapshot!(deno().env("NO_COLOR", "1").args(run_args(out_path)));
 }
 
-fn check_test(path: &Path) {
+fn check(path: &Path) {
     assert_cmd_snapshot!(cli().args(check_args(path)));
 }
 
@@ -67,6 +67,7 @@ fn clear_existing_build() {
 macro_rules! apply_common_filters {
     {} => {
         let mut settings = Settings::clone_current();
+        settings.set_prepend_module_to_snapshot(false);
         settings.add_filter(r"file:(.*)", "[FILE_PATH]");
         let _bound = settings.bind_to_scope();
     }
@@ -79,10 +80,10 @@ fn t() {
     apply_common_filters!();
     glob!("check/**/*.nemo", |path| {
         let path = path.strip_prefix(&cwd).unwrap();
-        check_test(path);
+        check(path);
     });
     glob!("run/**/*.nemo", |path| {
         let path = path.strip_prefix(&cwd).unwrap();
-        run_test(path);
+        run(path);
     });
 }

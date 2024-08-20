@@ -1,0 +1,18 @@
+---
+source: crates/cli/tests/lib.rs
+info:
+  program: nemo
+  args:
+    - compile
+    - tests/run/expr_postfix.nemo
+    - "--output"
+    - tests/build/expr_postfix.wasm
+  env:
+    RUST_BACKTRACE: "0"
+input_file: crates/cli/tests/run/expr_postfix.nemo
+---
+success: true
+exit_code: 0
+----- stdout -----
+
+----- stderr -----

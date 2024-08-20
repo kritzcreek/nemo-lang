@@ -1,0 +1,22 @@
+---
+source: crates/cli/tests/lib.rs
+info:
+  program: deno
+  args:
+    - run
+    - "--allow-read"
+    - "../../dev/wasm-runner.ts"
+    - tests/build/divide_by_zero.wasm
+  env:
+    NO_COLOR: "1"
+input_file: crates/cli/tests/run/divide_by_zero.nemo
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+error: Uncaught (in promise) RuntimeError: divide by zero
+    at main (wasm://wasm/5f03433e:1:68)
+    at [FILE_PATH]
+    at eventLoopTick (ext:core/01_core.js:168:7)
