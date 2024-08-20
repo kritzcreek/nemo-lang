@@ -14,7 +14,7 @@ fn render_slash_path(path: &Path) -> String {
 
 fn compile_args(path: &Path) -> (Vec<String>, String) {
     let out_path = format!(
-        "tests/build/passing/{}.wasm",
+        "tests/build/{}.wasm",
         path.file_stem().unwrap().to_str().unwrap()
     );
     (
@@ -59,6 +59,11 @@ fn check_test(path: &Path) {
     assert_cmd_snapshot!(cli().args(check_args(path)));
 }
 
+fn clear_existing_build() {
+    let _ = std::fs::remove_dir_all("tests/build");
+    std::fs::create_dir_all("tests/build").unwrap();
+}
+
 macro_rules! apply_common_filters {
     {} => {
         let mut settings = Settings::clone_current();
@@ -70,6 +75,7 @@ macro_rules! apply_common_filters {
 #[test]
 fn t() {
     let cwd = std::env::current_dir().unwrap();
+    clear_existing_build();
     apply_common_filters!();
     glob!("check/**/*.nemo", |path| {
         let path = path.strip_prefix(&cwd).unwrap();

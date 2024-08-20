@@ -6,17 +6,18 @@ info:
     - run
     - "--allow-read"
     - "../../dev/wasm-runner.ts"
-    - tests/build/passing/structs.wasm
+    - tests/build/structs.wasm
   env:
     NO_COLOR: "1"
 input_file: crates/cli/tests/run/structs.nemo
 ---
-success: true
-exit_code: 0
+success: false
+exit_code: 1
 ----- stdout -----
-1
-2
-3
-0
 
 ----- stderr -----
+error: Uncaught (in promise) NotFound: No such file or directory (os error 2): readfile 'tests/build/structs.wasm'
+const wasmCode = await Deno.readFile(filePath);
+                            ^
+    at Object.readFile (ext:deno_fs/30_fs.js:848:24)
+    at [FILE_PATH]
