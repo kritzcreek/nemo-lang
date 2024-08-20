@@ -11,13 +11,15 @@ info:
     NO_COLOR: "1"
 input_file: crates/cli/tests/run/variants.nemo
 ---
-success: false
-exit_code: 1
+success: true
+exit_code: 0
 ----- stdout -----
+a
+b
+c
+2
+3
+4
+0
 
 ----- stderr -----
-error: Uncaught (in promise) NotFound: No such file or directory (os error 2): readfile 'tests/build/variants.wasm'
-const wasmCode = await Deno.readFile(filePath);
-                            ^
-    at Object.readFile (ext:deno_fs/30_fs.js:848:24)
-    at [FILE_PATH]
