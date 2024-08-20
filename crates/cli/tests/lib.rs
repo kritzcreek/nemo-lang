@@ -12,16 +12,20 @@ fn render_slash_path(path: &Path) -> String {
         .join("/")
 }
 
-fn compile_args(path: &Path) -> Vec<String> {
-    vec![
-        "compile".to_string(),
-        render_slash_path(path),
-        "--output".to_string(),
-        format!(
-            "tests/build/passing/{}.wasm",
-            path.file_stem().unwrap().to_str().unwrap()
-        ),
-    ]
+fn compile_args(path: &Path) -> (Vec<String>, String) {
+    let out_path = format!(
+        "tests/build/passing/{}.wasm",
+        path.file_stem().unwrap().to_str().unwrap()
+    );
+    (
+        vec![
+            "compile".to_string(),
+            render_slash_path(path),
+            "--output".to_string(),
+            out_path.clone(),
+        ],
+        out_path,
+    )
 }
 
 fn check_args(path: &Path) -> Vec<String> {
@@ -32,15 +36,12 @@ fn cli() -> Command {
     Command::new(get_cargo_bin("nemo"))
 }
 
-fn run_args(path: &Path) -> Vec<String> {
+fn run_args(path: String) -> Vec<String> {
     vec![
         "run".to_string(),
         "--allow-read".to_string(),
         "../../dev/wasm-runner.ts".to_string(),
-        format!(
-            "tests/build/passing/{}.wasm",
-            path.file_stem().unwrap().to_str().unwrap()
-        ),
+        path,
     ]
 }
 
@@ -49,8 +50,9 @@ fn deno() -> Command {
 }
 
 fn run_test(path: &Path) {
-    assert_cmd_snapshot!(cli().args(compile_args(path)));
-    assert_cmd_snapshot!(deno().env("NO_COLOR", "1").args(run_args(path)));
+    let (args, out_path) = compile_args(path);
+    assert_cmd_snapshot!(cli().args(args));
+    assert_cmd_snapshot!(deno().env("NO_COLOR", "1").args(run_args(out_path)));
 }
 
 fn check_test(path: &Path) {
