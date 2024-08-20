@@ -4,10 +4,18 @@ use std::process::Command;
 
 use insta_cmd::{assert_cmd_snapshot, get_cargo_bin};
 
+fn render_slash_path(path: &Path) -> String {
+    assert!(path.is_relative());
+    path.components()
+        .map(|c| c.as_os_str().to_string_lossy())
+        .collect::<Vec<_>>()
+        .join("/")
+}
+
 fn compile_args(path: &Path) -> Vec<String> {
     vec![
         "compile".to_string(),
-        path.display().to_string(),
+        render_slash_path(path),
         "--output".to_string(),
         format!(
             "tests/build/passing/{}.wasm",
@@ -17,7 +25,7 @@ fn compile_args(path: &Path) -> Vec<String> {
 }
 
 fn check_args(path: &Path) -> Vec<String> {
-    vec!["check".to_string(), path.display().to_string()]
+    vec!["check".to_string(), render_slash_path(path)]
 }
 
 fn cli() -> Command {
@@ -59,11 +67,14 @@ macro_rules! apply_common_filters {
 
 #[test]
 fn t() {
+    let cwd = std::env::current_dir().unwrap();
     apply_common_filters!();
     glob!("check/**/*.nemo", |path| {
+        let path = path.strip_prefix(&cwd).unwrap();
         check_test(path);
     });
     glob!("run/**/*.nemo", |path| {
+        let path = path.strip_prefix(&cwd).unwrap();
         run_test(path);
     });
 }

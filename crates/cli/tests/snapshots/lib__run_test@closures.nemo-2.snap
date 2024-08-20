@@ -16,7 +16,7 @@ exit_code: 1
 ----- stdout -----
 
 ----- stderr -----
-error: Uncaught (in promise) NotFound: The system cannot find the file specified. (os error 2): readfile 'tests/build/passing/closures.wasm'
+error: Uncaught (in promise) NotFound: No such file or directory (os error 2): readfile 'tests/build/passing/closures.wasm'
 const wasmCode = await Deno.readFile(filePath);
                             ^
     at Object.readFile (ext:deno_fs/30_fs.js:848:24)

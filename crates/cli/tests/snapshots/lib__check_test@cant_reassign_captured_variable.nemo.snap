@@ -4,7 +4,7 @@ info:
   program: nemo
   args:
     - check
-    - "\\\\?\\C:\\Users\\creek\\code\\nemo-lang\\crates\\cli\\tests\\check\\cant_reassign_captured_variable.nemo"
+    - tests/check/cant_reassign_captured_variable.nemo
 input_file: crates/cli/tests/check/cant_reassign_captured_variable.nemo
 ---
 success: false
@@ -13,7 +13,7 @@ exit_code: 1
 
 ----- stderr -----
 [31m[25] Error:[0m Can't reassign the captured variable 'local'. Maybe you want to box this variable in a struct?
-   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0msource:1:13[38;5;246m][0m
+   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0msource:2:1[38;5;246m][0m
    [38;5;246m│[0m
  [38;5;246m4 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249ms[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249m [0mlocal [38;5;249m=[0m[38;5;249m [0m[38;5;249m2[0m[38;5;249m0[0m[38;5;249m;[0m
  [38;5;240m  │[0m             ───┬──  
