@@ -1,0 +1,19 @@
+---
+source: crates/cli/tests/lib.rs
+info:
+  program: deno
+  args:
+    - run
+    - "--allow-read"
+    - "../../dev/wasm-runner.ts"
+    - tests/build/passing/poly.wasm
+  env:
+    NO_COLOR: "1"
+input_file: crates/cli/tests/run/poly.nemo
+---
+success: true
+exit_code: 0
+----- stdout -----
+[Object: null prototype] {}
+
+----- stderr -----

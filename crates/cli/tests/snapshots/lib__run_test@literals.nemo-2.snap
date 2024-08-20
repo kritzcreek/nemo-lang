@@ -1,0 +1,29 @@
+---
+source: crates/cli/tests/lib.rs
+info:
+  program: deno
+  args:
+    - run
+    - "--allow-read"
+    - "../../dev/wasm-runner.ts"
+    - tests/build/passing/literals.wasm
+  env:
+    NO_COLOR: "1"
+input_file: crates/cli/tests/run/literals.nemo
+---
+success: true
+exit_code: 0
+----- stdout -----
+0
+4242
+85
+233495534
+447460044
+1
+0
+0
+0.1234000027179718
+1234.1234130859375
+0
+
+----- stderr -----

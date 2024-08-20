@@ -4,7 +4,7 @@ info:
   program: nemo
   args:
     - check
-    - /Users/christoph/code/nemo-lang/crates/cli/tests/check/pattern_type_mismatch.nemo
+    - "\\\\?\\C:\\Users\\creek\\code\\nemo-lang\\crates\\cli\\tests\\check\\pattern_type_mismatch.nemo"
 input_file: crates/cli/tests/check/pattern_type_mismatch.nemo
 ---
 success: false
@@ -13,7 +13,7 @@ exit_code: 1
 
 ----- stderr -----
 [31m[20] Error:[0m This pattern can't match a value of type i32
-   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0msource:2:1[38;5;246m][0m
+   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0msource:1:13[38;5;246m][0m
    [38;5;246m│[0m
  [38;5;246m7 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0mV::S _[38;5;249m [0m[38;5;249m=[0m[38;5;249m>[0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m}[0m
  [38;5;240m  │[0m     ───┬──  

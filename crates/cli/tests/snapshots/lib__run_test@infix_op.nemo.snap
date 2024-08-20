@@ -1,0 +1,16 @@
+---
+source: crates/cli/tests/lib.rs
+info:
+  program: nemo
+  args:
+    - compile
+    - "\\\\?\\C:\\Users\\creek\\code\\nemo-lang\\crates\\cli\\tests\\run\\infix_op.nemo"
+    - "--output"
+    - tests/build/passing/infix_op.wasm
+input_file: crates/cli/tests/run/infix_op.nemo
+---
+success: true
+exit_code: 0
+----- stdout -----
+
+----- stderr -----

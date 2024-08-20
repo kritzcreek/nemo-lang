@@ -6,17 +6,17 @@ info:
     - run
     - "--allow-read"
     - "../../dev/wasm-runner.ts"
-    - tests/build/passing/structs.wasm
+    - tests/build/passing/global_annotation.wasm
   env:
     NO_COLOR: "1"
-input_file: crates/cli/tests/run/structs.nemo
+input_file: crates/cli/tests/run/global_annotation.nemo
 ---
 success: false
 exit_code: 1
 ----- stdout -----
 
 ----- stderr -----
-error: Uncaught (in promise) NotFound: The system cannot find the file specified. (os error 2): readfile 'tests/build/passing/structs.wasm'
+error: Uncaught (in promise) NotFound: The system cannot find the file specified. (os error 2): readfile 'tests/build/passing/global_annotation.wasm'
 const wasmCode = await Deno.readFile(filePath);
                             ^
     at Object.readFile (ext:deno_fs/30_fs.js:848:24)

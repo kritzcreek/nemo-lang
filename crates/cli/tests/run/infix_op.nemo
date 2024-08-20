@@ -1,0 +1,23 @@
+import log : fn (i32) -> unit from log
+
+struct S { x : i32 }
+
+fn main() {
+  log(1 + 1);
+  log(1 + 1 + 1);
+  log(1 * 1 + 1);
+  log(1 + 1 * 1);
+  if 1 <= 2 && 1 < 1 || 1 >= 3 && 3 > 4 || 1 == 1 || 1 != 2 {
+    log(1);
+  } else {
+    log(2);
+  };
+
+  log(1 + S { x = 10 }.x);
+
+  if f32_abs(2.5) > f32_abs(f32_neg(2.6)) {
+    log(1);
+  } else {
+    log(2);
+  };
+}

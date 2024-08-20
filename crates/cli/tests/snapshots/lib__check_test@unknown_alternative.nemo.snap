@@ -4,7 +4,7 @@ info:
   program: nemo
   args:
     - check
-    - /Users/christoph/code/nemo-lang/crates/cli/tests/check/unknown_alternative.nemo
+    - "\\\\?\\C:\\Users\\creek\\code\\nemo-lang\\crates\\cli\\tests\\check\\unknown_alternative.nemo"
 input_file: crates/cli/tests/check/unknown_alternative.nemo
 ---
 success: false
@@ -13,7 +13,7 @@ exit_code: 1
 
 ----- stderr -----
 [31m[07] Error:[0m Unknown type V::Unknown
-   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0msource:2:1[38;5;246m][0m
+   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0msource:1:13[38;5;246m][0m
    [38;5;246m│[0m
  [38;5;246m6 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249mV[0m[38;5;249m:[0m[38;5;249m:[0mUnknown[38;5;249m [0m[38;5;249m{[0m[38;5;249m}[0m[38;5;249m;[0m
  [38;5;240m  │[0m      ───┬───  
@@ -21,7 +21,7 @@ exit_code: 1
 [38;5;246m───╯[0m
 
 [31m[07] Error:[0m Unknown type V::Unknown
-   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0msource:2:1[38;5;246m][0m
+   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0msource:1:13[38;5;246m][0m
    [38;5;246m│[0m
  [38;5;246m9 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249mV[0m[38;5;249m:[0m[38;5;249m:[0mUnknown[38;5;249m [0m[38;5;249m_[0m[38;5;249m [0m[38;5;249m=[0m[38;5;249m>[0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m}[0m
  [38;5;240m  │[0m        ───┬───  

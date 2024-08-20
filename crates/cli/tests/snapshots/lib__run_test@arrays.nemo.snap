@@ -1,0 +1,16 @@
+---
+source: crates/cli/tests/lib.rs
+info:
+  program: nemo
+  args:
+    - compile
+    - "\\\\?\\C:\\Users\\creek\\code\\nemo-lang\\crates\\cli\\tests\\run\\arrays.nemo"
+    - "--output"
+    - tests/build/passing/arrays.wasm
+input_file: crates/cli/tests/run/arrays.nemo
+---
+success: true
+exit_code: 0
+----- stdout -----
+
+----- stderr -----

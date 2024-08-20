@@ -1,0 +1,18 @@
+import log : fn (i32) -> unit from log
+
+fn main() {
+  let x = { 1 };
+  log(x);
+
+  let x = {
+    x + 1
+  };
+  log(x);
+
+  let x = {
+    let x = 3;
+    set x = x + 1;
+    x
+  };
+  log(x);
+}

@@ -1,0 +1,38 @@
+import log : fn(i32) -> unit from log
+
+fn f0() {
+  log(42);
+}
+
+fn f1(x : i32) {
+  log(x);
+}
+
+fn f2(x : i32, y : i32) {
+  log(x);
+  log(y);
+}
+
+fn ff(x : i32) -> fn(i32) -> unit {
+  fn (y : i32) {
+    log(y)
+  }
+}
+
+struct S {
+  f0 : fn() -> unit,
+}
+
+fn main() {
+  f0();
+  f1(1);
+  f2(1, 2,);
+  f2(1, f1(2));
+  ff(1)(10);
+
+  let s = S { f0 = f0 };
+  s.f0();
+
+  let xs = [s];
+  xs[0].f0();
+}

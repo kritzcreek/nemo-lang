@@ -286,7 +286,6 @@ version = "0.1.0"
 dependencies = [
  "ariadne",
  "derive_ir",
- "insta",
  "lexpr",
  "line-index",
  "logos",

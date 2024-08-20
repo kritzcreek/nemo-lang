@@ -1,0 +1,19 @@
+---
+source: crates/cli/tests/lib.rs
+info:
+  program: nemo
+  args:
+    - compile
+    - "\\\\?\\C:\\Users\\creek\\code\\nemo-lang\\crates\\cli\\tests\\run\\closures.nemo"
+    - "--output"
+    - tests/build/passing/closures.wasm
+input_file: crates/cli/tests/run/closures.nemo
+---
+success: false
+exit_code: 101
+----- stdout -----
+
+----- stderr -----
+thread 'main' panicked at crates\frontend\src\lib.rs:105:13:
+No IR generated, despite no errors
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
