@@ -30,7 +30,7 @@ run-wasm FILE:
     deno run --allow-read dev/wasm-runner.ts build/{{ without_extension(file_name(FILE)) }}.wasm
 
 dev FILE:
-    RUST_BACKTRACE=1 watchexec --quiet --no-vcs-ignore -e nemo,rs,mjs just run-wasm {{ FILE }}
+    watchexec --quiet --no-vcs-ignore -e nemo,rs,mjs just run-wasm {{ FILE }}
 
 playground: build-wasm-lib
     cd playground && npm i && npm run dev
