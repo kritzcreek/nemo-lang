@@ -2,7 +2,7 @@ import log : fn (i32) -> unit from log
 
 fn main() {
   let x = (fn (x : i32) -> i32 { x + 1 })(10);
-  log(x)
+  log(x);
 
   let twice = {
    fn (f : fn (i32) -> i32) -> fn(i32) -> i32 {

@@ -11,11 +11,8 @@ info:
     RUST_BACKTRACE: "0"
 input_file: crates/cli/tests/run/closures.nemo
 ---
-success: false
-exit_code: 101
+success: true
+exit_code: 0
 ----- stdout -----
 
 ----- stderr -----
-thread 'main' panicked at crates/frontend/src/lib.rs:105:13:
-No IR generated, despite no errors
-note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
