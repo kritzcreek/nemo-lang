@@ -101,7 +101,7 @@ pub fn run_frontend(source: &str) -> FrontendResult {
         ctx.set_module_name(id, name);
         ctx.set_interface(id, check_result.interface.clone());
         ctx.set_name_supply(id, check_result.names);
-        if check_result.errors.is_empty() && check_result.ir.is_none() {
+        if parse_errors.is_empty() && check_result.errors.is_empty() && check_result.ir.is_none() {
             panic!("No IR generated, despite no errors")
         };
         checked_ids.push(id);
