@@ -297,8 +297,7 @@ impl Typechecker {
                             self.record_ref(&tkn, def.name);
                             interface.variant_names.insert(str_name, def.name);
                             interface.variants.insert(def.name, def.clone());
-                            for (alt_str, alt_name) in &def.alternatives {
-                                interface.struct_names.insert(alt_str.clone(), *alt_name);
+                            for alt_name in def.alternatives.values() {
                                 interface
                                     .structs
                                     .insert(*alt_name, self.context.lookup_struct_name(*alt_name));

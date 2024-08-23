@@ -192,6 +192,7 @@ impl<'a> fmt::Display for FuncDefDisplay<'a> {
 #[derive(Debug, Default, Clone)]
 pub struct Interface {
     pub structs: HashMap<Name, StructDef>,
+    // NOTE: Does not contain mappings for variant alternatives
     pub struct_names: HashMap<String, Name>,
     pub variants: HashMap<Name, VariantDef>,
     pub variant_names: HashMap<String, Name>,
@@ -207,15 +208,16 @@ impl Interface {
     }
 
     pub fn lookup_type(&self, name: &str) -> Option<TypeDef> {
-        self.struct_names
+        self.variant_names
             .get(name)
-            .map(|n| TypeDef::Struct(self.structs.get(n).unwrap().clone()))
+            .map(|n| TypeDef::Variant(self.variants.get(n).unwrap().clone()))
             .or_else(|| {
-                self.variant_names
+                self.struct_names
                     .get(name)
-                    .map(|n| TypeDef::Variant(self.variants.get(n).unwrap().clone()))
+                    .map(|n| TypeDef::Struct(self.structs.get(n).unwrap().clone()))
             })
     }
+
     pub fn lookup_type_name(&self, name: Name) -> Option<TypeDef> {
         self.structs
             .get(&name)
