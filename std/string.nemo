@@ -1,0 +1,102 @@
+module string
+exports (Str, concat, eq, new, chars)
+
+use option
+
+struct Str {
+  buf : bytes,
+  offset : i32,
+  len : i32,
+}
+
+fn concat(a : Str, b : Str) -> Str {
+  let len = a.len + b.len;
+  let buf = bytes_new(0, len);
+  bytes_copy(buf, 0, a.buf, a.offset, a.len);
+  bytes_copy(buf, a.len, b.buf, b.offset, b.len);
+  Str { buf = buf, offset = 0, len = len }
+}
+
+fn eq(a : Str, b : Str) -> bool {
+  if a.len != b.len {
+    return false;
+  } else {};
+  let i = 0;
+  while i < a.len {
+    if bytes_get(a.buf, a.offset + i) != bytes_get(b.buf, b.offset + i) {
+      return false;
+    } else {};
+    set i = i + 1;
+  };
+  true
+}
+
+fn new(buf : bytes) -> Str {
+  Str { buf = buf, offset = 0, len = bytes_len(buf) }
+}
+
+fn chars(s : Str) -> fn () -> option::Option[i32] {
+  let offset = MutBox { value = s.offset };
+  fn () -> option::Option[i32] {
+    if offset.value >= s.offset + s.len {
+      option::Option::None {}
+    } else {
+      let result = codepoint_at_byte(offset.value, s.buf);
+      set offset.value = offset.value + result.byte_count;
+      option::Option::Some { val = result.codepoint }
+    }
+  }
+}
+
+struct CodepointAtByte {
+  codepoint : i32,
+  byte_count : i32
+}
+
+struct MutBox[a] {
+  value : a
+}
+
+// Assumes well formed utf8
+fn codepoint_at_byte(offset : i32, bs : bytes) -> CodepointAtByte {
+  let first_byte = bytes_get(bs, offset);
+  // ASCII case
+  if i32_and(first_byte, 0x80) == 0 {
+    CodepointAtByte { codepoint = first_byte, byte_count = 1 }
+  } else {
+    let extra_bytes = i32_xor(first_byte, 0 - 1);
+    if extra_bytes == 1 {
+      let res = i32_shl(i32_and(first_byte, 63), 6);
+      set res = res + i32_and(bytes_get(bs, offset + 1), 63);
+      CodepointAtByte { codepoint = res, byte_count = 2 }
+    } else {
+      if extra_bytes == 2 {
+        let res = i32_shl(i32_and(first_byte, 15), 6);
+        set res = i32_shl(res + i32_and(bytes_get(bs, offset + 1), 63), 6);
+        set res = res + i32_and(bytes_get(bs, offset + 2), 63);
+        CodepointAtByte { codepoint = res, byte_count = 3 }
+      } else {
+        let res = i32_shl(i32_and(first_byte, 7), 6);
+        set res = i32_shl(res + i32_and(bytes_get(bs, offset + 1), 63), 6);
+        set res = i32_shl(res + i32_and(bytes_get(bs, offset + 2), 63), 6);
+        set res = res + i32_and(bytes_get(bs, offset + 3), 63);
+        CodepointAtByte { codepoint = res, byte_count = 4 }
+      }
+    }
+  }
+}
+
+// TODO: convert to Str
+// fn codepoint_len(bs : bytes) -> i32 {
+//   let result = 0;
+//   let i = 0;
+//   let bytes_len = bytes_len(bs);
+//   while i < bytes_len {
+//     let b = bytes_get(bs, i);
+//     if i32_and(b, 0xC0) != 0x80 {
+//       set result = result + 1;
+//     } else {};
+//     set i = i + 1;
+//   };
+//   result
+// }

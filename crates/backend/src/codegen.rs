@@ -719,8 +719,13 @@ impl<'a> Codegen<'a> {
             let body = self.compile_expr(&mut body_builder, func.body);
             let locals = body_builder.get_locals();
             self.builder.fill_func(func.name, locals, body);
-            self.builder
-                .declare_export(func.name, self.builder.resolve_name(func.name));
+            let module_name = self.builder.resolve_module_name(func.name);
+            let external_name = if module_name.is_empty() {
+                self.builder.resolve_name(func.name)
+            } else {
+                format!("{module_name}::{}", self.builder.resolve_name(func.name))
+            };
+            self.builder.declare_export(func.name, external_name);
         }
     }
 

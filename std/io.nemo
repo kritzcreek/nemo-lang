@@ -1,0 +1,26 @@
+module io
+exports (print)
+
+use string
+use option
+
+import print_char : fn (i32) -> unit from print_char
+
+fn print_chars(next: fn () -> option::Option[i32]) {
+  while true {
+    match next() {
+      option::Option::None _ => {
+        // newline
+        print_char(0x0A);
+        return {}
+      },
+      option::Option::Some char => {
+        print_char(char.val)
+      }
+    }
+  };
+}
+
+fn print(s : string::Str) {
+  print_chars(string::chars(s))
+}

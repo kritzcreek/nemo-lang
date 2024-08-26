@@ -315,6 +315,10 @@ impl<'a> Builder<'a> {
         self.ctx.display_name(name)
     }
 
+    pub fn resolve_module_name(&self, name: Name) -> &str {
+        self.ctx.get_module_name(name.module)
+    }
+
     pub fn resolve_name_range(&self, name: Name) -> (String, TextRange) {
         self.ctx.resolve(name)
     }
