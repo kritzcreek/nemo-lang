@@ -83,7 +83,8 @@ macro_rules! apply_common_filters {
     {} => {
         let mut settings = Settings::clone_current();
         settings.set_prepend_module_to_snapshot(false);
-        settings.add_filter(r"file:(.*)", "[FILE_PATH]");
+        // Removes deno stack traces, as these change between versions
+        settings.add_filter(r"    at(.*)", "");
         let _bound = settings.bind_to_scope();
     }
 }
