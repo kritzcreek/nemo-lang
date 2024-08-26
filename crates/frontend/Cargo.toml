@@ -17,3 +17,4 @@ lexpr = "0.2.7"
 derive_ir = { path = "../derive_ir" }
 string-interner = "0.17.0"
 topological-sort = "0.2.2"
+camino = "1.1.9"
