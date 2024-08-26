@@ -1,35 +1,32 @@
+use camino::{Utf8Path, Utf8PathBuf};
 use insta::{glob, Settings};
-use std::path::Path;
-use std::process::Command;
-
 use insta_cmd::{assert_cmd_snapshot, get_cargo_bin};
+use std::process::Command;
+use std::{fs, path::Path};
 
-fn render_slash_path(path: &Path) -> String {
+fn render_slash_path(path: &Utf8Path) -> String {
     assert!(path.is_relative());
     path.components()
-        .map(|c| c.as_os_str().to_string_lossy())
+        .map(|c| c.as_str())
         .collect::<Vec<_>>()
         .join("/")
 }
 
-fn compile_args(path: &Path) -> (Vec<String>, String) {
-    let out_path = format!(
-        "tests/build/{}.wasm",
-        path.file_stem().unwrap().to_str().unwrap()
-    );
-    (
-        vec![
-            "compile".to_string(),
-            render_slash_path(path),
-            "--output".to_string(),
-            out_path.clone(),
-        ],
-        out_path,
-    )
+fn compile_args(paths: &[Utf8PathBuf], out_name: &str) -> (Vec<String>, String) {
+    let out_path = format!("tests/build/{}.wasm", out_name);
+    let mut args = vec![
+        "compile".to_string(),
+        "--output".to_string(),
+        out_path.clone(),
+    ];
+    args.extend(paths.into_iter().map(|p| render_slash_path(p)));
+    (args, out_path)
 }
 
-fn check_args(path: &Path) -> Vec<String> {
-    vec!["check".to_string(), render_slash_path(path)]
+fn check_args(paths: &[Utf8PathBuf]) -> Vec<String> {
+    let mut args = vec!["check".to_string()];
+    args.extend(paths.into_iter().map(|p| render_slash_path(p)));
+    args
 }
 
 fn cli() -> Command {
@@ -49,14 +46,32 @@ fn deno() -> Command {
     Command::new("deno")
 }
 
+fn collect_test_input(path: &Path) -> (String, Vec<Utf8PathBuf>) {
+    let path = Utf8Path::from_path(path).expect("Non-utf8 path: {path:?}");
+    let out_name = path.file_stem().unwrap();
+    let mut paths = vec![];
+    if path.is_dir() {
+        for entry in fs::read_dir(path).expect("Failed to list directory {path:?}") {
+            let entry = entry.expect("Failed to read entry");
+            let path = entry.path();
+            paths.push(Utf8PathBuf::from_path_buf(path).expect("non-utf8 path: {path:?}"));
+        }
+    } else {
+        paths.push(path.to_owned());
+    };
+    (out_name.to_string(), paths)
+}
+
 fn run(path: &Path) {
-    let (args, out_path) = compile_args(path);
+    let (out_name, paths) = collect_test_input(path);
+    let (args, out_path) = compile_args(&paths, &out_name);
     assert_cmd_snapshot!(cli().env("RUST_BACKTRACE", "0").args(args));
     assert_cmd_snapshot!(deno().env("NO_COLOR", "1").args(run_args(out_path)));
 }
 
 fn check(path: &Path) {
-    assert_cmd_snapshot!(cli().args(check_args(path)));
+    let (_, paths) = collect_test_input(path);
+    assert_cmd_snapshot!(cli().args(check_args(&paths)));
 }
 
 fn clear_existing_build() {
@@ -78,11 +93,11 @@ fn t() {
     let cwd = std::env::current_dir().unwrap();
     clear_existing_build();
     apply_common_filters!();
-    glob!("check/**/*.nemo", |path| {
+    glob!("check/*", |path| {
         let path = path.strip_prefix(&cwd).unwrap();
         check(path);
     });
-    glob!("run/**/*.nemo", |path| {
+    glob!("run/*", |path| {
         let path = path.strip_prefix(&cwd).unwrap();
         run(path);
     });

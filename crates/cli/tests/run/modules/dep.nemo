@@ -1,0 +1,16 @@
+module dep
+exports (S, V, f, log)
+
+import log : fn (i32) -> unit from log
+
+struct S {
+  x : i32,
+}
+
+variant V {
+  struct S { y : i32 },
+}
+
+fn f(s : S, x : i32) {
+  set s.x = s.x + x;
+}
