@@ -1,0 +1,20 @@
+module result
+exports (Res, get_ok, is_ok)
+
+use option
+
+variant Res[ok, err] {
+  struct Ok { val : ok },
+  struct Err { val : err },
+}
+
+fn get_ok[ok, err](res : Res[ok, err]) -> option::Option[ok] {
+  match res {
+    Res::Ok ok => { option::Option::Some { val = ok.val } },
+    Res::Err _ => { option::Option::None {} },
+  }
+}
+
+fn is_ok[ok, err](res : Res[ok, err]) -> bool {
+  option::is_none#[ok](get_ok(res)) == false
+}
