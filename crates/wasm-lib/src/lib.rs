@@ -1,4 +1,5 @@
 use backend::codegen::codegen;
+use camino::Utf8Path;
 use frontend::highlight;
 use wasm_bindgen::prelude::*;
 
@@ -40,27 +41,28 @@ pub struct CompileResult {
 #[wasm_bindgen]
 pub fn compile(input: &str) -> CompileResult {
     console_error_panic_hook::set_once();
-    let check_result = frontend::run_frontend(input);
+    let sources = vec![(Utf8Path::new("input").to_path_buf(), input.to_string())];
+    let check_result = frontend::run_frontend(&sources);
     let mut highlights = vec![];
     for module in &check_result.modules {
         highlights.extend(
             highlight::translate_to_utf16(
                 input,
-                highlight::highlight(&module.parse, &module.occurrences),
+                highlight::highlight(&module.parse_result.parse, &module.occurrences),
             )
             .into_iter()
             .map(|(start, end, kind)| Highlight::new(start, end, kind)),
         );
     }
-    let result = if check_result.has_errors() {
-        let errors = check_result
-            .errors()
-            .map(|e| Diagnostic {
-                message: e.message(&check_result.ctx),
-                start: e.at().start().into(),
-                end: e.at().end().into(),
-            })
-            .collect();
+    let errors: Vec<Diagnostic> = check_result
+        .errors()
+        .map(|e| Diagnostic {
+            message: e.message(&check_result.ctx),
+            start: e.at().start().into(),
+            end: e.at().end().into(),
+        })
+        .collect();
+    let result = if !errors.is_empty() {
         Err(errors)
     } else {
         let (ctx, ir) = check_result.consume();

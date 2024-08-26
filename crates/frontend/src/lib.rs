@@ -7,87 +7,22 @@ pub mod parser;
 pub mod syntax;
 pub mod types;
 
-use std::collections::HashMap;
-
-use camino::{Utf8Path, Utf8PathBuf};
+use camino::Utf8PathBuf;
+pub use error::CheckError;
 use ir::{Ctx, ModuleId, ModuleIdGen, Program};
 use parser::{parse_prog, ParseError};
-
-pub use error::CheckError;
+use std::collections::HashMap;
 use syntax::Module;
 pub use types::CheckResult;
 use types::{OccurrenceMap, TyError};
 
-// TODO: Customizable display for debugging
 #[derive(Debug)]
-pub struct FrontendModuleResult {
-    pub id: ModuleId,
-    // path/offset?
-    pub ty_errors: Vec<TyError>,
-    pub occurrences: OccurrenceMap,
-    pub ir: Option<Program>,
-    pub parse: Module,
-}
-
-#[derive(Debug)]
-pub struct FrontendResult {
-    pub ctx: Ctx,
-    pub parse_errors: Vec<ParseError>,
-    pub modules: Vec<FrontendModuleResult>,
-}
-
-impl FrontendResult {
-    pub fn errors(&self) -> impl Iterator<Item = CheckError> {
-        self.parse_errors.iter().map(CheckError::ParseError).chain(
-            self.modules
-                .iter()
-                .flat_map(|module| module.ty_errors.iter().map(CheckError::TypeError)),
-        )
-    }
-
-    pub fn has_errors(&self) -> bool {
-        !self.parse_errors.is_empty()
-            || self
-                .modules
-                .iter()
-                .any(|module| !module.ty_errors.is_empty())
-    }
-
-    pub fn display(&self, source: &str) {
-        for module in &self.modules {
-            for error in &module.ty_errors {
-                eprintln!(
-                    "{}",
-                    error.display(&self.ctx, Utf8Path::new(""), source, true)
-                );
-            }
-        }
-    }
-
-    pub fn consume(self) -> (Ctx, Option<Program>) {
-        let mut ir = Some(ir::Program::default());
-        for module in self.modules {
-            match (&mut ir, module.ir) {
-                (Some(ir), Some(module_ir)) => {
-                    ir.merge(module_ir);
-                }
-                (_, _) => {
-                    ir = None;
-                    break;
-                }
-            }
-        }
-        (self.ctx, ir)
-    }
-}
-
-#[derive(Debug)]
-pub struct FrontendResultNew<'src> {
+pub struct FrontendResult<'src> {
     pub ctx: Ctx,
     pub modules: Vec<ModuleResult<'src>>,
 }
 
-impl FrontendResultNew<'_> {
+impl FrontendResult<'_> {
     pub fn errors(&self) -> impl Iterator<Item = CheckError> {
         self.modules.iter().flat_map(|module| {
             module.ty_errors.iter().map(CheckError::TypeError).chain(
@@ -156,26 +91,32 @@ pub struct ModuleParseResult<'src> {
     pub dependencies: Vec<String>,
 }
 
-pub fn run_frontend_new(sources: &[(Utf8PathBuf, String)]) -> FrontendResultNew {
+fn module_name(module: &Module) -> Option<String> {
+    Some(module.mod_header()?.ident_token()?.text().to_string())
+}
+
+fn extract_module_header(module: &Module) -> (String, Vec<String>) {
+    let name = module_name(module).unwrap_or_default();
+    let dependencies = module
+        .mod_uses()
+        .filter_map(|mod_use| mod_use.ident_token().map(|t| t.text().to_string()))
+        .collect();
+    (name, dependencies)
+}
+
+/// Runs the full frontend on `sources` and returns the generated IR and other structures.
+/// If there are any errors, the generated IR should _not_ be used. It's returned here for
+/// debugging purposes.
+pub fn run_frontend(sources: &[(Utf8PathBuf, String)]) -> FrontendResult {
     let mut id_gen = ModuleIdGen::new();
     let mut parsed_modules: HashMap<ModuleId, ModuleParseResult> = HashMap::new();
     for (path, source) in sources {
         let id = id_gen.next_id();
         let (parse_root, parse_errors) = parse_prog(source).take();
         let parse = parse_root
-            .modules()
-            .next()
+            .module()
             .expect("Failed to parse a module from file: {path}");
-        let module_header = parse.mod_header().expect("Expected a module header");
-        let name = module_header
-            .ident_token()
-            .expect("Expected a module name")
-            .text()
-            .to_string();
-        let dependencies = module_header
-            .mod_uses()
-            .filter_map(|mod_use| mod_use.ident_token().map(|t| t.text().to_string()))
-            .collect();
+        let (name, dependencies) = extract_module_header(&parse);
         parsed_modules.insert(
             id,
             ModuleParseResult {
@@ -199,8 +140,8 @@ pub fn run_frontend_new(sources: &[(Utf8PathBuf, String)]) -> FrontendResultNew 
             )
         })
         .collect();
-    let sorted_modules = module_dag::toposort_modules_new(module_sort_input);
 
+    let sorted_modules = module_dag::toposort_modules(module_sort_input);
     let mut ctx = Ctx::new(sources.len() as u16);
     let mut checked_ids = vec![];
     let mut checked_modules = vec![];
@@ -225,79 +166,18 @@ pub fn run_frontend_new(sources: &[(Utf8PathBuf, String)]) -> FrontendResultNew 
         });
     }
 
-    FrontendResultNew {
-        ctx,
-        modules: checked_modules,
-    }
-}
-
-/// Runs the full frontend on `source` and returns the generated IR and other structures.
-/// If there are any errors, the generated IR should _not_ be used. It's returned here for
-/// debugging purposes.
-pub fn run_frontend(source: &str) -> FrontendResult {
-    // TODO multiple files
-    let (parse_root, parse_errors) = parse_prog(source).take();
-
-    // Special case for single module without module header
-    let parsed_modules: Vec<Module> = parse_root.modules().collect();
-    let modules = if parsed_modules.len() == 1 {
-        vec![(
-            ModuleIdGen::new().next_id(),
-            "main".to_owned(),
-            parsed_modules[0].clone(),
-        )]
-    } else {
-        module_dag::toposort_modules(parse_root.clone())
-    };
-    let mut ctx = Ctx::new(modules.len() as u16);
-    let mut checked_modules = vec![];
-    let mut checked_ids = vec![];
-    for (id, name, module) in modules {
-        let check_result = types::check_module(&ctx, module.clone(), id, &checked_ids);
-        ctx.set_module_name(id, name);
-        ctx.set_interface(id, check_result.interface.clone());
-        ctx.set_name_supply(id, check_result.names);
-        if parse_errors.is_empty() && check_result.errors.is_empty() && check_result.ir.is_none() {
-            panic!("No IR generated, despite no errors")
-        };
-        checked_ids.push(id);
-        checked_modules.push(FrontendModuleResult {
-            id,
-            parse: module,
-            ty_errors: check_result.errors,
-            occurrences: check_result.occurrences,
-            ir: check_result.ir,
-        });
-    }
-
     FrontendResult {
         ctx,
-        parse_errors,
         modules: checked_modules,
     }
 }
 
-pub fn check_program_new(sources: &[(Utf8PathBuf, String)]) -> Result<(), String> {
-    let check_result = run_frontend_new(sources);
+/// Checks the given sources and prints any parse or type errors.
+/// If there are any errors returns a summary message in Err otherwise Ok.
+pub fn check_program(sources: &[(Utf8PathBuf, String)]) -> Result<(), String> {
+    let check_result = run_frontend(sources);
     if let Some(count) = check_result.display_errors() {
         return Err(format!("Check failed with {} errors", count));
     }
     return Ok(());
-}
-/// Checks the given program, and prints any parse or type errors.
-/// If there are any errors returns a summary message in Err otherwise Ok.
-pub fn check_program(source: &str) -> Result<(), String> {
-    let check_result = run_frontend(source);
-    if check_result.has_errors() {
-        let mut count = 0;
-        for err in check_result.errors() {
-            count += 1;
-            eprintln!(
-                "{}",
-                err.display(&check_result.ctx, Utf8Path::new(""), source, true)
-            );
-        }
-        return Err(format!("Check failed with {} errors", count));
-    }
-    Ok(())
 }

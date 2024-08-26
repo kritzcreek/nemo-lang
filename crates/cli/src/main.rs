@@ -1,7 +1,6 @@
 use backend::compile_program;
 use camino::Utf8PathBuf;
 use clap::{Parser, Subcommand};
-use language_server::start_language_server;
 use std::{error::Error, fs, io};
 
 /// The nemo language
@@ -61,9 +60,12 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
                     Ok((input_file, source))
                 })
                 .collect::<Result<Vec<_>, io::Error>>()?;
-            frontend::check_program_new(&sources)?;
+            frontend::check_program(&sources)?;
             Ok(())
         }
-        Commands::LanguageServer { .. } => start_language_server(),
+        Commands::LanguageServer { .. } => {
+            // start_language_server()
+            todo!();
+        }
     }
 }
