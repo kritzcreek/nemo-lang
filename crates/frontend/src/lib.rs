@@ -67,8 +67,7 @@ impl FrontendResult<'_> {
                 return (self.ctx, None);
             }
         }
-
-        return (self.ctx, Some(ir));
+        (self.ctx, Some(ir))
     }
 }
 
@@ -179,5 +178,5 @@ pub fn check_program(sources: &[(Utf8PathBuf, String)]) -> Result<(), String> {
     if let Some(count) = check_result.display_errors() {
         return Err(format!("Check failed with {} errors", count));
     }
-    return Ok(());
+    Ok(())
 }

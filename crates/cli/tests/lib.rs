@@ -19,13 +19,13 @@ fn compile_args(paths: &[Utf8PathBuf], out_name: &str) -> (Vec<String>, String) 
         "--output".to_string(),
         out_path.clone(),
     ];
-    args.extend(paths.into_iter().map(|p| render_slash_path(p)));
+    args.extend(paths.iter().map(|p| render_slash_path(p)));
     (args, out_path)
 }
 
 fn check_args(paths: &[Utf8PathBuf]) -> Vec<String> {
     let mut args = vec!["check".to_string()];
-    args.extend(paths.into_iter().map(|p| render_slash_path(p)));
+    args.extend(paths.iter().map(|p| render_slash_path(p)));
     args
 }
 
