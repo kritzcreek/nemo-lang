@@ -11,11 +11,13 @@ info:
     NO_COLOR: "1"
 input_file: crates/cli/tests/run/modules.nemo
 ---
-success: true
-exit_code: 0
+success: false
+exit_code: 1
 ----- stdout -----
-22
-12
-0
 
 ----- stderr -----
+error: Uncaught (in promise) TypeError: main is not a function
+console.log(main());
+            ^
+    at [FILE_PATH]
+    at eventLoopTick (ext:core/01_core.js:174:7)
