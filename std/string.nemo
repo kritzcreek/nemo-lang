@@ -1,8 +1,9 @@
 module string
-exports (Str, concat, eq, new, chars)
+exports (Str, unsafe_new, concat, eq, chars, codepoint_len)
 
 use option
 
+// TODO: We should be able to hide the implementation details of Str
 struct Str {
   buf : bytes,
   offset : i32,
@@ -31,7 +32,8 @@ fn eq(a : Str, b : Str) -> bool {
   true
 }
 
-fn new(buf : bytes) -> Str {
+// Assumes well formed utf8
+fn unsafe_new(buf : bytes) -> Str {
   Str { buf = buf, offset = 0, len = bytes_len(buf) }
 }
 
@@ -86,17 +88,16 @@ fn codepoint_at_byte(offset : i32, bs : bytes) -> CodepointAtByte {
   }
 }
 
-// TODO: convert to Str
-// fn codepoint_len(bs : bytes) -> i32 {
-//   let result = 0;
-//   let i = 0;
-//   let bytes_len = bytes_len(bs);
-//   while i < bytes_len {
-//     let b = bytes_get(bs, i);
-//     if i32_and(b, 0xC0) != 0x80 {
-//       set result = result + 1;
-//     } else {};
-//     set i = i + 1;
-//   };
-//   result
-// }
+fn codepoint_len(str : Str) -> i32 {
+  let result = 0;
+  let i = str.offset;
+  let bytes_len = str.len;
+  while i < bytes_len {
+    let b = bytes_get(str.buf, i);
+    if i32_and(b, 0xC0) != 0x80 {
+      set result = result + 1;
+    } else {};
+    set i = i + 1;
+  };
+  result
+}
