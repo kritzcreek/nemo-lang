@@ -3,6 +3,9 @@ use topological_sort::TopologicalSort;
 
 use crate::ir::ModuleId;
 
+// TODO: Report errors for
+// - Unknown modules. Handle by recording the import somehow and giving all references to it type ERROR?
+// - Import cycles. Handle by early exit with error? Don't think we can recover gracefully here?
 pub fn toposort_modules(modules: Vec<(ModuleId, &str, &[String])>) -> Vec<ModuleId> {
     let mut module_name_map = HashMap::new();
     let mut module_id_map = HashMap::new();
@@ -16,9 +19,13 @@ pub fn toposort_modules(modules: Vec<(ModuleId, &str, &[String])>) -> Vec<Module
 
     for (id, _, deps) in &modules {
         for dep in *deps {
-            let import_id = module_name_map[dep.as_str()];
-            ts.add_dependency(import_id, *id)
+            if let Some(import_id) = module_name_map.get(dep.as_str()) {
+                ts.add_dependency(*import_id, *id)
+            } else {
+                // TODO: report error
+            };
         }
     }
+
     ts.collect()
 }
