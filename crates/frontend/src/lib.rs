@@ -10,7 +10,9 @@ pub mod types;
 use camino::Utf8PathBuf;
 pub use error::CheckError;
 use ir::{Ctx, ModuleId, ModuleIdGen, Program};
+use module_dag::SortResult;
 use parser::{parse_prog, ParseError};
+use rowan::TextRange;
 use std::collections::HashMap;
 use syntax::Module;
 pub use types::CheckResult;
@@ -87,18 +89,22 @@ pub struct ModuleParseResult<'src> {
     pub parse: Module,
     pub path: Utf8PathBuf,
     pub name: String,
-    pub dependencies: Vec<String>,
+    pub dependencies: Vec<(TextRange, String)>,
 }
 
 fn module_name(module: &Module) -> Option<String> {
     Some(module.mod_header()?.ident_token()?.text().to_string())
 }
 
-fn extract_module_header(module: &Module) -> (String, Vec<String>) {
+fn extract_module_header(module: &Module) -> (String, Vec<(TextRange, String)>) {
     let name = module_name(module).unwrap_or_default();
     let dependencies = module
         .mod_uses()
-        .filter_map(|mod_use| mod_use.ident_token().map(|t| t.text().to_string()))
+        .filter_map(|mod_use| {
+            mod_use
+                .ident_token()
+                .map(|t| (t.text_range(), t.text().to_string()))
+        })
         .collect();
     (name, dependencies)
 }
@@ -141,11 +147,30 @@ pub fn run_frontend(sources: &[(Utf8PathBuf, String)]) -> FrontendResult {
         .collect();
 
     let sorted_modules = module_dag::toposort_modules(module_sort_input);
+    let (sorted, unknown_modules) = match sorted_modules {
+        SortResult::Cycle(_) => todo!(),
+        SortResult::Sorted {
+            sorted,
+            unknown_modules,
+        } => (sorted, unknown_modules),
+    };
     let mut ctx = Ctx::new(sources.len() as u16);
     let mut checked_ids = vec![];
     let mut checked_modules = vec![];
-    for id in sorted_modules {
-        let parsed_module = parsed_modules.remove(&id).unwrap();
+    for id in sorted {
+        let mut parsed_module = parsed_modules.remove(&id).unwrap();
+        parsed_module
+            .parse_errors
+            .extend(unknown_modules.iter().filter_map(|(i, at, s)| {
+                if *i == id {
+                    Some(ParseError {
+                        it: format!("Unknown module '{s}'"),
+                        at: *at,
+                    })
+                } else {
+                    None
+                }
+            }));
         let check_result = types::check_module(&ctx, parsed_module.parse.clone(), id, &checked_ids);
         ctx.set_module_name(id, parsed_module.name.clone());
         ctx.set_interface(id, check_result.interface);

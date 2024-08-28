@@ -1,0 +1,6 @@
+module test
+exports (main)
+
+use unknown
+
+fn main() {}
