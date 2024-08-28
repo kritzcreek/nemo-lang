@@ -36,8 +36,14 @@ pub fn toposort_modules<'a>(
             };
         }
     }
+    let sorted: Vec<ModuleId> = ts.collect();
+    if sorted.len() < modules.len() {
+        // TODO: Report cycle
+        // let cycle = ts.find_cycle();
+        return SortResult::Cycle(vec![]);
+    }
     SortResult::Sorted {
-        sorted: ts.collect(),
+        sorted,
         unknown_modules,
     }
 }
