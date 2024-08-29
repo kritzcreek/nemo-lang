@@ -38,13 +38,29 @@ pub struct CompileResult {
     pub highlights: Vec<Highlight>,
 }
 
+const STDLIB: &[(&str, &str)] = &[
+    ("std/option.nemo", include_str!("../../../std/option.nemo")),
+    ("std/result.nemo", include_str!("../../../std/result.nemo")),
+    ("std/string.nemo", include_str!("../../../std/string.nemo")),
+    ("std/io.nemo", include_str!("../../../std/io.nemo")),
+    ("std/byte.nemo", include_str!("../../../std/byte.nemo")),
+];
+
 #[wasm_bindgen]
 pub fn compile(input: &str) -> CompileResult {
     console_error_panic_hook::set_once();
-    let sources = vec![(Utf8Path::new("input").to_path_buf(), input.to_string())];
+    let mut sources = vec![];
+    for (path, source) in STDLIB {
+        sources.push((Utf8Path::new(path).to_path_buf(), source.to_string()))
+    }
+    let input_path = Utf8Path::new("input");
+    sources.push((input_path.to_path_buf(), input.to_string()));
     let check_result = frontend::run_frontend(&sources);
     let mut highlights = vec![];
     for module in &check_result.modules {
+        if module.parse_result.path != input_path {
+            continue;
+        }
         highlights.extend(
             highlight::translate_to_utf16(
                 input,

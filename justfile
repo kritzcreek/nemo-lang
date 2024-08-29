@@ -1,5 +1,8 @@
 set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
 
+default:
+    just --list
+
 install:
     cargo install --path crates/cli
 
