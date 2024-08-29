@@ -71,7 +71,7 @@ fn run(path: &Path) {
 
 fn check(path: &Path) {
     let (_, paths) = collect_test_input(path);
-    assert_cmd_snapshot!(cli().args(check_args(&paths)));
+    assert_cmd_snapshot!(cli().env("RUST_BACKTRACE", "0").args(check_args(&paths)));
 }
 
 fn clear_existing_build() {

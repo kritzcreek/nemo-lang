@@ -6,6 +6,8 @@ info:
     - check
     - tests/check/cycle/modb.nemo
     - tests/check/cycle/moda.nemo
+  env:
+    RUST_BACKTRACE: "0"
 input_file: crates/cli/tests/check/cycle
 ---
 success: false
@@ -13,21 +15,6 @@ exit_code: 101
 ----- stdout -----
 
 ----- stderr -----
-thread 'main' panicked at crates/frontend/src/lib.rs:151:33:
-not yet implemented
-stack backtrace:
-   0: rust_begin_unwind
-         
-   1: core::panicking::panic_fmt
-         
-   2: core::panicking::panic
-         
-   3: frontend::run_frontend
-         
-   4: frontend::check_program
-         
-   5: nemo::main
-         
-   6: core::ops::function::FnOnce::call_once
-         
-note: Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose backtrace.
+thread 'main' panicked at crates/frontend/src/lib.rs:153:13:
+not yet implemented: Cycle detected in module dependencies: []
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

@@ -10,7 +10,7 @@ pub mod types;
 use camino::Utf8PathBuf;
 pub use error::CheckError;
 use ir::{Ctx, ModuleId, ModuleIdGen, Program};
-use module_dag::SortResult;
+use module_dag::{ModuleInfo, SortResult};
 use parser::{parse_prog, ParseError};
 use rowan::TextRange;
 use std::collections::HashMap;
@@ -137,18 +137,21 @@ pub fn run_frontend(sources: &[(Utf8PathBuf, String)]) -> FrontendResult {
     }
     let module_sort_input: Vec<_> = parsed_modules
         .values()
-        .map(|parsed_module| {
-            (
-                parsed_module.id,
-                parsed_module.name.as_str(),
-                parsed_module.dependencies.as_slice(),
-            )
+        .map(|parsed_module| ModuleInfo {
+            id: parsed_module.id,
+            name: parsed_module.name.as_str(),
+            uses: parsed_module.dependencies.as_slice(),
         })
         .collect();
 
     let sorted_modules = module_dag::toposort_modules(module_sort_input);
     let (sorted, unknown_modules) = match sorted_modules {
-        SortResult::Cycle(_) => todo!(),
+        SortResult::Cycle(module_ids) => {
+            // TODO: Early return with just parsed modules here?
+            // We could try to gracefully recover by checking the SCCs
+            // that don't participate in the cycle(s)
+            todo!("Cycle detected in module dependencies: {:?}", module_ids)
+        }
         SortResult::Sorted {
             sorted,
             unknown_modules,

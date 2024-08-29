@@ -13,22 +13,25 @@ pub enum SortResult {
     },
 }
 
-// TODO: Report errors for
-// - Import cycles. Handle by early exit with error? Don't think we can recover gracefully here?
-pub fn toposort_modules<'a>(
-    modules: Vec<(ModuleId, &str, &'a [(TextRange, String)])>,
-) -> SortResult {
+#[derive(Debug)]
+pub struct ModuleInfo<'a> {
+    pub id: ModuleId,
+    pub name: &'a str,
+    pub uses: &'a [(TextRange, String)],
+}
+
+pub fn toposort_modules(modules: Vec<ModuleInfo>) -> SortResult {
     let mut module_name_map = HashMap::new();
     let mut module_id_map = HashMap::new();
     let mut unknown_modules = vec![];
     let mut ts: TopologicalSort<ModuleId> = TopologicalSort::new();
-    for (id, name, _) in &modules {
+    for ModuleInfo { id, name, uses: _ } in &modules {
         ts.insert(*id);
         module_name_map.insert(*name, *id);
         module_id_map.insert(*id, *name);
     }
-    for (id, _, deps) in &modules {
-        for (range, dep) in *deps {
+    for ModuleInfo { id, name: _, uses } in &modules {
+        for (range, dep) in *uses {
             if let Some(import_id) = module_name_map.get(dep.as_str()) {
                 ts.add_dependency(*import_id, *id)
             } else {
@@ -38,8 +41,7 @@ pub fn toposort_modules<'a>(
     }
     let sorted: Vec<ModuleId> = ts.collect();
     if sorted.len() < modules.len() {
-        // TODO: Report cycle
-        // let cycle = ts.find_cycle();
+        // TODO: Report which modules participate in cycle
         return SortResult::Cycle(vec![]);
     }
     SortResult::Sorted {
