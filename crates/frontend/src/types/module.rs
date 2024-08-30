@@ -229,8 +229,8 @@ impl Interface {
             })
     }
 
-    pub fn lookup_func(&self, name: &str) -> Option<FuncDef> {
-        self.functions.get(name).cloned()
+    pub fn lookup_func(&self, name: &str) -> Option<&FuncDef> {
+        self.functions.get(name)
     }
 }
 

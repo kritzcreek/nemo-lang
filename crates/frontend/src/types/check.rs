@@ -94,7 +94,7 @@ impl Scope {
 struct TyCtx<'ctx> {
     // Basically "static" data. Once we've walked all uses,
     // type definitions, and function headers this data is fixed.
-    functions: HashMap<Symbol, Rc<FuncDef>>,
+    functions: HashMap<Symbol, FuncDef>,
     types_names: HashMap<Symbol, Name>,
     type_defs: HashMap<Name, TypeDef>,
     uses: HashMap<Symbol, &'ctx Interface>,
@@ -123,18 +123,18 @@ impl TyCtx<'_> {
         })
     }
 
-    fn lookup_func(&self, name: Symbol) -> Option<Rc<FuncDef>> {
-        self.functions.get(&name).cloned()
+    fn lookup_func(&self, name: Symbol) -> Option<&FuncDef> {
+        self.functions.get(&name)
     }
 
     fn add_func(&mut self, v: Symbol, name: Name, ty_params: Vec<Name>, ty: FuncTy) {
         self.functions.insert(
             v,
-            Rc::new(FuncDef {
+            FuncDef {
                 name,
                 ty_params,
                 ty,
-            }),
+            },
         );
     }
 
@@ -197,7 +197,7 @@ impl TyCtx<'_> {
             .and_then(|interface| interface.lookup_type(v))
     }
 
-    fn lookup_qual_func(&self, q: Symbol, v: &str) -> Option<FuncDef> {
+    fn lookup_qual_func(&self, q: Symbol, v: &str) -> Option<&FuncDef> {
         self.uses
             .get(&q)
             .and_then(|interface| interface.lookup_func(v))
@@ -910,7 +910,7 @@ impl Typechecker<'_> {
                             builder.name(Some(func_def.name));
                             let ir = builder.build();
                             self.record_ref(&var_tkn, func_def.name);
-                            (Ty::Func(Box::new(func_def.ty)), ir)
+                            (Ty::Func(Box::new(func_def.ty.clone())), ir)
                         }
                     }
                 } else {
@@ -1107,11 +1107,9 @@ impl Typechecker<'_> {
         Some((ty, ir_expr))
     }
 
-    fn lookup_func(&self, qual: Option<SyntaxToken>, name: &str) -> Option<Rc<FuncDef>> {
+    fn lookup_func(&self, qual: Option<SyntaxToken>, name: &str) -> Option<&FuncDef> {
         if let Some(qual) = qual {
-            self.context
-                .lookup_qual_func(self.sym(qual.text()), name)
-                .map(Rc::new)
+            self.context.lookup_qual_func(self.sym(qual.text()), name)
         } else {
             self.context.lookup_func(self.sym(name))
         }
@@ -1292,7 +1290,7 @@ impl Typechecker<'_> {
         &self,
         errors: &mut TyErrors,
         scope: &mut Scope,
-        def: Rc<FuncDef>,
+        def: &FuncDef,
         func_tkn: &SyntaxToken,
         call_expr: &ECall,
         expected: Option<&Ty>,
