@@ -92,7 +92,6 @@ impl Scope {
 // checking
 #[derive(Debug)]
 struct TyCtx {
-    scope: Scope,
     // Basically "static" data. Once we've walked all uses,
     // type definitions, and function headers this data is fixed.
     functions: HashMap<Symbol, Rc<FuncDef>>,
@@ -104,7 +103,6 @@ struct TyCtx {
 impl TyCtx {
     fn new() -> TyCtx {
         TyCtx {
-            scope: Scope::new(),
             functions: HashMap::new(),
             type_defs: HashMap::new(),
             types_names: HashMap::new(),
@@ -112,48 +110,8 @@ impl TyCtx {
         }
     }
 
-    fn add_var(&mut self, v: Symbol, ty: Ty, name: Name) {
-        self.scope.add_var(v, ty, name);
-    }
-
-    fn lookup_var(&self, v: Symbol) -> Option<(Ty, Name)> {
-        self.scope.lookup_var(v)
-    }
-
-    fn add_type_var(&mut self, v: Symbol, name: Name) {
-        self.scope.add_type_var(v, name)
-    }
-
-    fn lookup_type_var(&self, v: Symbol) -> Option<Name> {
-        self.scope.lookup_type_var(v)
-    }
-
-    fn clear_type_vars(&mut self) {
-        self.scope.clear_type_vars()
-    }
-
-    fn return_type(&self) -> Option<Rc<Ty>> {
-        self.scope.return_type()
-    }
-
-    fn set_return_type(&mut self, ty: Ty) -> Option<Rc<Ty>> {
-        self.scope.set_return_type(ty)
-    }
-
-    fn restore_return_type(&mut self, ty: Option<Rc<Ty>>) {
-        self.scope.restore_return_type(ty)
-    }
-
-    fn enter_block(&mut self) {
-        self.scope.enter_block()
-    }
-
-    fn leave_block(&mut self) {
-        self.scope.leave_block()
-    }
-
-    fn lookup_var_or_func(&self, v: Symbol) -> Option<(Ty, Name)> {
-        self.scope.lookup_var(v).or_else(|| {
+    fn lookup_var_or_func(&self, scope: &Scope, v: Symbol) -> Option<(Ty, Name)> {
+        scope.lookup_var(v).or_else(|| {
             let def = self.lookup_func(v)?;
             if !def.ty_params.is_empty() {
                 eprintln!(
@@ -372,16 +330,19 @@ impl Typechecker {
         errors: &mut TyErrors,
         module: &Module,
     ) -> Option<ir::Program> {
-        self.context.enter_block();
+        // TODO: There should be no need for a top-level scope here.
+        // Globals should get their own field on TyCtx
+        let mut scope = Scope::new();
+        scope.enter_block();
 
         let types = self.check_type_definitions(errors, module);
         let imports = self.check_imports(errors, module);
         self.check_function_headers(errors, module);
 
-        let globals = self.check_globals(errors, module);
-        let functions = self.check_function_bodies(errors, module);
+        let globals = self.check_globals(errors, &mut scope, module);
+        let functions = self.check_function_bodies(errors, &mut scope, module);
 
-        self.context.leave_block();
+        scope.leave_block();
 
         Some(ir::Program {
             imports: imports?,
@@ -396,6 +357,8 @@ impl Typechecker {
     }
 
     fn check_imports(&mut self, errors: &mut TyErrors, module: &Module) -> Option<Vec<ir::Import>> {
+        // Imports should check in the context of an empty scope
+        let mut scope = Scope::new();
         let mut imports = vec![];
         for top_level in module.top_levels() {
             if let TopLevel::TopImport(i) = top_level {
@@ -406,7 +369,7 @@ impl Typechecker {
                 self.record_def(&internal_name_tkn, name);
 
                 let ty = if let Some(ty_node) = i.ty() {
-                    match self.check_ty(errors, &ty_node) {
+                    match self.check_ty(errors, &mut scope, &ty_node) {
                         Ty::Func(t) => *t,
                         ty => {
                             if ty != Ty::Error {
@@ -543,17 +506,17 @@ impl Typechecker {
             };
 
             let mut fields = HashMap::new();
-            self.context.clear_type_vars();
+            let mut scope = Scope::new();
             for n in &def.ty_params {
                 let s = self.name_supply.resolve(*n);
-                self.context.add_type_var(s, *n)
+                scope.add_type_var(s, *n)
             }
             for field in s.struct_fields() {
                 let Some(field_name) = field.ident_token() else {
                     continue;
                 };
                 let ty = match field.ty() {
-                    Some(field_ty) => self.check_ty(errors, &field_ty),
+                    Some(field_ty) => self.check_ty(errors, &mut scope, &field_ty),
                     None => Ty::Error,
                 };
                 let (name, _) = self.name_supply.field_idx(&field_name);
@@ -561,7 +524,6 @@ impl Typechecker {
 
                 fields.insert(field_name.text().to_string(), (name, ty));
             }
-            self.context.clear_type_vars();
             self.context.set_fields(name, fields);
         }
         let mut type_defs = vec![];
@@ -584,6 +546,7 @@ impl Typechecker {
     }
 
     fn check_function_headers(&mut self, errors: &mut TyErrors, module: &Module) {
+        let mut scope = Scope::new();
         for top_level in module.top_levels() {
             if let TopLevel::TopFn(top_fn) = top_level {
                 let Some(fn_name_tkn) = top_fn.ident_token() else {
@@ -597,7 +560,7 @@ impl Typechecker {
                     };
                     let (name, sym) = self.name_supply.type_var(&tkn);
                     self.record_def(&tkn, name);
-                    self.context.add_type_var(sym, name);
+                    scope.add_type_var(sym, name);
                     ty_args.push(name)
                 }
 
@@ -605,7 +568,7 @@ impl Typechecker {
                 for param in top_fn.params() {
                     let ty = param
                         .ty()
-                        .map(|t| self.check_ty(errors, &t))
+                        .map(|t| self.check_ty(errors, &mut scope, &t))
                         .unwrap_or(Ty::Error);
                     arguments.push(ty);
                 }
@@ -613,11 +576,10 @@ impl Typechecker {
                 self.record_def(&fn_name_tkn, name);
                 let result = top_fn
                     .ty()
-                    .map(|t| self.check_ty(errors, &t))
+                    .map(|t| self.check_ty(errors, &mut scope, &t))
                     .unwrap_or(Ty::Unit);
                 self.context
                     .add_func(sym, name, ty_args, FuncTy { arguments, result });
-                self.context.clear_type_vars()
             }
         }
     }
@@ -681,14 +643,14 @@ impl Typechecker {
         }
     }
 
-    fn check_ty(&mut self, errors: &mut TyErrors, ty: &Type) -> Ty {
+    fn check_ty(&mut self, errors: &mut TyErrors, scope: &mut Scope, ty: &Type) -> Ty {
         match ty {
             Type::TyInt(_) => Ty::I32,
             Type::TyFloat(_) => Ty::F32,
             Type::TyBool(_) => Ty::Bool,
             Type::TyUnit(_) => Ty::Unit,
             Type::TyBytes(_) => Ty::Bytes,
-            Type::TyArray(t) => match t.elem().map(|e| self.check_ty(errors, &e)) {
+            Type::TyArray(t) => match t.elem().map(|e| self.check_ty(errors, scope, &e)) {
                 Some(elem_ty) => Ty::Array(Box::new(elem_ty)),
                 None => Ty::Array(Box::new(Ty::Error)),
             },
@@ -701,7 +663,7 @@ impl Typechecker {
                 else {
                     return Ty::Error;
                 };
-                let ty_args: Vec<Ty> = t.type_args().map(|t| self.check_ty(errors, &t)).collect();
+                let ty_args: Vec<Ty> = t.type_args().map(|t| self.check_ty(errors, scope, &t)).collect();
                 let ty_param_names = ty_def.ty_params();
                 if ty_param_names.len() != ty_args.len() {
                     errors.report(t, TyArgCountMismatch(ty_param_names.len(), ty_args.len()));
@@ -714,7 +676,7 @@ impl Typechecker {
             }
             Type::TyVar(v) => {
                 let tkn = v.ident_token().unwrap();
-                if let Some(name) = self.context.lookup_type_var(self.sym(tkn.text())) {
+                if let Some(name) = scope.lookup_type_var(self.sym(tkn.text())) {
                     self.record_ref(&tkn, name);
                     Ty::Var(name)
                 } else {
@@ -726,33 +688,33 @@ impl Typechecker {
                 let mut arguments = vec![];
                 if let Some(arg_list) = t.ty_arg_list() {
                     for arg in arg_list.types() {
-                        arguments.push(self.check_ty(errors, &arg))
+                        arguments.push(self.check_ty(errors, scope, &arg))
                     }
                 }
                 let result = t
                     .result()
-                    .map_or_else(|| Ty::Error, |t| self.check_ty(errors, &t));
+                    .map_or_else(|| Ty::Error, |t| self.check_ty(errors, scope, &t));
                 let func_ty = FuncTy { arguments, result };
                 Ty::Func(Box::new(func_ty))
             }
         }
     }
 
-    fn check_globals(&mut self, errors: &mut TyErrors, module: &Module) -> Vec<ir::Global> {
+    fn check_globals(&mut self, errors: &mut TyErrors, scope: &mut Scope, module: &Module) -> Vec<ir::Global> {
         let mut globals = vec![];
         for top_level in module.top_levels() {
             if let TopLevel::TopGlobal(top_global) = top_level {
                 let (ty, ir) = match (
-                    top_global.ty().map(|t| self.check_ty(errors, &t)),
+                    top_global.ty().map(|t| self.check_ty(errors, scope, &t)),
                     top_global.expr(),
                 ) {
                     (None, None) => {
                         continue;
                     }
                     (Some(ty), None) => (ty, None),
-                    (None, Some(e)) => self.infer_expr(errors, &e),
+                    (None, Some(e)) => self.infer_expr(errors, scope, &e),
                     (Some(ty), Some(e)) => {
-                        let ir = self.check_expr(errors, &e, &ty);
+                        let ir = self.check_expr(errors, scope, &e, &ty);
                         (ty, ir)
                     }
                 };
@@ -766,7 +728,7 @@ impl Typechecker {
                             init: ir,
                         })
                     }
-                    self.context.add_var(sym, ty, name)
+                    scope.add_var(sym, ty, name)
                 };
             }
         }
@@ -776,6 +738,7 @@ impl Typechecker {
     fn check_function_bodies(
         &mut self,
         errors: &mut TyErrors,
+        scope: &mut Scope,
         module: &Module,
     ) -> Option<Vec<ir::Func>> {
         let mut funcs = Some(vec![]);
@@ -793,11 +756,11 @@ impl Typechecker {
                 builder.name(Some(def.name));
 
                 let func_ty = def.ty.clone();
-                self.context.enter_block();
+                scope.enter_block();
                 for name in &def.ty_params {
                     builder.ty_params(Some(*name));
                     let v = self.name_supply.resolve(*name);
-                    self.context.add_type_var(v, *name);
+                    scope.add_type_var(v, *name);
                 }
 
                 for (param, ty) in top_fn.params().zip(func_ty.arguments.into_iter()) {
@@ -808,20 +771,20 @@ impl Typechecker {
                     let (name, sym) = self.name_supply.local_idx(&ident_tkn);
                     builder.params(Some((name, ty.clone())));
                     self.record_def(&ident_tkn, name);
-                    self.context.add_var(sym, ty, name);
+                    scope.add_var(sym, ty, name);
                 }
 
                 builder.return_ty(Some(func_ty.result.clone()));
                 // It's fine to drop any previous return type here
-                let _ = self.context.set_return_type(func_ty.result.clone());
+                let _ = scope.set_return_type(func_ty.result.clone());
 
                 if let Some(body) = top_fn.body() {
                     // println!("Checking body {}", func_name.text());
-                    builder.body(self.check_expr(errors, &body.into(), &func_ty.result));
+                    builder.body(self.check_expr(errors, scope, &body.into(), &func_ty.result));
                 }
 
-                self.context.clear_type_vars();
-                self.context.leave_block();
+                scope.clear_type_vars();
+                scope.leave_block();
 
                 if let Some(fs) = &mut funcs {
                     if let Some(func) = builder.build() {
@@ -887,14 +850,15 @@ impl Typechecker {
         )
     }
 
-    fn infer_expr(&mut self, errors: &mut TyErrors, expr: &Expr) -> (Ty, Option<ir::Expr>) {
-        self.infer_expr_inner(errors, expr)
+    fn infer_expr(&mut self, errors: &mut TyErrors, scope: &mut Scope, expr: &Expr) -> (Ty, Option<ir::Expr>) {
+        self.infer_expr_inner(errors, scope, expr)
             .unwrap_or((Ty::Error, None))
     }
 
     fn infer_expr_inner(
         &mut self,
         errors: &mut TyErrors,
+        scope: &mut Scope,
         expr: &Expr,
     ) -> Option<(Ty, Option<ir::Expr>)> {
         let (ty, ir): (Ty, Option<ir::ExprData>) = match expr {
@@ -902,10 +866,10 @@ impl Typechecker {
                 let mut builder = ir::ArrayBuilder::default();
                 let mut elems = arr.exprs();
                 if let Some(first_elem) = elems.next() {
-                    let (elem_ty, elem_ir) = self.infer_expr(errors, &first_elem);
+                    let (elem_ty, elem_ir) = self.infer_expr(errors, scope, &first_elem);
                     builder.elems(elem_ir);
                     for elem in elems {
-                        builder.elems(self.check_expr(errors, &elem, &elem_ty));
+                        builder.elems(self.check_expr(errors, scope, &elem, &elem_ty));
                     }
                     (Ty::Array(Box::new(elem_ty)), builder.build())
                 } else {
@@ -940,7 +904,7 @@ impl Typechecker {
                         }
                     }
                 } else {
-                    match self.context.lookup_var_or_func(self.sym(var_tkn.text())) {
+                    match self.context.lookup_var_or_func(scope, self.sym(var_tkn.text())) {
                         None => {
                             errors.report(&var_tkn, UnknownVar(var_tkn.text().to_string()));
                             return None;
@@ -955,43 +919,43 @@ impl Typechecker {
                     }
                 }
             }
-            Expr::EStruct(struct_expr) => self.check_struct(errors, struct_expr, None)?,
-            Expr::ECall(call_expr) => self.check_call(errors, call_expr, None)?,
+            Expr::EStruct(struct_expr) => self.check_struct(errors, scope, struct_expr, None)?,
+            Expr::ECall(call_expr) => self.check_call(errors, scope, call_expr, None)?,
             Expr::EParen(e) => {
-                let (ty, ir) = self.infer_expr(errors, &e.expr()?);
+                let (ty, ir) = self.infer_expr(errors, scope, &e.expr()?);
                 (ty, ir.map(|x| *x.it))
             }
             Expr::EIf(if_expr) => {
                 let mut builder = ir::IfBuilder::default();
                 if let Some(condition) = if_expr.condition() {
-                    builder.condition(self.check_expr(errors, &condition, &Ty::Bool));
+                    builder.condition(self.check_expr(errors, scope, &condition, &Ty::Bool));
                 }
                 let mut ty = Ty::Error;
                 if let Some(then_branch) = if_expr.then_branch() {
-                    let (then_ty, ir) = self.infer_expr(errors, &then_branch);
+                    let (then_ty, ir) = self.infer_expr(errors, scope, &then_branch);
                     ty = then_ty;
                     builder.then_branch(ir);
                 }
                 if let Some(else_branch) = if_expr.else_branch() {
                     let ir = if matches!(ty, Ty::Error | Ty::Diverge) {
-                        let (else_ty, ir) = self.infer_expr(errors, &else_branch);
+                        let (else_ty, ir) = self.infer_expr(errors, scope, &else_branch);
                         ty = else_ty;
                         ir
                     } else {
-                        self.check_expr(errors, &else_branch, &ty)
+                        self.check_expr(errors, scope, &else_branch, &ty)
                     };
                     builder.else_branch(ir);
                 }
                 (ty, builder.build())
             }
-            Expr::EMatch(match_expr) => self.check_match(errors, match_expr, None),
+            Expr::EMatch(match_expr) => self.check_match(errors, scope, match_expr, None),
             Expr::EArrayIdx(idx_expr) => {
                 let mut builder = ir::ArrayIdxBuilder::default();
                 let arr_expr = idx_expr.expr().unwrap();
                 if let Some(index) = idx_expr.index() {
-                    builder.index(self.check_expr(errors, &index, &Ty::I32));
+                    builder.index(self.check_expr(errors, scope, &index, &Ty::I32));
                 }
-                let elem_ty = match self.infer_expr(errors, &arr_expr) {
+                let elem_ty = match self.infer_expr(errors, scope, &arr_expr) {
                     (Ty::Array(elem_ty), ir) => {
                         builder.array(ir);
                         *elem_ty
@@ -1008,7 +972,7 @@ impl Typechecker {
             Expr::EStructIdx(idx_expr) => {
                 let mut builder = ir::StructIdxBuilder::default();
                 let struct_expr = idx_expr.expr().unwrap();
-                let (ty_receiver, receiver_ir) = self.infer_expr(errors, &struct_expr);
+                let (ty_receiver, receiver_ir) = self.infer_expr(errors, scope, &struct_expr);
                 builder.expr(receiver_ir);
 
                 let field_name_tkn = idx_expr.ident_token()?;
@@ -1019,10 +983,10 @@ impl Typechecker {
             }
             Expr::EBinary(bin_expr) => {
                 let mut builder = ir::BinaryBuilder::default();
-                let (lhs_ty, lhs_ir) = self.infer_expr(errors, &bin_expr.lhs()?);
+                let (lhs_ty, lhs_ir) = self.infer_expr(errors, scope, &bin_expr.lhs()?);
                 builder.left(lhs_ir);
                 // TODO could maybe check the rhs based on operator and lhs?
-                let (rhs_ty, rhs_ir) = self.infer_expr(errors, &bin_expr.rhs()?);
+                let (rhs_ty, rhs_ir) = self.infer_expr(errors, scope, &bin_expr.rhs()?);
                 builder.right(rhs_ir);
                 let op_tkn = bin_expr.op()?;
                 if lhs_ty == Ty::Error || rhs_ty == Ty::Error {
@@ -1050,13 +1014,13 @@ impl Typechecker {
                     arguments: vec![],
                     result: lambda
                         .return_ty()
-                        .map(|t| self.check_ty(errors, &t))
+                        .map(|t| self.check_ty(errors, scope, &t))
                         .unwrap_or(Ty::Unit),
                 };
                 let mut builder = LambdaBuilder::default();
                 builder.return_ty(Some(ty_func.result.clone()));
-                self.context.enter_block();
-                let prev_return_ty = self.context.set_return_type(ty_func.result.clone());
+                scope.enter_block();
+                let prev_return_ty = scope.set_return_type(ty_func.result.clone());
                 let mut params = HashSet::new();
                 for param in lambda.params() {
                     let Some(name_tkn) = param.ident_token() else {
@@ -1065,16 +1029,16 @@ impl Typechecker {
                     let (name, sym) = self.name_supply.local_idx(&name_tkn);
                     let ty = match param.ty() {
                         None => Ty::Error,
-                        Some(t) => self.check_ty(errors, &t),
+                        Some(t) => self.check_ty(errors, scope, &t),
                     };
                     builder.params(Some((name, ty.clone())));
                     ty_func.arguments.push(ty.clone());
                     params.insert(name);
-                    self.context.add_var(sym, ty, name);
+                    scope.add_var(sym, ty, name);
                 }
 
                 if let Some(body) = lambda.body() {
-                    let body_ir = self.check_expr(errors, &body, &ty_func.result);
+                    let body_ir = self.check_expr(errors, scope, &body, &ty_func.result);
                     if let Some(body_ir) = body_ir {
                         for (n, fvi) in body_ir.free_vars() {
                             if !params.contains(&n) {
@@ -1088,33 +1052,33 @@ impl Typechecker {
                         builder.body(Some(body_ir));
                     }
                 }
-                self.context.leave_block();
+                scope.leave_block();
                 // Restore the previous return type
-                self.context.restore_return_type(prev_return_ty);
+                scope.restore_return_type(prev_return_ty);
                 (Ty::Func(Box::new(ty_func)), builder.build())
             }
             Expr::EBlock(block_expr) => {
-                self.context.enter_block();
-                let (last_expr, mut builder) = self.infer_block(errors, block_expr);
+                scope.enter_block();
+                let (last_expr, mut builder) = self.infer_block(errors, scope, block_expr);
                 let ty = if let Some(last_expr) = last_expr {
-                    let (ty, ir) = self.infer_expr(errors, &last_expr);
+                    let (ty, ir) = self.infer_expr(errors, scope, &last_expr);
                     builder.expr(ir);
                     ty
                 } else {
                     builder.expr(unit_lit(block_expr.syntax().text_range()));
                     Ty::Unit
                 };
-                self.context.leave_block();
+                scope.leave_block();
                 (ty, builder.build())
             }
             Expr::EReturn(return_expr) => {
-                let Some(return_ty) = self.context.return_type() else {
+                let Some(return_ty) = scope.return_type() else {
                     errors.report(return_expr, CantReturnFromGlobal);
                     return None;
                 };
                 let mut builder = ReturnBuilder::default();
                 if let Some(return_value) = return_expr.expr() {
-                    builder.expr(self.check_expr(errors, &return_value, return_ty.as_ref()));
+                    builder.expr(self.check_expr(errors, scope, &return_value, return_ty.as_ref()));
                 }
                 (Ty::Diverge, builder.build())
             }
@@ -1143,31 +1107,32 @@ impl Typechecker {
     fn check_call(
         &mut self,
         errors: &mut TyErrors,
+        scope: &mut Scope,
         call_expr: &ECall,
         expected: Option<&Ty>,
     ) -> Option<(Ty, Option<ir::ExprData>)> {
         let func_expr = call_expr.expr()?;
         let ty_args: Vec<Ty> = call_expr
             .e_ty_arg_list()
-            .map(|tas| tas.types().map(|t| self.check_ty(errors, &t)).collect())
+            .map(|tas| tas.types().map(|t| self.check_ty(errors, scope, &t)).collect())
             .unwrap_or_default();
         let callee = if let Expr::EVar(v) = &func_expr {
             let mod_qual_tkn = v.mod_qualifier().map(|q| q.ident_token().unwrap());
             let var_tkn = v.ident_token().unwrap();
-            if mod_qual_tkn.is_none() && self.context.lookup_var(self.sym(var_tkn.text())).is_some()
+            if mod_qual_tkn.is_none() && scope.lookup_var(self.sym(var_tkn.text())).is_some()
             {
                 if !ty_args.is_empty() {
                     errors.report(&var_tkn, CantInstantiateFunctionRef);
                     return None;
                 }
-                let (ty, ir) = self.infer_expr(errors, &func_expr);
+                let (ty, ir) = self.infer_expr(errors, scope, &func_expr);
                 (ty, ir.map(ir::Callee::FuncRef))
             } else if let Some(def) = self.lookup_func(mod_qual_tkn, var_tkn.text()) {
                 self.record_ref(&var_tkn, def.name);
                 let ty_params: &[Name] = &def.ty_params;
                 // NOTE(early-return-control-flow)
                 if !ty_params.is_empty() && ty_args.is_empty() {
-                    return self.infer_poly_call(errors, def, &var_tkn, call_expr, expected);
+                    return self.infer_poly_call(errors, scope, def, &var_tkn, call_expr, expected);
                 }
                 if ty_params.len() != ty_args.len() {
                     errors.report(
@@ -1203,7 +1168,7 @@ impl Typechecker {
                 return None;
             }
         } else {
-            let (ty, ir) = self.infer_expr(errors, &func_expr);
+            let (ty, ir) = self.infer_expr(errors, scope, &func_expr);
             (ty, ir.map(ir::Callee::FuncRef))
         };
 
@@ -1218,7 +1183,7 @@ impl Typechecker {
                         errors.report(&arg_list, ArgCountMismatch(arg_tys.len(), arg_exprs.len()));
                     }
                     for (param, expected_ty) in arg_exprs.iter().zip(arg_tys.iter()) {
-                        builder.arguments(self.check_expr(errors, param, expected_ty));
+                        builder.arguments(self.check_expr(errors, scope, param, expected_ty));
                     }
                 }
                 Some((func_ty.result, builder.build()))
@@ -1234,6 +1199,7 @@ impl Typechecker {
     fn infer_poly_struct(
         &mut self,
         errors: &mut TyErrors,
+        scope: &mut Scope,
         def: &StructDef,
         struct_tkn: &SyntaxToken,
         struct_expr: &EStruct,
@@ -1261,7 +1227,7 @@ impl Typechecker {
             };
             let applied_ty = subst.apply(fresh_subst.apply(expected_ty));
             let ir = if applied_ty.vars().iter().any(|v| v.tag == NameTag::Gen) {
-                let (ty, ir) = self.infer_expr(errors, &expr);
+                let (ty, ir) = self.infer_expr(errors, scope, &expr);
                 if ty != Ty::Error {
                     if let Err(err) = match_ty(&mut subst, applied_ty, &ty) {
                         errors.report(&expr, err);
@@ -1269,7 +1235,7 @@ impl Typechecker {
                 }
                 ir
             } else {
-                self.check_expr(errors, &expr, &applied_ty)
+                self.check_expr(errors, scope, &expr, &applied_ty)
             };
             builder.fields(ir.map(|ir| (name, ir)));
         }
@@ -1309,6 +1275,7 @@ impl Typechecker {
     fn infer_poly_call(
         &mut self,
         errors: &mut TyErrors,
+        scope: &mut Scope,
         def: Rc<FuncDef>,
         func_tkn: &SyntaxToken,
         call_expr: &ECall,
@@ -1344,7 +1311,7 @@ impl Typechecker {
         for (arg, expected_ty) in args.iter().zip(func_ty.arguments.iter()) {
             let applied_ty = subst.apply(expected_ty.clone());
             let ir = if applied_ty.vars().iter().any(|v| v.tag == NameTag::Gen) {
-                let (ty, ir) = self.infer_expr(errors, arg);
+                let (ty, ir) = self.infer_expr(errors, scope, arg);
                 if ty != Ty::Error {
                     if let Err(err) = match_ty(&mut subst, applied_ty, &ty) {
                         errors.report(arg, err);
@@ -1352,7 +1319,7 @@ impl Typechecker {
                 }
                 ir
             } else {
-                self.check_expr(errors, arg, &applied_ty)
+                self.check_expr(errors, scope, arg, &applied_ty)
             };
             builder.arguments(ir);
         }
@@ -1407,6 +1374,7 @@ impl Typechecker {
     fn check_struct(
         &mut self,
         errors: &mut TyErrors,
+        scope: &mut Scope,
         struct_expr: &EStruct,
         expected: Option<&Ty>,
     ) -> Option<(Ty, Option<ir::ExprData>)> {
@@ -1432,7 +1400,7 @@ impl Typechecker {
             struct_expr.e_ty_arg_list().map(|t| t.types().collect());
         let subst = if !def.ty_params.is_empty() && ty_arg_list.is_none() {
             match expected {
-                None => return self.infer_poly_struct(errors, &def, &struct_name_tkn, struct_expr),
+                None => return self.infer_poly_struct(errors, scope, &def, &struct_name_tkn, struct_expr),
                 Some(expected) => {
                     let Some(subst) = infer_struct_instantiation(&def, expected) else {
                         errors.report(
@@ -1462,7 +1430,7 @@ impl Typechecker {
             let ty_arg_names: &[Name] = &def.ty_params;
             let tys: Vec<Ty> = ty_arg_list
                 .into_iter()
-                .map(|t| self.check_ty(errors, &t))
+                .map(|t| self.check_ty(errors, scope, &t))
                 .collect();
             Some(Substitution::new(ty_arg_names, &tys))
         };
@@ -1476,7 +1444,7 @@ impl Typechecker {
             seen.push(field_name);
             if let Some(field_expr) = field.expr() {
                 builder.fields(
-                    self.check_expr(errors, &field_expr, &subst.apply(ty))
+                    self.check_expr(errors, scope, &field_expr, &subst.apply(ty))
                         .map(|e| (field_name, e)),
                 );
             }
@@ -1505,6 +1473,7 @@ impl Typechecker {
     fn check_match(
         &mut self,
         errors: &mut TyErrors,
+        scope: &mut Scope,
         match_expr: &EMatch,
         expected: Option<Ty>,
     ) -> (Ty, Option<ir::ExprData>) {
@@ -1513,21 +1482,21 @@ impl Typechecker {
             return (Ty::Error, None);
         };
 
-        let (ty_scrutinee, ir_scrutinee) = self.infer_expr(errors, &scrutinee);
+        let (ty_scrutinee, ir_scrutinee) = self.infer_expr(errors, scope, &scrutinee);
         builder.scrutinee(ir_scrutinee);
         let mut ty = expected;
         for branch in match_expr.e_match_branchs() {
             let (Some(pattern), Some(body)) = (branch.pattern(), branch.body()) else {
                 continue;
             };
-            self.context.enter_block();
-            let pattern_ir = self.check_pattern(errors, &pattern, &ty_scrutinee);
+            scope.enter_block();
+            let pattern_ir = self.check_pattern(errors, scope, &pattern, &ty_scrutinee);
             let body_ir = match &ty {
                 Some(expected) if expected != &Ty::Diverge => {
-                    self.check_expr(errors, &body.into(), expected)
+                    self.check_expr(errors, scope, &body.into(), expected)
                 }
                 _ => {
-                    let (ty_body, ir) = self.infer_expr(errors, &body.into());
+                    let (ty_body, ir) = self.infer_expr(errors, scope, &body.into());
                     if ty_body != Ty::Error {
                         ty = Some(ty_body);
                     }
@@ -1542,7 +1511,7 @@ impl Typechecker {
                     body: body_ir,
                 }));
             }
-            self.context.leave_block();
+            scope.leave_block();
         }
         (ty.unwrap_or(Ty::Error), builder.build())
     }
@@ -1551,20 +1520,21 @@ impl Typechecker {
     fn infer_block(
         &mut self,
         errors: &mut TyErrors,
+        scope: &mut Scope,
         block_expr: &EBlock,
     ) -> (Option<Expr>, ir::BlockBuilder) {
         let mut builder = ir::BlockBuilder::default();
         let declarations: Vec<Declaration> = block_expr.declarations().collect();
         let last_expr = if let Some((last, declarations)) = declarations.split_last() {
             for decl in declarations {
-                let (_, ir) = self.infer_decl(errors, decl);
+                let (_, ir) = self.infer_decl(errors, scope, decl);
                 // TODO: if ty_decl is Ty::Diverge here, all following declarations are dead code
                 builder.declarations(ir);
             }
             match last {
                 Declaration::DExpr(expr) => expr.expr(),
                 decl => {
-                    let (_, ir) = self.infer_decl(errors, decl);
+                    let (_, ir) = self.infer_decl(errors, scope, decl);
                     builder.declarations(ir);
                     None
                 }
@@ -1578,6 +1548,7 @@ impl Typechecker {
     fn check_expr(
         &mut self,
         errors: &mut TyErrors,
+        scope: &mut Scope,
         expr: &Expr,
         expected: &Ty,
     ) -> Option<ir::Expr> {
@@ -1585,7 +1556,7 @@ impl Typechecker {
             (Expr::EArray(expr), Ty::Array(elem_ty)) => {
                 let mut builder = ir::ArrayBuilder::default();
                 for elem in expr.exprs() {
-                    builder.elems(self.check_expr(errors, &elem, elem_ty));
+                    builder.elems(self.check_expr(errors, scope, &elem, elem_ty));
                 }
                 builder.build()
             }
@@ -1594,16 +1565,17 @@ impl Typechecker {
                 let arr_expr = idx_expr.expr().unwrap();
                 builder.array(self.check_expr(
                     errors,
+                    scope,
                     &arr_expr,
                     &Ty::Array(Box::new(elem_ty.clone())),
                 ));
                 if let Some(index) = idx_expr.index() {
-                    builder.index(self.check_expr(errors, &index, &Ty::I32));
+                    builder.index(self.check_expr(errors, scope, &index, &Ty::I32));
                 }
                 builder.build()
             }
             (Expr::EStruct(expr), ty) => {
-                let (ty, ir) = self.check_struct(errors, expr, Some(ty))?;
+                let (ty, ir) = self.check_struct(errors, scope, expr, Some(ty))?;
                 // A bit weird to duplicate this here
                 if *expected != Ty::Error
                     && !matches!(ty, Ty::Error | Ty::Diverge)
@@ -1622,25 +1594,25 @@ impl Typechecker {
             (Expr::EIf(expr), ty) => {
                 let mut builder = ir::IfBuilder::default();
                 if let Some(condition) = expr.condition() {
-                    builder.condition(self.check_expr(errors, &condition, &Ty::Bool));
+                    builder.condition(self.check_expr(errors, scope, &condition, &Ty::Bool));
                 }
                 if let Some(then_branch) = expr.then_branch() {
-                    builder.then_branch(self.check_expr(errors, &then_branch, ty));
+                    builder.then_branch(self.check_expr(errors, scope, &then_branch, ty));
                 }
                 if let Some(else_branch) = expr.else_branch() {
-                    builder.else_branch(self.check_expr(errors, &else_branch, ty));
+                    builder.else_branch(self.check_expr(errors, scope, &else_branch, ty));
                 }
                 builder.build()
             }
             (Expr::EParen(expr), _) => expr
                 .expr()
-                .and_then(|expr| self.check_expr(errors, &expr, expected))
+                .and_then(|expr| self.check_expr(errors, scope, &expr, expected))
                 .map(|ir| *ir.it),
             (Expr::EBlock(block_expr), _) => {
-                self.context.enter_block();
-                let (last_expr, mut builder) = self.infer_block(errors, block_expr);
+                scope.enter_block();
+                let (last_expr, mut builder) = self.infer_block(errors, scope, block_expr);
                 if let Some(last_expr) = last_expr {
-                    builder.expr(self.check_expr(errors, &last_expr, expected));
+                    builder.expr(self.check_expr(errors, scope, &last_expr, expected));
                 } else {
                     builder.expr(unit_lit(block_expr.syntax().text_range()));
                     if !matches!(expected, Ty::Unit | Ty::Error) {
@@ -1653,19 +1625,19 @@ impl Typechecker {
                         )
                     }
                 };
-                self.context.leave_block();
+                scope.leave_block();
                 builder.build()
             }
             (Expr::EMatch(match_expr), _) => {
-                self.check_match(errors, match_expr, Some(expected.clone()))
+                self.check_match(errors, scope, match_expr, Some(expected.clone()))
                     .1
             }
             (Expr::ECall(expr), _) => {
-                let (_, ir) = self.check_call(errors, expr, Some(expected))?;
+                let (_, ir) = self.check_call(errors, scope, expr, Some(expected))?;
                 ir
             }
             _ => {
-                let (ty, ir) = self.infer_expr(errors, expr);
+                let (ty, ir) = self.infer_expr(errors, scope, expr);
                 if *expected != Ty::Error
                     && !matches!(ty, Ty::Error | Ty::Diverge)
                     && ty.ne(expected)
@@ -1744,17 +1716,18 @@ impl Typechecker {
     fn infer_decl(
         &mut self,
         errors: &mut TyErrors,
+        scope: &mut Scope,
         decl: &Declaration,
     ) -> (Ty, Option<ir::Declaration>) {
         let (ty, ir) = match decl {
             Declaration::DLet(let_decl) => {
                 let mut builder = ir::LetBuilder::default();
                 let (ty, ir) = if let Some(expr) = let_decl.expr() {
-                    if let Some(ty) = let_decl.ty().map(|ta| self.check_ty(errors, &ta)) {
-                        let ir = self.check_expr(errors, &expr, &ty);
+                    if let Some(ty) = let_decl.ty().map(|ta| self.check_ty(errors, scope, &ta)) {
+                        let ir = self.check_expr(errors, scope, &expr, &ty);
                         (ty, ir)
                     } else {
-                        self.infer_expr(errors, &expr)
+                        self.infer_expr(errors, scope, &expr)
                     }
                 } else {
                     (Ty::Error, None)
@@ -1765,21 +1738,21 @@ impl Typechecker {
                     let (name, sym) = self.name_supply.local_idx(&binder_tkn);
                     builder.binder(Some(name));
                     self.record_def(&binder_tkn, name);
-                    self.context.add_var(sym, ty, name)
+                    scope.add_var(sym, ty, name)
                 }
                 (Ty::Unit, builder.build())
             }
             Declaration::DSet(set_decl) => {
                 let mut builder = ir::SetBuilder::default();
                 let set_ty = if let Some(set_target) = set_decl.set_target() {
-                    let (ty, ir) = self.infer_set_target(errors, &set_target);
+                    let (ty, ir) = self.infer_set_target(errors, scope, &set_target);
                     builder.set_target(ir);
                     ty
                 } else {
                     Ty::Error
                 };
                 if let Some(expr) = set_decl.expr() {
-                    builder.expr(self.check_expr(errors, &expr, &set_ty));
+                    builder.expr(self.check_expr(errors, scope, &expr, &set_ty));
                 }
                 (Ty::Unit, builder.build())
             }
@@ -1787,17 +1760,17 @@ impl Typechecker {
                 let mut builder = ir::WhileBuilder::default();
                 let condition = while_decl.expr();
                 if let Some(condition) = condition {
-                    builder.condition(self.check_expr(errors, &condition, &Ty::Bool));
+                    builder.condition(self.check_expr(errors, scope, &condition, &Ty::Bool));
                 }
                 let body = while_decl.e_block();
                 if let Some(body) = body {
-                    builder.body(self.check_expr(errors, &body.into(), &Ty::Unit));
+                    builder.body(self.check_expr(errors, scope, &body.into(), &Ty::Unit));
                 }
                 (Ty::Unit, builder.build())
             }
             Declaration::DExpr(decl) => {
                 let mut builder = ExprBuilder::default();
-                let (ty, ir) = self.infer_expr(errors, &decl.expr().unwrap());
+                let (ty, ir) = self.infer_expr(errors, scope, &decl.expr().unwrap());
                 builder.expr(ir);
                 (ty, builder.build())
             }
@@ -1815,6 +1788,7 @@ impl Typechecker {
     fn infer_set_target(
         &mut self,
         errors: &mut TyErrors,
+        scope: &mut Scope,
         set_target: &SetTarget,
     ) -> (Ty, Option<ir::SetTarget>) {
         let Some(expr) = set_target.set_target_expr() else {
@@ -1824,7 +1798,7 @@ impl Typechecker {
             SetTargetExpr::EVar(var) => {
                 let ident_tkn = var.ident_token().unwrap();
                 if let Some((ty, name)) =
-                    self.context.lookup_var_or_func(self.sym(ident_tkn.text()))
+                    self.context.lookup_var_or_func(scope, self.sym(ident_tkn.text()))
                 {
                     let ir = ir::SetTargetData::SetVar { name };
                     self.record_ref(&ident_tkn, name);
@@ -1837,13 +1811,13 @@ impl Typechecker {
             SetTargetExpr::EArrayIdx(arr_idx) => {
                 let mut builder = ir::SetArrayBuilder::default();
                 let arr_ty = arr_idx.expr().map(|target| {
-                    let (ty, ir) = self.infer_expr(errors, &target);
+                    let (ty, ir) = self.infer_expr(errors, scope, &target);
                     builder.target(ir);
                     ty
                 });
 
                 if let Some(index) = arr_idx.index() {
-                    builder.index(self.check_expr(errors, &index, &Ty::I32));
+                    builder.index(self.check_expr(errors, scope, &index, &Ty::I32));
                 }
 
                 match arr_ty {
@@ -1860,7 +1834,7 @@ impl Typechecker {
                 let Some(target_expr) = struct_idx.expr() else {
                     return (Ty::Error, None);
                 };
-                let (target_ty, ir) = self.infer_expr(errors, &target_expr);
+                let (target_ty, ir) = self.infer_expr(errors, scope, &target_expr);
                 builder.target(ir);
                 let Some(field_name_tkn) = struct_idx.ident_token() else {
                     return (Ty::Error, None);
@@ -1888,6 +1862,7 @@ impl Typechecker {
     fn check_pattern(
         &mut self,
         errors: &mut TyErrors,
+        scope: &mut Scope,
         pattern: &Pattern,
         expected: &Ty,
     ) -> Option<ir::Pattern> {
@@ -1907,7 +1882,7 @@ impl Typechecker {
                         builder.variant(def.variant);
                         builder.alternative(Some(def.name));
                         let (name, sym) = self.name_supply.local_idx(&var);
-                        self.context.add_var(
+                        scope.add_var(
                             sym,
                             // TODO Think about this clone
                             Ty::Cons {
@@ -1935,7 +1910,7 @@ impl Typechecker {
             Pattern::PatVar(v) => {
                 let ident_tkn = v.ident_token()?;
                 let (name, sym) = self.name_supply.local_idx(&ident_tkn);
-                self.context.add_var(sym, expected.clone(), name);
+                scope.add_var(sym, expected.clone(), name);
                 self.record_def(&ident_tkn, name);
                 let mut builder = PatVarBuilder::default();
                 builder.var(Some(name));
