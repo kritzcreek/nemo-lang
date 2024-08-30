@@ -319,8 +319,10 @@ impl<'a> Builder<'a> {
         self.ctx.get_module_name(name.module)
     }
 
-    pub fn resolve_name_range(&self, name: Name) -> (String, TextRange) {
-        self.ctx.resolve(name)
+    pub fn resolve_qualified_name(&self, name: Name) -> (&str, String) {
+        let mod_name = self.ctx.get_module_name(name.module);
+        let it = self.ctx.display_name(name);
+        (mod_name, it)
     }
 
     pub fn declare_variant(&mut self, ty: Variant) {
@@ -736,10 +738,12 @@ impl<'a> Builder<'a> {
         if let Some(idx) = self.func_refs.get(&name) {
             return *idx;
         }
-        let (it, at) = self.resolve_name_range(name);
-        let (func_name, _) =
-            self.name_supply()
-                .func_idx(ModuleId::CODEGEN, &format!("{it}#ref"), at);
+        let (mod_name, it) = self.resolve_qualified_name(name);
+        let (func_name, _) = self.name_supply().func_idx(
+            ModuleId::CODEGEN,
+            &format!("{mod_name}::{it}#ref"),
+            TextRange::default(),
+        );
         let mut instrs: Vec<Instruction> = (0..ty.arguments.len())
             .map(|i| Instruction::LocalGet(i as u32 + 1))
             .collect();
