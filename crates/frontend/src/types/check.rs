@@ -271,7 +271,7 @@ impl Typechecker {
         (ir, interface, errors.errors)
     }
 
-    fn mk_interface(&mut self, errors: &mut TyErrors, module: &Module) -> Interface {
+    fn mk_interface(&self, errors: &mut TyErrors, module: &Module) -> Interface {
         let mut interface = Interface::default();
         let Some(header) = module.mod_header() else {
             return interface;
@@ -409,7 +409,7 @@ impl Typechecker {
         })
     }
 
-    fn check_ty_param(&mut self, ty_param: &ParamTy) -> Name {
+    fn check_ty_param(&self, ty_param: &ParamTy) -> Name {
         let tkn = ty_param.ident_token().unwrap();
         let (name, _) = self.name_supply.type_var(&tkn);
         self.record_def(&tkn, name);
@@ -585,7 +585,7 @@ impl Typechecker {
     }
 
     fn lookup_type(
-        &mut self,
+        &self,
         errors: &mut TyErrors,
         mod_qualifier: Option<ModQualifier>,
         qualifier: Option<Qualifier>,
@@ -643,7 +643,7 @@ impl Typechecker {
         }
     }
 
-    fn check_ty(&mut self, errors: &mut TyErrors, scope: &mut Scope, ty: &Type) -> Ty {
+    fn check_ty(&self, errors: &mut TyErrors, scope: &mut Scope, ty: &Type) -> Ty {
         match ty {
             Type::TyInt(_) => Ty::I32,
             Type::TyFloat(_) => Ty::F32,
@@ -663,7 +663,10 @@ impl Typechecker {
                 else {
                     return Ty::Error;
                 };
-                let ty_args: Vec<Ty> = t.type_args().map(|t| self.check_ty(errors, scope, &t)).collect();
+                let ty_args: Vec<Ty> = t
+                    .type_args()
+                    .map(|t| self.check_ty(errors, scope, &t))
+                    .collect();
                 let ty_param_names = ty_def.ty_params();
                 if ty_param_names.len() != ty_args.len() {
                     errors.report(t, TyArgCountMismatch(ty_param_names.len(), ty_args.len()));
@@ -700,7 +703,12 @@ impl Typechecker {
         }
     }
 
-    fn check_globals(&mut self, errors: &mut TyErrors, scope: &mut Scope, module: &Module) -> Vec<ir::Global> {
+    fn check_globals(
+        &mut self,
+        errors: &mut TyErrors,
+        scope: &mut Scope,
+        module: &Module,
+    ) -> Vec<ir::Global> {
         let mut globals = vec![];
         for top_level in module.top_levels() {
             if let TopLevel::TopGlobal(top_global) = top_level {
@@ -736,7 +744,7 @@ impl Typechecker {
     }
 
     fn check_function_bodies(
-        &mut self,
+        &self,
         errors: &mut TyErrors,
         scope: &mut Scope,
         module: &Module,
@@ -798,7 +806,7 @@ impl Typechecker {
         funcs
     }
 
-    fn infer_literal(&mut self, errors: &mut TyErrors, lit: &Literal) -> (Ty, Option<ir::Lit>) {
+    fn infer_literal(&self, errors: &mut TyErrors, lit: &Literal) -> (Ty, Option<ir::Lit>) {
         let (ty, it) = match lit {
             Literal::LitBool(b) => (Ty::Bool, Some(ir::LitData::Bool(b.true_token().is_some()))),
             Literal::LitFloat(l) => {
@@ -850,13 +858,18 @@ impl Typechecker {
         )
     }
 
-    fn infer_expr(&mut self, errors: &mut TyErrors, scope: &mut Scope, expr: &Expr) -> (Ty, Option<ir::Expr>) {
+    fn infer_expr(
+        &self,
+        errors: &mut TyErrors,
+        scope: &mut Scope,
+        expr: &Expr,
+    ) -> (Ty, Option<ir::Expr>) {
         self.infer_expr_inner(errors, scope, expr)
             .unwrap_or((Ty::Error, None))
     }
 
     fn infer_expr_inner(
-        &mut self,
+        &self,
         errors: &mut TyErrors,
         scope: &mut Scope,
         expr: &Expr,
@@ -904,7 +917,10 @@ impl Typechecker {
                         }
                     }
                 } else {
-                    match self.context.lookup_var_or_func(scope, self.sym(var_tkn.text())) {
+                    match self
+                        .context
+                        .lookup_var_or_func(scope, self.sym(var_tkn.text()))
+                    {
                         None => {
                             errors.report(&var_tkn, UnknownVar(var_tkn.text().to_string()));
                             return None;
@@ -1105,7 +1121,7 @@ impl Typechecker {
     }
 
     fn check_call(
-        &mut self,
+        &self,
         errors: &mut TyErrors,
         scope: &mut Scope,
         call_expr: &ECall,
@@ -1114,13 +1130,16 @@ impl Typechecker {
         let func_expr = call_expr.expr()?;
         let ty_args: Vec<Ty> = call_expr
             .e_ty_arg_list()
-            .map(|tas| tas.types().map(|t| self.check_ty(errors, scope, &t)).collect())
+            .map(|tas| {
+                tas.types()
+                    .map(|t| self.check_ty(errors, scope, &t))
+                    .collect()
+            })
             .unwrap_or_default();
         let callee = if let Expr::EVar(v) = &func_expr {
             let mod_qual_tkn = v.mod_qualifier().map(|q| q.ident_token().unwrap());
             let var_tkn = v.ident_token().unwrap();
-            if mod_qual_tkn.is_none() && scope.lookup_var(self.sym(var_tkn.text())).is_some()
-            {
+            if mod_qual_tkn.is_none() && scope.lookup_var(self.sym(var_tkn.text())).is_some() {
                 if !ty_args.is_empty() {
                     errors.report(&var_tkn, CantInstantiateFunctionRef);
                     return None;
@@ -1197,7 +1216,7 @@ impl Typechecker {
         }
     }
     fn infer_poly_struct(
-        &mut self,
+        &self,
         errors: &mut TyErrors,
         scope: &mut Scope,
         def: &StructDef,
@@ -1273,7 +1292,7 @@ impl Typechecker {
     // Calls to top-level functions get special handling as we attempt to infer
     // instantiations for their type parameters (if the user omits them at the call-site).
     fn infer_poly_call(
-        &mut self,
+        &self,
         errors: &mut TyErrors,
         scope: &mut Scope,
         def: Rc<FuncDef>,
@@ -1345,7 +1364,7 @@ impl Typechecker {
     }
 
     fn lookup_struct_field(
-        &mut self,
+        &self,
         errors: &mut TyErrors,
         struct_name: Name,
         field: &EStructField,
@@ -1372,7 +1391,7 @@ impl Typechecker {
     }
 
     fn check_struct(
-        &mut self,
+        &self,
         errors: &mut TyErrors,
         scope: &mut Scope,
         struct_expr: &EStruct,
@@ -1400,7 +1419,15 @@ impl Typechecker {
             struct_expr.e_ty_arg_list().map(|t| t.types().collect());
         let subst = if !def.ty_params.is_empty() && ty_arg_list.is_none() {
             match expected {
-                None => return self.infer_poly_struct(errors, scope, &def, &struct_name_tkn, struct_expr),
+                None => {
+                    return self.infer_poly_struct(
+                        errors,
+                        scope,
+                        &def,
+                        &struct_name_tkn,
+                        struct_expr,
+                    )
+                }
                 Some(expected) => {
                     let Some(subst) = infer_struct_instantiation(&def, expected) else {
                         errors.report(
@@ -1471,7 +1498,7 @@ impl Typechecker {
     }
 
     fn check_match(
-        &mut self,
+        &self,
         errors: &mut TyErrors,
         scope: &mut Scope,
         match_expr: &EMatch,
@@ -1518,7 +1545,7 @@ impl Typechecker {
 
     // Infers all declarations in the given block, and returns the trailing expression iff it exists
     fn infer_block(
-        &mut self,
+        &self,
         errors: &mut TyErrors,
         scope: &mut Scope,
         block_expr: &EBlock,
@@ -1546,7 +1573,7 @@ impl Typechecker {
     }
 
     fn check_expr(
-        &mut self,
+        &self,
         errors: &mut TyErrors,
         scope: &mut Scope,
         expr: &Expr,
@@ -1661,7 +1688,7 @@ impl Typechecker {
     }
 
     fn check_struct_idx(
-        &mut self,
+        &self,
         errors: &mut TyErrors,
         receiver: &Ty,
         field_name_tkn: &SyntaxToken,
@@ -1714,7 +1741,7 @@ impl Typechecker {
     }
 
     fn infer_decl(
-        &mut self,
+        &self,
         errors: &mut TyErrors,
         scope: &mut Scope,
         decl: &Declaration,
@@ -1786,7 +1813,7 @@ impl Typechecker {
     }
 
     fn infer_set_target(
-        &mut self,
+        &self,
         errors: &mut TyErrors,
         scope: &mut Scope,
         set_target: &SetTarget,
@@ -1797,8 +1824,9 @@ impl Typechecker {
         let (ty, ir_data) = match expr {
             SetTargetExpr::EVar(var) => {
                 let ident_tkn = var.ident_token().unwrap();
-                if let Some((ty, name)) =
-                    self.context.lookup_var_or_func(scope, self.sym(ident_tkn.text()))
+                if let Some((ty, name)) = self
+                    .context
+                    .lookup_var_or_func(scope, self.sym(ident_tkn.text()))
                 {
                     let ir = ir::SetTargetData::SetVar { name };
                     self.record_ref(&ident_tkn, name);
@@ -1860,7 +1888,7 @@ impl Typechecker {
     }
 
     fn check_pattern(
-        &mut self,
+        &self,
         errors: &mut TyErrors,
         scope: &mut Scope,
         pattern: &Pattern,
