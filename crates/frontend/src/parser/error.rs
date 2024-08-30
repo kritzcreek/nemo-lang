@@ -1,4 +1,5 @@
 use ariadne::{Color, Config, Label, Report, ReportKind, Source};
+use camino::Utf8Path;
 use line_index::{LineCol, LineIndex};
 use std::{fmt, str};
 use text_size::TextRange;
@@ -12,10 +13,12 @@ pub struct ParseError {
 impl ParseError {
     pub fn display<'err, 'src>(
         &'err self,
+        path: &'src Utf8Path,
         source: &'src str,
         colors: bool,
     ) -> ParseErrorDisplay<'src, 'err> {
         ParseErrorDisplay {
+            path,
             source,
             parse_error: self,
             colors,
@@ -30,6 +33,7 @@ impl ParseError {
 }
 
 pub struct ParseErrorDisplay<'src, 'err> {
+    path: &'src Utf8Path,
     source: &'src str,
     parse_error: &'err ParseError,
     colors: bool,
@@ -37,24 +41,28 @@ pub struct ParseErrorDisplay<'src, 'err> {
 
 impl fmt::Display for ParseErrorDisplay<'_, '_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        render_parse_error(self.source, self.parse_error, self.colors, f);
+        render_parse_error(self.path, self.source, self.parse_error, self.colors, f);
         Ok(())
     }
 }
 
-fn render_parse_error(source: &str, error: &ParseError, colors: bool, output: &mut fmt::Formatter) {
-    let file_name = "source";
-
+fn render_parse_error(
+    path: &Utf8Path,
+    source: &str,
+    error: &ParseError,
+    colors: bool,
+    output: &mut fmt::Formatter,
+) {
     let out = Color::Fixed(81);
-    let cache = (file_name, Source::from(source));
+    let cache = (path, Source::from(source));
 
     // TODO avoid this allocation
     let mut out_buf = Vec::new();
-    Report::build(ReportKind::Error, file_name, 12)
+    Report::build(ReportKind::Error, path, 12)
         .with_code("Parsing error")
         .with_message(&error.it)
         .with_label(
-            Label::new((file_name, error.at.start().into()..error.at.end().into()))
+            Label::new((path, error.at.start().into()..error.at.end().into()))
                 .with_message(error.it.to_string())
                 .with_color(out),
         )

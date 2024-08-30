@@ -1,18 +1,14 @@
 pub mod codegen;
 mod wasm_builder;
 
+use camino::Utf8PathBuf;
 use codegen::codegen;
 use frontend::run_frontend;
 
-pub fn compile_program(source: &str) -> Result<Vec<u8>, String> {
-    let check_result = run_frontend(source);
+pub fn compile_program(sources: &[(Utf8PathBuf, String)]) -> Result<Vec<u8>, String> {
+    let check_result = run_frontend(sources);
 
-    if check_result.has_errors() {
-        let mut count = 0;
-        for err in check_result.errors() {
-            count += 1;
-            eprintln!("{}", err.display(source, &check_result.ctx, true));
-        }
+    if let Some(count) = check_result.display_errors() {
         return Err(format!("Compiling failed with {} errors", count));
     }
 

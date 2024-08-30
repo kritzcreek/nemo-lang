@@ -610,7 +610,7 @@ impl<'a> Codegen<'a> {
             if let Some(existing) = poly_func.instances.get(&tys) {
                 return *existing;
             }
-            let func_name = self.builder.ctx.display_name(name);
+            let func_name = self.builder.ctx.display_qualified_name(name);
             let mut it = format!("{}#", func_name);
             for param in &tys {
                 write!(&mut it, "_{}", param.display(&self.builder.ctx)).unwrap()
@@ -719,8 +719,13 @@ impl<'a> Codegen<'a> {
             let body = self.compile_expr(&mut body_builder, func.body);
             let locals = body_builder.get_locals();
             self.builder.fill_func(func.name, locals, body);
-            self.builder
-                .declare_export(func.name, self.builder.resolve_name(func.name));
+            let module_name = self.builder.resolve_module_name(func.name);
+            let external_name = if module_name.is_empty() {
+                self.builder.resolve_name(func.name)
+            } else {
+                format!("{module_name}::{}", self.builder.resolve_name(func.name))
+            };
+            self.builder.declare_export(func.name, external_name);
         }
     }
 

@@ -1,5 +1,6 @@
 use crate::types::TyError;
 use crate::{ir::Ctx, parser::ParseError};
+use camino::Utf8Path;
 use line_index::{LineCol, LineIndex};
 use std::fmt;
 use text_size::TextRange;
@@ -13,14 +14,16 @@ pub enum CheckError<'a> {
 impl<'a> CheckError<'a> {
     pub fn display<'src, 'err>(
         &'err self,
-        source: &'src str,
         ctx: &'src Ctx,
+        path: &'src Utf8Path,
+        source: &'src str,
         colors: bool,
     ) -> DisplayCheckError<'src, 'err> {
         DisplayCheckError {
+            ctx,
+            path,
             source,
             error: self.clone(),
-            ctx,
             colors,
         }
     }
@@ -49,8 +52,9 @@ impl<'a> CheckError<'a> {
 
 pub struct DisplayCheckError<'a, 'b> {
     error: CheckError<'b>,
-    source: &'a str,
     ctx: &'a Ctx,
+    path: &'a Utf8Path,
+    source: &'a str,
     colors: bool,
 }
 
@@ -58,10 +62,14 @@ impl fmt::Display for DisplayCheckError<'_, '_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.error {
             CheckError::ParseError(err) => {
-                write!(f, "{}", err.display(self.source, self.colors))
+                write!(f, "{}", err.display(self.path, self.source, self.colors))
             }
             CheckError::TypeError(err) => {
-                write!(f, "{}", err.display(self.source, self.ctx, self.colors))
+                write!(
+                    f,
+                    "{}",
+                    err.display(self.ctx, self.path, self.source, self.colors)
+                )
             }
         }
     }

@@ -9,8 +9,8 @@ pub struct Root {
     pub(crate) syntax: SyntaxNode,
 }
 impl Root {
-    pub fn modules(&self) -> AstChildren<Module> {
-        support::children(&self.syntax)
+    pub fn module(&self) -> Option<Module> {
+        support::child(&self.syntax)
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -21,6 +21,9 @@ impl Module {
     pub fn mod_header(&self) -> Option<ModHeader> {
         support::child(&self.syntax)
     }
+    pub fn mod_uses(&self) -> AstChildren<ModUse> {
+        support::children(&self.syntax)
+    }
     pub fn top_levels(&self) -> AstChildren<TopLevel> {
         support::children(&self.syntax)
     }
@@ -30,16 +33,10 @@ pub struct ModHeader {
     pub(crate) syntax: SyntaxNode,
 }
 impl ModHeader {
-    pub fn module_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T![module])
-    }
     pub fn ident_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T![ident])
     }
     pub fn mod_exports(&self) -> AstChildren<ModExport> {
-        support::children(&self.syntax)
-    }
-    pub fn mod_uses(&self) -> AstChildren<ModUse> {
         support::children(&self.syntax)
     }
 }

@@ -1,0 +1,21 @@
+---
+source: crates/cli/tests/lib.rs
+info:
+  program: deno
+  args:
+    - run
+    - "--allow-read"
+    - "../../dev/wasm-runner.ts"
+    - tests/build/modules.wasm
+  env:
+    NO_COLOR: "1"
+input_file: crates/cli/tests/run/modules
+---
+success: true
+exit_code: 0
+----- stdout -----
+22
+12
+0
+
+----- stderr -----

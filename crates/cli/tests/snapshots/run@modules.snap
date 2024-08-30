@@ -1,0 +1,19 @@
+---
+source: crates/cli/tests/lib.rs
+info:
+  program: nemo
+  args:
+    - compile
+    - "--output"
+    - tests/build/modules.wasm
+    - tests/run/modules/main.nemo
+    - tests/run/modules/dep.nemo
+  env:
+    RUST_BACKTRACE: "0"
+input_file: crates/cli/tests/run/modules
+---
+success: true
+exit_code: 0
+----- stdout -----
+
+----- stderr -----

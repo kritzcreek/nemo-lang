@@ -1,5 +1,13 @@
 [workspace]
-members = ["crates/*"]
+members = [
+    "crates/derive_ir",
+    "crates/frontend",
+    "crates/backend",
+    "crates/cli",
+    "crates/wasm-lib",
+    "crates/xtask-gen-ast",
+    # "crates/language-server",
+]
 resolver = "2"
 
 [profile.release]

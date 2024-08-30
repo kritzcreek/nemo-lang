@@ -1,4 +1,5 @@
 use backend::codegen::codegen;
+use camino::Utf8Path;
 use frontend::highlight;
 use wasm_bindgen::prelude::*;
 
@@ -37,30 +38,47 @@ pub struct CompileResult {
     pub highlights: Vec<Highlight>,
 }
 
+const STDLIB: &[(&str, &str)] = &[
+    ("std/option.nemo", include_str!("../../../std/option.nemo")),
+    ("std/result.nemo", include_str!("../../../std/result.nemo")),
+    ("std/string.nemo", include_str!("../../../std/string.nemo")),
+    ("std/io.nemo", include_str!("../../../std/io.nemo")),
+    ("std/byte.nemo", include_str!("../../../std/byte.nemo")),
+];
+
 #[wasm_bindgen]
 pub fn compile(input: &str) -> CompileResult {
     console_error_panic_hook::set_once();
-    let check_result = frontend::run_frontend(input);
+    let mut sources = vec![];
+    for (path, source) in STDLIB {
+        sources.push((Utf8Path::new(path).to_path_buf(), source.to_string()))
+    }
+    let input_path = Utf8Path::new("input");
+    sources.push((input_path.to_path_buf(), input.to_string()));
+    let check_result = frontend::run_frontend(&sources);
     let mut highlights = vec![];
     for module in &check_result.modules {
+        if module.parse_result.path != input_path {
+            continue;
+        }
         highlights.extend(
             highlight::translate_to_utf16(
                 input,
-                highlight::highlight(&module.parse, &module.occurrences),
+                highlight::highlight(&module.parse_result.parse, &module.occurrences),
             )
             .into_iter()
             .map(|(start, end, kind)| Highlight::new(start, end, kind)),
         );
     }
-    let result = if check_result.has_errors() {
-        let errors = check_result
-            .errors()
-            .map(|e| Diagnostic {
-                message: e.message(&check_result.ctx),
-                start: e.at().start().into(),
-                end: e.at().end().into(),
-            })
-            .collect();
+    let errors: Vec<Diagnostic> = check_result
+        .errors()
+        .map(|e| Diagnostic {
+            message: e.message(&check_result.ctx),
+            start: e.at().start().into(),
+            end: e.at().end().into(),
+        })
+        .collect();
+    let result = if !errors.is_empty() {
         Err(errors)
     } else {
         let (ctx, ir) = check_result.consume();

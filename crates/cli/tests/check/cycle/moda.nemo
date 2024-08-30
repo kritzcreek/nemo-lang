@@ -1,0 +1,6 @@
+module moda
+exports (funca)
+
+use modb
+
+fn funca () {}

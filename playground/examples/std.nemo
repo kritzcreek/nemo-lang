@@ -1,0 +1,19 @@
+use string
+use byte
+use io
+
+// An example of using some of the std libraries string and printing functions
+fn main() {
+  let s = string::unsafe_new("Hello! ");
+  let s2 = string::unsafe_new("😀");
+  let s3 = string::concat(s, s2);
+
+  io::print_bytes("Byte count:");
+  io::print_int(s3.len);
+
+  io::print_bytes("Codepoint count:");
+  io::print_int(string::codepoint_len(s3));
+
+  io::print_bytes("Concatenated:");
+  io::print(s3)
+}
