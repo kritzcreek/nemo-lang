@@ -85,6 +85,8 @@ macro_rules! apply_common_filters {
         settings.set_prepend_module_to_snapshot(false);
         // Removes deno stack traces, as these change between versions
         settings.add_filter(r"    at(.*)", "");
+        // Removes line numbers from panics
+        settings.add_filter(r"thread 'main' panicked at (.*)", "thread 'main' panicked at [FILTERED]");
         let _bound = settings.bind_to_scope();
     }
 }

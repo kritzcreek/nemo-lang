@@ -15,6 +15,6 @@ exit_code: 101
 ----- stdout -----
 
 ----- stderr -----
-thread 'main' panicked at crates/frontend/src/lib.rs:156:13:
+thread 'main' panicked at [FILTERED]
 not yet implemented: Duplicate module name declared: 'moda'
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

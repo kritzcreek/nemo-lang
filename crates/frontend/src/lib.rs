@@ -40,7 +40,7 @@ impl FrontendResult<'_> {
     pub fn display_errors(&self) -> Option<i32> {
         let mut count = 0;
         for module in &self.modules {
-            let path = module.parse_result.path.as_path();
+            let path = self.ctx.get_module_path(module.parse_result.id);
             for error in &module.parse_result.parse_errors {
                 count += 1;
                 println!("{}", error.display(path, module.parse_result.source, true));
@@ -144,6 +144,7 @@ pub fn run_frontend(sources: &[(Utf8PathBuf, String)]) -> FrontendResult {
         })
         .collect();
 
+    // TODO: Group all module resolution related errors and report them properly
     let sorted_modules = module_dag::toposort_modules(module_sort_input);
     let (sorted, unknown_modules) = match sorted_modules {
         SortResult::Cycle(module_ids) => {
@@ -179,6 +180,7 @@ pub fn run_frontend(sources: &[(Utf8PathBuf, String)]) -> FrontendResult {
             }));
         let check_result = types::check_module(&ctx, parsed_module.parse.clone(), id, &checked_ids);
         ctx.set_module_name(id, parsed_module.name.clone());
+        ctx.set_module_path(id, parsed_module.path.clone());
         ctx.set_interface(id, check_result.interface);
         ctx.set_name_supply(id, check_result.names);
         if parsed_module.parse_errors.is_empty()

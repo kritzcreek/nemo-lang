@@ -1,3 +1,4 @@
+use camino::{Utf8Path, Utf8PathBuf};
 use std::{
     cell::{Cell, RefCell},
     fmt,
@@ -14,6 +15,7 @@ use crate::types::Interface;
 pub struct Ctx {
     // Indexed by ModuleId
     module_names: Vec<String>,
+    module_paths: Vec<Utf8PathBuf>,
     interfaces: Vec<Interface>,
     name_supplies: Vec<NameSupply>,
 }
@@ -23,17 +25,20 @@ impl Ctx {
         // Includes the reserved modules
         let all_module_count = (module_count + ModuleId::FIRST_NON_RESERVED.get() - 1) as usize;
 
-        let mut name_supplies = Vec::with_capacity(all_module_count);
         let mut module_names = Vec::with_capacity(all_module_count);
+        let mut module_paths = Vec::with_capacity(all_module_count);
         let mut interfaces = Vec::with_capacity(all_module_count);
+        let mut name_supplies = Vec::with_capacity(all_module_count);
         // TODO: Should add proper values for reserved modules
         for _ in 0..name_supplies.capacity() {
-            name_supplies.push(NameSupply::new());
             module_names.push("NOT INITIALIZED".to_string());
+            module_paths.push(Utf8Path::new("NOT INITIALIZED").to_path_buf());
             interfaces.push(Interface::default());
+            name_supplies.push(NameSupply::new());
         }
         Ctx {
             module_names,
+            module_paths,
             interfaces,
             name_supplies,
         }
@@ -41,25 +46,35 @@ impl Ctx {
     pub fn set_module_name(&mut self, module: ModuleId, name: String) {
         self.module_names[(module.0.get() - 1) as usize] = name
     }
+    pub fn set_module_path(&mut self, module: ModuleId, path: Utf8PathBuf) {
+        self.module_paths[(module.0.get() - 1) as usize] = path
+    }
     pub fn set_interface(&mut self, module: ModuleId, interface: Interface) {
         self.interfaces[(module.0.get() - 1) as usize] = interface
     }
     pub fn set_name_supply(&mut self, module: ModuleId, supply: NameSupply) {
         self.name_supplies[(module.0.get() - 1) as usize] = supply
     }
-    pub fn get_name_supply(&self, module: ModuleId) -> &NameSupply {
-        &self.name_supplies[(module.0.get() - 1) as usize]
+    pub fn get_module_name(&self, module: ModuleId) -> &str {
+        &self.module_names[(module.0.get() - 1) as usize]
+    }
+    pub fn get_module_path(&self, module: ModuleId) -> &Utf8Path {
+        &self.module_paths[(module.0.get() - 1) as usize]
     }
     pub fn get_interface(&self, module: ModuleId) -> &Interface {
         &self.interfaces[(module.0.get() - 1) as usize]
     }
-    pub fn get_module_name(&self, module: ModuleId) -> &str {
-        &self.module_names[(module.0.get() - 1) as usize]
+    pub fn get_name_supply(&self, module: ModuleId) -> &NameSupply {
+        &self.name_supplies[(module.0.get() - 1) as usize]
     }
-    pub fn resolve(&self, name: Name) -> (String, TextRange) {
+    pub fn resolve(&self, name: Name) -> (String, &Utf8Path, TextRange) {
         let supply = self.get_name_supply(name.module);
         let id = supply.lookup(name);
-        (supply.lookup_symbol(id.it), id.at)
+        (
+            supply.lookup_symbol(id.it),
+            self.get_module_path(name.module),
+            id.at,
+        )
     }
     pub fn display_name(&self, name: Name) -> String {
         self.resolve(name).0
