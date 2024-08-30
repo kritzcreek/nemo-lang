@@ -25,36 +25,19 @@ use std::mem;
 use std::rc::Rc;
 use text_size::TextRange;
 
-// NOTE: We could consider splitting into context and scope
-// to split into an immutable and mutable part during expr/decl
-// checking
 #[derive(Debug)]
-struct TyCtx {
+struct Scope {
     values: Vec<HashMap<Symbol, (Ty, Name)>>,
     type_vars: HashMap<Symbol, Name>,
-    // We keep track of the return type of the current function
-    // so that we can typecheck early returns
     return_type: Option<Rc<Ty>>,
-
-    // Basically "static" data. Once we've walked all uses,
-    // type definitions, and function headers this data is fixed.
-    functions: HashMap<Symbol, Rc<FuncDef>>,
-    types_names: HashMap<Symbol, Name>,
-    type_defs: HashMap<Name, TypeDef>,
-    uses: HashMap<Symbol, Interface>,
 }
 
-impl TyCtx {
-    fn new() -> TyCtx {
-        TyCtx {
+impl Scope {
+    fn new() -> Scope {
+        Scope {
             values: vec![],
             type_vars: HashMap::new(),
             return_type: None,
-
-            functions: HashMap::new(),
-            type_defs: HashMap::new(),
-            types_names: HashMap::new(),
-            uses: HashMap::new(),
         }
     }
 
@@ -68,34 +51,6 @@ impl TyCtx {
         } else {
             None
         }
-    }
-
-    fn lookup_var_or_func(&self, v: Symbol) -> Option<(Ty, Name)> {
-        self.lookup_var(v).or_else(|| {
-            let def = self.lookup_func(v)?;
-            if !def.ty_params.is_empty() {
-                eprintln!(
-                    "No func refs for polymorphic functions yet. Allow instantiate in the future?"
-                );
-                return None;
-            }
-            Some((Ty::Func(Box::new(def.ty.clone())), def.name))
-        })
-    }
-
-    fn lookup_func(&self, name: Symbol) -> Option<Rc<FuncDef>> {
-        self.functions.get(&name).cloned()
-    }
-
-    fn add_func(&mut self, v: Symbol, name: Name, ty_params: Vec<Name>, ty: FuncTy) {
-        self.functions.insert(
-            v,
-            Rc::new(FuncDef {
-                name,
-                ty_params,
-                ty,
-            }),
-        );
     }
 
     fn add_type_var(&mut self, v: Symbol, name: Name) {
@@ -120,6 +75,108 @@ impl TyCtx {
 
     fn restore_return_type(&mut self, ty: Option<Rc<Ty>>) {
         self.return_type = ty
+    }
+
+    fn enter_block(&mut self) {
+        self.values.push(HashMap::new())
+    }
+
+    fn leave_block(&mut self) {
+        self.values.pop().expect("Tried to pop from an empty Ctx");
+    }
+}
+
+// NOTE: We could consider splitting into context and scope
+// to split into an immutable and mutable part during expr/decl
+// checking
+#[derive(Debug)]
+struct TyCtx {
+    scope: Scope,
+    // Basically "static" data. Once we've walked all uses,
+    // type definitions, and function headers this data is fixed.
+    functions: HashMap<Symbol, Rc<FuncDef>>,
+    types_names: HashMap<Symbol, Name>,
+    type_defs: HashMap<Name, TypeDef>,
+    uses: HashMap<Symbol, Interface>,
+}
+
+impl TyCtx {
+    fn new() -> TyCtx {
+        TyCtx {
+            scope: Scope::new(),
+            functions: HashMap::new(),
+            type_defs: HashMap::new(),
+            types_names: HashMap::new(),
+            uses: HashMap::new(),
+        }
+    }
+
+    fn add_var(&mut self, v: Symbol, ty: Ty, name: Name) {
+        self.scope.add_var(v, ty, name);
+    }
+
+    fn lookup_var(&self, v: Symbol) -> Option<(Ty, Name)> {
+        self.scope.lookup_var(v)
+    }
+
+    fn add_type_var(&mut self, v: Symbol, name: Name) {
+        self.scope.add_type_var(v, name)
+    }
+
+    fn lookup_type_var(&self, v: Symbol) -> Option<Name> {
+        self.scope.lookup_type_var(v)
+    }
+
+    fn clear_type_vars(&mut self) {
+        self.scope.clear_type_vars()
+    }
+
+    fn return_type(&self) -> Option<Rc<Ty>> {
+        self.scope.return_type()
+    }
+
+    fn set_return_type(&mut self, ty: Ty) -> Option<Rc<Ty>> {
+        self.scope.set_return_type(ty)
+    }
+
+    fn restore_return_type(&mut self, ty: Option<Rc<Ty>>) {
+        self.scope.restore_return_type(ty)
+    }
+
+    fn enter_block(&mut self) {
+        self.scope.enter_block()
+    }
+
+    fn leave_block(&mut self) {
+        self.scope.leave_block()
+    }
+
+    fn lookup_var_or_func(&self, v: Symbol) -> Option<(Ty, Name)> {
+        self.scope.lookup_var(v).or_else(|| {
+            let def = self.lookup_func(v)?;
+            if !def.ty_params.is_empty() {
+                eprintln!(
+                    "No func refs for polymorphic functions yet. Allow instantiate in the future?"
+                );
+                return None;
+            }
+            Some((Ty::Func(Box::new(def.ty.clone())), def.name))
+        })
+    }
+
+    fn lookup_func(&self, name: Symbol) -> Option<Rc<FuncDef>> {
+        self.functions.get(&name).cloned()
+    }
+
+    fn add_func(&mut self, v: Symbol, name: Name, ty_params: Vec<Name>, ty: FuncTy) {
+        self.functions.insert(
+            v,
+            Rc::new(FuncDef {
+                name,
+                ty_params,
+                ty,
+            }),
+        );
     }
 
     fn declare_type_def(&mut self, v: Symbol, name: Name, def: TypeDef) {
@@ -167,14 +224,6 @@ impl TyCtx {
         if let Some(TypeDef::Struct(def)) = self.type_defs.get_mut(&name) {
             def.fields = fields;
         }
-    }
-
-    fn enter_block(&mut self) {
-        self.values.push(HashMap::new())
-    }
-
-    fn leave_block(&mut self) {
-        self.values.pop().expect("Tried to pop from an empty Ctx");
     }
 
     fn add_use(&mut self, name: Symbol, interface: Interface) {
