@@ -152,6 +152,9 @@ pub fn run_frontend(sources: &[(Utf8PathBuf, String)]) -> FrontendResult {
             // that don't participate in the cycle(s)
             todo!("Cycle detected in module dependencies: {:?}", module_ids)
         }
+        SortResult::Duplicate(name) => {
+            todo!("Duplicate module name declared: '{name}'")
+        }
         SortResult::Sorted {
             sorted,
             unknown_modules,

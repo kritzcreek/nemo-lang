@@ -7,6 +7,7 @@ use crate::ir::ModuleId;
 #[derive(Debug)]
 pub enum SortResult {
     Cycle(Vec<ModuleId>),
+    Duplicate(String),
     Sorted {
         sorted: Vec<ModuleId>,
         unknown_modules: Vec<(ModuleId, TextRange, String)>,
@@ -27,7 +28,10 @@ pub fn toposort_modules(modules: Vec<ModuleInfo>) -> SortResult {
     let mut ts: TopologicalSort<ModuleId> = TopologicalSort::new();
     for ModuleInfo { id, name, uses: _ } in &modules {
         ts.insert(*id);
-        module_name_map.insert(*name, *id);
+        let prev = module_name_map.insert(*name, *id);
+        if prev.is_some() {
+            return SortResult::Duplicate(name.to_string());
+        }
         module_id_map.insert(*id, *name);
     }
     for ModuleInfo { id, name: _, uses } in &modules {

@@ -6,12 +6,18 @@ default:
 install:
     cargo install --path crates/cli
 
+test:
+    cargo test --all
+    cargo clippy --all-targets --all-features
+
+test-accept:
+    cargo insta test --accept
+
 ci:
     just gen
     git update-index -q --really-refresh
     git diff-index --quiet HEAD crates/frontend/src/syntax/nodes.rs
-    cargo test --all
-    cargo clippy --all-targets --all-features
+    just test
     cargo fmt --all --check
     just build-playground
 
