@@ -41,7 +41,7 @@ pub fn check_module(
     let (names, _) = checker.name_supply.take();
     CheckResult {
         errors,
-        occurrences: checker.occurrences,
+        occurrences: checker.occurrences.take(),
         names,
         ir,
         interface,

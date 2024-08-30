@@ -20,6 +20,7 @@ use crate::{
     builtins::lookup_builtin,
     ir::{ModuleId, NameTag},
 };
+use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::mem;
 use std::rc::Rc;
@@ -267,7 +268,7 @@ impl<N> Occurrence<N> {
 pub type OccurrenceMap = HashMap<SyntaxTokenPtr, Occurrence<Name>>;
 
 pub struct Typechecker {
-    pub occurrences: OccurrenceMap, // Write only
+    pub occurrences: RefCell<OccurrenceMap>, // Write only
     pub name_supply: NameSupply,
     context: TyCtx, // Can be split into mutable and immutable parts
 }
@@ -280,22 +281,24 @@ impl Typechecker {
             context.add_use(name_supply.get_or_intern(&name), interface);
         }
         Typechecker {
-            occurrences: HashMap::new(),
+            occurrences: RefCell::new(HashMap::new()),
             name_supply,
             context,
         }
     }
 
-    fn record_def(&mut self, token: &SyntaxToken, name: Name) {
+    fn record_def(&self, token: &SyntaxToken, name: Name) {
         let previous_def = self
             .occurrences
+            .borrow_mut()
             .insert(SyntaxTokenPtr::new(token), Occurrence::Def(name));
         assert!(previous_def.is_none())
     }
 
-    fn record_ref(&mut self, token: &SyntaxToken, name: Name) {
+    fn record_ref(&self, token: &SyntaxToken, name: Name) {
         let previous_ref = self
             .occurrences
+            .borrow_mut()
             .insert(SyntaxTokenPtr::new(token), Occurrence::Ref(name));
         assert!(previous_ref.is_none())
     }
