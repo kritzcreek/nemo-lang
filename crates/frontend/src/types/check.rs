@@ -91,22 +91,22 @@ impl Scope {
 // to split into an immutable and mutable part during expr/decl
 // checking
 #[derive(Debug)]
-struct TyCtx {
+struct TyCtx<'ctx> {
     // Basically "static" data. Once we've walked all uses,
     // type definitions, and function headers this data is fixed.
     functions: HashMap<Symbol, Rc<FuncDef>>,
     types_names: HashMap<Symbol, Name>,
     type_defs: HashMap<Name, TypeDef>,
-    uses: HashMap<Symbol, Interface>,
+    uses: HashMap<Symbol, &'ctx Interface>,
 }
 
-impl TyCtx {
-    fn new() -> TyCtx {
+impl TyCtx<'_> {
+    fn new<'ctx>(uses: HashMap<Symbol, &'ctx Interface>) -> TyCtx<'ctx> {
         TyCtx {
             functions: HashMap::new(),
             type_defs: HashMap::new(),
             types_names: HashMap::new(),
-            uses: HashMap::new(),
+            uses
         }
     }
 
@@ -185,10 +185,6 @@ impl TyCtx {
         }
     }
 
-    fn add_use(&mut self, name: Symbol, interface: Interface) {
-        self.uses.insert(name, interface);
-    }
-
     fn lookup_qual_type_name(&self, q: Symbol, n: Name) -> Option<TypeDef> {
         self.uses
             .get(&q)
@@ -225,19 +221,20 @@ impl<N> Occurrence<N> {
 
 pub type OccurrenceMap = HashMap<SyntaxTokenPtr, Occurrence<Name>>;
 
-pub struct Typechecker {
+pub struct Typechecker<'ctx> {
     pub occurrences: RefCell<OccurrenceMap>, // Write only
     pub name_supply: NameSupply,
-    context: TyCtx, // Can be split into mutable and immutable parts
+    context: TyCtx<'ctx>,
 }
 
-impl Typechecker {
-    pub fn new(module: ModuleId, deps: Vec<(String, Interface)>) -> Typechecker {
-        let mut context = TyCtx::new();
+impl Typechecker<'_> {
+    pub fn new<'ctx>(module: ModuleId, deps: &'ctx [(&'ctx str, &'ctx Interface)]) -> Typechecker<'ctx> {
         let name_supply = NameSupply::new(module);
+        let mut uses = HashMap::new();
         for (name, interface) in deps {
-            context.add_use(name_supply.get_or_intern(&name), interface);
+            uses.insert(name_supply.get_or_intern(name), *interface);
         }
+        let context = TyCtx::new(uses);
         Typechecker {
             occurrences: RefCell::new(HashMap::new()),
             name_supply,
