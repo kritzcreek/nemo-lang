@@ -1,0 +1,20 @@
+---
+source: crates/cli/tests/lib.rs
+info:
+  program: nemo
+  args:
+    - check
+    - tests/check/cycle/modb.nemo
+    - tests/check/cycle/moda.nemo
+  env:
+    RUST_BACKTRACE: "0"
+input_file: crates/cli/tests/check/cycle
+---
+success: false
+exit_code: 101
+----- stdout -----
+
+----- stderr -----
+thread 'main' panicked at [FILTERED]
+not yet implemented: Cycle detected in module dependencies: []
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

@@ -1,0 +1,48 @@
+module io
+exports (print, print_bytes, print_int, print_float, print_bool)
+
+use string
+use option
+
+import print_char : fn (i32) -> unit from print_char
+import log_int : fn (i32) -> unit from log
+import log_float : fn (f32) -> unit from log
+
+fn print_chars(next: fn () -> option::Option[i32]) {
+  while true {
+    match next() {
+      option::Option::None _ => {
+        // newline
+        print_char(0x0A);
+        return {}
+      },
+      option::Option::Some char => {
+        print_char(char.val)
+      }
+    }
+  };
+}
+
+fn print(s : string::Str) {
+  print_chars(string::chars(s))
+}
+
+fn print_bytes(b : bytes) {
+  print(string::unsafe_new(b))
+}
+
+fn print_int(i : i32) {
+  log_int(i)
+}
+
+fn print_float(f : f32) {
+  log_float(f)
+}
+
+fn print_bool(b : bool) {
+  if b {
+    print_bytes("true")
+  } else {
+    print_bytes("false")
+  }
+}

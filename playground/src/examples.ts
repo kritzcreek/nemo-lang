@@ -6,6 +6,7 @@ import list from "../examples/list.nemo?raw";
 import closure from "../examples/closure.nemo?raw";
 import strings from "../examples/strings.nemo?raw";
 import histogram from "../examples/histogram.nemo?raw";
+import std from "../examples/std.nemo?raw";
 
 export const examples: Record<string, string> = {
   bouncy_shapes,
@@ -16,4 +17,5 @@ export const examples: Record<string, string> = {
   closure,
   strings,
   histogram,
+  std,
 };

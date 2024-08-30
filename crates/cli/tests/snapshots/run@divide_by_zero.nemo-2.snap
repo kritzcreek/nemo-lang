@@ -17,6 +17,3 @@ exit_code: 1
 
 ----- stderr -----
 error: Uncaught (in promise) RuntimeError: divide by zero
-    at main (wasm://wasm/5f03433e:1:68)
-    at [FILE_PATH]
-    at eventLoopTick (ext:core/01_core.js:168:7)

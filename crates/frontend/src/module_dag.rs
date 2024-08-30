@@ -1,48 +1,55 @@
+use rowan::TextRange;
 use std::collections::HashMap;
 use topological_sort::TopologicalSort;
 
-use crate::{
-    ir::{ModuleId, ModuleIdGen},
-    syntax::{Module, Root},
-};
+use crate::ir::ModuleId;
 
-fn mod_name(module: &Module) -> String {
-    module
-        .mod_header()
-        .and_then(|h| h.ident_token())
-        .map(|t| t.text().to_string())
-        .unwrap_or("DEFAULT_MODULE_NAME".to_string())
+#[derive(Debug)]
+pub enum SortResult {
+    Cycle(Vec<ModuleId>),
+    Duplicate(String),
+    Sorted {
+        sorted: Vec<ModuleId>,
+        unknown_modules: Vec<(ModuleId, TextRange, String)>,
+    },
 }
 
-pub fn toposort_modules(root: Root) -> Vec<(ModuleId, String, Module)> {
-    let mut id_gen = ModuleIdGen::new();
-    let (module_name_map, mut module_id_map) = {
-        let mut module_name_map = HashMap::new();
-        let mut module_id_map = HashMap::new();
-        for module in root.modules() {
-            let id = id_gen.next_id();
-            module_name_map.insert(mod_name(&module), id);
-            module_id_map.insert(id, (mod_name(&module), module.clone()));
-        }
-        (module_name_map, module_id_map)
-    };
+#[derive(Debug)]
+pub struct ModuleInfo<'a> {
+    pub id: ModuleId,
+    pub name: &'a str,
+    pub uses: &'a [(TextRange, String)],
+}
 
+pub fn toposort_modules(modules: Vec<ModuleInfo>) -> SortResult {
+    let mut module_name_map = HashMap::new();
+    let mut module_id_map = HashMap::new();
+    let mut unknown_modules = vec![];
     let mut ts: TopologicalSort<ModuleId> = TopologicalSort::new();
-    for (_, module) in module_id_map.values() {
-        let module_id = module_name_map[&mod_name(module)];
-        ts.insert(module_id);
-        let Some(header) = module.mod_header() else {
-            continue;
-        };
-        for mod_use in header.mod_uses() {
-            let import_name_tkn = mod_use.ident_token().unwrap();
-            let import_id = module_name_map[import_name_tkn.text()];
-            ts.add_dependency(import_id, module_id)
+    for ModuleInfo { id, name, uses: _ } in &modules {
+        ts.insert(*id);
+        let prev = module_name_map.insert(*name, *id);
+        if prev.is_some() {
+            return SortResult::Duplicate(name.to_string());
+        }
+        module_id_map.insert(*id, *name);
+    }
+    for ModuleInfo { id, name: _, uses } in &modules {
+        for (range, dep) in *uses {
+            if let Some(import_id) = module_name_map.get(dep.as_str()) {
+                ts.add_dependency(*import_id, *id)
+            } else {
+                unknown_modules.push((*id, *range, dep.clone()))
+            };
         }
     }
-    ts.map(|id| {
-        let (name, module) = module_id_map.remove(&id).unwrap();
-        (id, name, module)
-    })
-    .collect()
+    let sorted: Vec<ModuleId> = ts.collect();
+    if sorted.len() < modules.len() {
+        // TODO: Report which modules participate in cycle
+        return SortResult::Cycle(vec![]);
+    }
+    SortResult::Sorted {
+        sorted,
+        unknown_modules,
+    }
 }

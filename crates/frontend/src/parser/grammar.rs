@@ -23,7 +23,8 @@ pub fn prog(p: &mut Parser) {
 
 fn module(p: &mut Parser) {
     let c = p.checkpoint();
-    module_header(p);
+    mod_header(p);
+    mod_uses(p);
     while !p.at(SyntaxKind::EOF) && !p.at(T![module]) {
         if !toplevel(p).made_progress() {
             let c = p.checkpoint();
@@ -38,7 +39,7 @@ fn module(p: &mut Parser) {
     p.finish_at(c, SyntaxKind::Module)
 }
 
-fn module_header(p: &mut Parser) -> Progress {
+fn mod_header(p: &mut Parser) -> Progress {
     let c = p.checkpoint();
     if !p.eat(T![module]) {
         return Progress::None;
@@ -62,12 +63,6 @@ fn module_header(p: &mut Parser) -> Progress {
         }
     }
     p.expect(T![')']);
-    while !p.at(SyntaxKind::EOF) && p.at(T![use]) {
-        let c = p.checkpoint();
-        p.bump(T![use]);
-        p.expect(T![ident]);
-        p.finish_at(c, SyntaxKind::ModUse);
-    }
     p.finish_at(c, SyntaxKind::ModHeader);
     Progress::Made
 }
@@ -82,6 +77,15 @@ fn mod_export_item(p: &mut Parser) -> Progress {
         return Progress::None;
     }
     Progress::Made
+}
+
+fn mod_uses(p: &mut Parser) {
+    while !p.at(SyntaxKind::EOF) && p.at(T![use]) {
+        let c = p.checkpoint();
+        p.bump(T![use]);
+        p.expect(T![ident]);
+        p.finish_at(c, SyntaxKind::ModUse);
+    }
 }
 
 const TOP_LEVEL_FIRST: [SyntaxKind; 6] = [

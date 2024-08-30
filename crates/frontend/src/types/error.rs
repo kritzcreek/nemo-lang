@@ -1,6 +1,7 @@
 use crate::ir::{Ctx, Name, Ty};
 use crate::syntax::{AstNode, SyntaxNode, SyntaxToken};
 use ariadne::{Config, Label, Report, ReportKind, Source};
+use camino::Utf8Path;
 use core::fmt;
 use line_index::{LineCol, LineIndex};
 use std::str;
@@ -78,12 +79,14 @@ pub struct TyError {
 impl TyError {
     pub fn display<'err, 'src>(
         &'err self,
-        source: &'src str,
         ctx: &'src Ctx,
+        path: &'src Utf8Path,
+        source: &'src str,
         colors: bool,
     ) -> TyErrorDisplay<'src, 'err> {
         TyErrorDisplay {
             source,
+            path,
             ctx,
             ty_error: self,
             colors,
@@ -104,13 +107,21 @@ impl TyError {
 pub struct TyErrorDisplay<'src, 'err> {
     ty_error: &'err TyError,
     source: &'src str,
+    path: &'src Utf8Path,
     ctx: &'src Ctx,
     colors: bool,
 }
 
 impl fmt::Display for TyErrorDisplay<'_, '_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        render_ty_error(self.source, self.ctx, self.ty_error, self.colors, f);
+        render_ty_error(
+            self.ctx,
+            self.path,
+            self.source,
+            self.ty_error,
+            self.colors,
+            f,
+        );
         Ok(())
     }
 }
@@ -302,25 +313,22 @@ fn error_label(err_data: &TyErrorData, ctx: &Ctx) -> String {
 }
 
 pub fn render_ty_error(
-    source: &str,
     ctx: &Ctx,
+    path: &Utf8Path,
+    source: &str,
     ty_error: &TyError,
     colors: bool,
     output: &mut fmt::Formatter,
 ) {
-    let file_name = "source";
-    let cache = (file_name, Source::from(source));
+    let cache = (path, Source::from(source));
     let mut out_buf = Vec::new();
 
-    Report::build(ReportKind::Error, file_name, 12)
+    Report::build(ReportKind::Error, path, 12)
         .with_code(code_for_error(&ty_error.it))
         .with_message(error_label(&ty_error.it, ctx))
         .with_label(
-            Label::new((
-                file_name,
-                ty_error.at.start().into()..ty_error.at.end().into(),
-            ))
-            .with_message(error_label(&ty_error.it, ctx)),
+            Label::new((path, ty_error.at.start().into()..ty_error.at.end().into()))
+                .with_message(error_label(&ty_error.it, ctx)),
         )
         .with_config(Config::default().with_color(colors))
         .finish()

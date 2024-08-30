@@ -1,0 +1,36 @@
+module option
+exports (Option, some, none, map, is_none, is_some)
+
+variant Option[t] {
+  struct Some { val: t },
+  struct None {}
+}
+
+fn some[t](value: t) -> Option[t] {
+  Option::Some { val = value }
+}
+
+fn none[t]() -> Option[t] {
+  Option::None {}
+}
+
+fn map[t, u](option: Option[t], f: fn(t) -> u) -> Option[u] {
+  match option {
+    Option::Some s => { Option::Some { val = f(s.val) } },
+    Option::None _ => { none() },
+  }
+}
+
+fn is_some[a](opt : Option[a]) -> bool {
+  match opt {
+    Option::Some _ => { true },
+    Option::None _ => { false },
+  }
+}
+
+fn is_none[a](opt : Option[a]) -> bool {
+  match opt {
+    Option::None _ => { true },
+    Option::Some _ => { false },
+  }
+}

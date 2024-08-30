@@ -1,14 +1,23 @@
 set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
 
+default:
+    just --list
+
 install:
     cargo install --path crates/cli
+
+test:
+    cargo test --all
+    cargo clippy --all-targets --all-features
+
+test-accept:
+    cargo insta test --accept
 
 ci:
     just gen
     git update-index -q --really-refresh
     git diff-index --quiet HEAD crates/frontend/src/syntax/nodes.rs
-    cargo test --all
-    cargo clippy --all-targets --all-features
+    just test
     cargo fmt --all --check
     just build-playground
 
@@ -23,7 +32,7 @@ build-wasm-lib:
 
 run-wasm FILE:
     mkdir -p build
-    cargo run --bin nemo compile {{ FILE }} --output build/{{ without_extension(file_name(FILE)) }}.wasm
+    cargo run --bin nemo compile std/* {{ FILE }} --output build/{{ without_extension(file_name(FILE)) }}.wasm
     wasm-opt --enable-reference-types --enable-gc --enable-bulk-memory -O3 build/{{ without_extension(file_name(FILE)) }}.wasm -o build/{{ without_extension(file_name(FILE)) }}_opt.wasm
     wasm-tools print build/{{ without_extension(file_name(FILE)) }}.wasm -o build/{{ without_extension(file_name(FILE)) }}.wast
     wasm-tools print build/{{ without_extension(file_name(FILE)) }}_opt.wasm -o build/{{ without_extension(file_name(FILE)) }}_opt.wast

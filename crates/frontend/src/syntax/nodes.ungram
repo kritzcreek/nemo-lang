@@ -1,8 +1,8 @@
-Root = Module*
+Root = Module
 
-Module = ModHeader TopLevel*
+Module = ModHeader? ModUse* TopLevel*
 
-ModHeader = 'module' 'ident' ModExport* ModUse*
+ModHeader = 'ident' ModExport*
 
 ModExport = ModExportVal | ModExportTy | ModExportAll
 ModExportVal = 'ident'

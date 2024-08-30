@@ -173,7 +173,7 @@ impl<'a> Builder<'a> {
 
         for (name, info) in self.structs {
             for (tys, type_idx) in &info.instances {
-                let mut it = ctx.display_name(name);
+                let mut it = ctx.display_qualified_name(name);
                 if !tys.is_empty() {
                     it.push('#');
                 }
@@ -191,7 +191,7 @@ impl<'a> Builder<'a> {
 
         for (name, info) in self.variants {
             for (tys, type_idx) in info.instances {
-                let mut it = ctx.display_name(name);
+                let mut it = ctx.display_qualified_name(name);
                 if !tys.is_empty() {
                     it.push('#');
                 }
@@ -212,7 +212,7 @@ impl<'a> Builder<'a> {
         let mut import_indices = vec![];
         for (name, data) in imports {
             import_section.import(&data.ns, &data.func, EntityType::Function(data.ty_idx));
-            function_names.append(data.index, &ctx.display_name(name));
+            function_names.append(data.index, &ctx.display_qualified_name(name));
             import_indices.push(data.index);
         }
         // function_section
@@ -221,7 +221,7 @@ impl<'a> Builder<'a> {
         let mut function_indices = vec![];
         funcs.sort_by_key(|(_, v)| v.index);
         for (name, func) in funcs.iter() {
-            function_names.append(func.index, &ctx.display_name(*name));
+            function_names.append(func.index, &ctx.display_qualified_name(*name));
             function_section.function(func.ty);
             function_indices.push(func.index);
         }
@@ -235,7 +235,7 @@ impl<'a> Builder<'a> {
         let mut global_names = WasmNameMap::new();
         for data in globals {
             global_section.global(data.ty, &data.init);
-            global_names.append(data.index, &ctx.display_name(data.name))
+            global_names.append(data.index, &ctx.display_qualified_name(data.name))
         }
         // export_section
         let mut export_section = ExportSection::new();
@@ -261,7 +261,10 @@ impl<'a> Builder<'a> {
                 names: local_names,
             }) = func.locals
             else {
-                panic!("No locals for function {}", ctx.display_name(name))
+                panic!(
+                    "No locals for function {}",
+                    ctx.display_qualified_name(name)
+                )
             };
             let mut func_body = Function::new_with_locals_types(locals);
             for instr in func.body.unwrap() {
@@ -315,8 +318,14 @@ impl<'a> Builder<'a> {
         self.ctx.display_name(name)
     }
 
-    pub fn resolve_name_range(&self, name: Name) -> (String, TextRange) {
-        self.ctx.resolve(name)
+    pub fn resolve_module_name(&self, name: Name) -> &str {
+        self.ctx.get_module_name(name.module)
+    }
+
+    pub fn resolve_qualified_name(&self, name: Name) -> (&str, String) {
+        let mod_name = self.ctx.get_module_name(name.module);
+        let it = self.ctx.display_name(name);
+        (mod_name, it)
     }
 
     pub fn declare_variant(&mut self, ty: Variant) {
@@ -732,10 +741,12 @@ impl<'a> Builder<'a> {
         if let Some(idx) = self.func_refs.get(&name) {
             return *idx;
         }
-        let (it, at) = self.resolve_name_range(name);
-        let (func_name, _) =
-            self.name_supply()
-                .func_idx(ModuleId::CODEGEN, &format!("{it}#ref"), at);
+        let (mod_name, it) = self.resolve_qualified_name(name);
+        let (func_name, _) = self.name_supply().func_idx(
+            ModuleId::CODEGEN,
+            &format!("{mod_name}::{it}#ref"),
+            TextRange::default(),
+        );
         let mut instrs: Vec<Instruction> = (0..ty.arguments.len())
             .map(|i| Instruction::LocalGet(i as u32 + 1))
             .collect();
