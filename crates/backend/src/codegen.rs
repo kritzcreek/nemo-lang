@@ -610,7 +610,7 @@ impl<'a> Codegen<'a> {
             if let Some(existing) = poly_func.instances.get(&tys) {
                 return *existing;
             }
-            let func_name = self.builder.ctx.display_name(name);
+            let func_name = self.builder.ctx.display_qualified_name(name);
             let mut it = format!("{}#", func_name);
             for param in &tys {
                 write!(&mut it, "_{}", param.display(&self.builder.ctx)).unwrap()

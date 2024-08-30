@@ -76,6 +76,13 @@ impl Ctx {
             id.at,
         )
     }
+    pub fn display_qualified_name(&self, name: Name) -> String {
+        format!(
+            "{}::{}",
+            self.get_module_name(name.module),
+            self.resolve(name).0
+        )
+    }
     pub fn display_name(&self, name: Name) -> String {
         self.resolve(name).0
     }

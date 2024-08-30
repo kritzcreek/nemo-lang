@@ -173,7 +173,7 @@ impl<'a> Builder<'a> {
 
         for (name, info) in self.structs {
             for (tys, type_idx) in &info.instances {
-                let mut it = ctx.display_name(name);
+                let mut it = ctx.display_qualified_name(name);
                 if !tys.is_empty() {
                     it.push('#');
                 }
@@ -191,7 +191,7 @@ impl<'a> Builder<'a> {
 
         for (name, info) in self.variants {
             for (tys, type_idx) in info.instances {
-                let mut it = ctx.display_name(name);
+                let mut it = ctx.display_qualified_name(name);
                 if !tys.is_empty() {
                     it.push('#');
                 }
@@ -212,7 +212,7 @@ impl<'a> Builder<'a> {
         let mut import_indices = vec![];
         for (name, data) in imports {
             import_section.import(&data.ns, &data.func, EntityType::Function(data.ty_idx));
-            function_names.append(data.index, &ctx.display_name(name));
+            function_names.append(data.index, &ctx.display_qualified_name(name));
             import_indices.push(data.index);
         }
         // function_section
@@ -221,7 +221,7 @@ impl<'a> Builder<'a> {
         let mut function_indices = vec![];
         funcs.sort_by_key(|(_, v)| v.index);
         for (name, func) in funcs.iter() {
-            function_names.append(func.index, &ctx.display_name(*name));
+            function_names.append(func.index, &ctx.display_qualified_name(*name));
             function_section.function(func.ty);
             function_indices.push(func.index);
         }
@@ -235,7 +235,7 @@ impl<'a> Builder<'a> {
         let mut global_names = WasmNameMap::new();
         for data in globals {
             global_section.global(data.ty, &data.init);
-            global_names.append(data.index, &ctx.display_name(data.name))
+            global_names.append(data.index, &ctx.display_qualified_name(data.name))
         }
         // export_section
         let mut export_section = ExportSection::new();
@@ -261,7 +261,10 @@ impl<'a> Builder<'a> {
                 names: local_names,
             }) = func.locals
             else {
-                panic!("No locals for function {}", ctx.display_name(name))
+                panic!(
+                    "No locals for function {}",
+                    ctx.display_qualified_name(name)
+                )
             };
             let mut func_body = Function::new_with_locals_types(locals);
             for instr in func.body.unwrap() {
