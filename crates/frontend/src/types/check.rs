@@ -762,6 +762,8 @@ impl Typechecker<'_> {
         scope: &mut Scope,
         module: &Module,
     ) -> Option<Vec<ir::Func>> {
+        // TODO: Do we really need the Option wrapper here? As long as we report errors on all paths
+        // we should be fine to emit funcs anyway.
         let mut funcs = Some(vec![]);
         for top_level in module.top_levels() {
             if let TopLevel::TopFn(top_fn) = top_level {
