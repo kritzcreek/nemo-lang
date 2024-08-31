@@ -25,11 +25,11 @@ impl NameSupply {
         self.0.func_idx(self.1, tkn.text(), tkn.text_range())
     }
 
-    pub fn type_idx(&mut self, tkn: &SyntaxToken) -> (Name, Symbol) {
+    pub fn type_idx(&self, tkn: &SyntaxToken) -> (Name, Symbol) {
         self.0.type_idx(self.1, tkn.text(), tkn.text_range())
     }
 
-    pub fn type_var(&mut self, tkn: &SyntaxToken) -> (Name, Symbol) {
+    pub fn type_var(&self, tkn: &SyntaxToken) -> (Name, Symbol) {
         self.0.type_var_idx(self.1, tkn.text(), tkn.text_range())
     }
 

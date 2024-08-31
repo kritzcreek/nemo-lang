@@ -29,19 +29,16 @@ pub fn check_module(
     module_id: ModuleId,
     checked_ids: &[ModuleId],
 ) -> CheckResult {
-    let mut dependencies: Vec<(String, Interface)> = vec![];
+    let mut dependencies: Vec<(&str, &Interface)> = vec![];
     for id in checked_ids {
-        dependencies.push((
-            ctx.get_module_name(*id).to_owned(),
-            ctx.get_interface(*id).clone(),
-        ));
+        dependencies.push((ctx.get_module_name(*id), ctx.get_interface(*id)));
     }
-    let mut checker = Typechecker::new(module_id, dependencies);
+    let mut checker = Typechecker::new(module_id, &dependencies);
     let (ir, interface, errors) = checker.infer_module(&module);
     let (names, _) = checker.name_supply.take();
     CheckResult {
         errors,
-        occurrences: checker.occurrences,
+        occurrences: checker.occurrences.take(),
         names,
         ir,
         interface,
