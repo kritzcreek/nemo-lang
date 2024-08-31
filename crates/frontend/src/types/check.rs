@@ -87,13 +87,13 @@ impl Scope {
     }
 }
 
-// NOTE: We could consider splitting into context and scope
-// to split into an immutable and mutable part during expr/decl
-// checking
+// TyCtx contains top-level function, type, and import definitions.
+// Because it is immutable once we've walked the top-level structure of a
+// module we keep it in the Typechecker struct for easier access.
+// The mutable part of the type checking "context" is called Scope in this module
+// and passed as an explicit mutable reference throughout the checking process
 #[derive(Debug)]
 struct TyCtx<'ctx> {
-    // Basically "static" data. Once we've walked all uses,
-    // type definitions, and function headers this data is fixed.
     functions: HashMap<Symbol, FuncDef>,
     types_names: HashMap<Symbol, Name>,
     type_defs: HashMap<Name, TypeDef>,
@@ -1099,7 +1099,6 @@ impl Typechecker<'_> {
 
         let ir_expr = ir.map(|expr_data| ir::Expr {
             at: expr.syntax().text_range(),
-            // Bail if Ty is any?
             ty: ty.clone(),
             it: Box::new(expr_data),
         });
@@ -1210,6 +1209,7 @@ impl Typechecker<'_> {
             }
         }
     }
+
     fn infer_poly_struct(
         &self,
         errors: &mut TyErrors,
@@ -1233,6 +1233,7 @@ impl Typechecker<'_> {
         for field in struct_expr.e_struct_fields() {
             let Some((name, expected_ty)) = self.lookup_struct_field(errors, def.name, &field)
             else {
+                // NOTE: no need to report an error here, because `lookup_struct_field` already does
                 continue;
             };
             seen.push(name);
@@ -1458,9 +1459,11 @@ impl Typechecker<'_> {
         };
 
         let subst = subst.unwrap_or_default();
+        // TODO: Can we reduce duplication between this and infer_poly_struct somewhat?
         let mut seen = vec![];
         for field in struct_expr.e_struct_fields() {
             let Some((field_name, ty)) = self.lookup_struct_field(errors, def.name, &field) else {
+                // NOTE: no need to report an error here, because `lookup_struct_field` already does
                 continue;
             };
             seen.push(field_name);
