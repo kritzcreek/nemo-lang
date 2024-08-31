@@ -31,10 +31,7 @@ pub fn check_module(
 ) -> CheckResult {
     let mut dependencies: Vec<(&str, &Interface)> = vec![];
     for id in checked_ids {
-        dependencies.push((
-            ctx.get_module_name(*id),
-            ctx.get_interface(*id),
-        ));
+        dependencies.push((ctx.get_module_name(*id), ctx.get_interface(*id)));
     }
     let mut checker = Typechecker::new(module_id, &dependencies);
     let (ir, interface, errors) = checker.infer_module(&module);

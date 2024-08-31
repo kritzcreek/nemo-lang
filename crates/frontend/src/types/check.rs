@@ -95,18 +95,24 @@ impl Scope {
 #[derive(Debug)]
 struct TyCtx<'ctx> {
     functions: HashMap<Symbol, FuncDef>,
-    types_names: HashMap<Symbol, Name>,
-    type_defs: HashMap<Name, TypeDef>,
     uses: HashMap<Symbol, &'ctx Interface>,
+
+    structs: HashMap<Name, StructDef>,
+    variants: HashMap<Name, VariantDef>,
+    // NOTE: Does not contain mappings for variant alternatives
+    struct_names: HashMap<Symbol, Name>,
+    variant_names: HashMap<Symbol, Name>,
 }
 
 impl TyCtx<'_> {
     fn new<'ctx>(uses: HashMap<Symbol, &'ctx Interface>) -> TyCtx<'ctx> {
         TyCtx {
             functions: HashMap::new(),
-            type_defs: HashMap::new(),
-            types_names: HashMap::new(),
-            uses
+            uses,
+            structs: HashMap::new(),
+            variants: HashMap::new(),
+            struct_names: HashMap::new(),
+            variant_names: HashMap::new(),
         }
     }
 
@@ -138,30 +144,43 @@ impl TyCtx<'_> {
         );
     }
 
-    fn declare_type_def(&mut self, v: Symbol, name: Name, def: TypeDef) {
-        let mut is_sub_struct = false;
-        if let TypeDef::Struct(struct_def) = &def {
-            is_sub_struct = struct_def.variant.is_some()
-        }
+    fn declare_struct_def(&mut self, v: Symbol, name: Name, def: StructDef) {
+        let is_sub_struct = def.variant.is_some();
         // We don't record String -> Name mapping for variant structs
         // as those are looked up via their Variant name
         if !is_sub_struct {
-            self.types_names.insert(v, name);
+            self.struct_names.insert(v, name);
         }
-        self.type_defs.insert(name, def);
+        self.structs.insert(name, def);
+    }
+
+    fn declare_variant_def(&mut self, v: Symbol, name: Name, def: VariantDef) {
+        self.variant_names.insert(v, name);
+        self.variants.insert(name, def);
     }
 
     fn lookup_type_name(&self, v: Symbol) -> Option<Name> {
-        self.types_names.get(&v).copied()
+        self.variant_names
+            .get(&v)
+            .or_else(|| self.struct_names.get(&v))
+            .copied()
     }
 
     fn lookup_type_def(&self, name: Name) -> Option<TypeDef> {
         // TODO: Get rid of clone
-        self.type_defs.get(&name).cloned().or_else(|| {
-            self.uses
-                .values()
-                .find_map(|iface| iface.lookup_type_name(name))
-        })
+        self.variants
+            .get(&name)
+            .map(|d| TypeDef::Variant(d.clone()))
+            .or_else(|| {
+                self.structs
+                    .get(&name)
+                    .map(|d| TypeDef::Struct(d.clone()))
+                    .or_else(|| {
+                        self.uses
+                            .values()
+                            .find_map(|iface| iface.lookup_type_name(name))
+                    })
+            })
     }
 
     fn lookup_type(&self, v: Symbol) -> Option<TypeDef> {
@@ -180,7 +199,8 @@ impl TyCtx<'_> {
     }
 
     fn set_fields(&mut self, name: Name, fields: HashMap<String, (Name, Ty)>) {
-        if let Some(TypeDef::Struct(def)) = self.type_defs.get_mut(&name) {
+        // TODO: expect?
+        if let Some(def) = self.structs.get_mut(&name) {
             def.fields = fields;
         }
     }
@@ -228,7 +248,10 @@ pub struct Typechecker<'ctx> {
 }
 
 impl Typechecker<'_> {
-    pub fn new<'ctx>(module: ModuleId, deps: &'ctx [(&'ctx str, &'ctx Interface)]) -> Typechecker<'ctx> {
+    pub fn new<'ctx>(
+        module: ModuleId,
+        deps: &'ctx [(&'ctx str, &'ctx Interface)],
+    ) -> Typechecker<'ctx> {
         let name_supply = NameSupply::new(module);
         let mut uses = HashMap::new();
         for (name, interface) in deps {
@@ -431,16 +454,16 @@ impl Typechecker<'_> {
                     self.record_def(&tkn, name);
 
                     let ty_params = s.type_params().map(|p| self.check_ty_param(&p)).collect();
-                    self.context.declare_type_def(
+                    self.context.declare_struct_def(
                         sym,
                         name,
-                        TypeDef::Struct(StructDef {
+                        StructDef {
                             name,
                             span: s.syntax().text_range(),
                             ty_params,
                             variant: None,
                             fields: HashMap::new(),
-                        }),
+                        },
                     );
                     struct_defs.push((name, s))
                 }
@@ -466,30 +489,30 @@ impl Typechecker<'_> {
                             errors.report(&tkn, TypeParamInVariantStruct);
                         }
 
-                        self.context.declare_type_def(
+                        self.context.declare_struct_def(
                             alt_sym,
                             alt_name,
-                            TypeDef::Struct(StructDef {
+                            StructDef {
                                 name: alt_name,
                                 span: s.syntax().text_range(),
                                 ty_params: ty_params.clone(),
                                 variant: Some(variant_name),
                                 fields: HashMap::new(),
-                            }),
+                            },
                         );
                         alternatives.insert(tkn.text().to_string(), alt_name);
                         struct_defs.push((alt_name, s))
                     }
 
-                    self.context.declare_type_def(
+                    self.context.declare_variant_def(
                         variant_sym,
                         variant_name,
-                        TypeDef::Variant(VariantDef {
+                        VariantDef {
                             name: variant_name,
                             span: v.syntax().text_range(),
                             ty_params,
                             alternatives,
-                        }),
+                        },
                     );
                 }
                 _ => {}
@@ -524,20 +547,20 @@ impl Typechecker<'_> {
             self.context.set_fields(name, fields);
         }
         let mut type_defs = vec![];
-        for (name, def) in self.context.type_defs.iter() {
-            match def {
-                TypeDef::Variant(v) => type_defs.push(ir::TypeDef::Variant(ir::Variant {
-                    name: *name,
-                    span: v.span,
-                    alternatives: v.alternatives.values().copied().collect(),
-                })),
-                TypeDef::Struct(s) => type_defs.push(ir::TypeDef::Struct(ir::Struct {
-                    name: *name,
-                    span: s.span,
-                    variant: s.variant,
-                    fields: s.fields.values().cloned().collect(),
-                })),
-            }
+        for (name, def) in &self.context.structs {
+            type_defs.push(ir::TypeDef::Struct(ir::Struct {
+                name: *name,
+                span: def.span,
+                variant: def.variant,
+                fields: def.fields.values().cloned().collect(),
+            }))
+        }
+        for (name, def) in &self.context.variants {
+            type_defs.push(ir::TypeDef::Variant(ir::Variant {
+                name: *name,
+                span: def.span,
+                alternatives: def.alternatives.values().copied().collect(),
+            }))
         }
         Some(type_defs)
     }
