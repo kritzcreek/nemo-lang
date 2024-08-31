@@ -105,7 +105,7 @@ struct TyCtx<'ctx> {
 }
 
 impl TyCtx<'_> {
-    fn new<'ctx>(uses: HashMap<Symbol, &'ctx Interface>) -> TyCtx<'ctx> {
+    fn new(uses: HashMap<Symbol, &Interface>) -> TyCtx {
         TyCtx {
             functions: HashMap::new(),
             uses,
@@ -1435,13 +1435,13 @@ impl Typechecker<'_> {
                     return self.infer_poly_struct(
                         errors,
                         scope,
-                        &def,
+                        def,
                         &struct_name_tkn,
                         struct_expr,
                     )
                 }
                 Some(expected) => {
-                    let Some(subst) = infer_struct_instantiation(&def, expected) else {
+                    let Some(subst) = infer_struct_instantiation(def, expected) else {
                         errors.report(
                             struct_expr,
                             TypeMismatch {
