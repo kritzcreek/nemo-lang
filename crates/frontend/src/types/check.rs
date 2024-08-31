@@ -167,20 +167,13 @@ impl TyCtx<'_> {
     }
 
     fn lookup_type_def(&self, name: Name) -> Option<TypeDef> {
-        // TODO: Get rid of clone
-        self.variants
-            .get(&name)
-            .map(|d| TypeDef::Variant(d.clone()))
-            .or_else(|| {
-                self.structs
-                    .get(&name)
-                    .map(|d| TypeDef::Struct(d.clone()))
-                    .or_else(|| {
-                        self.uses
-                            .values()
-                            .find_map(|iface| iface.lookup_type_name(name))
-                    })
+        self.variants.get(&name).map(TypeDef::Variant).or_else(|| {
+            self.structs.get(&name).map(TypeDef::Struct).or_else(|| {
+                self.uses
+                    .values()
+                    .find_map(|iface| iface.lookup_type_name(name))
             })
+        })
     }
 
     fn lookup_type(&self, v: Symbol) -> Option<TypeDef> {

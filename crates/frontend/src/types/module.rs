@@ -107,11 +107,11 @@ impl<'a> fmt::Display for VariantDefDisplay<'a> {
 }
 
 #[derive(Debug, Clone)]
-pub enum TypeDef {
-    Struct(StructDef),
-    Variant(VariantDef),
+pub enum TypeDef<'a> {
+    Struct(&'a StructDef),
+    Variant(&'a VariantDef),
 }
-impl TypeDef {
+impl TypeDef<'_> {
     pub fn name(&self) -> Name {
         match self {
             TypeDef::Struct(x) => x.name,
@@ -210,23 +210,19 @@ impl Interface {
     pub fn lookup_type(&self, name: &str) -> Option<TypeDef> {
         self.variant_names
             .get(name)
-            .map(|n| TypeDef::Variant(self.variants.get(n).unwrap().clone()))
+            .map(|n| TypeDef::Variant(self.variants.get(n).unwrap()))
             .or_else(|| {
                 self.struct_names
                     .get(name)
-                    .map(|n| TypeDef::Struct(self.structs.get(n).unwrap().clone()))
+                    .map(|n| TypeDef::Struct(self.structs.get(n).unwrap()))
             })
     }
 
     pub fn lookup_type_name(&self, name: Name) -> Option<TypeDef> {
         self.structs
             .get(&name)
-            .map(|n| TypeDef::Struct(n.clone()))
-            .or_else(|| {
-                self.variants
-                    .get(&name)
-                    .map(|n| TypeDef::Variant(n.clone()))
-            })
+            .map(TypeDef::Struct)
+            .or_else(|| self.variants.get(&name).map(TypeDef::Variant))
     }
 
     pub fn lookup_func(&self, name: &str) -> Option<&FuncDef> {
