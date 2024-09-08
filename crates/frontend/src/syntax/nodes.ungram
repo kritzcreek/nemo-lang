@@ -52,7 +52,7 @@ TyBool = 'bool'
 TyBytes = 'bytes'
 TyUnit = 'unit'
 TyArray = '[' elem:Type ']'
-TyCons = ModQualifier? Qualifier? 'upper_ident' type_args:Type*
+TyCons = ModQualifier? 'upper_ident' type_args:Type*
 TyVar = 'ident'
 
 ModQualifier = 'ident' '::'
