@@ -672,7 +672,7 @@ impl Typechecker<'_> {
                     return Ty::Error;
                 };
                 let Some(ty_def) =
-                    self.lookup_type(errors, t.mod_qualifier(), t.qualifier(), &ty_tkn)
+                    self.lookup_type(errors, t.mod_qualifier(), None, &ty_tkn)
                 else {
                     return Ty::Error;
                 };
