@@ -7,11 +7,11 @@ use frontend::ir::{
 };
 use text_size::TextRange;
 use wasm_encoder::{
-    self, ArrayType, CodeSection, CompositeType, ConstExpr, DataCountSection, DataSection,
-    ElementSection, Elements, EntityType, ExportKind, ExportSection, FieldType, FuncType, Function,
-    FunctionSection, GlobalSection, GlobalType, HeapType, ImportSection, IndirectNameMap,
-    Instruction, Module, NameMap as WasmNameMap, NameSection, RefType, StartSection, StorageType,
-    StructType, SubType, TypeSection, ValType,
+    self, ArrayType, CodeSection, CompositeInnerType, CompositeType, ConstExpr, DataCountSection,
+    DataSection, ElementSection, Elements, EntityType, ExportKind, ExportSection, FieldType,
+    FuncType, Function, FunctionSection, GlobalSection, GlobalType, HeapType, ImportSection,
+    IndirectNameMap, Instruction, Module, NameMap as WasmNameMap, NameSection, RefType,
+    StartSection, StorageType, StructType, SubType, TypeSection, ValType,
 };
 
 type FuncIdx = u32;
@@ -359,7 +359,7 @@ impl<'a> Builder<'a> {
                 self.types.push(SubType {
                     is_final: true,
                     supertype_idx: None,
-                    composite_type: CompositeType::Func(func_type),
+                    composite_type: composite_func(func_type),
                 });
                 idx
             }
@@ -385,7 +385,7 @@ impl<'a> Builder<'a> {
             self.types.push(SubType {
                 is_final: false,
                 supertype_idx: None,
-                composite_type: CompositeType::Struct(StructType {
+                composite_type: composite_struct(StructType {
                     fields: vec![FieldType {
                         element_type: StorageType::Val(ValType::I32),
                         mutable: false,
@@ -429,7 +429,7 @@ impl<'a> Builder<'a> {
             self.types.push(SubType {
                 is_final: true,
                 supertype_idx,
-                composite_type: CompositeType::Struct(StructType {
+                composite_type: composite_struct(StructType {
                     fields: fields.into_boxed_slice(),
                 }),
             });
@@ -465,7 +465,7 @@ impl<'a> Builder<'a> {
                 self.types.push(SubType {
                     is_final: true,
                     supertype_idx: None,
-                    composite_type: CompositeType::Array(ArrayType(FieldType {
+                    composite_type: composite_array(ArrayType(FieldType {
                         element_type: StorageType::I8,
                         mutable: true,
                     })),
@@ -539,7 +539,7 @@ impl<'a> Builder<'a> {
                 self.types.push(SubType {
                     is_final: true,
                     supertype_idx: None,
-                    composite_type: CompositeType::Array(ArrayType(FieldType {
+                    composite_type: composite_array(ArrayType(FieldType {
                         element_type: StorageType::Val(elem_val_ty),
                         mutable: true,
                     })),
@@ -571,12 +571,12 @@ impl<'a> Builder<'a> {
             self.types.push(SubType {
                 is_final: true,
                 supertype_idx: None,
-                composite_type: CompositeType::Func(FuncType::new(params, iter::once(result_ty))),
+                composite_type: composite_func(FuncType::new(params, iter::once(result_ty))),
             });
             self.types.push(SubType {
                 is_final: false,
                 supertype_idx: None,
-                composite_type: CompositeType::Struct(StructType {
+                composite_type: composite_struct(StructType {
                     fields: [FieldType {
                         element_type: StorageType::Val(ValType::Ref(RefType {
                             nullable: false,
@@ -624,7 +624,7 @@ impl<'a> Builder<'a> {
         self.types.push(SubType {
             is_final: true,
             supertype_idx: Some(closure_info.closure_struct_ty),
-            composite_type: CompositeType::Struct(StructType {
+            composite_type: composite_struct(StructType {
                 fields: fields.into_boxed_slice(),
             }),
         });
@@ -685,7 +685,7 @@ impl<'a> Builder<'a> {
         self.types.push(SubType {
             is_final: true,
             supertype_idx: None,
-            composite_type: CompositeType::Func(FuncType::new(vec![], vec![])),
+            composite_type: composite_func(FuncType::new(vec![], vec![])),
         });
         self.funcs.insert(
             name,
@@ -847,5 +847,26 @@ impl BodyBuilder {
         }
         let locals = self.locals[self.param_count..].to_vec();
         FnLocals { locals, names }
+    }
+}
+
+fn composite_func(ty: FuncType) -> CompositeType {
+    CompositeType {
+        shared: false,
+        inner: CompositeInnerType::Func(ty),
+    }
+}
+
+fn composite_array(ty: ArrayType) -> CompositeType {
+    CompositeType {
+        shared: false,
+        inner: CompositeInnerType::Array(ty),
+    }
+}
+
+fn composite_struct(ty: StructType) -> CompositeType {
+    CompositeType {
+        shared: false,
+        inner: CompositeInnerType::Struct(ty),
     }
 }

@@ -6,6 +6,6 @@ license = "MIT"
 
 [dependencies]
 text-size = "1.1.1"
-wasm-encoder = "0.209"
+wasm-encoder = "0.217"
 frontend = { path = "../frontend" }
 camino = "1.1.9"
