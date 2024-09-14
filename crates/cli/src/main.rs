@@ -1,6 +1,7 @@
 use backend::compile_program;
 use camino::Utf8PathBuf;
 use clap::{Parser, Subcommand};
+use frontend::scip::write_index;
 use std::{error::Error, fs, io};
 
 /// The nemo language
@@ -25,6 +26,12 @@ enum Commands {
     /// Checks Nemo programs and reports any errors. Does not generate Wasm.
     Check {
         /// The *.nemo files to check
+        input_files: Vec<Utf8PathBuf>,
+    },
+    /// Produces a SCIP index
+    Index {
+        #[arg(required = true)]
+        /// The *.nemo files to index
         input_files: Vec<Utf8PathBuf>,
     },
     /// Runs the language server
@@ -61,6 +68,17 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
                 })
                 .collect::<Result<Vec<_>, io::Error>>()?;
             frontend::check_program(&sources)?;
+            Ok(())
+        }
+        Commands::Index { input_files } => {
+            let sources: Vec<_> = input_files
+                .into_iter()
+                .map(|input_file| {
+                    let source = fs::read_to_string(&input_file)?;
+                    Ok((input_file, source))
+                })
+                .collect::<Result<Vec<_>, io::Error>>()?;
+            write_index(&sources)?;
             Ok(())
         }
         Commands::LanguageServer { .. } => {
