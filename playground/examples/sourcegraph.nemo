@@ -1,0 +1,190 @@
+use canvas
+
+import random : fn () -> f32 from random
+
+global two_pi = 3.14159265359 * 2.0
+global global_deg = 0
+global sticks : [Stick] = make_logos()
+global boom_timer : f32 = 2000.0
+
+fn make_logos() -> [Stick] {
+  let logos = [
+    sg_logo(100.0, 50.0, 0.25, 0.5),
+    sg_logo(100.0, 180.0, 0.5, 0.5),
+    sg_logo(200.0, 200.0, 1.0, 0.25),
+    sg_logo(320.0, 190.0, 0.75, 0.9),
+    sg_logo(240.0, 90.0, 0.75, 1.4),
+    sg_logo(290.0, 300.0, 0.75, 0.7),
+    sg_logo(45.0, 400.0, 0.5, 0.9),
+    sg_logo(45.0, 400.0, 0.5, 0.5),
+  ];
+  let sticks = array_new#[Stick](zero_stick(), array_len#[[Stick]](logos) * 3);
+  let i = 0;
+  while i < array_len#[[Stick]](logos) {
+    let offset = i * 3;
+    set sticks[offset] = logos[i][0];
+    set sticks[offset + 1] = logos[i][1];
+    set sticks[offset + 2] = logos[i][2];
+    set i = i + 1;
+  };
+  sticks
+}
+
+fn draw_cube(x : f32, y : f32, size : f32) {
+  canvas::fill_rect(x, y, size, size)
+}
+
+fn draw_circle(x : f32, y : f32, radius : f32) {
+  canvas::begin_path();
+  canvas::arc(x, y, radius, 0.0, two_pi);
+  canvas::close_path();
+  canvas::fill();
+}
+
+fn draw_stick(stick : Stick) {
+  canvas::save();
+  canvas::set_fill_color(stick.color.r, stick.color.g, stick.color.b);
+  canvas::translate(stick.position.x, stick.position.y);
+  canvas::rotate(rad(stick.degree));
+  let width = stick.size * 20.0;
+  let len = stick.size * 80.0;
+  let half_width = width / 2.0;
+  let half_length = len / 2.0;
+  draw_circle(0.0 - half_length, 0.0, half_width);
+  canvas::fill_rect(0.0 - half_length, 0.0 - half_width, len, width);
+  draw_circle(half_length, 0.0, half_width);
+  canvas::restore();
+}
+
+fn rad(deg : i32) -> f32 {
+ f32_convert_i32_s(deg) * two_pi / 360.0
+}
+
+struct Vec2 {
+  x : f32,
+  y : f32,
+}
+
+fn zero_vec2() -> Vec2 {
+  Vec2 { x = 0.0, y = 0.0 }
+}
+
+struct Color {
+  r : f32,
+  g : f32,
+  b : f32,
+}
+
+struct Stick {
+  position : Vec2,
+  velocity : Vec2,
+  degree : i32,
+  turns_per_sec : f32,
+  color : Color,
+  size : f32,
+}
+
+fn tick_position(position : Vec2, velocity : Vec2, time : f32) {
+  set position.x = position.x + velocity.x * time;
+  set position.y = position.y + velocity.y * time;
+}
+
+fn tick_stick(stick : Stick, time : f32) {
+  if boom_timer < 0.0 {
+    set stick.velocity.y = stick.velocity.y + (time * 500.0);
+  } else {};
+  tick_position(stick.position, stick.velocity, time);
+  set stick.degree = stick.degree + i32_trunc_f32_s(stick.turns_per_sec * 360.0 * time);
+}
+
+fn zero_stick() -> Stick {
+  Stick {
+    position = zero_vec2(),
+    velocity = zero_vec2(),
+    degree = 0,
+    turns_per_sec = 0.0,
+    color = Color {
+      r = 0.0,
+      g = 0.0,
+      b = 0.0,
+    },
+    size = 0.0,
+  }
+}
+
+fn sg_logo(x : f32, y : f32, size : f32, turns_per_sec : f32) -> [Stick] {
+  [Stick {
+    position = Vec2 { x = x, y = y },
+    velocity = zero_vec2(),
+    degree = 0,
+    turns_per_sec = turns_per_sec,
+    color = Color {
+      r = 255.0,
+      g = 85.0,
+      b = 67.0,
+    },
+    size = size
+  },
+  Stick {
+    position = Vec2 { x = x, y = y },
+    velocity = zero_vec2(),
+    degree = 60,
+    turns_per_sec = turns_per_sec,
+    color = Color {
+      r = 161.0,
+      g = 18.0,
+      b = 255.0,
+    },
+    size = size
+  },
+  Stick {
+    position = Vec2 { x = x, y = y },
+    velocity = zero_vec2(),
+    degree = 120,
+    turns_per_sec = turns_per_sec,
+    color = Color {
+      r = 0.0,
+      g = 193.0,
+      b = 236.0,
+    },
+    size = size
+  }]
+}
+
+fn random_sign(x : f32) -> f32 {
+  if random() < 0.5 {
+    f32_neg(x)
+  } else {
+    x
+  }
+}
+
+fn random_between(lo : f32, hi : f32) -> f32 {
+  lo + (hi - lo) * random()
+}
+
+fn tick(elapsed_time_ms : f32) {
+  canvas::clear();
+  let time = elapsed_time_ms / 1000.0;
+  let i = 0;
+  let boom = if boom_timer > 0.0 {
+    set boom_timer = boom_timer - elapsed_time_ms;
+    boom_timer < 0.0;
+  } else {
+    false
+  };
+
+  while i < array_len#[Stick](sticks) {
+    if boom {
+      let v = Vec2 {
+        x = random_sign(random_between(100.0, 120.0)),
+        y = f32_neg(random_between(400.0, 450.0)),
+      };
+      set sticks[i].velocity = v;
+      set sticks[i].turns_per_sec = random_between(0.5, 2.5);
+    } else {};
+    tick_stick(sticks[i], time);
+    draw_stick(sticks[i]);
+    set i = i + 1;
+  }
+}

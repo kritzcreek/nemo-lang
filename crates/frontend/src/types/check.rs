@@ -671,8 +671,7 @@ impl Typechecker<'_> {
                 let Some(ty_tkn) = t.upper_ident_token() else {
                     return Ty::Error;
                 };
-                let Some(ty_def) =
-                    self.lookup_type(errors, t.mod_qualifier(), None, &ty_tkn)
+                let Some(ty_def) = self.lookup_type(errors, t.mod_qualifier(), None, &ty_tkn)
                 else {
                     return Ty::Error;
                 };
