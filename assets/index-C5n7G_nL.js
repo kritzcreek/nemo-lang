@@ -811,7 +811,7 @@ fn main() {
 exports (
   tick, make_logos, draw_cube, draw_circle, draw_stick, rad,
   Vec2, zero_vec2, Color, Stick, tick_position, tick_stick,
-  zero_position, sg_logo, random_sign, random_between
+  zero_stick, sg_logo, random_sign, random_between
 )
 
 use canvas
