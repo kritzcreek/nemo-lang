@@ -39,12 +39,40 @@ function setupWasmImports(): WebAssembly.Imports {
     ctx.stroke();
   }
 
+  function fill() {
+    ctx.fill();
+  }
+
   function set_stroke_color(r: number, g: number, b: number) {
     ctx.strokeStyle = `rgb(${r}, ${g}, ${b})`;
   }
 
+  function set_fill_color(r: number, g: number, b: number) {
+    ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+  }
+
   function arc(x: number, y: number, a: number, b: number, c: number) {
     ctx.arc(x, y, a, b, c);
+  }
+
+  function fill_rect(x: number, y: number, dx: number, dy: number) {
+    ctx.fillRect(x, y, dx, dy)
+  }
+
+  function save() {
+    ctx.save()
+  }
+
+  function restore() {
+    ctx.restore()
+  }
+
+  function translate(x: number, y: number) {
+    ctx.translate(x, y)
+  }
+
+  function rotate(x: number) {
+    ctx.rotate(x)
   }
 
   function log(x: any) {
@@ -72,9 +100,16 @@ function setupWasmImports(): WebAssembly.Imports {
       move_to,
       line_to,
       arc,
+      fill_rect,
       close_path,
+      set_fill_color,
       set_stroke_color,
       stroke,
+      fill,
+      save,
+      restore,
+      translate,
+      rotate,
     },
   };
   return imports;

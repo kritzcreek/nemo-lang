@@ -1,0 +1,22 @@
+module canvas
+exports (
+  move_to, line_to, arc, set_stroke_color, set_fill_color, begin_path, close_path, stroke, fill,
+  clear, fill_rect, save, restore, translate, rotate, restore
+)
+
+import move_to : fn (f32, f32) -> unit from move_to
+import line_to : fn (f32, f32) -> unit from line_to
+import arc : fn (f32, f32, f32, f32, f32) -> unit from arc
+import set_stroke_color : fn (f32, f32, f32) -> unit from set_stroke_color
+import set_fill_color : fn (f32, f32, f32) -> unit from set_fill_color
+import begin_path : fn () -> unit from begin_path
+import close_path : fn () -> unit from close_path
+import stroke : fn () -> unit from stroke
+import fill : fn () -> unit from fill
+import fill_rect : fn (f32, f32, f32, f32) -> unit from fill_rect
+import clear : fn () -> unit from clear_canvas
+
+import save : fn () -> unit from save
+import restore : fn () -> unit from restore
+import translate : fn (f32, f32) -> unit from translate
+import rotate : fn (f32) -> unit from rotate
