@@ -5,6 +5,7 @@ use hop_scip::scip::{
 use hop_scip::symbol::{Descriptor, GlobalSymbol, Package, Scheme, Symbol};
 use line_index::LineIndex;
 use rowan::TextRange;
+use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::fs;
 
@@ -16,6 +17,10 @@ pub fn write_index(sources: &[(Utf8PathBuf, String)]) -> Result<(), String> {
     let index = index_files(sources)?;
     fs::write("index.scip", hop_scip::encode_index(index)).map_err(|e| e.to_string())?;
     Ok(())
+}
+
+fn cmp_range(r1: &[i32], r2: &[i32]) -> Ordering {
+    r1[0].cmp(&r2[0]).then(r1[1].cmp(&r2[1]))
 }
 
 fn mk_range(line_index: &LineIndex, range: &TextRange) -> Vec<i32> {
@@ -145,6 +150,7 @@ fn index_occurrence_map(
             });
         }
     }
+    occurrences.sort_by(|o1, o2| cmp_range(&o1.range, &o2.range));
     Document {
         language: "nemo".to_string(),
         relative_path: ctx.get_module_path(module.parse_result.id).to_string(),
