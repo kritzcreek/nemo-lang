@@ -1,3 +1,6 @@
+module main
+exports (tick)
+
 use canvas
 
 import random : fn () -> f32 from random
@@ -15,8 +18,7 @@ fn make_logos() -> [Stick] {
     sg_logo(320.0, 190.0, 0.75, 0.9),
     sg_logo(240.0, 90.0, 0.75, 1.4),
     sg_logo(290.0, 300.0, 0.75, 0.7),
-    sg_logo(45.0, 400.0, 0.5, 0.9),
-    sg_logo(45.0, 400.0, 0.5, 0.5),
+    sg_logo(45.0, 400.0, 0.5, 1.7),
   ];
   let sticks = array_new#[Stick](zero_stick(), array_len#[[Stick]](logos) * 3);
   let i = 0;

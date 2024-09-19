@@ -195,7 +195,7 @@ const compile_result = StateField.define<CompileState>({
 });
 
 function runConsoleApplication(instance: WebAssembly.Instance) {
-  const main = instance.exports.main as () => void;
+  let main = (instance.exports["main"] ?? instance.exports["main::main"]) as CallableFunction;
   clearConsoleBuffer();
   showOutput("console");
   const result = main();
@@ -223,8 +223,8 @@ function actions_panel(view: EditorView): Panel {
     element: HTMLElement,
     instance: WebAssembly.Instance | undefined,
   ) {
-    let can_run = instance != null && instance.exports.main != null;
-    let can_render = instance != null && instance.exports.tick != null;
+    let can_run = instance != null && (instance.exports["main"] != null || instance.exports["main::main"] != null);
+    let can_render = instance != null && (instance.exports["tick"] != null || instance.exports["main::tick"] != null);
     let example_picker = html`
       <select
         id="example-picker"
@@ -281,8 +281,8 @@ function start_render(editorView: EditorView) {
   function render_canvas(timeStamp: number) {
     const elapsed = timeStamp - (previousTimeStamp ?? timeStamp);
     previousTimeStamp = timeStamp;
-    let tick = editorView.state.field(compile_result).instance?.exports
-      .tick as any;
+    const instance = editorView.state.field(compile_result).instance;
+    let tick = (instance.exports["tick"] ?? instance.exports["main::tick"]) as CallableFunction;
     if (tick) {
       tick(elapsed);
       const output = getConsoleBuffer();
