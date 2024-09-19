@@ -44,7 +44,10 @@ const STDLIB: &[(&str, &str)] = &[
     ("std/string.nemo", include_str!("../../../std/string.nemo")),
     ("std/io.nemo", include_str!("../../../std/io.nemo")),
     ("std/byte.nemo", include_str!("../../../std/byte.nemo")),
-    ("std/canvas.nemo", include_str!("../../../playground/examples/canvas.nemo")),
+    (
+        "std/canvas.nemo",
+        include_str!("../../../playground/examples/canvas.nemo"),
+    ),
 ];
 
 #[wasm_bindgen]

@@ -1,6 +1,7 @@
 use camino::Utf8PathBuf;
 use hop_scip::scip::{
-    self, Document, Index, Metadata, PositionEncoding, SymbolRole, TextEncoding, ToolInfo,
+    self, Document, Index, Metadata, PositionEncoding, SymbolInformation, SymbolRole, TextEncoding,
+    ToolInfo,
 };
 use hop_scip::symbol::{Descriptor, GlobalSymbol, Package, Scheme, Symbol};
 use line_index::LineIndex;
@@ -47,7 +48,7 @@ fn mk_sym(descriptors: Vec<Descriptor>) -> Symbol {
 }
 
 fn module_definitions<'a>(
-    accumulator: &mut HashMap<Name, Symbol<'a>>,
+    accumulator: &mut HashMap<Name, (Symbol<'a>, SymbolInformation)>,
     descriptors: Vec<Descriptor<'a>>,
     ctx: &Ctx,
     iface: &Interface,
@@ -58,8 +59,20 @@ fn module_definitions<'a>(
             name: ctx.display_name(def.name).into(),
             disambiguator: None,
         });
+        let sym = mk_sym(descriptors.clone());
+        let symbol = sym.to_string();
         if accumulator
-            .insert(def.name, mk_sym(descriptors.clone()))
+            .insert(
+                def.name,
+                (
+                    sym,
+                    SymbolInformation {
+                        symbol,
+                        documentation: vec![format!("`{}`", def.display(ctx))],
+                        ..Default::default()
+                    },
+                ),
+            )
             .is_some()
         {
             panic!(
@@ -72,8 +85,20 @@ fn module_definitions<'a>(
         let mut descriptors = descriptors.clone();
         let s = ctx.display_name(def.name);
         descriptors.push(Descriptor::Type(s.into()));
+        let sym = mk_sym(descriptors.clone());
+        let symbol = sym.to_string();
         if accumulator
-            .insert(def.name, mk_sym(descriptors.clone()))
+            .insert(
+                def.name,
+                (
+                    sym,
+                    SymbolInformation {
+                        symbol,
+                        documentation: vec![format!("`{}`", def.display(ctx))],
+                        ..Default::default()
+                    },
+                ),
+            )
             .is_some()
         {
             panic!(
@@ -89,8 +114,20 @@ fn module_definitions<'a>(
             descriptors.push(Descriptor::Type(ctx.display_name(variant).into()));
         }
         descriptors.push(Descriptor::Type(s.into()));
+        let sym = mk_sym(descriptors.clone());
+        let symbol = sym.to_string();
         if accumulator
-            .insert(def.name, mk_sym(descriptors.clone()))
+            .insert(
+                def.name,
+                (
+                    sym,
+                    SymbolInformation {
+                        symbol,
+                        documentation: vec![format!("`{}`", def.display(ctx))],
+                        ..Default::default()
+                    },
+                ),
+            )
             .is_some()
         {
             panic!(
@@ -98,11 +135,26 @@ fn module_definitions<'a>(
                 ctx.display_name(def.name)
             )
         }
-        for (name, _) in def.fields.values() {
+        for (name, ty) in def.fields.values() {
             let mut descriptors = descriptors.clone();
             let field_str = ctx.display_name(*name);
             descriptors.push(Descriptor::Term(field_str.into()));
-            if accumulator.insert(*name, mk_sym(descriptors)).is_some() {
+            let sym = mk_sym(descriptors.clone());
+            let symbol = sym.to_string();
+            if accumulator
+                .insert(
+                    *name,
+                    (
+                        sym,
+                        SymbolInformation {
+                            symbol,
+                            documentation: vec![format!("`{}`", ty.display(ctx))],
+                            ..Default::default()
+                        },
+                    ),
+                )
+                .is_some()
+            {
                 panic!(
                     "Double inserted a definition {}",
                     ctx.display_name(def.name)
@@ -113,24 +165,33 @@ fn module_definitions<'a>(
 }
 
 fn index_occurrence_map(
-    definitions: &mut HashMap<Name, Symbol>,
+    definitions: &mut HashMap<Name, (Symbol, SymbolInformation)>,
     ctx: &Ctx,
     module: &ModuleResult,
 ) -> Document {
     let line_index = LineIndex::new(module.parse_result.source);
     let mut local_supply = 0;
+    let mut symbols = vec![];
     let mut occurrences = vec![];
     let mut all_occs: Vec<_> = module.occurrences.iter().collect();
     all_occs.sort_by(|(ptr1, _), (ptr2, _)| ptr1.text_range().ordering(ptr2.text_range()));
     for (ptr, occ) in &all_occs {
         let range = ptr.0;
         if let Occurrence::Def(d) = occ {
-            let sym = definitions.entry(*d).or_insert_with(|| {
+            let (sym, symbol_information) = definitions.entry(*d).or_insert_with(|| {
                 local_supply += 1;
-                Symbol::Local {
+                let sym = Symbol::Local {
                     local_id: local_supply.to_string().into(),
-                }
+                };
+                let symbol = sym.to_string();
+                (sym, SymbolInformation {
+                    symbol,
+                    ..Default::default()
+                })
             });
+            if !sym.is_local() {
+                symbols.push(symbol_information.clone());
+            }
             occurrences.push(scip::Occurrence {
                 range: mk_range(&line_index, &range),
                 symbol: sym.to_string(),
@@ -142,7 +203,7 @@ fn index_occurrence_map(
     for (ptr, occ) in &all_occs {
         let range = ptr.0;
         if let Occurrence::Ref(r) = occ {
-            let sym = definitions.get(r).expect("Reference with no definition");
+            let (sym, _) = definitions.get(r).expect("Reference with no definition");
             occurrences.push(scip::Occurrence {
                 range: mk_range(&line_index, &range),
                 symbol: sym.to_string(),
@@ -157,15 +218,14 @@ fn index_occurrence_map(
         occurrences,
         position_encoding: PositionEncoding::Utf8CodeUnitOffsetFromLineStart.into(),
         text: "".to_string(),
-        // TODO: Populate symbols
-        symbols: vec![],
+        symbols,
     }
 }
 
 fn index_files(sources: &[(Utf8PathBuf, String)]) -> Result<Index, String> {
     let frontend_result = run_frontend(sources);
     let ctx = &frontend_result.ctx;
-    let mut definitions: HashMap<Name, Symbol> = HashMap::new();
+    let mut definitions: HashMap<Name, (Symbol, SymbolInformation)> = HashMap::new();
     let mut documents: Vec<Document> = vec![];
     for module in &frontend_result.modules {
         let descriptors = vec![Descriptor::Namespace(
