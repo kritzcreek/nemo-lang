@@ -282,7 +282,7 @@ function start_render(editorView: EditorView) {
     const elapsed = timeStamp - (previousTimeStamp ?? timeStamp);
     previousTimeStamp = timeStamp;
     const instance = editorView.state.field(compile_result).instance;
-    let tick = (instance.exports["tick"] ?? instance.exports["main::tick"]) as CallableFunction;
+    let tick = (instance?.exports["tick"] ?? instance?.exports["main::tick"]) as CallableFunction;
     if (tick) {
       tick(elapsed);
       const output = getConsoleBuffer();
