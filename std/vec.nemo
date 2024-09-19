@@ -1,0 +1,42 @@
+module vec
+exports (Vec, new, push)
+
+struct Vec[a] {
+  zero : a,
+  buf : [a],
+  len : i32,
+}
+
+fn new[a](zero : a) -> Vec[a] {
+  Vec {
+    zero = zero,
+    buf = [],
+    len = 0,
+  }
+}
+
+fn capacity[a](vec : Vec[a]) -> i32 {
+  array_len#[a](vec.buf)
+}
+
+fn grow[a](vec : Vec[a], new_len : i32) {
+  if capacity(vec) >= new_len {
+    return {};
+  } else {};
+  let new_capacity = if vec.len < 4 { 4 } else { vec.len };
+  while new_capacity < new_len {
+    set new_capacity = new_capacity * 2;
+  };
+  let new_buf = array_new#[a](vec.zero, new_capacity);
+  let i = 0;
+  while i < vec.len {
+    set new_buf[i] = vec.buf[i];
+    set i = i + 1;
+  };
+
+  set vec.buf = new_buf;
+}
+
+fn push[a](vec : Vec[a], elem : a) {
+
+}
