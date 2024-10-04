@@ -166,7 +166,7 @@ impl<'a> Builder<'a> {
 
         // I remember this didn't work on some more complicated programs
         // but it passes for all the current example programs. Keep an eye on it
-        type_section.rec(self.types);
+        type_section.ty().rec(self.types);
         // for ty in self.types {
         //     type_section.subtype(&ty);
         // }
@@ -249,8 +249,8 @@ impl<'a> Builder<'a> {
             .map(|function_index| StartSection { function_index });
         // elem_section
         let mut elem_section = ElementSection::new();
-        elem_section.declared(Elements::Functions(&import_indices));
-        elem_section.declared(Elements::Functions(&function_indices));
+        elem_section.declared(Elements::Functions(import_indices.into()));
+        elem_section.declared(Elements::Functions(function_indices.into()));
 
         // code_section
         let mut code_section = CodeSection::new();
