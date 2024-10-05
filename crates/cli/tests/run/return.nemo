@@ -24,7 +24,7 @@ fn loop_return() -> f32 {
 }
 
 fn lambda_return() -> i32 {
-  let f = fn () -> bool {
+  let f = \() -> bool {
     return true;
   };
   if f() {

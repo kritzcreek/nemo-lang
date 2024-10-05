@@ -14,7 +14,7 @@ fn f2(x : i32, y : i32) {
 }
 
 fn ff(x : i32) -> fn(i32) -> unit {
-  fn (y : i32) {
+  \(y : i32) {
     log(y)
   }
 }

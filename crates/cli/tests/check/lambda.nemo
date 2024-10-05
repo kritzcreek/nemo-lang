@@ -1,5 +1,5 @@
 fn main() -> i32 {
-    let f = fn () -> f32 {
+    let f = \() -> i32 {
       return 10;
     };
     return 10.0;

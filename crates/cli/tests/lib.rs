@@ -14,12 +14,9 @@ fn render_slash_path(path: &Utf8Path) -> String {
 
 fn compile_args(paths: &[Utf8PathBuf], out_name: &str) -> (Vec<String>, String) {
     let out_path = format!("tests/build/{}.wasm", out_name);
-    let mut args = vec![
-        "compile".to_string(),
-        "--output".to_string(),
-        out_path.clone(),
-    ];
+    let mut args = vec!["compile".to_string()];
     args.extend(paths.iter().map(|p| render_slash_path(p)));
+    args.extend(["--output".to_string(), out_path.clone()]);
     (args, out_path)
 }
 

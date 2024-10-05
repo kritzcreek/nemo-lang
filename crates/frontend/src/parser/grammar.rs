@@ -15,6 +15,12 @@ impl Progress {
     }
 }
 
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+enum TypAnnot {
+    Optional,
+    Required,
+}
+
 pub fn prog(p: &mut Parser) {
     while !p.at(SyntaxKind::EOF) {
         module(p);
@@ -197,7 +203,7 @@ fn top_func(p: &mut Parser) {
         p.error("expected a function name")
     }
     typ_param_list(p);
-    param_list(p);
+    param_list(p, TypAnnot::Required);
     if p.eat(T![->]) && !typ(p).made_progress() {
         p.error("expected a return type")
     }
@@ -225,7 +231,7 @@ fn typ_param_list(p: &mut Parser) -> Progress {
     Progress::Made
 }
 
-fn param_list(p: &mut Parser) {
+fn param_list(p: &mut Parser, typ_annot_opt: TypAnnot) {
     if !p.eat(SyntaxKind::L_PAREN) {
         p.error("expected a parameter list");
         return;
@@ -233,7 +239,7 @@ fn param_list(p: &mut Parser) {
     while p.at(SyntaxKind::IDENT) {
         let c = p.checkpoint();
         p.bump(SyntaxKind::IDENT);
-        if !typ_annot(p).made_progress() {
+        if !typ_annot(p).made_progress() && typ_annot_opt == TypAnnot::Required {
             p.error("expected a type annotation")
         }
         p.eat(SyntaxKind::COMMA);
@@ -428,8 +434,8 @@ fn expr(p: &mut Parser) -> Progress {
         match_expr(p);
         return Progress::Made;
     }
-    if p.at(T![fn]) {
-        func_expr(p);
+    if p.at(T![lambda]) {
+        lambda_expr(p);
         return Progress::Made;
     }
     if p.at(T![return]) {
@@ -537,10 +543,10 @@ fn return_expr(p: &mut Parser) {
     p.finish_at(c, SyntaxKind::EReturn)
 }
 
-fn func_expr(p: &mut Parser) {
+fn lambda_expr(p: &mut Parser) {
     let c = p.checkpoint();
-    p.bump(T![fn]);
-    param_list(p);
+    p.bump(T![lambda]);
+    param_list(p, TypAnnot::Optional);
     if p.eat(T![->]) && !typ(p).made_progress() {
         p.error("expected a return type")
     }

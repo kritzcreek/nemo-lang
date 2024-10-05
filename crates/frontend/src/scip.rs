@@ -184,10 +184,13 @@ fn index_occurrence_map(
                     local_id: local_supply.to_string().into(),
                 };
                 let symbol = sym.to_string();
-                (sym, SymbolInformation {
-                    symbol,
-                    ..Default::default()
-                })
+                (
+                    sym,
+                    SymbolInformation {
+                        symbol,
+                        ..Default::default()
+                    },
+                )
             });
             if !sym.is_local() {
                 symbols.push(symbol_information.clone());
