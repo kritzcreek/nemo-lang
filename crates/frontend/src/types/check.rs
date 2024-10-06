@@ -1058,6 +1058,7 @@ impl Typechecker<'_> {
                     };
                     let (name, sym) = self.name_supply.local_idx(&name_tkn);
                     let ty = match param.ty() {
+                        // TODO: Produce a type error. We can't infer lambdas
                         None => Ty::Error,
                         Some(t) => self.check_ty(errors, scope, &t),
                     };
@@ -1678,19 +1679,13 @@ impl Typechecker<'_> {
                 let (_, ir) = self.check_call(errors, scope, expr, Some(expected))?;
                 ir
             }
+            (Expr::ELambda(expr), Ty::Func(func_ty)) => {
+                self.check_lambda(errors, scope, expr, func_ty.as_ref())
+            }
             _ => {
                 let (ty, ir) = self.infer_expr(errors, scope, expr);
-                if *expected != Ty::Error
-                    && !matches!(ty, Ty::Error | Ty::Diverge)
-                    && ty.ne(expected)
-                {
-                    errors.report(
-                        expr,
-                        TypeMismatch {
-                            expected: expected.clone(),
-                            actual: ty,
-                        },
-                    );
+                if let Some(ty_err) = expect_ty(expected, &ty) {
+                    errors.report(expr, ty_err);
                 }
                 return ir;
             }
@@ -1966,6 +1961,78 @@ impl Typechecker<'_> {
             at: pattern.syntax().text_range(),
         })
     }
+
+    fn check_lambda(
+        &self,
+        errors: &mut TyErrors,
+        scope: &mut Scope,
+        expr: &ELambda,
+        expected: &FuncTy,
+    ) -> Option<ir::ExprData> {
+        if let Some(return_ty) = expr.return_ty() {
+            let t = self.check_ty(errors, scope, &return_ty);
+            if let Some(ty_err) = expect_ty(&expected.result, &t) {
+                errors.report(&return_ty, ty_err);
+            }
+        }
+        let mut builder = LambdaBuilder::default();
+        builder.return_ty(Some(expected.result.clone()));
+        scope.enter_block();
+        let prev_return_ty = scope.set_return_type(expected.result.clone());
+        // TODO: Check for duplicate parameter names
+        let params: Vec<Param> = expr.params().collect();
+        if params.len() != expected.arguments.len() {
+            errors.report(
+                // TODO: Make a node for the arg list, so we can report it instead of the whole lambda
+                expr,
+                ArgCountMismatch(expected.arguments.len(), params.len()),
+            );
+        }
+        let mut param_names = HashSet::new();
+        for (param, param_ty) in params.iter().zip(
+            expected
+                .arguments
+                .iter()
+                .chain(std::iter::repeat(&Ty::Error)),
+        ) {
+            let Some(name_tkn) = param.ident_token() else {
+                continue;
+            };
+            let (name, sym) = self.name_supply.local_idx(&name_tkn);
+            let ty = if let Some(t) = param.ty() {
+                let ty = self.check_ty(errors, scope, &t);
+                if let Some(ty_err) = expect_ty(param_ty, &ty) {
+                    errors.report(&t, ty_err);
+                }
+                ty
+            } else {
+                param_ty.clone()
+            };
+            builder.params(Some((name, ty.clone())));
+            param_names.insert(name);
+            scope.add_var(sym, ty.clone(), name);
+        }
+
+        if let Some(body) = expr.body() {
+            let body_ir = self.check_expr(errors, scope, &body, &expected.result);
+            if let Some(body_ir) = body_ir {
+                for (n, fvi) in body_ir.free_vars() {
+                    if !param_names.contains(&n) {
+                        if let Some(assignment) = fvi.is_assigned {
+                            errors.report(&assignment, CantReassignCapturedVariable(n));
+                        } else {
+                            builder.captures(Some((n, fvi.ty.clone())));
+                        }
+                    }
+                }
+                builder.body(Some(body_ir));
+            }
+        }
+        scope.leave_block();
+        // Restore the previous return type
+        scope.restore_return_type(prev_return_ty);
+        builder.build()
+    }
 }
 
 fn check_op(op: &SyntaxToken, ty_left: &Ty, ty_right: &Ty) -> Option<(ir::OpData, Ty)> {
@@ -2023,6 +2090,17 @@ fn infer_struct_instantiation<'a>(def: &StructDef, expected: &'a Ty) -> Option<&
         }
     }
     None
+}
+
+fn expect_ty(expected: &Ty, ty: &Ty) -> Option<TyErrorData> {
+    if *expected != Ty::Error && !matches!(ty, Ty::Error | Ty::Diverge) && expected != ty {
+        Some(TypeMismatch {
+            expected: expected.clone(),
+            actual: ty.clone(),
+        })
+    } else {
+        None
+    }
 }
 
 // `match_ty` is non-commutative unification. Only variables on the left are allowed to be solved, and we limit

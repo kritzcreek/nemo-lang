@@ -1,6 +1,15 @@
 fn main() -> i32 {
     let f = \() -> i32 {
-      return 10;
+      return 10.0;
     };
-    return 10.0;
+    let wrong_return : fn (i32) -> i32 = \(x) {
+      x
+    };
+    let wrong_param : fn (i32) -> i32 = \(x : f32) {
+      return x + 1.0;
+    };
+    let wrong_param_count : fn (i32) -> i32 = \(x, y) {
+      return x + y;
+    };
+    return 42;
 }
