@@ -39,7 +39,7 @@ fn unsafe_new(buf : bytes) -> Str {
 
 fn chars(s : Str) -> fn () -> option::Option[i32] {
   let offset = MutBox { value = s.offset };
-  fn () -> option::Option[i32] {
+  \() {
     if offset.value >= s.offset + s.len {
       option::Option::None {}
     } else {

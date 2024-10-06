@@ -5,14 +5,14 @@ fn tick(time_elapsed_ms: f32) -> unit {
   if frame_timer > 100.0 {
     set frame_timer = 0.0;
     clear();
-    let generator = fn() -> i32 { random_int(0, 99) };
+    let generator = \() -> i32 { random_int(0, 99) };
     let buckets = histogram(10, generator);
     render_canvas(buckets)
   } else {}
 }
 
 fn main() {
-  let generator = fn() -> i32 { random_int(0, 99) };
+  let generator = \() -> i32 { random_int(0, 99) };
   let buckets = histogram(10, generator);
   render(buckets)
 }
