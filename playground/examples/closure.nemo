@@ -9,7 +9,5 @@ fn main() -> i32 {
 }
 
 fn twice[a](f : fn(a) -> a) -> fn (a) -> a {
-    fn (x : a) -> a {
-        f(f(x))
-    }
+    \(x) { f(f(x)) }
 }

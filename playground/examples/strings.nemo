@@ -74,7 +74,7 @@ struct MutBox[a] {
 // An iterator over the codepoints in a utf8 string
 fn chars(bs : bytes) -> fn () -> Option[i32] {
   let offset = MutBox { value = 0 };
-  fn () -> Option[i32] {
+  \() {
     if offset.value == bytes_len(bs) {
       Option::None {}
     } else {
@@ -168,7 +168,7 @@ fn str_new(buf : bytes) -> Str {
 
 fn str_chars(s : Str) -> fn () -> Option[i32] {
   let offset = MutBox { value = s.offset };
-  fn () -> Option[i32] {
+  \() {
     if offset.value >= s.offset + s.len {
       Option::None {}
     } else {
