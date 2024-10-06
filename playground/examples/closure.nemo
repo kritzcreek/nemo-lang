@@ -2,7 +2,7 @@ global x = 5
 
 fn main() -> i32 {
     let y = 10;
-    let add15 = fn (z : i32) -> i32 {
+    let add15 = \(z : i32) -> i32 {
       x + y + z
     };
     twice(add15)(12);
