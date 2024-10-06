@@ -632,17 +632,8 @@ pub struct ELambda {
     pub(crate) syntax: SyntaxNode,
 }
 impl ELambda {
-    pub fn fn_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T![fn])
-    }
-    pub fn l_paren_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T!['('])
-    }
     pub fn params(&self) -> AstChildren<Param> {
         support::children(&self.syntax)
-    }
-    pub fn r_paren_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T![')'])
     }
     pub fn return_ty(&self) -> Option<Type> {
         support::child(&self.syntax)
