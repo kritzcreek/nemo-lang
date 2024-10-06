@@ -1,6 +1,6 @@
 fn main() {
     let local = 10;
-    let assign_capture = fn () {
+    let assign_capture = \() {
         set local = 20;
     };
     {}

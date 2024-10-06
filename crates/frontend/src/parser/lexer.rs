@@ -229,6 +229,9 @@ pub enum SyntaxKind {
     #[token("/")]
     SLASH,
 
+    #[token("\\")]
+    BACKSLASH,
+
     #[token("=")]
     EQUALS,
 
@@ -449,6 +452,7 @@ macro_rules ! T {
     [exports] => { SyntaxKind::EXPORTS_KW };
     [use] => { SyntaxKind::USE_KW };
     [fn] => { SyntaxKind::FN_KW };
+    [lambda] => { SyntaxKind::BACKSLASH };
     [global] => { SyntaxKind::GLOBAL_KW };
     [import] => { SyntaxKind::IMPORT_KW };
     [from] => { SyntaxKind::FROM_KW };
