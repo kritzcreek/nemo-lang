@@ -87,11 +87,11 @@ impl Scope {
     }
 }
 
-// TyCtx contains top-level function, type, and import definitions.
-// Because it is immutable once we've walked the top-level structure of a
-// module we keep it in the Typechecker struct for easier access.
-// The mutable part of the type checking "context" is called Scope in this module
-// and passed as an explicit mutable reference throughout the checking process
+/// TyCtx contains top-level function, type, and import definitions.
+/// Because it is immutable once we've walked the top-level structure of a
+/// module we keep it in the Typechecker struct for easier access.
+/// The mutable part of the type checking "context" is called Scope in this module
+/// and passed as an explicit mutable reference throughout the checking process
 #[derive(Debug)]
 struct TyCtx<'ctx> {
     functions: HashMap<Symbol, FuncDef>,
@@ -1058,8 +1058,11 @@ impl Typechecker<'_> {
                     };
                     let (name, sym) = self.name_supply.local_idx(&name_tkn);
                     let ty = match param.ty() {
-                        // TODO: Produce a type error. We can't infer lambdas
-                        None => Ty::Error,
+                        None => {
+                            // TODO: report a single error spanning the entire param list
+                            errors.report(&param, CantInferLambda);
+                            Ty::Error
+                        }
                         Some(t) => self.check_ty(errors, scope, &t),
                     };
                     builder.params(Some((name, ty.clone())));

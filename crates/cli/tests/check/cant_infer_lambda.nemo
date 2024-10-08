@@ -1,0 +1,4 @@
+fn main() -> i32 {
+  let clos = \(z) { z };
+  clos(1)
+}
