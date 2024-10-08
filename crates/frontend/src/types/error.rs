@@ -131,6 +131,7 @@ pub enum TyErrorData {
     MissingNode(String),
     InvalidLiteral,
     CantInferEmptyArray,
+    CantInferLambda,
     CantInstantiateFunctionRef,
     TypeParamInVariantStruct,
     CantReturnFromGlobal,
@@ -204,6 +205,7 @@ fn code_for_error(err_data: &TyErrorData) -> i32 {
         TyErrorData::CantReturnFromGlobal => 24,
         TyErrorData::CantReassignCapturedVariable(_) => 25,
         TyErrorData::CantInferTypeParam(_) => 26,
+        TyErrorData::CantInferLambda => 27,
     }
 }
 
@@ -216,6 +218,7 @@ fn error_label(err_data: &TyErrorData, ctx: &Ctx) -> String {
             rhs.display(ctx)
         ),
         TyErrorData::CantInferEmptyArray => "Can't infer type of an empty array".to_string(),
+        TyErrorData::CantInferLambda => "Can't infer type of unannotated lambda".to_string(),
         TyErrorData::CantInstantiateFunctionRef => "Can't instantiate function reference. Only top-level functions may be polymorphic at this time.".to_string(),
         TyErrorData::CantReturnFromGlobal => "Can't 'return' from a global definition.".to_string(),
         TyErrorData::UnknownVar(v) => format!("Unknown variable {v}"),
