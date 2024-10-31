@@ -577,8 +577,11 @@ impl Typechecker<'_> {
                     ty_args.push(name)
                 }
 
+                let Some(param_list) = top_fn.param_list() else {
+                    continue;
+                };
                 let mut arguments = vec![];
-                for param in top_fn.params() {
+                for param in param_list.params() {
                     let ty = param
                         .ty()
                         .map(|t| self.check_ty(errors, &mut scope, &t))
@@ -785,7 +788,10 @@ impl Typechecker<'_> {
                     scope.add_type_var(v, *name);
                 }
 
-                for (param, ty) in top_fn.params().zip(func_ty.arguments.into_iter()) {
+                let Some(param_list) = top_fn.param_list() else {
+                    continue;
+                };
+                for (param, ty) in param_list.params().zip(func_ty.arguments.into_iter()) {
                     let Some(ident_tkn) = param.ident_token() else {
                         funcs = None;
                         continue;
@@ -1052,23 +1058,24 @@ impl Typechecker<'_> {
                 scope.enter_block();
                 let prev_return_ty = scope.set_return_type(ty_func.result.clone());
                 let mut params = HashSet::new();
-                for param in lambda.params() {
-                    let Some(name_tkn) = param.ident_token() else {
-                        continue;
-                    };
-                    let (name, sym) = self.name_supply.local_idx(&name_tkn);
-                    let ty = match param.ty() {
-                        None => {
-                            // TODO: report a single error spanning the entire param list
-                            errors.report(&param, CantInferLambda);
-                            Ty::Error
-                        }
-                        Some(t) => self.check_ty(errors, scope, &t),
-                    };
-                    builder.params(Some((name, ty.clone())));
-                    ty_func.arguments.push(ty.clone());
-                    params.insert(name);
-                    scope.add_var(sym, ty, name);
+                if let Some(param_list) = lambda.param_list() {
+                    for param in param_list.params() {
+                        let Some(name_tkn) = param.ident_token() else {
+                            continue;
+                        };
+                        let (name, sym) = self.name_supply.local_idx(&name_tkn);
+                        let ty = match param.ty() {
+                            None => {
+                                errors.report(&param_list, CantInferLambda);
+                                Ty::Error
+                            }
+                            Some(t) => self.check_ty(errors, scope, &t),
+                        };
+                        builder.params(Some((name, ty.clone())));
+                        ty_func.arguments.push(ty.clone());
+                        params.insert(name);
+                        scope.add_var(sym, ty, name);
+                    }
                 }
 
                 if let Some(body) = lambda.body() {
@@ -1983,7 +1990,10 @@ impl Typechecker<'_> {
         scope.enter_block();
         let prev_return_ty = scope.set_return_type(expected.result.clone());
         // TODO: Check for duplicate parameter names
-        let params: Vec<Param> = expr.params().collect();
+        let params: Vec<Param> = expr
+            .param_list()
+            .map(|pl| pl.params().collect())
+            .unwrap_or_default();
         if params.len() != expected.arguments.len() {
             errors.report(
                 // TODO: Make a node for the arg list, so we can report it instead of the whole lambda
