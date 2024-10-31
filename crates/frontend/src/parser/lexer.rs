@@ -307,6 +307,7 @@ pub enum SyntaxKind {
     // Composite nodes
     Param,
     ParamTy,
+    ParamList,
     BinOp,
     TyArgList,
     EArgList,
