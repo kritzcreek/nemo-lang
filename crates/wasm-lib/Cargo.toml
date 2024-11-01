@@ -9,7 +9,7 @@ crate-type = ["cdylib"]
 [dependencies]
 frontend = { path = "../frontend" }
 backend = { path = "../backend" }
-wasm-bindgen = "0.2.93"
-wasmprinter = "0.218"
+wasm-bindgen = "0.2.95"
+wasmprinter = "0.219"
 console_error_panic_hook = "0.1.7"
 camino = "1.1.9"
