@@ -1,6 +1,6 @@
-import log : fn (i32) -> unit from log
+import log : fn (I32) -> Unit from log
 
-struct S { x : i32 }
+struct S { x : I32 }
 
 fn main() {
   log(1 + 1);

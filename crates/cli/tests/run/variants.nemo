@@ -5,12 +5,12 @@ variant Enum {
 }
 
 variant Shape {
-  struct Circle { radius : f32 },
-  struct Rectangle { len : f32, width : f32 },
+  struct Circle { radius : F32 },
+  struct Rectangle { len : F32, width : F32 },
 }
 
-import print_char : fn (i32) -> unit from print_char
-import logf : fn (f32) -> unit from log
+import print_char : fn (I32) -> Unit from print_char
+import logf : fn (F32) -> Unit from log
 
 fn print_enum(e : Enum) {
   let c = match e {

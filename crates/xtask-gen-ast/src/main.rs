@@ -508,7 +508,7 @@ impl Field {
                     "<:" => "sub",
                     _ => name,
                 };
-                format_ident!("{}_token", name)
+                format_ident!("{}_token", to_lower_snake_case(name))
             }
             Field::Node { name, .. } => {
                 if name == "type" {

@@ -5,9 +5,9 @@ use option
 
 // TODO: We should be able to hide the implementation details of Str
 struct Str {
-  buf : bytes,
-  offset : i32,
-  len : i32,
+  buf : Bytes,
+  offset : I32,
+  len : I32,
 }
 
 fn concat(a : Str, b : Str) -> Str {
@@ -18,7 +18,7 @@ fn concat(a : Str, b : Str) -> Str {
   Str { buf = buf, offset = 0, len = len }
 }
 
-fn eq(a : Str, b : Str) -> bool {
+fn eq(a : Str, b : Str) -> Bool {
   if a.len != b.len {
     return false;
   } else {};
@@ -33,11 +33,11 @@ fn eq(a : Str, b : Str) -> bool {
 }
 
 // Assumes well formed utf8
-fn unsafe_new(buf : bytes) -> Str {
+fn unsafe_new(buf : Bytes) -> Str {
   Str { buf = buf, offset = 0, len = bytes_len(buf) }
 }
 
-fn chars(s : Str) -> fn () -> option::Option[i32] {
+fn chars(s : Str) -> fn () -> option::Option[I32] {
   let offset = MutBox { value = s.offset };
   \() {
     if offset.value >= s.offset + s.len {
@@ -51,8 +51,8 @@ fn chars(s : Str) -> fn () -> option::Option[i32] {
 }
 
 struct CodepointAtByte {
-  codepoint : i32,
-  byte_count : i32
+  codepoint : I32,
+  byte_count : I32
 }
 
 struct MutBox[a] {
@@ -60,7 +60,7 @@ struct MutBox[a] {
 }
 
 // Assumes well formed utf8
-fn codepoint_at_byte(offset : i32, bs : bytes) -> CodepointAtByte {
+fn codepoint_at_byte(offset : I32, bs : Bytes) -> CodepointAtByte {
   let first_byte = bytes_get(bs, offset);
   // ASCII case
   if i32_and(first_byte, 0x80) == 0 {
@@ -88,7 +88,7 @@ fn codepoint_at_byte(offset : i32, bs : bytes) -> CodepointAtByte {
   }
 }
 
-fn codepoint_len(str : Str) -> i32 {
+fn codepoint_len(str : Str) -> I32 {
   let result = 0;
   let i = str.offset;
   let bytes_len = str.len;
