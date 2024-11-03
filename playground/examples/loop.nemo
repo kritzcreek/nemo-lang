@@ -1,6 +1,6 @@
-import log : fn (i32) -> unit from log
-  
-fn main() -> i32 {
+import log : fn (I32) -> Unit from log
+
+fn main() -> I32 {
   let i = 0;
   while i < 100 {
     log(i);

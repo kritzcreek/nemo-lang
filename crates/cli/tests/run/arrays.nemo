@@ -1,12 +1,12 @@
-import log : fn (i32) -> unit from log
+import log : fn (I32) -> Unit from log
 
 fn main() {
-  let empty: [i32] = [];
+  let empty: [I32] = [];
   let single = [1];
   let double = [1, 2];
   let double_trailing = [1, 2,];
 
-  let nested : [[i32]] = [[], [42]];
+  let nested : [[I32]] = [[], [42]];
   log(nested[1][0]);
   log([1][0]);
 }

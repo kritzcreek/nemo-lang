@@ -1,6 +1,6 @@
-import log : fn(i32) -> unit from log
+import log : fn(I32) -> Unit from log
 
-struct BoxInt { x : i32 }
+struct BoxInt { x : I32 }
 struct Box[a] { x : a }
 
 struct NestedInt { x : BoxInt }
@@ -11,10 +11,10 @@ variant Option[a] {
   struct Some { val : a },
 }
 // Rec is just a non-empty linked list
-struct RecInt { head : i32, tail : Option[RecInt] }
+struct RecInt { head : I32, tail : Option[RecInt] }
 struct Rec[a] { head : a, tail : Option[Rec[a]] }
 
-fn for_reci(r : RecInt, f : fn(i32) -> unit) {
+fn for_reci(r : RecInt, f : fn(I32) -> Unit) {
   f(r.head);
   match r.tail {
     Option::None _ => {},
@@ -22,7 +22,7 @@ fn for_reci(r : RecInt, f : fn(i32) -> unit) {
   }
 }
 
-fn for_rec[a](r : Rec[a], f : fn(a) -> unit) {
+fn for_rec[a](r : Rec[a], f : fn(a) -> Unit) {
   f(r.head);
   match r.tail {
     Option::None _ => {},

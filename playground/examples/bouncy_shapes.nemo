@@ -1,6 +1,6 @@
 // This function gets called using `requestAnimationFrame`, which tries to maintain
 // a smooth framerate.
-fn tick(elapsed_time_ms : f32) {
+fn tick(elapsed_time_ms : F32) {
   clear();
 
   let idx = 0;
@@ -22,49 +22,49 @@ fn tick(elapsed_time_ms : f32) {
   }
 }
 
-import move_to : fn (f32, f32) -> unit from move_to
-import line_to : fn (f32, f32) -> unit from line_to
-import arc : fn (f32, f32, f32, f32, f32) -> unit from arc
-import set_stroke_color : fn (f32, f32, f32) -> unit from set_stroke_color
-import begin_path : fn () -> unit from begin_path
-import close_path : fn () -> unit from close_path
-import stroke : fn () -> unit from stroke
-import clear : fn () -> unit from clear_canvas
+import move_to : fn (F32, F32) -> Unit from move_to
+import line_to : fn (F32, F32) -> Unit from line_to
+import arc : fn (F32, F32, F32, F32, F32) -> Unit from arc
+import set_stroke_color : fn (F32, F32, F32) -> Unit from set_stroke_color
+import begin_path : fn () -> Unit from begin_path
+import close_path : fn () -> Unit from close_path
+import stroke : fn () -> Unit from stroke
+import clear : fn () -> Unit from clear_canvas
 
 struct Color {
-  r : f32,
-  g : f32,
-  b : f32
+  r : F32,
+  g : F32,
+  b : F32
 }
 
 variant Body {
   struct Cube {
-    size : f32
+    size : F32
   },
   struct Circle {
-    radius : f32
+    radius : F32
   }
 }
 
 struct Shape {
-  x : f32,
-  y : f32,
-  vx : f32,
-  vy : f32,
+  x : F32,
+  y : F32,
+  vx : F32,
+  vy : F32,
   body : Body,
   color : Color
 }
 
 struct Particle {
-  x : f32,
-  y : f32,
+  x : F32,
+  y : F32,
   color : Color,
-  time : f32
+  time : F32
 }
 
 struct RingBuffer {
   buffer : [Particle],
-  watermark : i32
+  watermark : I32
 }
 
 global two_pi = 3.14159265359 * 2.0
@@ -95,18 +95,18 @@ fn add_particle(p : Particle) {
     i32_rem_s(particles.watermark + 1, array_len#[Particle](particles.buffer))
 }
 
-fn clamp(min : f32, val : f32, max : f32) -> f32 {
+fn clamp(min : F32, val : F32, max : F32) -> F32 {
   f32_min(max, f32_max(min, val))
 }
 
-fn size(body : Body) -> f32 {
+fn size(body : Body) -> F32 {
   match body {
     Body::Cube c => { c.size },
     Body::Circle c => { c.radius * 2.0 }
   }
 }
 
-fn draw_body(x : f32, y : f32, body : Body) {
+fn draw_body(x : F32, y : F32, body : Body) {
   match body {
     Body::Cube c => {
       move_to(x, y);
@@ -166,7 +166,7 @@ fn collide_shape(shape : Shape) {
   }
 }
 
-fn tick_shape(shape : Shape, elapsed_time_ms : f32) {
+fn tick_shape(shape : Shape, elapsed_time_ms : F32) {
   let elapsed_factor = elapsed_time_ms / 48.0;
 
   set shape.x = shape.x + shape.vx * elapsed_factor;

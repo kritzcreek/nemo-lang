@@ -1,4 +1,4 @@
-import log : fn (i32) -> unit from log
+import log : fn (I32) -> Unit from log
 
 fn main() {
   let x = { 1 };

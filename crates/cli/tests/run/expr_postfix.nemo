@@ -1,26 +1,26 @@
-import log : fn(i32) -> unit from log
+import log : fn(I32) -> Unit from log
 
 fn f0() {
   log(42);
 }
 
-fn f1(x : i32) {
+fn f1(x : I32) {
   log(x);
 }
 
-fn f2(x : i32, y : i32) {
+fn f2(x : I32, y : I32) {
   log(x);
   log(y);
 }
 
-fn ff(x : i32) -> fn(i32) -> unit {
-  \(y : i32) {
+fn ff(x : I32) -> fn(I32) -> Unit {
+  \(y : I32) {
     log(y)
   }
 }
 
 struct S {
-  f0 : fn() -> unit,
+  f0 : fn() -> Unit,
 }
 
 fn main() {

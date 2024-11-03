@@ -1,7 +1,7 @@
 module byte
 exports (eq, concat)
 
-fn eq(a: bytes, b: bytes) -> bool {
+fn eq(a: Bytes, b: Bytes) -> Bool {
   let len = bytes_len(a);
   if len != bytes_len(b) {
     return false;
@@ -16,7 +16,7 @@ fn eq(a: bytes, b: bytes) -> bool {
   true
 }
 
-fn concat(b1: bytes, b2: bytes) -> bytes {
+fn concat(b1: Bytes, b2: Bytes) -> Bytes {
   let len1 = bytes_len(b1);
   let len2 = bytes_len(b2);
   let len = len1 + len2;

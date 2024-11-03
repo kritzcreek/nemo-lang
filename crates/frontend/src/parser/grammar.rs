@@ -290,24 +290,24 @@ fn typ_annot(p: &mut Parser) -> Progress {
 fn typ(p: &mut Parser) -> Progress {
     let c = p.checkpoint();
     match p.current() {
-        T![i32] => {
-            p.bump(T![i32]);
+        T![I32] => {
+            p.bump(T![I32]);
             p.finish_at(c, SyntaxKind::TyInt)
         }
-        T![f32] => {
-            p.bump(T![f32]);
+        T![F32] => {
+            p.bump(T![F32]);
             p.finish_at(c, SyntaxKind::TyFloat)
         }
-        T![bool] => {
-            p.bump(T![bool]);
+        T![Bool] => {
+            p.bump(T![Bool]);
             p.finish_at(c, SyntaxKind::TyBool)
         }
-        T![bytes] => {
-            p.bump(T![bytes]);
+        T![Bytes] => {
+            p.bump(T![Bytes]);
             p.finish_at(c, SyntaxKind::TyBytes)
         }
-        T![unit] => {
-            p.bump(T![unit]);
+        T![Unit] => {
+            p.bump(T![Unit]);
             p.finish_at(c, SyntaxKind::TyUnit)
         }
         T![ident] => {

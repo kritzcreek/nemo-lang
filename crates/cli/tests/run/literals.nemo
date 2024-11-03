@@ -1,6 +1,6 @@
-import log : fn (i32) -> unit from log
-import logb : fn (bool) -> unit from log
-import logf : fn (f32) -> unit from log
+import log : fn (I32) -> Unit from log
+import logb : fn (Bool) -> Unit from log
+import logf : fn (F32) -> Unit from log
 
 fn main() {
   log(0);

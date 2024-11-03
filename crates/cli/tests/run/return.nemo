@@ -1,18 +1,18 @@
-import log : fn (i32) -> unit from log
-import logf : fn (f32) -> unit from log
+import log : fn (I32) -> Unit from log
+import logf : fn (F32) -> Unit from log
 
-fn main() -> i32 {
+fn main() -> I32 {
   log(early_return());
   logf(loop_return());
   log(lambda_return());
 }
 
-fn early_return() -> i32 {
+fn early_return() -> I32 {
   return 10;
   20;
 }
 
-fn loop_return() -> f32 {
+fn loop_return() -> F32 {
   let i = 0.0;
   while true {
     if i > 10.0 {
@@ -23,8 +23,8 @@ fn loop_return() -> f32 {
   0.0;
 }
 
-fn lambda_return() -> i32 {
-  let f = \() -> bool {
+fn lambda_return() -> I32 {
+  let f = \() -> Bool {
     return true;
   };
   if f() {

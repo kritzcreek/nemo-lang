@@ -1,10 +1,12 @@
 module vec
-exports (Vec, new, push)
+exports (Vec, new, push, pop, extend, slice)
+
+use option
 
 struct Vec[a] {
   zero : a,
   buf : [a],
-  len : i32,
+  len : I32,
 }
 
 fn new[a](zero : a) -> Vec[a] {
@@ -15,11 +17,19 @@ fn new[a](zero : a) -> Vec[a] {
   }
 }
 
-fn capacity[a](vec : Vec[a]) -> i32 {
+fn with_capacity[a](zero : a, capacity : I32) -> Vec[a] {
+  Vec {
+    zero = zero,
+    buf = array_new#[a](zero, capacity),
+    len = 0,
+  }
+}
+
+fn capacity[a](vec : Vec[a]) -> I32 {
   array_len#[a](vec.buf)
 }
 
-fn grow[a](vec : Vec[a], new_len : i32) {
+fn grow[a](vec : Vec[a], new_len : I32) {
   if capacity(vec) >= new_len {
     return {};
   } else {};
@@ -38,5 +48,41 @@ fn grow[a](vec : Vec[a], new_len : i32) {
 }
 
 fn push[a](vec : Vec[a], elem : a) {
+  grow(vec, vec.len + 1);
+  set vec.buf[vec.len] = elem;
+  set vec.len = vec.len + 1;
+}
 
+fn pop[a](vec : Vec[a]) -> option::Option[a] {
+  if vec.len == 0 {
+    return option::none();
+  } else {
+    set vec.len = vec.len - 1;
+    let elem = vec.buf[vec.len];
+    set vec.buf[vec.len] = vec.zero;
+    return option::some(elem);
+  };
+}
+
+fn extend[a](vec : Vec[a], other : Vec[a]) {
+  grow(vec, vec.len + other.len);
+  let i = 0;
+  while i < other.len {
+    set vec.buf[vec.len + i] = other.buf[i];
+    set i = i + 1;
+  };
+  set vec.len = vec.len + other.len;
+}
+
+fn subarray[a](vec : Vec[a], start : I32, len : I32) -> Vec[a] {
+  // TODO assert start >= 0 && len >= 0 && start + len <= vec.len
+  let end = start + len;
+  let new_vec = with_capacity(vec.zero, len);
+  // TODO(perf): directly modify new_vec.buf and new_vec.len
+  let i = start;
+  while i < end {
+    push(new_vec, vec.buf[i]);
+    set i = i + 1;
+  };
+  return new_vec;
 }

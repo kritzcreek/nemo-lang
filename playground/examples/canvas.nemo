@@ -4,19 +4,19 @@ exports (
   clear, fill_rect, save, restore, translate, rotate, restore
 )
 
-import move_to : fn (f32, f32) -> unit from move_to
-import line_to : fn (f32, f32) -> unit from line_to
-import arc : fn (f32, f32, f32, f32, f32) -> unit from arc
-import set_stroke_color : fn (f32, f32, f32) -> unit from set_stroke_color
-import set_fill_color : fn (f32, f32, f32) -> unit from set_fill_color
-import begin_path : fn () -> unit from begin_path
-import close_path : fn () -> unit from close_path
-import stroke : fn () -> unit from stroke
-import fill : fn () -> unit from fill
-import fill_rect : fn (f32, f32, f32, f32) -> unit from fill_rect
-import clear : fn () -> unit from clear_canvas
+import move_to : fn (F32, F32) -> Unit from move_to
+import line_to : fn (F32, F32) -> Unit from line_to
+import arc : fn (F32, F32, F32, F32, F32) -> Unit from arc
+import set_stroke_color : fn (F32, F32, F32) -> Unit from set_stroke_color
+import set_fill_color : fn (F32, F32, F32) -> Unit from set_fill_color
+import begin_path : fn () -> Unit from begin_path
+import close_path : fn () -> Unit from close_path
+import stroke : fn () -> Unit from stroke
+import fill : fn () -> Unit from fill
+import fill_rect : fn (F32, F32, F32, F32) -> Unit from fill_rect
+import clear : fn () -> Unit from clear_canvas
 
-import save : fn () -> unit from save
-import restore : fn () -> unit from restore
-import translate : fn (f32, f32) -> unit from translate
-import rotate : fn (f32) -> unit from rotate
+import save : fn () -> Unit from save
+import restore : fn () -> Unit from restore
+import translate : fn (F32, F32) -> Unit from translate
+import rotate : fn (F32) -> Unit from rotate

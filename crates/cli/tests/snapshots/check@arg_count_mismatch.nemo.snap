@@ -5,6 +5,8 @@ info:
   args:
     - check
     - tests/check/arg_count_mismatch.nemo
+  env:
+    RUST_BACKTRACE: "0"
 input_file: crates/cli/tests/check/arg_count_mismatch.nemo
 ---
 success: false

@@ -67,7 +67,7 @@ pub fn highlight(module: &Module, occurrences: &OccurrenceMap) -> Vec<Highlight>
                     kind: HighlightKind::Operator,
                 });
             }
-            T![i32] | T![bool] | T![f32] | T![unit] => {
+            T![I32] | T![F32] | T![Bool] | T![Unit] => {
                 highlights.push(Highlight {
                     range: node.text_range(),
                     kind: HighlightKind::Type,

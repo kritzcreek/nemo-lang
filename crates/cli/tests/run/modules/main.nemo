@@ -3,7 +3,7 @@ exports (main)
 
 use dep
 
-import log : fn (i32) -> unit from log
+import log : fn (I32) -> Unit from log
 
 fn main() {
   let s : dep::S = dep::S { x = 10 };

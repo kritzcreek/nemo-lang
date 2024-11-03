@@ -11,11 +11,11 @@ variant List[a] {
   struct Nil {}
 }
 
-fn main() -> i32 {
-  let x : Box = Box#[i32, i32]{ a = 1, b = 2 };
-  let x : Box[i32] = Box#[i32, i32]{ a = 1, b = 2 };
-  func#[i32](3);
-  Box#[i32] { a = 1, b = 2 };
-  List::Nil#[i32, f32] {};
+fn main() -> I32 {
+  let x : Box = Box#[I32, I32]{ a = 1, b = 2 };
+  let x : Box[I32] = Box#[I32, I32]{ a = 1, b = 2 };
+  func#[I32](3);
+  Box#[I32] { a = 1, b = 2 };
+  List::Nil#[I32, Bool] {};
   10
 }
