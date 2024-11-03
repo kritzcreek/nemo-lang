@@ -1,1 +1,1 @@
-import internal : i32 from external
+import internal : I32 from external

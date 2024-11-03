@@ -22,9 +22,9 @@ fn main() {
   }
 }
 
-import log : fn (i32) -> unit from log
-import log_f32 : fn (f32) -> unit from log
-import random : fn () -> f32 from random
+import log : fn (I32) -> Unit from log
+import log_f32 : fn (F32) -> Unit from log
+import random : fn () -> F32 from random
 
 variant Ordering {
   struct Lt {},
@@ -169,7 +169,7 @@ fn lookup[k, v](tree : Bst[k, v], key : k) -> Option[v] {
   result
 }
 
-fn compare_i32(a : i32, b : i32) -> Ordering {
+fn compare_i32(a : I32, b : I32) -> Ordering {
   if a < b {
     Ordering::Lt {}
   } else {
@@ -181,14 +181,14 @@ fn compare_i32(a : i32, b : i32) -> Ordering {
   }
 }
 
-fn size[k, v](tree : Bst[k, v]) -> i32 {
+fn size[k, v](tree : Bst[k, v]) -> I32 {
   match tree.root {
     Option::None _ => { 0 },
     Option::Some root => { size_node(root.value) },
   }
 }
 
-fn size_node[k, v](node : Node[k, v]) -> i32 {
+fn size_node[k, v](node : Node[k, v]) -> I32 {
   let left = match node.left {
     Option::None _ => { 0 },
     Option::Some n => { size_node(n.value) },
@@ -200,12 +200,12 @@ fn size_node[k, v](node : Node[k, v]) -> i32 {
   1 + left + right
 }
 
-fn round(x : f32) -> i32 {
+fn round(x : F32) -> I32 {
   let y = x + 0.5;
   i32_trunc_f32_s(y)
 }
 
-fn random_int(low : i32, high : i32) -> i32 {
+fn random_int(low : I32, high : I32) -> I32 {
   let scaled = random() * f32_convert_i32_s(high - low);
   low + round(scaled)
 }

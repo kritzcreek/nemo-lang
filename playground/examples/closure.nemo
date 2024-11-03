@@ -1,8 +1,8 @@
 global x = 5
 
-fn main() -> i32 {
+fn main() -> I32 {
     let y = 10;
-    let add15 = \(z : i32) -> i32 {
+    let add15 = \(z : I32) -> I32 {
       x + y + z
     };
     twice(add15)(12);

@@ -1,20 +1,20 @@
-import log : fn (i32) -> unit from log
+import log : fn (I32) -> Unit from log
 
-fn inferred() -> i32 {
-  let f : fn (i32, f32) -> i32 = \(x, y) { x + 2 };
+fn inferred() -> I32 {
+  let f : fn (I32, F32) -> I32 = \(x, y) { x + 2 };
   f(1, 2.0)
 }
 
 fn main() {
-  let x = (\(x : i32) -> i32 { x + 1 })(10);
+  let x = (\(x : I32) -> I32 { x + 1 })(10);
   log(x);
 
-  let twice = \(f : fn (i32) -> i32) -> fn(i32) -> i32 {
-    \(x : i32) -> i32 {
+  let twice = \(f : fn (I32) -> I32) -> fn(I32) -> I32 {
+    \(x : I32) -> I32 {
       f(f(x))
     }
   };
-  let add1 = \(x : i32) -> i32 { x + 1 };
+  let add1 = \(x : I32) -> I32 { x + 1 };
   log(twice(add1)(3));
   log(inferred());
 }

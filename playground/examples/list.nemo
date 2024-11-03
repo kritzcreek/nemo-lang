@@ -3,12 +3,12 @@
 // Both via recursion and imperative style.
 fn main() {
   let list = range(0, 10);
-  let squared = map#[i32, i32](\(x) { x * x }, list);
-  for_each#[i32](log, squared);
+  let squared = map#[I32, I32](\(x) { x * x }, list);
+  for_each#[I32](log, squared);
   log(sum(squared))
 }
 
-import log : fn (i32) -> unit from log
+import log : fn (I32) -> Unit from log
 
 variant List[a] {
   struct Nil {},
@@ -31,7 +31,7 @@ fn map[a, b](f : fn (a) -> b, as : List[a]) -> List[b] {
   }
 }
 
-fn for_each[a](f : fn (a) -> unit, as : List[a]) {
+fn for_each[a](f : fn (a) -> Unit, as : List[a]) {
   while true {
     match as {
       List::Nil l => { return {} },
@@ -43,8 +43,8 @@ fn for_each[a](f : fn (a) -> unit, as : List[a]) {
   }
 }
 
-fn range(lo : i32, hi : i32) -> List[i32] {
-  let result : List[i32] = List::Nil {};
+fn range(lo : I32, hi : I32) -> List[I32] {
+  let result : List[I32] = List::Nil {};
   while lo < hi {
     set result = List::Cons { head = hi, tail = result };
     set hi = hi - 1
@@ -52,7 +52,7 @@ fn range(lo : i32, hi : i32) -> List[i32] {
   result
 }
 
-fn sum(xs : List[i32]) -> i32 {
+fn sum(xs : List[I32]) -> I32 {
   let result = 0;
   match xs {
     List::Nil _ => { 0 },

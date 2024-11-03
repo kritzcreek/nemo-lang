@@ -1,11 +1,11 @@
 fn poly[a, b](a : a, other : b) {
-  poly#[i32, bool](1, true)
+  poly#[I32, Bool](1, true)
 }
 
 struct Box[a] {
   content : a
 }
 
-fn main() -> Box[i32] {
-  Box #[i32] { content = 42 }
+fn main() -> Box[I32] {
+  Box #[I32] { content = 42 }
 }

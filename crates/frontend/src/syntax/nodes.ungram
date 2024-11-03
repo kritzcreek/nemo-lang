@@ -47,11 +47,11 @@ Type
   | TyCons
   | TyFn
 
-TyInt = 'i32'
-TyFloat = 'f32'
-TyBool = 'bool'
-TyBytes = 'bytes'
-TyUnit = 'unit'
+TyInt = 'I32'
+TyFloat = 'F32'
+TyBool = 'Bool'
+TyBytes = 'Bytes'
+TyUnit = 'Unit'
 TyArray = '[' elem:Type ']'
 TyCons = ModQualifier? 'upper_ident' type_args:Type*
 TyVar = 'ident'

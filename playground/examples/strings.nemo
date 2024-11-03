@@ -15,10 +15,10 @@ fn main() {
   print_bytes(s3)
 }
 
-import log : fn (i32) -> unit from log
-import print_char : fn (i32) -> unit from print_char
+import log : fn (I32) -> Unit from log
+import print_char : fn (I32) -> Unit from print_char
 
-fn concat(b1: bytes, b2: bytes) -> bytes {
+fn concat(b1: Bytes, b2: Bytes) -> Bytes {
   let len1 = bytes_len(b1);
   let len2 = bytes_len(b2);
   let len = len1 + len2;
@@ -29,12 +29,12 @@ fn concat(b1: bytes, b2: bytes) -> bytes {
 }
 
 struct CodepointAtByte {
-  codepoint : i32,
-  byte_count : i32
+  codepoint : I32,
+  byte_count : I32
 }
 
 // Assumes well formed utf8
-fn codepoint_at_byte(offset : i32, bs : bytes) -> CodepointAtByte {
+fn codepoint_at_byte(offset : I32, bs : Bytes) -> CodepointAtByte {
   let first_byte = bytes_get(bs, offset);
   // ASCII case
   if i32_and(first_byte, 0x80) == 0 {
@@ -72,7 +72,7 @@ struct MutBox[a] {
 }
 
 // An iterator over the codepoints in a utf8 string
-fn chars(bs : bytes) -> fn () -> Option[i32] {
+fn chars(bs : Bytes) -> fn () -> Option[I32] {
   let offset = MutBox { value = 0 };
   \() {
     if offset.value == bytes_len(bs) {
@@ -85,7 +85,7 @@ fn chars(bs : bytes) -> fn () -> Option[i32] {
   }
 }
 
-fn print_chars(next: fn () -> Option[i32]) {
+fn print_chars(next: fn () -> Option[I32]) {
   while true {
     match next() {
       Option::None _ => {
@@ -100,12 +100,12 @@ fn print_chars(next: fn () -> Option[i32]) {
   };
 }
 
-fn print_bytes(s: bytes) {
+fn print_bytes(s: Bytes) {
   print_chars(chars(s))
 }
 
 // The following functions aren't used in the example, but they're nice to have
-fn bytes_eq(a: bytes, b: bytes) -> bool {
+fn bytes_eq(a: Bytes, b: Bytes) -> bool {
   let len = bytes_len(a);
   if len != bytes_len(b) {
     return false;
@@ -120,7 +120,7 @@ fn bytes_eq(a: bytes, b: bytes) -> bool {
   true
 }
 
-fn codepoint_len(bs : bytes) -> i32 {
+fn codepoint_len(bs : Bytes) -> I32 {
   let result = 0;
   let i = 0;
   let bytes_len = bytes_len(bs);
@@ -135,9 +135,9 @@ fn codepoint_len(bs : bytes) -> i32 {
 }
 
 struct Str {
-  buf : bytes,
-  offset : i32,
-  len : i32,
+  buf : Bytes,
+  offset : I32,
+  len : I32,
 }
 
 fn str_concat(a : Str, b : Str) -> Str {
@@ -162,11 +162,11 @@ fn str_eq(a : Str, b : Str) -> bool {
   true
 }
 
-fn str_new(buf : bytes) -> Str {
+fn str_new(buf : Bytes) -> Str {
   Str { buf = buf, offset = 0, len = bytes_len(buf) }
 }
 
-fn str_chars(s : Str) -> fn () -> Option[i32] {
+fn str_chars(s : Str) -> fn () -> Option[I32] {
   let offset = MutBox { value = s.offset };
   \() {
     if offset.value >= s.offset + s.len {

@@ -286,7 +286,7 @@ pub struct TyInt {
 }
 impl TyInt {
     pub fn i32_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T![i32])
+        support::token(&self.syntax, T![I32])
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -295,7 +295,7 @@ pub struct TyFloat {
 }
 impl TyFloat {
     pub fn f32_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T![f32])
+        support::token(&self.syntax, T![F32])
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -304,7 +304,7 @@ pub struct TyBool {
 }
 impl TyBool {
     pub fn bool_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T![bool])
+        support::token(&self.syntax, T![Bool])
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -313,7 +313,7 @@ pub struct TyBytes {
 }
 impl TyBytes {
     pub fn bytes_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T![bytes])
+        support::token(&self.syntax, T![Bytes])
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -322,7 +322,7 @@ pub struct TyUnit {
 }
 impl TyUnit {
     pub fn unit_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T![unit])
+        support::token(&self.syntax, T![Unit])
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

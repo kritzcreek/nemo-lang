@@ -69,11 +69,11 @@ pub struct TyDisplay<'a> {
 impl fmt::Display for TyDisplay<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.ty {
-            Ty::I32 => write!(f, "i32"),
-            Ty::F32 => write!(f, "f32"),
-            Ty::Bool => write!(f, "bool"),
-            Ty::Unit => write!(f, "unit"),
-            Ty::Bytes => write!(f, "bytes"),
+            Ty::I32 => write!(f, "I32"),
+            Ty::F32 => write!(f, "F32"),
+            Ty::Bool => write!(f, "Bool"),
+            Ty::Unit => write!(f, "Unit"),
+            Ty::Bytes => write!(f, "Bytes"),
             Ty::Diverge => write!(f, "!"),
             Ty::Array(t) => write!(f, "[{}]", t.display(self.ctx)),
             Ty::Cons {

@@ -15,6 +15,6 @@ fn get_ok[ok, err](res : Res[ok, err]) -> option::Option[ok] {
   }
 }
 
-fn is_ok[ok, err](res : Res[ok, err]) -> bool {
+fn is_ok[ok, err](res : Res[ok, err]) -> Bool {
   option::is_none#[ok](get_ok(res)) == false
 }

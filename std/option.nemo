@@ -21,14 +21,14 @@ fn map[t, u](option: Option[t], f: fn(t) -> u) -> Option[u] {
   }
 }
 
-fn is_some[a](opt : Option[a]) -> bool {
+fn is_some[a](opt : Option[a]) -> Bool {
   match opt {
     Option::Some _ => { true },
     Option::None _ => { false },
   }
 }
 
-fn is_none[a](opt : Option[a]) -> bool {
+fn is_none[a](opt : Option[a]) -> Bool {
   match opt {
     Option::None _ => { true },
     Option::Some _ => { false },

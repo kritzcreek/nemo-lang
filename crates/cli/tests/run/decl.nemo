@@ -1,13 +1,13 @@
-import log : fn (i32) -> unit from log
+import log : fn (I32) -> Unit from log
 
 struct Point {
-  x : i32,
-  xs : [i32],
+  x : I32,
+  xs : [I32],
 }
 
 fn main() {
     let x = 1;
-    let y : i32 = 10;
+    let y : I32 = 10;
     set x = 1;
     let xs = [1];
     set xs[0] = 1;
@@ -20,7 +20,7 @@ fn main() {
     log(p.xs[0]);
 
     let i = 0;
-    while i < array_len#[i32](p.xs) {
+    while i < array_len#[I32](p.xs) {
       log(p.xs[i]);
       set i = i + 1;
     }
