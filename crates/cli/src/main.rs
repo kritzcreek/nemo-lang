@@ -3,6 +3,7 @@ use camino::Utf8PathBuf;
 use clap::{Parser, Subcommand};
 use frontend::scip::write_index;
 use std::{error::Error, fs, io};
+use wasmtime::{Config, Engine, Store, Module, Instance};
 
 /// The nemo language
 #[derive(Debug, Parser)]
@@ -25,6 +26,10 @@ enum Commands {
     },
     /// Checks Nemo programs and reports any errors. Does not generate Wasm.
     Check {
+        /// The *.nemo files to check
+        input_files: Vec<Utf8PathBuf>,
+    },
+    Run {
         /// The *.nemo files to check
         input_files: Vec<Utf8PathBuf>,
     },
@@ -84,6 +89,25 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
         Commands::LanguageServer { .. } => {
             // start_language_server()
             todo!();
+        }
+        Commands::Run { input_files } => {
+            let sources: Vec<_> = input_files
+                .into_iter()
+                .map(|input_file| {
+                    let source = fs::read_to_string(&input_file)?;
+                    Ok((input_file, source))
+                })
+                .collect::<Result<Vec<_>, io::Error>>()?;
+            let wasm = compile_program(&sources)?;
+            let engine = Engine::new(Config::new().wasm_function_references(true).wasm_gc(true))?;
+            let mut store = Store::new(&engine, ());
+            let module = Module::new(&engine, &wasm)?;
+            // TODO add log import
+            let instance = Instance::new(&mut store, &module, &[])?;
+            let main_func = instance.get_typed_func::<(), i32>(&mut store, "main")?;
+            let result = main_func.call(&mut store, ())?;
+            println!("Result: {:?}", result);
+            Ok(())
         }
     }
 }
