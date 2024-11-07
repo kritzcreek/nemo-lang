@@ -3,7 +3,7 @@ use camino::Utf8PathBuf;
 use clap::{Parser, Subcommand};
 use frontend::scip::write_index;
 use std::{error::Error, fs, io};
-use wasmtime::{Config, Engine, Store, Module, Instance};
+use wasmtime::{Config, Engine, Linker, Module, Store};
 
 /// The nemo language
 #[derive(Debug, Parser)]
@@ -101,9 +101,13 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
             let wasm = compile_program(&sources)?;
             let engine = Engine::new(Config::new().wasm_function_references(true).wasm_gc(true))?;
             let mut store = Store::new(&engine, ());
+            let mut linker = Linker::new(&engine);
             let module = Module::new(&engine, &wasm)?;
-            // TODO add log import
-            let instance = Instance::new(&mut store, &module, &[])?;
+            linker.func_wrap("env", "log", |param: i32| {
+                println!("{param}");
+                0
+            })?;
+            let instance = linker.instantiate(&mut store, &module)?;
             let main_func = instance.get_typed_func::<(), i32>(&mut store, "main")?;
             let result = main_func.call(&mut store, ())?;
             println!("Result: {:?}", result);
