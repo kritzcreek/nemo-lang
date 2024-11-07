@@ -105,7 +105,7 @@ fn print_bytes(s: Bytes) {
 }
 
 // The following functions aren't used in the example, but they're nice to have
-fn bytes_eq(a: Bytes, b: Bytes) -> bool {
+fn bytes_eq(a: Bytes, b: Bytes) -> Bool {
   let len = bytes_len(a);
   if len != bytes_len(b) {
     return false;
@@ -148,7 +148,7 @@ fn str_concat(a : Str, b : Str) -> Str {
   Str { buf = buf, offset = 0, len = len }
 }
 
-fn str_eq(a : Str, b : Str) -> bool {
+fn str_eq(a : Str, b : Str) -> Bool {
   if a.len != b.len {
     return false;
   } else {};
