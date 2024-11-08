@@ -155,14 +155,24 @@ impl<'a> Builder<'a> {
     // }
 
     fn is_primitive_val_ty(ty: &ValType) -> bool {
-        matches!(ty, ValType::I32 | ValType::I64 | ValType::F32 | ValType::F64 | ValType::V128)
+        matches!(
+            ty,
+            ValType::I32 | ValType::I64 | ValType::F32 | ValType::F64 | ValType::V128
+        )
     }
     fn is_primitive_ty(ty: &CompositeInnerType) -> Option<&FuncType> {
         let CompositeInnerType::Func(func_ty) = ty else {
-            return None
+            return None;
         };
-        if func_ty.params().iter().all(|ty| Self::is_primitive_val_ty(ty))
-            && func_ty.results().iter().all(|ty| Self::is_primitive_val_ty(ty)) {
+        if func_ty
+            .params()
+            .iter()
+            .all(|ty| Self::is_primitive_val_ty(ty))
+            && func_ty
+                .results()
+                .iter()
+                .all(|ty| Self::is_primitive_val_ty(ty))
+        {
             Some(func_ty)
         } else {
             None
@@ -179,9 +189,6 @@ impl<'a> Builder<'a> {
         let mut type_section = TypeSection::new();
         let mut all_field_names = IndirectNameMap::new();
 
-
-        // I remember this didn't work on some more complicated programs
-        // but it passes for all the current example programs. Keep an eye on it
         let mut subtys = vec![];
         for ty in self.types {
             if let Some(func_ty) = Self::is_primitive_ty(&ty.composite_type.inner) {
@@ -193,9 +200,6 @@ impl<'a> Builder<'a> {
         if !subtys.is_empty() {
             type_section.ty().rec(subtys);
         }
-        // for ty in self.types {
-        //     type_section.subtype(&ty);
-        // }
 
         for (name, info) in self.structs {
             for (tys, type_idx) in &info.instances {
@@ -209,7 +213,7 @@ impl<'a> Builder<'a> {
                 type_names.append(*type_idx, &it);
                 let mut field_names = WasmNameMap::new();
                 for (field, _) in info.definition.fields.iter() {
-                    field_names.append(info.field_idx(*field), &ctx.display_name(name))
+                    field_names.append(info.field_idx(*field), &ctx.display_name(*field))
                 }
                 all_field_names.append(*type_idx, &field_names);
             }
