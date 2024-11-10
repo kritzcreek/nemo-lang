@@ -103,6 +103,8 @@ pub struct Builder<'a> {
     types: Vec<SubType>,
     datas: Vec<Vec<u8>>,
     imports: HashMap<Name, ImportData>,
+    // Represents the first type index that doesn't describe an import
+    import_ty_watermark: Option<TypeIdx>,
     exports: Vec<Export>,
     start_fn: Option<FuncIdx>,
     substitution: Substitution,
@@ -135,6 +137,7 @@ impl<'a> Builder<'a> {
             closure_tys: HashMap::new(),
             func_refs: HashMap::new(),
             imports: HashMap::new(),
+            import_ty_watermark: None,
             exports: vec![],
             start_fn: None,
             substitution: Substitution::new(&[], &[]),
@@ -154,31 +157,6 @@ impl<'a> Builder<'a> {
     //     }
     // }
 
-    fn is_primitive_val_ty(ty: &ValType) -> bool {
-        matches!(
-            ty,
-            ValType::I32 | ValType::I64 | ValType::F32 | ValType::F64 | ValType::V128
-        )
-    }
-    fn is_primitive_ty(ty: &CompositeInnerType) -> Option<&FuncType> {
-        let CompositeInnerType::Func(func_ty) = ty else {
-            return None;
-        };
-        if func_ty
-            .params()
-            .iter()
-            .all(|ty| Self::is_primitive_val_ty(ty))
-            && func_ty
-                .results()
-                .iter()
-                .all(|ty| Self::is_primitive_val_ty(ty))
-        {
-            Some(func_ty)
-        } else {
-            None
-        }
-    }
-
     pub fn finish(self) -> (Vec<u8>, Ctx) {
         let mut module = Module::new();
         let ctx = self.ctx;
@@ -189,18 +167,17 @@ impl<'a> Builder<'a> {
         let mut type_section = TypeSection::new();
         let mut all_field_names = IndirectNameMap::new();
 
-        let mut subtys = vec![];
-        for ty in self.types {
-            if let Some(func_ty) = Self::is_primitive_ty(&ty.composite_type.inner) {
-                type_section.ty().func_type(func_ty)
-            } else {
-                subtys.push(ty);
-            }
+        let import_ty_watermark = self
+            .import_ty_watermark
+            .expect("import section was never finished");
+        let (imports_tys, program_tys) = self.types.split_at(import_ty_watermark as usize);
+        for ty in imports_tys {
+            let CompositeInnerType::Func(ref func_ty) = ty.composite_type.inner else {
+                panic!("imported type is not a function type")
+            };
+            type_section.ty().func_type(func_ty);
         }
-        if !subtys.is_empty() {
-            type_section.ty().rec(subtys);
-        }
-
+        type_section.ty().rec(program_tys.iter().cloned());
         for (name, info) in self.structs {
             for (tys, type_idx) in &info.instances {
                 let mut it = ctx.display_qualified_name(name);
@@ -675,6 +652,14 @@ impl<'a> Builder<'a> {
 
     pub fn lookup_import(&self, name: &Name) -> Option<FuncIdx> {
         self.imports.get(name).map(|data| data.index)
+    }
+
+    pub fn finish_imports(&mut self) {
+        assert!(
+            self.import_ty_watermark.is_none(),
+            "finish_imports called twice"
+        );
+        self.import_ty_watermark = Some(self.types.len() as u32)
     }
 
     pub fn declare_global(&mut self, name: Name, ty: &Ty, init: ConstExpr) -> GlobalIdx {
