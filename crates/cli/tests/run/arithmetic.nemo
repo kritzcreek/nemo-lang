@@ -1,5 +1,5 @@
 import log : fn (I32) -> Unit from log
-import log_f32 : fn (F32) -> Unit from log
+import log_f32 : fn (F32) -> Unit from log_f32
 
 fn main() {
   log(1 + 1);

@@ -107,6 +107,16 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
                 println!("{param}");
                 0
             })?;
+            linker.func_wrap("env", "log_f32", |param: f32| {
+                println!("{param}");
+                0
+            })?;
+            linker.func_wrap("env", "print_char", |param: i32| {
+                print!("{}", char::from_u32(param as u32).unwrap());
+                0
+            })?;
+            linker.func_wrap("env", "random", |_: i32| -> f32 { 0.0 })?;
+
             let instance = linker.instantiate(&mut store, &module)?;
             let main_func = instance.get_typed_func::<(), i32>(&mut store, "main")?;
             let result = main_func.call(&mut store, ())?;
