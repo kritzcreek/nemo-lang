@@ -10,7 +10,7 @@ variant Shape {
 }
 
 import print_char : fn (I32) -> Unit from print_char
-import logf : fn (F32) -> Unit from log
+import log_f32 : fn (F32) -> Unit from log_f32
 
 fn print_enum(e : Enum) {
   let c = match e {
@@ -26,11 +26,11 @@ fn print_enum(e : Enum) {
 fn print_shape(s : Shape) {
   match s {
     Shape::Circle c => {
-      logf(c.radius);
+      log_f32(c.radius);
     },
     Shape::Rectangle r => {
-      logf(r.len);
-      logf(r.width);
+      log_f32(r.len);
+      log_f32(r.width);
     },
   };
 }
@@ -41,5 +41,5 @@ fn main() {
   print_enum(Enum::C {});
 
   print_shape(Shape::Circle { radius = 2.0 });
-  print_shape(Shape::Rectangle { len = 3.0, width = 4.0 });
+  print_shape(Shape::Rectangle { len = 3.1, width = 4.0 });
 }
