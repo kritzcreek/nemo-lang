@@ -6,22 +6,22 @@ struct Point {
 }
 
 fn main() {
-    let x = 1;
-    let y : I32 = 10;
-    set x = 1;
-    let xs = [1];
-    set xs[0] = 1;
+    // let x = 1;
+    // let y : I32 = 10;
+    // set x = 1;
+    // let xs = [1];
+    // set xs[0] = 1;
 
     let p = Point { x = 10, xs = [0, 1, 2] };
-    log(p.x);
-    set p.x = 1;
-    log(p.x);
+    // log(p.x);
+    // set p.x = 1;
+    // log(p.x);
     set p.xs[0] = 1;
     log(p.xs[0]);
 
-    let i = 0;
-    while i < array_len#[I32](p.xs) {
-      log(p.xs[i]);
-      set i = i + 1;
-    }
+    // let i = 0;
+    // while i < array_len#[I32](p.xs) {
+    //   log(p.xs[i]);
+    //   set i = i + 1;
+    // }
 }
