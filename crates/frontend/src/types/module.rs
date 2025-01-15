@@ -24,7 +24,7 @@ pub struct StructDefDisplay<'a> {
     ctx: &'a Ctx,
 }
 
-impl<'a> fmt::Display for StructDefDisplay<'a> {
+impl fmt::Display for StructDefDisplay<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "struct {}", self.ctx.display_name(self.def.name))?;
         if !self.def.ty_params.is_empty() {
@@ -81,7 +81,7 @@ pub struct VariantDefDisplay<'a> {
     ctx: &'a Ctx,
 }
 
-impl<'a> fmt::Display for VariantDefDisplay<'a> {
+impl fmt::Display for VariantDefDisplay<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "variant {}", self.ctx.display_name(self.def.name))?;
         if !self.def.ty_params.is_empty() {
@@ -161,7 +161,7 @@ pub struct FuncDefDisplay<'a> {
     ctx: &'a Ctx,
 }
 
-impl<'a> fmt::Display for FuncDefDisplay<'a> {
+impl fmt::Display for FuncDefDisplay<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "fn {}", self.ctx.display_name(self.def.name))?;
         if !self.def.ty_params.is_empty() {
@@ -235,7 +235,7 @@ pub struct InterfaceDisplay<'a> {
     ctx: &'a Ctx,
 }
 
-impl<'a> fmt::Display for InterfaceDisplay<'a> {
+impl fmt::Display for InterfaceDisplay<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "Structs:")?;
         for def in self.interface.structs.values() {
