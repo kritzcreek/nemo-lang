@@ -335,7 +335,7 @@ function setupOutputs() {
 export function setupEditor(initialExample: string) {
   setupOutputs();
   new EditorView({
-    doc: examples[initialExample] ?? examples.sourcegraph,
+    doc: examples[initialExample] ?? examples.bouncy_shapes,
     extensions: [
       minimalSetup,
       lineNumbers(),
