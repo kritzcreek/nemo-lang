@@ -326,7 +326,7 @@ pub fn render_ty_error(
     let cache = (path, Source::from(source));
     let mut out_buf = Vec::new();
 
-    Report::build(ReportKind::Error, path, 12)
+    Report::build(ReportKind::Error, (path, ty_error.at.into()))
         .with_code(code_for_error(&ty_error.it))
         .with_message(error_label(&ty_error.it, ctx))
         .with_label(

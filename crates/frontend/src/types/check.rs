@@ -2163,7 +2163,7 @@ fn match_ty(subst: &mut Substitution, definition: Ty, inferred: &Ty) -> Result<(
                     subst,
                     v,
                     ts2.lookup(k)
-                        .ok_or_else(|| ArgCountMismatch(ts1_len, ts2.0.len()))?,
+                        .ok_or(ArgCountMismatch(ts1_len, ts2.0.len()))?,
                 )?
             }
             Ok(())

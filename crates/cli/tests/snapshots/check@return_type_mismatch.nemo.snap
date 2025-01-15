@@ -13,7 +13,7 @@ success: false
 exit_code: 1
 ----- stdout -----
 [31m[15] Error:[0m Type mismatch. Expected Unit, but got I32
-   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0mtests/check/return_type_mismatch.nemo:2:1[38;5;246m][0m
+   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0mtests/check/return_type_mismatch.nemo:2:10[38;5;246m][0m
    [38;5;246m│[0m
  [38;5;246m2 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;249mn[0m[38;5;249m [0m1
  [38;5;240m  │[0m          ┬  
@@ -21,7 +21,7 @@ exit_code: 1
 [38;5;246m───╯[0m
 
 [31m[15] Error:[0m Type mismatch. Expected I32, but got Unit
-   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0mtests/check/return_type_mismatch.nemo:2:1[38;5;246m][0m
+   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0mtests/check/return_type_mismatch.nemo:6:10[38;5;246m][0m
    [38;5;246m│[0m
  [38;5;246m6 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;249mn[0m[38;5;249m [0m{}
  [38;5;240m  │[0m          ─┬  
