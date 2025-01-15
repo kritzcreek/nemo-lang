@@ -58,7 +58,7 @@ fn render_parse_error(
 
     // TODO avoid this allocation
     let mut out_buf = Vec::new();
-    Report::build(ReportKind::Error, path, 12)
+    Report::build(ReportKind::Error, (path, error.at.into()))
         .with_code("Parsing error")
         .with_message(&error.it)
         .with_label(

@@ -5,13 +5,15 @@ info:
   args:
     - check
     - tests/check/unknown_variant.nemo
+  env:
+    RUST_BACKTRACE: "0"
 input_file: crates/cli/tests/check/unknown_variant.nemo
 ---
 success: false
 exit_code: 1
 ----- stdout -----
 [31m[07] Error:[0m Unknown type Unknown
-   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0mtests/check/unknown_variant.nemo:2:1[38;5;246m][0m
+   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0mtests/check/unknown_variant.nemo:3:5[38;5;246m][0m
    [38;5;246m│[0m
  [38;5;246m3 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0mUnknown[38;5;249m:[0m[38;5;249m:[0m[38;5;249mC[0m[38;5;249m [0m[38;5;249m_[0m[38;5;249m [0m[38;5;249m=[0m[38;5;249m>[0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m}[0m
  [38;5;240m  │[0m     ───┬───  

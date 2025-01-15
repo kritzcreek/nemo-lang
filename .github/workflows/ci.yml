@@ -15,7 +15,7 @@ jobs:
       - uses: cargo-bins/cargo-binstall@v1.8.0
       - uses: denoland/setup-deno@v1
         with:
-          deno-version: v1.x
+          deno-version: v2.x
       - run: |
           # For some reason the cached binaries don't end up on the path
           # so we need to --force here
