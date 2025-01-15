@@ -10,8 +10,8 @@ import std from "../examples/std.nemo?raw";
 import sourcegraph from "../examples/sourcegraph.nemo?raw";
 
 export const examples: Record<string, string> = {
-  sourcegraph,
   bouncy_shapes,
+  sourcegraph,
   loop,
   poly,
   bst,

@@ -1,7 +1,7 @@
 module main
 exports (
-  tick, make_logos, draw_cube, draw_circle, draw_stick, rad,
-  Vec2, zero_vec2, Color, Stick, tick_position, tick_stick,
+  tick, make_logos, draw_circle, draw_stick, rad, Vec2,
+  zero_vec2, Color, Stick, tick_position, tick_stick,
   zero_stick, sg_logo, random_sign, random_between
 )
 
@@ -33,10 +33,6 @@ fn make_logos() -> [Stick] {
     set i = i + 1;
   };
   sticks
-}
-
-fn draw_cube(x : F32, y : F32, size : F32) {
-  canvas::fill_rect(x, y, size, size)
 }
 
 fn draw_circle(x : F32, y : F32, radius : F32) {
