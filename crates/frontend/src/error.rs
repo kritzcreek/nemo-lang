@@ -11,7 +11,7 @@ pub enum CheckError<'a> {
     TypeError(&'a TyError),
 }
 
-impl<'a> CheckError<'a> {
+impl CheckError<'_> {
     pub fn display<'src, 'err>(
         &'err self,
         ctx: &'src Ctx,

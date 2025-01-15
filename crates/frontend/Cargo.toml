@@ -5,17 +5,17 @@ edition = "2021"
 license = "MIT"
 
 [dependencies]
-ariadne = "0.4.1"
+ariadne = "0.5"
 yansi = "1"
-logos = "0.14.2"
+logos = "0.15"
 num-derive = "0.4.2"
 num-traits = "0.2.18"
-rowan = "0.15.16"
+rowan = "0.16"
 text-size = "1.1.1"
 line-index = "0.1.1"
 lexpr = "0.2.7"
 derive_ir = { path = "../derive_ir" }
-string-interner = "0.17.0"
+string-interner = "0.18"
 topological-sort = "0.2.2"
 camino = "1.1.9"
 hop-scip = { git = "https://github.com/kritzcreek/hop", rev = "869548a8bdb11f88da73be72bef500fc15d59124" }

@@ -15,5 +15,5 @@ backend = { path = "../backend" }
 camino = "1.1.9"
 
 [dev-dependencies]
-insta = { version = "1.40.0", features = ["glob", "filters"] }
+insta = { version = "1.42.0", features = ["glob", "filters"] }
 insta-cmd = "0.6.0"
