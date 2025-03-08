@@ -97,32 +97,32 @@ impl<'a> Codegen<'a> {
         }
     }
 
-    fn compile_op(op: &Op) -> Vec<Instruction<'a>> {
+    fn compile_op(op: &Op) -> Instruction<'a> {
         match op.it {
-            OpData::I32Add => vec![Instruction::I32Add],
-            OpData::I32Sub => vec![Instruction::I32Sub],
-            OpData::I32Mul => vec![Instruction::I32Mul],
-            OpData::I32Div => vec![Instruction::I32DivS],
-            OpData::I32Lt => vec![Instruction::I32LtS],
-            OpData::I32Gt => vec![Instruction::I32GtS],
-            OpData::I32Le => vec![Instruction::I32LeS],
-            OpData::I32Ge => vec![Instruction::I32GeS],
-            OpData::I32Eq => vec![Instruction::I32Eq],
-            OpData::I32Ne => vec![Instruction::I32Ne],
-            OpData::F32Add => vec![Instruction::F32Add],
-            OpData::F32Sub => vec![Instruction::F32Sub],
-            OpData::F32Mul => vec![Instruction::F32Mul],
-            OpData::F32Div => vec![Instruction::F32Div],
-            OpData::F32Lt => vec![Instruction::F32Lt],
-            OpData::F32Gt => vec![Instruction::F32Gt],
-            OpData::F32Le => vec![Instruction::F32Le],
-            OpData::F32Ge => vec![Instruction::F32Ge],
-            OpData::F32Eq => vec![Instruction::F32Eq],
-            OpData::F32Ne => vec![Instruction::F32Ne],
-            OpData::BoolEq => vec![Instruction::I32Eq],
-            OpData::BoolNe => vec![Instruction::I32Eq],
-            OpData::BoolAnd => vec![Instruction::I32And],
-            OpData::BoolOr => vec![Instruction::I32Or],
+            OpData::I32Add => Instruction::I32Add,
+            OpData::I32Sub => Instruction::I32Sub,
+            OpData::I32Mul => Instruction::I32Mul,
+            OpData::I32Div => Instruction::I32DivS,
+            OpData::I32Lt =>  Instruction::I32LtS,
+            OpData::I32Gt =>  Instruction::I32GtS,
+            OpData::I32Le =>  Instruction::I32LeS,
+            OpData::I32Ge =>  Instruction::I32GeS,
+            OpData::I32Eq =>  Instruction::I32Eq,
+            OpData::I32Ne =>  Instruction::I32Ne,
+            OpData::F32Add => Instruction::F32Add,
+            OpData::F32Sub => Instruction::F32Sub,
+            OpData::F32Mul => Instruction::F32Mul,
+            OpData::F32Div => Instruction::F32Div,
+            OpData::F32Lt => Instruction::F32Lt,
+            OpData::F32Gt => Instruction::F32Gt,
+            OpData::F32Le => Instruction::F32Le,
+            OpData::F32Ge => Instruction::F32Ge,
+            OpData::F32Eq => Instruction::F32Eq,
+            OpData::F32Ne => Instruction::F32Ne,
+            OpData::BoolEq => Instruction::I32Eq,
+            OpData::BoolNe => Instruction::I32Eq,
+            OpData::BoolAnd => Instruction::I32And,
+            OpData::BoolOr => Instruction::I32Or,
         }
     }
 
@@ -237,7 +237,7 @@ impl<'a> Codegen<'a> {
                     }
                     _ => {
                         instrs.extend(self.compile_expr(body, right));
-                        instrs.extend(Self::compile_op(&op));
+                        instrs.push(Self::compile_op(&op));
                     }
                 }
                 instrs
