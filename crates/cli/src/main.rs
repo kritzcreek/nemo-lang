@@ -39,6 +39,18 @@ enum Commands {
     },
 }
 
+fn read_source_files(
+    input_files: Vec<Utf8PathBuf>,
+) -> Result<Vec<(Utf8PathBuf, String)>, io::Error> {
+    input_files
+        .into_iter()
+        .map(|input_file| {
+            let source = fs::read_to_string(&input_file)?;
+            Ok((input_file, source))
+        })
+        .collect()
+}
+
 fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
     let args = Cli::parse();
     match args.command {
@@ -46,25 +58,13 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
             input_files,
             output,
         } => {
-            let sources: Vec<_> = input_files
-                .into_iter()
-                .map(|input_file| {
-                    let source = fs::read_to_string(&input_file)?;
-                    Ok((input_file, source))
-                })
-                .collect::<Result<Vec<_>, io::Error>>()?;
+            let sources = read_source_files(input_files)?;
             let wasm = compile_program(&sources)?;
             fs::write(output, wasm)?;
             Ok(())
         }
         Commands::Check { input_files } => {
-            let sources: Vec<_> = input_files
-                .into_iter()
-                .map(|input_file| {
-                    let source = fs::read_to_string(&input_file)?;
-                    Ok((input_file, source))
-                })
-                .collect::<Result<Vec<_>, io::Error>>()?;
+            let sources: Vec<_> = read_source_files(input_files)?;
             frontend::check_program(&sources)?;
             Ok(())
         }
@@ -73,13 +73,7 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
             todo!();
         }
         Commands::Run { input_files } => {
-            let sources: Vec<_> = input_files
-                .into_iter()
-                .map(|input_file| {
-                    let source = fs::read_to_string(&input_file)?;
-                    Ok((input_file, source))
-                })
-                .collect::<Result<Vec<_>, io::Error>>()?;
+            let sources: Vec<_> = read_source_files(input_files)?;
             let wasm = compile_program(&sources)?;
             let engine = Engine::new(Config::new().wasm_function_references(true).wasm_gc(true))?;
             let mut store = Store::new(&engine, ());
