@@ -97,8 +97,8 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
                 println!("{param}");
                 0
             })?;
-            linker.func_wrap("env", "print_char", |param: i32| {
-                print!("{}", char::from_u32(param as u32).unwrap());
+            linker.func_wrap("env", "print_char", |param: u32| {
+                print!("{}", char::from_u32(param).unwrap());
                 0
             })?;
             linker.func_wrap("env", "random", |_: i32| -> f32 { 0.0 })?;
