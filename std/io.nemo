@@ -1,5 +1,5 @@
 module io
-exports (print, print_bytes, print_int, print_float, print_bool)
+exports (println, println_bytes, print_int, print_float, print_bool)
 
 use string
 use option
@@ -23,12 +23,12 @@ fn print_chars(next: fn () -> option::Option[I32]) {
   };
 }
 
-fn print(s : string::Str) {
+fn println(s : string::Str) {
   print_chars(string::chars(s))
 }
 
-fn print_bytes(b : Bytes) {
-  print(string::unsafe_new(b))
+fn println_bytes(b : Bytes) {
+  println(string::unsafe_new(b))
 }
 
 fn print_int(i : I32) {
@@ -41,8 +41,8 @@ fn print_float(f : F32) {
 
 fn print_bool(b : Bool) {
   if b {
-    print_bytes("true")
+    println_bytes("true")
   } else {
-    print_bytes("false")
+    println_bytes("false")
   }
 }

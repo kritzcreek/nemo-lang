@@ -103,7 +103,9 @@ static BUILTINS: LazyLock<HashMap<&'static str, Fn>> = LazyLock::new(|| {
     m.insert("i32_or", i32_func_binary("i32_or"));
     m.insert("i32_xor", i32_func_binary("i32_xor"));
     m.insert("i32_rem_s", i32_func_binary("i32_rem_s"));
+    m.insert("i32_rem_u", i32_func_binary("i32_rem_u"));
     m.insert("i32_shl", i32_func_binary("i32_shl"));
+    m.insert("i32_shr_u", i32_func_binary("i32_shr_u"));
     m.insert("i32_shr_s", i32_func_binary("i32_shr_s"));
     m.insert(
         "i32_trunc_f32_s",

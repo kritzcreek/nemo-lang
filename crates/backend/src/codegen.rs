@@ -195,7 +195,8 @@ impl<'a> Codegen<'a> {
                             instrs.push(Instruction::ArrayGetU(bytes_ty))
                         } else if builtin == "bytes_set" {
                             let bytes_ty = self.builder.bytes_ty();
-                            instrs.push(Instruction::ArraySet(bytes_ty))
+                            instrs.push(Instruction::ArraySet(bytes_ty));
+                            instrs.push(Instruction::I32Const(0))
                         } else if builtin == "bytes_len" {
                             instrs.push(Instruction::ArrayLen)
                         } else if builtin == "bytes_new" {
@@ -758,7 +759,9 @@ fn builtin_instruction(builtin: &str) -> Instruction<'static> {
         "i32_or" => Instruction::I32Or,
         "i32_xor" => Instruction::I32Xor,
         "i32_rem_s" => Instruction::I32RemS,
+        "i32_rem_u" => Instruction::I32RemU,
         "i32_shl" => Instruction::I32Shl,
+        "i32_shr_u" => Instruction::I32ShrU,
         "i32_shr_s" => Instruction::I32ShrS,
         "i32_trunc_f32_s" => Instruction::I32TruncF32S,
         "i32_reinterpret_f32" => Instruction::I32ReinterpretF32,
