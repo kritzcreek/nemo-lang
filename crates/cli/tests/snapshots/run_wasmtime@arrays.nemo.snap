@@ -1,0 +1,8 @@
+---
+source: crates/cli/tests/lib.rs
+expression: output
+input_file: crates/cli/tests/run/arrays.nemo
+---
+Success: 0
+42
+1

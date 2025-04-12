@@ -1,0 +1,16 @@
+---
+source: crates/cli/tests/lib.rs
+expression: output
+input_file: crates/cli/tests/run/literals.nemo
+---
+Success: 0
+0
+4242
+85
+233495534
+447460044
+1
+0
+0
+0.1234
+1234.1234

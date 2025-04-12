@@ -1,0 +1,13 @@
+---
+source: crates/cli/tests/lib.rs
+expression: output
+input_file: crates/cli/tests/run/infix_op.nemo
+---
+Success: 0
+2
+3
+2
+2
+2
+11
+2

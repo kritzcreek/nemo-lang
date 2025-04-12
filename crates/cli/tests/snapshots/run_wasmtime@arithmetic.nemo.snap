@@ -1,0 +1,22 @@
+---
+source: crates/cli/tests/lib.rs
+expression: output
+input_file: crates/cli/tests/run/arithmetic.nemo
+---
+Success: 0
+2
+1
+-1
+0
+6
+6
+0
+1
+2.2
+0.9999999
+-0.9999999
+0
+6.5099993
+6.5099993
+0.67741936
+1.4761904
