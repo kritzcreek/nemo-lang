@@ -58,3 +58,6 @@ update-gh-pages: build-playground
 
 dev-wast FILE:
     watchexec --quiet -e wast just run-wast {{ FILE }}
+
+install-tools:
+    cargo binstall just wasm-bindgen-cli wasm-tools wasm-opt watchexec-cli cargo-nextest --secure

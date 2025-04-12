@@ -60,10 +60,7 @@ The easiest way I've found to install them is using [cargo-binstall]:
 cargo binstall just wasm-bindgen-cli wasm-tools wasm-opt watchexec-cli cargo-nextest --secure
 ```
 
-Additionally you'll need [Deno] to run the tests.
-
 [Nemo playground]: https://kritzcreek.github.io/nemo-lang
 [Rust toolchain]: https://rustup.rs
 [cargo-binstall]: https://github.com/cargo-bins/cargo-binstall
 [justfile]: ./justfile
-[Deno]: https://deno.com/
