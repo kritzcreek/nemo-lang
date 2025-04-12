@@ -1,0 +1,13 @@
+---
+source: crates/cli/tests/lib.rs
+expression: output
+input_file: crates/cli/tests/run/variants.nemo
+---
+Success: 0
+a
+b
+c
+
+2
+3.1
+4

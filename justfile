@@ -32,11 +32,7 @@ build-wasm-lib:
 
 run-wasm FILE:
     mkdir -p build
-    cargo run --bin nemo compile std/* {{ FILE }} --output build/{{ without_extension(file_name(FILE)) }}.wasm
-    wasm-opt --enable-reference-types --enable-gc --enable-bulk-memory -O3 build/{{ without_extension(file_name(FILE)) }}.wasm -o build/{{ without_extension(file_name(FILE)) }}_opt.wasm
-    wasm-tools print build/{{ without_extension(file_name(FILE)) }}.wasm -o build/{{ without_extension(file_name(FILE)) }}.wast
-    wasm-tools print build/{{ without_extension(file_name(FILE)) }}_opt.wasm -o build/{{ without_extension(file_name(FILE)) }}_opt.wast
-    deno run --allow-read dev/wasm-runner.ts build/{{ without_extension(file_name(FILE)) }}.wasm
+    cargo run --bin nemo run std/* {{ FILE }}
 
 dev FILE:
     watchexec --quiet --no-vcs-ignore -e nemo,rs,mjs just run-wasm {{ FILE }}
@@ -51,10 +47,5 @@ update-gh-pages: build-playground
     rm -r gh-pages/*
     cp -r playground/dist/* gh-pages/
 
-@run-wast FILE:
-    wasm-tools parse {{ FILE }}.wast -o build/{{ FILE }}.wasm
-    wasm-tools validate -f gc build/{{ FILE }}.wasm
-    node dev/run-wasm.mjs build/{{ FILE }}.wasm
-
-dev-wast FILE:
-    watchexec --quiet -e wast just run-wast {{ FILE }}
+install-tools:
+    cargo binstall just wasm-bindgen-cli wasm-tools wasm-opt watchexec-cli cargo-nextest --secure

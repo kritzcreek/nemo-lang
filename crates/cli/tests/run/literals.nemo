@@ -1,6 +1,9 @@
 import log : fn (I32) -> Unit from log
-import logb : fn (Bool) -> Unit from log
-import logf : fn (F32) -> Unit from log
+import log_float : fn (F32) -> Unit from log_float
+
+fn int_of_bool(b : Bool) -> I32 {
+  if b { 1 } else { 0 }
+}
 
 fn main() {
   log(0);
@@ -8,9 +11,9 @@ fn main() {
   log(0b01010101);
   log(0xDeAdBeE);
   log(0x1aAbB2cC);
-  logb(true);
-  logb(false);
-  logf(0.0);
-  logf(0.1234);
-  logf(1234.1234);
+  log(int_of_bool(true));
+  log(int_of_bool(false));
+  log_float(0.0);
+  log_float(0.1234);
+  log_float(1234.1234);
 }
