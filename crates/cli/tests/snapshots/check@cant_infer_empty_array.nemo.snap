@@ -13,7 +13,7 @@ success: false
 exit_code: 1
 ----- stdout -----
 [31m[17] Error:[0m Can't infer type of an empty array
-   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0mtests/check/cant_infer_empty_array.nemo:2:11[38;5;246m][0m
+   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m tests/check/cant_infer_empty_array.nemo:2:11 [38;5;246m][0m
    [38;5;246m│[0m
  [38;5;246m2 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249ml[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249m [0m[38;5;249mx[0m[38;5;249m [0m[38;5;249m=[0m[38;5;249m [0m[]
  [38;5;240m  │[0m           ─┬  

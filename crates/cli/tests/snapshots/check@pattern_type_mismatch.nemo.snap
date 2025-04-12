@@ -13,7 +13,7 @@ success: false
 exit_code: 1
 ----- stdout -----
 [31m[20] Error:[0m This pattern can't match a value of type I32
-   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0mtests/check/pattern_type_mismatch.nemo:7:5[38;5;246m][0m
+   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m tests/check/pattern_type_mismatch.nemo:7:5 [38;5;246m][0m
    [38;5;246m│[0m
  [38;5;246m7 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0mV::S _[38;5;249m [0m[38;5;249m=[0m[38;5;249m>[0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m}[0m
  [38;5;240m  │[0m     ───┬──  
