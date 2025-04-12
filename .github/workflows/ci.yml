@@ -16,5 +16,5 @@ jobs:
       - run: |
           # For some reason the cached binaries don't end up on the path
           # so we need to --force here
-          cargo binstall -y --force just wasm-bindgen-cli wasm-opt
+          cargo binstall -y --force just wasm-bindgen-cli wasm-opt cargo-nextest
           just ci
