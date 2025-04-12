@@ -4,8 +4,8 @@ info:
   program: nemo
   args:
     - check
-    - tests/check/duplicate_module_name/moda_again.nemo
     - tests/check/duplicate_module_name/moda.nemo
+    - tests/check/duplicate_module_name/moda_again.nemo
   env:
     RUST_BACKTRACE: "0"
 input_file: crates/cli/tests/check/duplicate_module_name
@@ -15,6 +15,7 @@ exit_code: 101
 ----- stdout -----
 
 ----- stderr -----
+
 thread 'main' panicked at [FILTERED]
 not yet implemented: Duplicate module name declared: 'moda'
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
