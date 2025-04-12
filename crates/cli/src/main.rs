@@ -1,8 +1,9 @@
+use anyhow::Result;
 use backend::compile_program;
 use camino::Utf8PathBuf;
 use clap::{Parser, Subcommand};
 use std::{error::Error, fs, io};
-use wasmtime::{Config, Engine, Linker, Module, Store};
+use wasmtime::{Config, Engine, Instance, Linker, Module, Store, TypedFunc};
 
 /// The nemo language
 #[derive(Debug, Parser)]
@@ -49,6 +50,14 @@ fn read_source_files(
             Ok((input_file, source))
         })
         .collect()
+}
+
+fn find_wasm_main<T>(instance: &Instance, mut store: &mut Store<T>) -> Result<TypedFunc<(), i32>> {
+    let main_export = instance
+        .exports(&mut store)
+        .find(|export| export.name() == "main" || export.name().ends_with("::main"))
+        .unwrap();
+    main_export.into_func().unwrap().typed::<(), i32>(store)
 }
 
 fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
@@ -98,7 +107,7 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
             linker.func_wrap("env", "random", |_: i32| -> f32 { 0.0 })?;
 
             let instance = linker.instantiate(&mut store, &module)?;
-            let main_func = instance.get_typed_func::<(), i32>(&mut store, "main")?;
+            let main_func = find_wasm_main(&instance, &mut store)?;
             let result = main_func.call(&mut store, ())?;
             println!("Result: {:?}", result);
             Ok(())
