@@ -78,13 +78,11 @@ impl Ctx {
         )
     }
     pub fn display_qualified_name(&self, name: Name) -> String {
-        let module_name = self.get_module_name(name.module);
-        let name = self.resolve(name).0;
-        if module_name.is_empty() || module_name == "NOT INITIALIZED" {
-            name.to_string()
-        } else {
-            format!("{module_name}::{name}")
-        }
+        format!(
+            "{}::{}",
+            self.get_module_name(name.module),
+            self.resolve(name).0
+        )
     }
     pub fn display_name(&self, name: Name) -> String {
         self.resolve(name).0
