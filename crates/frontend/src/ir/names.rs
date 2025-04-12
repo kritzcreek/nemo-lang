@@ -13,7 +13,6 @@ use crate::types::Interface;
 // Indexed by ModuleId
 #[derive(Debug)]
 pub struct Ctx {
-    // Indexed by ModuleId
     module_names: Vec<String>,
     module_paths: Vec<Utf8PathBuf>,
     interfaces: Vec<Interface>,
@@ -29,19 +28,21 @@ impl Ctx {
         let mut module_paths = Vec::with_capacity(all_module_count);
         let mut interfaces = Vec::with_capacity(all_module_count);
         let mut name_supplies = Vec::with_capacity(all_module_count);
-        // TODO: Should add proper values for reserved modules
         for _ in 0..name_supplies.capacity() {
             module_names.push("NOT INITIALIZED".to_string());
             module_paths.push(Utf8Path::new("NOT INITIALIZED").to_path_buf());
             interfaces.push(Interface::default());
             name_supplies.push(NameSupply::new());
         }
-        Ctx {
+        let mut ctx = Ctx {
             module_names,
             module_paths,
             interfaces,
             name_supplies,
-        }
+        };
+        ctx.set_module_name(ModuleId::PRIM, "#prim".to_string());
+        ctx.set_module_name(ModuleId::CODEGEN, "#codegen".to_string());
+        ctx
     }
     pub fn set_module_name(&mut self, module: ModuleId, name: String) {
         self.module_names[(module.0.get() - 1) as usize] = name
