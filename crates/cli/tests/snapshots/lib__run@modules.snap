@@ -1,0 +1,8 @@
+---
+source: crates/cli/tests/lib.rs
+expression: output
+input_file: crates/cli/tests/run/modules
+---
+Success: 0
+22
+12

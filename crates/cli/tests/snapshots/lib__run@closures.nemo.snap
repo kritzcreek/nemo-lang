@@ -1,0 +1,9 @@
+---
+source: crates/cli/tests/lib.rs
+expression: output
+input_file: crates/cli/tests/run/closures.nemo
+---
+Success: 0
+11
+5
+3

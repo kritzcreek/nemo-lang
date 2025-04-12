@@ -1,0 +1,14 @@
+---
+source: crates/cli/tests/lib.rs
+expression: output
+input_file: crates/cli/tests/run/structs.nemo
+---
+Success: 0
+5
+6
+5
+6
+1
+2
+1
+2
