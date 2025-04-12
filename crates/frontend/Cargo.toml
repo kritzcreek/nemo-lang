@@ -15,7 +15,6 @@ text-size = "1.1.1"
 line-index = "0.1.1"
 lexpr = "0.2.7"
 derive_ir = { path = "../derive_ir" }
-string-interner = "0.18"
+string-interner = "0.19"
 topological-sort = "0.2.2"
 camino = "1.1.9"
-hop-scip = { git = "https://github.com/kritzcreek/hop", rev = "869548a8bdb11f88da73be72bef500fc15d59124" }

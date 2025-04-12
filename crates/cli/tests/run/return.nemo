@@ -1,9 +1,9 @@
 import log : fn (I32) -> Unit from log
-import logf : fn (F32) -> Unit from log
+import log_f32 : fn (F32) -> Unit from log_f32
 
 fn main() -> I32 {
   log(early_return());
-  logf(loop_return());
+  log_f32(loop_return());
   log(lambda_return());
 }
 

@@ -6,6 +6,7 @@ struct Box[a] {
   content : a
 }
 
-fn main() -> Box[I32] {
-  Box #[I32] { content = 42 }
+fn main() -> I32 {
+  let box = Box #[I32] { content = 42 };
+  box.content
 }

@@ -648,6 +648,7 @@ impl<'a> Codegen<'a> {
         for import in program.imports {
             self.builder.declare_import(import);
         }
+        self.builder.finish_imports();
 
         // Variants need to be declared before structs
         for type_def in program.types.iter() {

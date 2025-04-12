@@ -39,9 +39,7 @@ impl Parse {
     pub fn debug_tree(&self) -> String {
         let syntax_node = SyntaxNode::new_root(self.green_node.clone());
         let formatted = format!("{:#?}", syntax_node);
-
-        // We cut off the last byte because formatting the SyntaxNode adds on a newline at the end.
-        formatted[0..formatted.len() - 1].to_string()
+        formatted.trim_end_matches('\n').to_string()
     }
 
     pub fn take(self) -> (Root, Vec<ParseError>) {

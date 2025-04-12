@@ -103,6 +103,8 @@ pub struct Builder<'a> {
     types: Vec<SubType>,
     datas: Vec<Vec<u8>>,
     imports: HashMap<Name, ImportData>,
+    // Represents the first type index that doesn't describe an import
+    import_ty_watermark: Option<TypeIdx>,
     exports: Vec<Export>,
     start_fn: Option<FuncIdx>,
     substitution: Substitution,
@@ -135,6 +137,7 @@ impl<'a> Builder<'a> {
             closure_tys: HashMap::new(),
             func_refs: HashMap::new(),
             imports: HashMap::new(),
+            import_ty_watermark: None,
             exports: vec![],
             start_fn: None,
             substitution: Substitution::new(&[], &[]),
@@ -164,13 +167,17 @@ impl<'a> Builder<'a> {
         let mut type_section = TypeSection::new();
         let mut all_field_names = IndirectNameMap::new();
 
-        // I remember this didn't work on some more complicated programs
-        // but it passes for all the current example programs. Keep an eye on it
-        type_section.ty().rec(self.types);
-        // for ty in self.types {
-        //     type_section.subtype(&ty);
-        // }
-
+        let import_ty_watermark = self
+            .import_ty_watermark
+            .expect("import section was never finished");
+        let (imports_tys, program_tys) = self.types.split_at(import_ty_watermark as usize);
+        for ty in imports_tys {
+            let CompositeInnerType::Func(ref func_ty) = ty.composite_type.inner else {
+                panic!("imported type is not a function type")
+            };
+            type_section.ty().func_type(func_ty);
+        }
+        type_section.ty().rec(program_tys.iter().cloned());
         for (name, info) in self.structs {
             for (tys, type_idx) in &info.instances {
                 let mut it = ctx.display_qualified_name(name);
@@ -183,7 +190,7 @@ impl<'a> Builder<'a> {
                 type_names.append(*type_idx, &it);
                 let mut field_names = WasmNameMap::new();
                 for (field, _) in info.definition.fields.iter() {
-                    field_names.append(info.field_idx(*field), &ctx.display_name(name))
+                    field_names.append(info.field_idx(*field), &ctx.display_name(*field))
                 }
                 all_field_names.append(*type_idx, &field_names);
             }
@@ -645,6 +652,14 @@ impl<'a> Builder<'a> {
 
     pub fn lookup_import(&self, name: &Name) -> Option<FuncIdx> {
         self.imports.get(name).map(|data| data.index)
+    }
+
+    pub fn finish_imports(&mut self) {
+        assert!(
+            self.import_ty_watermark.is_none(),
+            "finish_imports called twice"
+        );
+        self.import_ty_watermark = Some(self.types.len() as u32)
     }
 
     pub fn declare_global(&mut self, name: Name, ty: &Ty, init: ConstExpr) -> GlobalIdx {

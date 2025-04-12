@@ -7,6 +7,8 @@ const encoder = new TextEncoder();
 const imports = {
   env: {
     log: (arg: number) => console.log(arg),
+    log_int: (arg: number) => console.log(arg),
+    log_f32: (arg: number) => console.log(arg),
     print_char: (cp: number) =>
       Deno.stdout.writeSync(encoder.encode(String.fromCodePoint(cp))),
     random: () => Math.random(),
