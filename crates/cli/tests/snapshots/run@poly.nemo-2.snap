@@ -14,6 +14,6 @@ input_file: crates/cli/tests/run/poly.nemo
 success: true
 exit_code: 0
 ----- stdout -----
-[Object: null prototype] {}
+42
 
 ----- stderr -----

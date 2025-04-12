@@ -1,5 +1,5 @@
 module vec
-exports (Vec, new, push, pop, extend, slice)
+exports (Vec, new, push, pop, extend)
 
 use option
 

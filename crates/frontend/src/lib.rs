@@ -4,7 +4,6 @@ pub mod highlight;
 pub mod ir;
 mod module_dag;
 pub mod parser;
-pub mod scip;
 pub mod syntax;
 pub mod types;
 

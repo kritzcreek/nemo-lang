@@ -5,8 +5,8 @@ use string
 use option
 
 import print_char : fn (I32) -> Unit from print_char
-import log_int : fn (I32) -> Unit from log
-import log_float : fn (F32) -> Unit from log
+import log_int : fn (I32) -> Unit from log_int
+import log_float : fn (F32) -> Unit from log_float
 
 fn print_chars(next: fn () -> option::Option[I32]) {
   while true {
