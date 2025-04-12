@@ -13,7 +13,7 @@ success: false
 exit_code: 1
 ----- stdout -----
 [31m[16] Error:[0m Can't a call a value of type I32 as a function
-   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0mtests/check/not_a_function.nemo:3:3[38;5;246m][0m
+   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m tests/check/not_a_function.nemo:3:3 [38;5;246m][0m
    [38;5;246m│[0m
  [38;5;246m3 │[0m [38;5;249m [0m[38;5;249m [0mx[38;5;249m([0m[38;5;249m0[0m[38;5;249m)[0m
  [38;5;240m  │[0m   ┬  
