@@ -89,7 +89,11 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
                 println!("{param}");
                 0
             })?;
-            linker.func_wrap("env", "log_f32", |param: f32| {
+            linker.func_wrap("env", "log_int", |param: i32| {
+                println!("{param}");
+                0
+            })?;
+            linker.func_wrap("env", "log_float", |param: f32| {
                 println!("{param}");
                 0
             })?;
