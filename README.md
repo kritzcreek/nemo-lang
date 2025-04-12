@@ -57,7 +57,7 @@ While developing the compiler a couple of other tools are useful/necessary to ha
 
 The easiest way I've found to install them is using [cargo-binstall]:
 ```sh
-cargo binstall just wasm-bindgen-cli wasm-tools wasm-opt watchexec-cli
+cargo binstall just wasm-bindgen-cli wasm-tools wasm-opt watchexec-cli cargo-nextest --secure
 ```
 
 Additionally you'll need [Deno] to run the tests.
