@@ -7,11 +7,11 @@ install:
     cargo install --path crates/cli
 
 test:
-    cargo test --all
+    cargo nextest run --all
     cargo clippy --all-targets --all-features
 
 test-accept:
-    cargo insta test --accept
+    cargo insta test --test-runner=nextest --accept
 
 ci:
     just gen
