@@ -14,6 +14,7 @@ backend = { path = "../backend" }
 # language-server = { path = "../language-server" }
 camino = "1.1.9"
 wasmtime = "31.0.0"
+anyhow = "1.0.87"
 
 [dev-dependencies]
 insta = { version = "1.42.0", features = ["glob", "filters"] }
