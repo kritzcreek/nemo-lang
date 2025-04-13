@@ -2,7 +2,7 @@ use rowan::TextRange;
 use std::collections::HashMap;
 use topological_sort::TopologicalSort;
 
-use crate::ir::ModuleId;
+use crate::ir::{Id, ModuleId};
 
 #[derive(Debug)]
 pub enum SortResult {
@@ -18,10 +18,11 @@ pub enum SortResult {
 pub struct ModuleInfo<'a> {
     pub id: ModuleId,
     pub name: &'a str,
-    pub uses: &'a [(TextRange, String)],
+    pub uses: &'a [Id],
 }
 
 pub fn toposort_modules(modules: Vec<ModuleInfo>) -> SortResult {
+    let module_count = modules.len();
     let mut module_name_map = HashMap::new();
     let mut module_id_map = HashMap::new();
     let mut unknown_modules = vec![];
@@ -34,17 +35,17 @@ pub fn toposort_modules(modules: Vec<ModuleInfo>) -> SortResult {
         }
         module_id_map.insert(*id, *name);
     }
-    for ModuleInfo { id, name: _, uses } in &modules {
-        for (range, dep) in *uses {
+    for ModuleInfo { id, name: _, uses } in modules {
+        for Id { it: dep, at: range } in uses {
             if let Some(import_id) = module_name_map.get(dep.as_str()) {
-                ts.add_dependency(*import_id, *id)
+                ts.add_dependency(*import_id, id)
             } else {
-                unknown_modules.push((*id, *range, dep.clone()))
+                unknown_modules.push((id, *range, dep.clone()))
             };
         }
     }
     let sorted: Vec<ModuleId> = ts.collect();
-    if sorted.len() < modules.len() {
+    if sorted.len() < module_count {
         // TODO: Report which modules participate in cycle
         return SortResult::Cycle(vec![]);
     }
