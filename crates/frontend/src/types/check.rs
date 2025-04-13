@@ -666,14 +666,23 @@ impl Typechecker<'_> {
             Type::TyBool(_) => Ty::Bool,
             Type::TyUnit(_) => Ty::Unit,
             Type::TyBytes(_) => Ty::Bytes,
-            Type::TyArray(t) => match t.elem().map(|e| self.check_ty(errors, scope, &e)) {
-                Some(elem_ty) => Ty::Array(Box::new(elem_ty)),
-                None => Ty::Array(Box::new(Ty::Error)),
-            },
             Type::TyCons(t) => {
                 let Some(ty_tkn) = t.upper_ident_token() else {
                     return Ty::Error;
                 };
+                if ty_tkn.text() == "Array" && t.mod_qualifier().is_none() {
+                    let mut ty_args: Vec<Ty> = t
+                        .type_args()
+                        .map(|t| self.check_ty(errors, scope, &t))
+                        .collect();
+                    if ty_args.len() != 1 {
+                        errors.report(t, TyArgCountMismatch(1, ty_args.len()));
+                        return Ty::Error;
+                    }
+                    let elem_ty = Box::new(ty_args.pop().unwrap());
+                    return Ty::Array(elem_ty);
+                }
+
                 let Some(ty_def) = self.lookup_type(errors, t.mod_qualifier(), None, &ty_tkn)
                 else {
                     return Ty::Error;

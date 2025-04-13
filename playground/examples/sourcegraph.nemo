@@ -10,10 +10,10 @@ use canvas
 import random : fn () -> F32 from random
 
 global two_pi = 3.14159265359 * 2.0
-global sticks : [Stick] = make_logos()
+global sticks : Array[Stick] = make_logos()
 global boom_timer : F32 = 2000.0
 
-fn make_logos() -> [Stick] {
+fn make_logos() -> Array[Stick] {
   let logos = [
     sg_logo(100.0, 50.0, 0.25, 0.5),
     sg_logo(100.0, 180.0, 0.5, 0.5),
@@ -23,9 +23,9 @@ fn make_logos() -> [Stick] {
     sg_logo(290.0, 300.0, 0.75, 0.7),
     sg_logo(45.0, 400.0, 0.5, 1.7),
   ];
-  let sticks = array_new#[Stick](zero_stick(), array_len#[[Stick]](logos) * 3);
+  let sticks = array_new#[Stick](zero_stick(), array_len#[Array[Stick]](logos) * 3);
   let i = 0;
-  while i < array_len#[[Stick]](logos) {
+  while i < array_len#[Array[Stick]](logos) {
     let offset = i * 3;
     set sticks[offset] = logos[i][0];
     set sticks[offset + 1] = logos[i][1];
@@ -113,7 +113,7 @@ fn zero_stick() -> Stick {
   }
 }
 
-fn sg_logo(x : F32, y : F32, size : F32, turns_per_sec : F32) -> [Stick] {
+fn sg_logo(x : F32, y : F32, size : F32, turns_per_sec : F32) -> Array[Stick] {
   [Stick {
     position = Vec2 { x = x, y = y },
     velocity = zero_vec2(),

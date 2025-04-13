@@ -2,7 +2,7 @@ import log : fn (I32) -> Unit from log
 
 struct Point {
   x : I32,
-  xs : [I32],
+  xs : Array[I32],
 }
 
 fn main() {

@@ -321,14 +321,6 @@ fn typ(p: &mut Parser) -> Progress {
         T![upper_ident] => {
             ty_cons(p, c);
         }
-        T!['['] => {
-            p.bump(T!['[']);
-            if !typ(p).made_progress() {
-                p.error("expected a type")
-            }
-            p.expect(T![']']);
-            p.finish_at(c, SyntaxKind::TyArray)
-        }
         T![fn] => {
             p.bump(T![fn]);
             let c_arg = p.checkpoint();

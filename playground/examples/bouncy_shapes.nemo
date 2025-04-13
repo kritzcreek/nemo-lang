@@ -63,7 +63,7 @@ struct Particle {
 }
 
 struct RingBuffer {
-  buffer : [Particle],
+  buffer : Array[Particle],
   watermark : I32
 }
 

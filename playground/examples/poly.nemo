@@ -1,7 +1,7 @@
 import log : fn (I32) -> Unit from log
 import log_f32 : fn (F32) -> Unit from log
 
-fn for_each[a](f : fn (a) -> Unit, as : [a]) {
+fn for_each[a](f : fn (a) -> Unit, as : Array[a]) {
   let i = 0;
   while i < array_len#[a](as) {
     f(as[i]);

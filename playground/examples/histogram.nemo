@@ -17,7 +17,7 @@ fn main() {
   render(buckets)
 }
 
-fn histogram(count : I32, generator : fn () -> I32) -> [I32] {
+fn histogram(count : I32, generator : fn () -> I32) -> Array[I32] {
   let buckets = [0, 0, 0, 0, 0];
   while count > 0 {
     let bucket = generator() / 20;
@@ -32,7 +32,7 @@ import print_char : fn (I32) -> Unit from print_char
 global star = bytes_get("*", 0)
 global line_feed = 10
 
-fn render(buckets : [I32]) -> Unit {
+fn render(buckets : Array[I32]) -> Unit {
   let i = 0 ;
   while i < array_len#[I32](buckets) {
     print_stars(buckets[i]);
@@ -69,7 +69,7 @@ import close_path : fn () -> Unit from close_path
 import stroke : fn () -> Unit from stroke
 import clear : fn () -> Unit from clear_canvas
 
-fn render_canvas(buckets: [I32]) {
+fn render_canvas(buckets: Array[I32]) {
   let i = 0;
   while i < array_len#[I32](buckets) {
     let x = f32_convert_i32_s(i * 100);

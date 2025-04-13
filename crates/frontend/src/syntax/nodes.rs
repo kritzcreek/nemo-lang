@@ -326,21 +326,6 @@ impl TyUnit {
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct TyArray {
-    pub(crate) syntax: SyntaxNode,
-}
-impl TyArray {
-    pub fn l_brack_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T!['['])
-    }
-    pub fn elem(&self) -> Option<Type> {
-        support::child(&self.syntax)
-    }
-    pub fn r_brack_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T![']'])
-    }
-}
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TyVar {
     pub(crate) syntax: SyntaxNode,
 }
@@ -834,7 +819,6 @@ pub enum Type {
     TyBool(TyBool),
     TyBytes(TyBytes),
     TyUnit(TyUnit),
-    TyArray(TyArray),
     TyVar(TyVar),
     TyCons(TyCons),
     TyFn(TyFn),
@@ -1229,21 +1213,6 @@ impl AstNode for TyBytes {
 impl AstNode for TyUnit {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == TyUnit
-    }
-    fn cast(syntax: SyntaxNode) -> Option<Self> {
-        if Self::can_cast(syntax.kind()) {
-            Some(Self { syntax })
-        } else {
-            None
-        }
-    }
-    fn syntax(&self) -> &SyntaxNode {
-        &self.syntax
-    }
-}
-impl AstNode for TyArray {
-    fn can_cast(kind: SyntaxKind) -> bool {
-        kind == TyArray
     }
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         if Self::can_cast(syntax.kind()) {
@@ -1883,11 +1852,6 @@ impl From<TyUnit> for Type {
         Type::TyUnit(node)
     }
 }
-impl From<TyArray> for Type {
-    fn from(node: TyArray) -> Type {
-        Type::TyArray(node)
-    }
-}
 impl From<TyVar> for Type {
     fn from(node: TyVar) -> Type {
         Type::TyVar(node)
@@ -1906,7 +1870,7 @@ impl From<TyFn> for Type {
 impl AstNode for Type {
     fn can_cast(kind: SyntaxKind) -> bool {
         match kind {
-            TyInt | TyFloat | TyBool | TyBytes | TyUnit | TyArray | TyVar | TyCons | TyFn => true,
+            TyInt | TyFloat | TyBool | TyBytes | TyUnit | TyVar | TyCons | TyFn => true,
             _ => false,
         }
     }
@@ -1917,7 +1881,6 @@ impl AstNode for Type {
             TyBool => Type::TyBool(TyBool { syntax }),
             TyBytes => Type::TyBytes(TyBytes { syntax }),
             TyUnit => Type::TyUnit(TyUnit { syntax }),
-            TyArray => Type::TyArray(TyArray { syntax }),
             TyVar => Type::TyVar(TyVar { syntax }),
             TyCons => Type::TyCons(TyCons { syntax }),
             TyFn => Type::TyFn(TyFn { syntax }),
@@ -1932,7 +1895,6 @@ impl AstNode for Type {
             Type::TyBool(it) => &it.syntax,
             Type::TyBytes(it) => &it.syntax,
             Type::TyUnit(it) => &it.syntax,
-            Type::TyArray(it) => &it.syntax,
             Type::TyVar(it) => &it.syntax,
             Type::TyCons(it) => &it.syntax,
             Type::TyFn(it) => &it.syntax,
@@ -2375,11 +2337,6 @@ impl std::fmt::Display for TyBytes {
     }
 }
 impl std::fmt::Display for TyUnit {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        std::fmt::Display::fmt(self.syntax(), f)
-    }
-}
-impl std::fmt::Display for TyArray {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
     }

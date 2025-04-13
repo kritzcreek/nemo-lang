@@ -5,7 +5,7 @@ use option
 
 struct Vec[a] {
   zero : a,
-  buf : [a],
+  buf : Array[a],
   len : I32,
 }
 
