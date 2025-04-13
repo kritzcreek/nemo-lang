@@ -42,7 +42,6 @@ Type
   | TyBool
   | TyBytes
   | TyUnit
-  | TyArray
   | TyVar
   | TyCons
   | TyFn
@@ -52,7 +51,6 @@ TyFloat = 'F32'
 TyBool = 'Bool'
 TyBytes = 'Bytes'
 TyUnit = 'Unit'
-TyArray = '[' elem:Type ']'
 TyCons = ModQualifier? 'upper_ident' type_args:Type*
 TyVar = 'ident'
 
