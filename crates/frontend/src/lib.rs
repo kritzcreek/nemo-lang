@@ -9,10 +9,9 @@ pub mod types;
 
 use camino::Utf8PathBuf;
 pub use error::CheckError;
-use ir::{Ctx, ModuleId, ModuleIdGen, Program};
+use ir::{Ctx, Id, ModuleId, ModuleIdGen, Program};
 use module_dag::{ModuleInfo, SortResult};
 use parser::{parse_prog, ParseError};
-use rowan::TextRange;
 use std::collections::HashMap;
 use syntax::Module;
 pub use types::CheckResult;
@@ -89,21 +88,21 @@ pub struct ModuleParseResult<'src> {
     pub parse: Module,
     pub path: Utf8PathBuf,
     pub name: String,
-    pub dependencies: Vec<(TextRange, String)>,
+    pub dependencies: Vec<Id>,
 }
 
 fn module_name(module: &Module) -> Option<String> {
     Some(module.mod_header()?.ident_token()?.text().to_string())
 }
 
-fn extract_module_header(module: &Module) -> (String, Vec<(TextRange, String)>) {
+fn extract_module_header(module: &Module) -> (String, Vec<Id>) {
     let name = module_name(module).unwrap_or_default();
     let dependencies = module
         .mod_uses()
         .filter_map(|mod_use| {
             mod_use
                 .ident_token()
-                .map(|t| (t.text_range(), t.text().to_string()))
+                .map(|t| Id { it: t.text().to_string(), at :t.text_range() })
         })
         .collect();
     (name, dependencies)
@@ -112,7 +111,7 @@ fn extract_module_header(module: &Module) -> (String, Vec<(TextRange, String)>) 
 /// Runs the full frontend on `sources` and returns the generated IR and other structures.
 /// If there are any errors, the generated IR should _not_ be used. It's returned here for
 /// debugging purposes.
-pub fn run_frontend(sources: &[(Utf8PathBuf, String)]) -> FrontendResult {
+pub fn run_frontend(sources: &[(Utf8PathBuf, String)]) -> Result<FrontendResult, String> {
     let mut id_gen = ModuleIdGen::new();
     let mut parsed_modules: HashMap<ModuleId, ModuleParseResult> = HashMap::new();
     for (path, source) in sources {
@@ -151,10 +150,10 @@ pub fn run_frontend(sources: &[(Utf8PathBuf, String)]) -> FrontendResult {
             // TODO: Early return with just parsed modules here?
             // We could try to gracefully recover by checking the SCCs
             // that don't participate in the cycle(s)
-            todo!("Cycle detected in module dependencies: {:?}", module_ids)
+            return Err(format!("Cycle detected in module dependencies: {module_ids:?}"))
         }
         SortResult::Duplicate(name) => {
-            todo!("Duplicate module name declared: '{name}'")
+            return Err(format!("Duplicate module name declared: '{name}'"))
         }
         SortResult::Sorted {
             sorted,
@@ -198,16 +197,16 @@ pub fn run_frontend(sources: &[(Utf8PathBuf, String)]) -> FrontendResult {
         });
     }
 
-    FrontendResult {
+    Ok(FrontendResult {
         ctx,
         modules: checked_modules,
-    }
+    })
 }
 
 /// Checks the given sources and prints any parse or type errors.
 /// If there are any errors returns a summary message in Err otherwise Ok.
 pub fn check_program(sources: &[(Utf8PathBuf, String)]) -> Result<(), String> {
-    let check_result = run_frontend(sources);
+    let check_result = run_frontend(sources)?;
     if let Some(count) = check_result.display_errors() {
         return Err(format!("Check failed with {} errors", count));
     }

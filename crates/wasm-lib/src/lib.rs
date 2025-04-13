@@ -59,7 +59,8 @@ pub fn compile(input: &str) -> CompileResult {
     }
     let input_path = Utf8Path::new("input");
     sources.push((input_path.to_path_buf(), input.to_string()));
-    let check_result = frontend::run_frontend(&sources);
+    // TODO: Report this properly
+    let check_result = frontend::run_frontend(&sources).unwrap();
     let mut highlights = vec![];
     for module in &check_result.modules {
         if module.parse_result.path != input_path {

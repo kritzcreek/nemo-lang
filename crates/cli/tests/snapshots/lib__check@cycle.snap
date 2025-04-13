@@ -4,18 +4,15 @@ info:
   program: nemo
   args:
     - check
-    - tests/check/cycle/modb.nemo
     - tests/check/cycle/moda.nemo
+    - tests/check/cycle/modb.nemo
   env:
     RUST_BACKTRACE: "0"
 input_file: crates/cli/tests/check/cycle
 ---
 success: false
-exit_code: 101
+exit_code: 1
 ----- stdout -----
 
 ----- stderr -----
-
-thread 'main' panicked at crates/frontend/src/lib.rs:154:13:
-not yet implemented: Cycle detected in module dependencies: []
-note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+Error: "Cycle detected in module dependencies: []"

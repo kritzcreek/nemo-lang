@@ -6,7 +6,7 @@ use codegen::codegen;
 use frontend::run_frontend;
 
 pub fn compile_program(sources: &[(Utf8PathBuf, String)]) -> Result<Vec<u8>, String> {
-    let check_result = run_frontend(sources);
+    let check_result = run_frontend(sources)?;
 
     if let Some(count) = check_result.display_errors() {
         return Err(format!("Compiling failed with {} errors", count));
