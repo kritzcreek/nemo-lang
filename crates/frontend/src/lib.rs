@@ -59,16 +59,12 @@ impl FrontendResult<'_> {
         }
     }
 
-    pub fn consume(self) -> (Ctx, Option<ir::Program>) {
+    pub fn consume(self) -> (Ctx, ir::Program) {
         let mut ir = ir::Program::default();
         for module in self.modules {
-            if let Some(module_ir) = module.ir {
-                ir.merge(module_ir)
-            } else {
-                return (self.ctx, None);
-            }
+            ir.merge(module.ir)
         }
-        (self.ctx, Some(ir))
+        (self.ctx, ir)
     }
 }
 
@@ -77,7 +73,7 @@ pub struct ModuleResult<'src> {
     pub parse_result: ModuleParseResult<'src>,
     pub occurrences: OccurrenceMap,
     pub ty_errors: Vec<TyError>,
-    pub ir: Option<Program>,
+    pub ir: Program,
 }
 
 #[derive(Debug)]
@@ -100,9 +96,10 @@ fn extract_module_header(module: &Module) -> (String, Vec<Id>) {
     let dependencies = module
         .mod_uses()
         .filter_map(|mod_use| {
-            mod_use
-                .ident_token()
-                .map(|t| Id { it: t.text().to_string(), at :t.text_range() })
+            mod_use.ident_token().map(|t| Id {
+                it: t.text().to_string(),
+                at: t.text_range(),
+            })
         })
         .collect();
     (name, dependencies)
@@ -150,7 +147,9 @@ pub fn run_frontend(sources: &[(Utf8PathBuf, String)]) -> Result<FrontendResult,
             // TODO: Early return with just parsed modules here?
             // We could try to gracefully recover by checking the SCCs
             // that don't participate in the cycle(s)
-            return Err(format!("Cycle detected in module dependencies: {module_ids:?}"))
+            return Err(format!(
+                "Cycle detected in module dependencies: {module_ids:?}"
+            ));
         }
         SortResult::Duplicate(name) => {
             return Err(format!("Duplicate module name declared: '{name}'"))
@@ -182,12 +181,6 @@ pub fn run_frontend(sources: &[(Utf8PathBuf, String)]) -> Result<FrontendResult,
         ctx.set_module_path(id, parsed_module.path.clone());
         ctx.set_interface(id, check_result.interface);
         ctx.set_name_supply(id, check_result.names);
-        if parsed_module.parse_errors.is_empty()
-            && check_result.errors.is_empty()
-            && check_result.ir.is_none()
-        {
-            panic!("No IR generated, despite no errors")
-        };
         checked_ids.push(id);
         checked_modules.push(ModuleResult {
             parse_result: parsed_module,

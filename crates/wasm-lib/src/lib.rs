@@ -87,7 +87,7 @@ pub fn compile(input: &str) -> CompileResult {
         Err(errors)
     } else {
         let (ctx, ir) = check_result.consume();
-        let (wasm, _) = codegen(ir.expect("No IR despite no errors"), ctx);
+        let (wasm, _) = codegen(ir, ctx);
         Ok(wasm)
     };
 
