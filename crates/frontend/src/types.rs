@@ -19,7 +19,7 @@ pub struct CheckResult {
     pub occurrences: HashMap<SyntaxTokenPtr, Occurrence<Name>>,
     pub names: NameSupply,
     pub interface: Interface,
-    pub ir: Option<Program>,
+    pub ir: Program,
     pub parse: Module,
 }
 

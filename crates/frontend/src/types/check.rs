@@ -217,7 +217,7 @@ impl TyCtx<'_> {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
 pub enum Occurrence<N> {
     Def(N),
     Ref(N),
@@ -277,7 +277,7 @@ impl Typechecker<'_> {
     pub fn infer_module(
         &mut self,
         module: &Module,
-    ) -> (Option<ir::Program>, Interface, Vec<TyError>) {
+    ) -> (ir::Program, Interface, Vec<TyError>) {
         let mut errors: TyErrors = TyErrors::new();
         let ir = self.infer_module_inner(&mut errors, module);
         let interface = self.mk_interface(&mut errors, module);
@@ -342,7 +342,7 @@ impl Typechecker<'_> {
         &mut self,
         errors: &mut TyErrors,
         module: &Module,
-    ) -> Option<ir::Program> {
+    ) -> ir::Program {
         // TODO: There should be no need for a top-level scope here.
         // Globals should get their own field on TyCtx
         let mut scope = Scope::new();
@@ -351,25 +351,24 @@ impl Typechecker<'_> {
         let types = self.check_type_definitions(errors, module);
         let imports = self.check_imports(errors, module);
         self.check_function_headers(errors, module);
-
         let globals = self.check_globals(errors, &mut scope, module);
-        let functions = self.check_function_bodies(errors, &mut scope, module);
+        let funcs = self.check_function_bodies(errors, &mut scope, module);
 
         scope.leave_block();
 
-        Some(ir::Program {
-            imports: imports?,
-            types: types?,
+        ir::Program {
+            imports,
+            types,
             globals,
-            funcs: functions?,
-        })
+            funcs,
+        }
     }
 
     fn sym(&self, s: &str) -> Symbol {
         self.name_supply.get_or_intern(s)
     }
 
-    fn check_imports(&mut self, errors: &mut TyErrors, module: &Module) -> Option<Vec<ir::Import>> {
+    fn check_imports(&mut self, errors: &mut TyErrors, module: &Module) -> Vec<ir::Import> {
         // Imports should check in the context of an empty scope
         let mut scope = Scope::new();
         let mut imports = vec![];
@@ -400,11 +399,13 @@ impl Typechecker<'_> {
                         result: Ty::Error,
                     }
                 };
-                imports.push(self.build_import_ir(&i, name, &ty));
+                if let Some(import) = self.build_import_ir(&i, name, &ty) {
+                    imports.push(import);
+                }
                 self.context.add_func(sym, name, vec![], ty);
             }
         }
-        imports.into_iter().collect()
+        imports
     }
 
     fn build_import_ir(
@@ -417,7 +418,7 @@ impl Typechecker<'_> {
         Some(ir::Import {
             span: import.syntax().text_range(),
             internal,
-            func_ty: (*ty).clone(),
+            func_ty: ty.clone(),
             external: external_name_tkn.text().to_string(),
         })
     }
@@ -433,7 +434,7 @@ impl Typechecker<'_> {
         &mut self,
         errors: &mut TyErrors,
         module: &Module,
-    ) -> Option<Vec<ir::TypeDef>> {
+    ) -> Vec<ir::TypeDef> {
         // Because types can be mutually recursive we need two passes:
         // - 1. Forward declare all types and their "shapes"
         let mut struct_defs = vec![];
@@ -555,7 +556,7 @@ impl Typechecker<'_> {
                 alternatives: def.alternatives.values().copied().collect(),
             }))
         }
-        Some(type_defs)
+        type_defs
     }
 
     fn check_function_headers(&mut self, errors: &mut TyErrors, module: &Module) {
@@ -772,15 +773,12 @@ impl Typechecker<'_> {
         errors: &mut TyErrors,
         scope: &mut Scope,
         module: &Module,
-    ) -> Option<Vec<ir::Func>> {
-        // TODO: Do we really need the Option wrapper here? As long as we report errors on all paths
-        // we should be fine to emit funcs anyway.
-        let mut funcs = Some(vec![]);
+    ) -> Vec<ir::Func> {
+        let mut funcs = vec![];
         for top_level in module.top_levels() {
             if let TopLevel::TopFn(top_fn) = top_level {
                 let mut builder = ir::FuncBuilder::default();
                 let Some(func_name) = top_fn.ident_token() else {
-                    funcs = None;
                     continue;
                 };
                 let Some(def) = self.context.lookup_func(self.sym(func_name.text())) else {
@@ -802,7 +800,6 @@ impl Typechecker<'_> {
                 };
                 for (param, ty) in param_list.params().zip(func_ty.arguments.into_iter()) {
                     let Some(ident_tkn) = param.ident_token() else {
-                        funcs = None;
                         continue;
                     };
                     let (name, sym) = self.name_supply.local_idx(&ident_tkn);
@@ -823,12 +820,8 @@ impl Typechecker<'_> {
                 scope.clear_type_vars();
                 scope.leave_block();
 
-                if let Some(fs) = &mut funcs {
-                    if let Some(func) = builder.build() {
-                        fs.push(func)
-                    } else {
-                        funcs = None
-                    }
+                if let Some(func) = builder.build() {
+                    funcs.push(func)
                 }
             }
         }
