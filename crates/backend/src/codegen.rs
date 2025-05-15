@@ -147,6 +147,8 @@ impl<'a> Codegen<'a> {
             },
             ExprData::Call { func, arguments } => {
                 let mut arg_instrs = vec![];
+                // TODO: Hack to support the array_copy instruction
+                let first_arg_ty = arguments.first().map(|e|e.ty.clone());
                 for arg in arguments {
                     arg_instrs.extend(self.compile_expr(body, arg));
                 }
@@ -190,6 +192,13 @@ impl<'a> Codegen<'a> {
                         if builtin == "array_new" {
                             let array_ty = self.builder.array_type(&expr.ty);
                             instrs.push(Instruction::ArrayNew(array_ty))
+                        } else if builtin == "array_copy" {
+                            let array_ty = self.builder.array_type(&first_arg_ty.unwrap());
+                            instrs.push(Instruction::ArrayCopy {
+                                array_type_index_dst: array_ty,
+                                array_type_index_src: array_ty
+                            });
+                            instrs.push(Instruction::I32Const(0))
                         } else if builtin == "bytes_get" {
                             let bytes_ty = self.builder.bytes_ty();
                             instrs.push(Instruction::ArrayGetU(bytes_ty))
@@ -767,6 +776,7 @@ fn builtin_instruction(builtin: &str) -> Instruction<'static> {
         "i32_reinterpret_f32" => Instruction::I32ReinterpretF32,
         "array_len" => Instruction::ArrayLen,
         "array_new" => unreachable!("array_new needs special handling"),
+        "array_copy" => unreachable!("array_copy needs special handling"),
         b => unreachable!("Unknown builtin {b}"),
     }
 }
