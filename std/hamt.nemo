@@ -1,0 +1,144 @@
+use io
+use option
+
+struct Hamt[a] {
+  root : Node[a],
+}
+
+variant Node[a] {
+  struct Mapped { bitmap : I32, nodes : Array[Node[a]] },
+  struct Leaf { hash : I32, value : a },
+}
+
+fn new[a]() -> Hamt[a] {
+  Hamt { root = Node::Mapped { bitmap = 0, nodes = [] } }
+}
+
+fn mask(hash : I32, shift : I32) -> I32 {
+  i32_shr_u(hash, i32_and(shift, 31))
+}
+
+fn bitpos(hash : I32, shift : I32) -> I32 {
+   i32_shl(1, mask(hash, shift))
+}
+
+fn index(bitmap : I32, pos : I32) -> I32 {
+  i32_popcnt(i32_and(bitmap, (pos - 1)))
+}
+
+fn get[a](hamt : Hamt[a], hash : I32) -> option::Option[a] {
+  match get_with_anchor(hamt.root, 0, hash).payload {
+    GetResultPayload::Success s => {
+      match s.node {
+        Node::Leaf l => {
+          option::Option::Some { val = l.value }
+        },
+        Node::Mapped _ => {
+          option::Option::None {}
+        },
+      }
+    },
+    GetResultPayload::Missing _ => { option::Option::None {} },
+    GetResultPayload::Conflict _ => { option::Option::None {} },
+  };
+}
+
+fn add[a](hamt : Hamt[a], hash : I32, value : a) {
+  let get_result = get_with_anchor(hamt.root, 0, hash);
+  match get_result.payload {
+    GetResultPayload::Missing _ => {
+      match get_result.anchor {
+        Node::Mapped n => {
+          let pos = bitpos(hash, get_result.shift);
+          set n.bitmap = i32_or(n.bitmap, pos);
+          let ix = index(n.bitmap, pos);
+          set n.nodes = insert_node(n.nodes, ix, Node::Leaf { hash = hash, value = value });
+        }
+      }
+    },
+    GetResultPayload::Success s => {
+      match s.node {
+        Node::Leaf l => {
+          set l.value = value;
+        }
+      }
+    },
+    GetResultPayload::Conflict c => {
+      match c.node {
+        Node::Leaf l => {
+
+        }
+      }
+    },
+  };
+}
+
+fn insert_node[a](as : Array[a], ix : I32, elem : a) -> Array[a] {
+  let old_len = array_len#[a](as);
+  io::print_int(old_len);
+  if old_len == 0 {
+    [elem]
+  } else {
+    let res = array_new#[a](elem, old_len + 1);
+    io::print_int(array_len#[a](res));
+    io::print_int(ix);
+    array_copy#[a](as, 0, res, 0, ix);
+    array_copy#[a](as, ix, res, ix + 1, old_len - ix);
+    res
+  }
+}
+
+struct GetResult[a] {
+  shift : I32,
+  anchor : Node[a],
+  payload : GetResultPayload[a]
+}
+
+variant GetResultPayload[a] {
+  struct Success { node : Node[a] },
+  struct Conflict { node : Node[a] },
+  struct Missing {},
+}
+
+fn get_with_anchor[a](node : Node[a], shift : I32, hash : I32) -> GetResult[a] {
+  let pos = bitpos(hash, shift);
+  match node {
+    Node::Mapped anchor => {
+      if i32_and(anchor.bitmap, pos) == 0 {
+        GetResult { shift = shift, anchor = node, payload = GetResultPayload::Missing {} };
+      } else {
+        let ix = index(anchor.bitmap, pos);
+        let n = anchor.nodes[ix];
+        match n {
+          Node::Mapped anchor => {
+            get_with_anchor(n, shift + 5, hash)
+          },
+          Node::Leaf leaf => {
+            if leaf.hash == hash {
+              GetResult { shift = shift, anchor = node, payload = GetResultPayload::Success { node = n } };
+            } else {
+              GetResult { shift = shift, anchor = node, payload = GetResultPayload::Conflict { node = n } };
+            }
+          },
+        };
+      };
+    }
+  }
+}
+
+
+fn main() -> I32 {
+  let hamt : Hamt[I32] = new();
+  add(hamt, 0, 0);
+  add(hamt, 1, 0);
+  add(hamt, 1, 20);
+  match get(hamt, 1) {
+    option::Option::Some s => {
+      io::print_int(s.val);
+      10
+    },
+    option::Option::None _ => {
+      0
+    },
+  }
+}
