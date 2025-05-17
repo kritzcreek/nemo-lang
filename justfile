@@ -48,4 +48,4 @@ update-gh-pages: build-playground
     cp -r playground/dist/* gh-pages/
 
 install-tools:
-    cargo binstall just wasm-bindgen-cli wasm-tools wasm-opt watchexec-cli cargo-nextest --secure
+    cargo binstall just wasm-bindgen-cli wasm-tools wasm-opt watchexec-cli cargo-nextest cargo-insta --secure
