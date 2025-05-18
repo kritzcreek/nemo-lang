@@ -1,4 +1,5 @@
 use io
+use string
 use option
 
 struct Hamt[a] {
@@ -66,24 +67,179 @@ fn add[a](hamt : Hamt[a], hash : I32, value : a) {
     GetResultPayload::Conflict c => {
       match c.node {
         Node::Leaf l => {
-
+          match get_result.anchor {
+            Node::Mapped n => {
+              let pos = bitpos(hash, get_result.shift);
+              let ix = index(n.bitmap, pos);
+              let new_node = merge_leafs(get_result.shift + 5, l.hash, l.value, hash, value);
+              set n.nodes[ix] = new_node;
+            }
+          }
         }
       }
-    },
+    }
   };
+}
+
+fn remove[a](hamt : Hamt[a], hash : I32) {
+  let _ = remove_rec(hamt.root, 0, hash);
+}
+
+fn merge_leafs[a](shift : I32, h1 : I32, v1 : a, h2 : I32, v2 : a) -> Node[a] {
+  let next_pos1 = bitpos(h1, shift);
+  let next_pos2 = bitpos(h2, shift);
+  if next_pos1 != next_pos2 {
+    let bitmap = i32_or(next_pos1, next_pos2);
+    let nodes : Array[Node[a]] = if next_pos1 < next_pos2 {
+      [Node::Leaf { hash = h1, value = v1 }, Node::Leaf { hash = h2, value = v2 }]
+    } else {
+      [Node::Leaf { hash = h2, value = v2 }, Node::Leaf { hash = h1, value = v1 }]
+    };
+    Node::Mapped { bitmap = bitmap, nodes = nodes }
+  } else {
+    let bitmap = next_pos1;
+    let newNode = merge_leafs(shift + 5, h1, v1, h2, v2);
+    Node::Mapped { bitmap = bitmap, nodes = [newNode] }
+  };
+}
+
+variant RemoveResult[a] {
+  struct Success {
+    // Guaranteed Leaf
+    node : Node[a]
+  },
+  struct NotFound {},
+  struct Gathered {
+    // Guaranteed Leaf
+    new_node : Node[a],
+    // Guaranteed Leaf
+    removed : Node[a],
+  },
+}
+
+fn remove_rec[a](node : Node[a], shift : I32, hash : I32) -> RemoveResult[a] {
+  match node {
+    Node::Mapped node => {
+      let pos = bitpos(hash, shift);
+      if i32_and(pos, node.bitmap) == 0 {
+        return RemoveResult::NotFound {};
+      } else {};
+      let ix = index(node.bitmap, pos);
+      let next_node = node.nodes[ix] ;
+      match next_node {
+        Node::Mapped n => {
+          let res = remove_rec(next_node, shift + 5, hash);
+          match res {
+            RemoveResult::Gathered gathered => {
+              if shift != 0 && i32_popcnt(n.bitmap) == 1 {
+                res
+              } else {
+                set n.nodes[ix] = gathered.new_node;
+                RemoveResult::Success { node = gathered.removed };
+              }
+            },
+            _ => { res },
+          };
+        },
+        Node::Leaf l => {
+          if hash != l.hash {
+            RemoveResult::NotFound {};
+          } else {
+            // TODO: Gather
+            let rows = i32_popcnt(node.bitmap);
+            // We never gather the root node
+            if rows == 1 && shift == 0 {
+              set node.bitmap = 0;
+              set node.nodes = [];
+              return RemoveResult::Success { node = next_node }
+            } else {};
+
+            if rows == 2 {
+              let other = if ix == 0 { node.nodes[1] } else { node.nodes[0] };
+              match other {
+                Node::Leaf l => {
+                  if shift != 0 {
+                    return RemoveResult::Gathered { new_node = other, removed = next_node };
+                  } else {};
+                },
+                _ => {},
+              };
+              set node.bitmap = i32_and(node.bitmap, 0 - pos);
+              set node.nodes = [other];
+              RemoveResult::Success { node = next_node }
+            } else {
+              let new_nodes = remove_node(node.nodes, ix);
+              set node.bitmap = i32_and(node.bitmap, 0 - pos);
+              set node.nodes = new_nodes;
+              RemoveResult::Success { node = next_node }
+            };
+          }
+        },
+      };
+    }
+  }
+}
+
+fn remove_node[a](as : Array[a], ix : I32) -> Array[a] {
+  let old_len = array_len#[a](as);
+  io::print_int(old_len);
+  if old_len == 1 {
+    []
+  } else {
+    let res = array_new#[a](as[0], old_len - 1);
+    array_copy#[a](as, 0, res, 0, ix);
+    array_copy#[a](as, ix + 1, res, ix, old_len - ix - 1);
+    res
+  }
+}
+
+fn remove_node_i(as : Array[I32], ix : I32) -> Array[I32] {
+  let old_len = array_len#[I32](as);
+  let i = 0;
+  let res = array_new#[I32](as[0], old_len - 1);
+  while i < old_len {
+
+
+
+
+
+
+
+
+
+
+
+/////////
+
+
+
+
+ %TGIojghbn  /cccc[''';m    ;m[']]]]]] ']']
+
+  };
+  res
+  io::print_int(old_len);
+  if old_len == 1 {
+    []
+  } else {
+    let res = array_new#[I32](as[0], old_len - 1);
+    print_array(res);
+    array_copy#[I32](res, 0, as, 0, ix);
+    print_array(res);
+    array_copy#[I32](res, ix, as, ix + 1, old_len - ix - 1);
+    print_array(res);
+    res
+  }
 }
 
 fn insert_node[a](as : Array[a], ix : I32, elem : a) -> Array[a] {
   let old_len = array_len#[a](as);
-  io::print_int(old_len);
   if old_len == 0 {
     [elem]
   } else {
     let res = array_new#[a](elem, old_len + 1);
-    io::print_int(array_len#[a](res));
-    io::print_int(ix);
-    array_copy#[a](as, 0, res, 0, ix);
-    array_copy#[a](as, ix, res, ix + 1, old_len - ix);
+    array_copy#[a](res, 0, as, 0, ix);
+    array_copy#[a](res, ix, as, ix + 1, old_len - ix);
     res
   }
 }
@@ -126,19 +282,35 @@ fn get_with_anchor[a](node : Node[a], shift : I32, hash : I32) -> GetResult[a] {
   }
 }
 
+fn print_array(as : Array[I32]) {
+  io::println_bytes("BEGIN");
+  let i = 0;
+  while i < array_len#[I32](as) {
+    io::print_int(as[i]);
+    set i = i + 1;
+  };
+  io::println_bytes("END");
+}
+
 
 fn main() -> I32 {
-  let hamt : Hamt[I32] = new();
-  add(hamt, 0, 0);
-  add(hamt, 1, 0);
-  add(hamt, 1, 20);
-  match get(hamt, 1) {
-    option::Option::Some s => {
-      io::print_int(s.val);
-      10
-    },
-    option::Option::None _ => {
-      0
-    },
-  }
+  let as = [1, 2, 3, 4];
+  let new_as = remove_node_i(as, 2);
+  print_array(new_as);
+
+  // let hamt : Hamt[I32] = new();
+  // add(hamt, 0, 0);
+  // add(hamt, 1, 0);
+  // remove(hamt, 1);
+  // match get(hamt, 0) {
+  //   option::Option::Some s => {
+  //     io::println_bytes("Found");
+  //     io::print_int(s.val);
+  //     10
+  //   },
+  //   option::Option::None _ => {
+  //     io::println_bytes("Not Found");
+  //     0
+  //   },
+  // }
 }
