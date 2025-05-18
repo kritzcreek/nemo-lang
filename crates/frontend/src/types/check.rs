@@ -274,10 +274,7 @@ impl Typechecker<'_> {
         assert!(previous_ref.is_none())
     }
 
-    pub fn infer_module(
-        &mut self,
-        module: &Module,
-    ) -> (ir::Program, Interface, Vec<TyError>) {
+    pub fn infer_module(&mut self, module: &Module) -> (ir::Program, Interface, Vec<TyError>) {
         let mut errors: TyErrors = TyErrors::new();
         let ir = self.infer_module_inner(&mut errors, module);
         let interface = self.mk_interface(&mut errors, module);
@@ -338,11 +335,7 @@ impl Typechecker<'_> {
         interface
     }
 
-    fn infer_module_inner(
-        &mut self,
-        errors: &mut TyErrors,
-        module: &Module,
-    ) -> ir::Program {
+    fn infer_module_inner(&mut self, errors: &mut TyErrors, module: &Module) -> ir::Program {
         // TODO: There should be no need for a top-level scope here.
         // Globals should get their own field on TyCtx
         let mut scope = Scope::new();
