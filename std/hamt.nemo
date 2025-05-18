@@ -252,11 +252,17 @@ fn main() -> I32 {
     set i = i + 1;
   };
   set i = 0;
-  while i < 1000000 {
-    let res = get(hamt, i);
-    if option::is_none(res) {
-      set result = 0 - 1;
-    } else {};
+  while i < 10000000 {
+    match get(hamt, i) {
+      option::Option::Some some => {
+        if some.val != i {
+          set result = 0 - 1;
+        } else {};
+      },
+      option::Option::None _ => {
+        set result = 0 - 2;
+      }
+    };
     set i = i + 1;
   };
   result
