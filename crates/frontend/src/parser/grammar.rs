@@ -388,7 +388,7 @@ fn expr_bp(p: &mut Parser, min_bp: u32) -> Progress {
             break;
         };
 
-        if op_bp < min_bp {
+        if op_bp <= min_bp {
             break;
         }
 
