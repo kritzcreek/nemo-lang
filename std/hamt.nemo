@@ -145,7 +145,6 @@ fn remove_rec[a](node : Node[a], shift : I32, hash : I32) -> RemoveResult[a] {
           if hash != l.hash {
             RemoveResult::NotFound {};
           } else {
-            // TODO: Gather
             let rows = i32_popcnt(node.bitmap);
             // We never gather the root node
             if rows == 1 && shift == 0 {
@@ -164,12 +163,12 @@ fn remove_rec[a](node : Node[a], shift : I32, hash : I32) -> RemoveResult[a] {
                 },
                 _ => {},
               };
-              set node.bitmap = i32_and(node.bitmap, 0 - pos);
+              set node.bitmap = i32_and(node.bitmap, i32_xor(pos, 0 - 1));
               set node.nodes = [other];
               RemoveResult::Success { node = next_node }
             } else {
               let new_nodes = remove_node(node.nodes, ix);
-              set node.bitmap = i32_and(node.bitmap, 0 - pos);
+              set node.bitmap = i32_and(node.bitmap, i32_xor(pos, 0 - 1));
               set node.nodes = new_nodes;
               RemoveResult::Success { node = next_node }
             };
@@ -182,52 +181,12 @@ fn remove_rec[a](node : Node[a], shift : I32, hash : I32) -> RemoveResult[a] {
 
 fn remove_node[a](as : Array[a], ix : I32) -> Array[a] {
   let old_len = array_len#[a](as);
-  io::print_int(old_len);
   if old_len == 1 {
     []
   } else {
     let res = array_new#[a](as[0], old_len - 1);
-    array_copy#[a](as, 0, res, 0, ix);
-    array_copy#[a](as, ix + 1, res, ix, old_len - ix - 1);
-    res
-  }
-}
-
-fn remove_node_i(as : Array[I32], ix : I32) -> Array[I32] {
-  let old_len = array_len#[I32](as);
-  let i = 0;
-  let res = array_new#[I32](as[0], old_len - 1);
-  while i < old_len {
-
-
-
-
-
-
-
-
-
-
-
-/////////
-
-
-
-
- %TGIojghbn  /cccc[''';m    ;m[']]]]]] ']']
-
-  };
-  res
-  io::print_int(old_len);
-  if old_len == 1 {
-    []
-  } else {
-    let res = array_new#[I32](as[0], old_len - 1);
-    print_array(res);
-    array_copy#[I32](res, 0, as, 0, ix);
-    print_array(res);
-    array_copy#[I32](res, ix, as, ix + 1, old_len - ix - 1);
-    print_array(res);
+    array_copy#[a](res, 0, as, 0, ix);
+    array_copy#[a](res, ix, as, ix + 1, old_len - ix - 1);
     res
   }
 }
@@ -239,7 +198,7 @@ fn insert_node[a](as : Array[a], ix : I32, elem : a) -> Array[a] {
   } else {
     let res = array_new#[a](elem, old_len + 1);
     array_copy#[a](res, 0, as, 0, ix);
-    array_copy#[a](res, ix, as, ix + 1, old_len - ix);
+    array_copy#[a](res, ix + 1, as, ix, old_len - ix);
     res
   }
 }
@@ -256,7 +215,11 @@ variant GetResultPayload[a] {
   struct Missing {},
 }
 
-fn get_with_anchor[a](node : Node[a], shift : I32, hash : I32) -> GetResult[a] {
+fn get_with_anchor[a](
+  // Guaranteed to be Mapped
+  node : Node[a],
+  shift : I32, hash : I32
+) -> GetResult[a] {
   let pos = bitpos(hash, shift);
   match node {
     Node::Mapped anchor => {
@@ -292,25 +255,19 @@ fn print_array(as : Array[I32]) {
   io::println_bytes("END");
 }
 
-
 fn main() -> I32 {
-  let as = [1, 2, 3, 4];
-  let new_as = remove_node_i(as, 2);
-  print_array(new_as);
-
-  // let hamt : Hamt[I32] = new();
-  // add(hamt, 0, 0);
-  // add(hamt, 1, 0);
-  // remove(hamt, 1);
-  // match get(hamt, 0) {
-  //   option::Option::Some s => {
-  //     io::println_bytes("Found");
-  //     io::print_int(s.val);
-  //     10
-  //   },
-  //   option::Option::None _ => {
-  //     io::println_bytes("Not Found");
-  //     0
-  //   },
-  // }
+  let hamt : Hamt[I32] = new();
+  add(hamt, 0, 0);
+  remove(hamt, 0);
+  match get(hamt, 1) {
+    option::Option::Some s => {
+      io::println_bytes("Found");
+      io::print_int(s.val);
+      10
+    },
+    option::Option::None _ => {
+      io::println_bytes("Not Found");
+      0
+    },
+  }
 }
