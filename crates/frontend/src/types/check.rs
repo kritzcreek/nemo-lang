@@ -677,7 +677,8 @@ impl Typechecker<'_> {
                     return Ty::Array(elem_ty);
                 }
 
-                let Some(ty_def) = self.lookup_type(errors, t.mod_qualifier(), None, &ty_tkn)
+                let Some(ty_def) =
+                    self.lookup_type(errors, t.mod_qualifier(), t.qualifier(), &ty_tkn)
                 else {
                     return Ty::Error;
                 };
@@ -1509,9 +1510,20 @@ impl Typechecker<'_> {
                 );
             }
         }
+        // Allow constructing an qualified alternative type in
+        // checking position. Otherwise infer the variant type
+        let name = if let Some(Ty::Cons { name, .. }) = expected {
+            if def.name == *name {
+                *name
+            } else {
+                def.variant.unwrap_or(def.name)
+            }
+        } else {
+            def.variant.unwrap_or(def.name)
+        };
         Some((
             Ty::Cons {
-                name: def.variant.unwrap_or(def.name),
+                name,
                 ty_args: subst,
             },
             builder.build(),
@@ -1689,7 +1701,7 @@ impl Typechecker<'_> {
             }
             _ => {
                 let (ty, ir) = self.infer_expr(errors, scope, expr);
-                if let Some(ty_err) = expect_ty(expected, &ty) {
+                if let Some(ty_err) = self.expect_ty(expected, &ty) {
                     errors.report(expr, ty_err);
                 }
                 return ir;
@@ -1976,7 +1988,7 @@ impl Typechecker<'_> {
     ) -> Option<ir::ExprData> {
         if let Some(return_ty) = expr.return_ty() {
             let t = self.check_ty(errors, scope, &return_ty);
-            if let Some(ty_err) = expect_ty(&expected.result, &t) {
+            if let Some(ty_err) = self.expect_ty(&expected.result, &t) {
                 errors.report(&return_ty, ty_err);
             }
         }
@@ -2009,7 +2021,7 @@ impl Typechecker<'_> {
             let (name, sym) = self.name_supply.local_idx(&name_tkn);
             let ty = if let Some(t) = param.ty() {
                 let ty = self.check_ty(errors, scope, &t);
-                if let Some(ty_err) = expect_ty(param_ty, &ty) {
+                if let Some(ty_err) = self.expect_ty(param_ty, &ty) {
                     errors.report(&t, ty_err);
                 }
                 ty
@@ -2040,6 +2052,38 @@ impl Typechecker<'_> {
         // Restore the previous return type
         scope.restore_return_type(prev_return_ty);
         builder.build()
+    }
+
+    fn expect_ty(&self, expected: &Ty, ty: &Ty) -> Option<TyErrorData> {
+        match (expected, ty) {
+            (
+                Ty::Cons {
+                    name: n1,
+                    ty_args: args1,
+                },
+                Ty::Cons {
+                    name: n2,
+                    ty_args: args2,
+                },
+            ) => {
+                if let Some(TypeDef::Variant(def)) = self.context.lookup_type_def(*n1) {
+                    if def.alternatives.values().any(|alt| alt == n2) && args1 == args2 {
+                        return None;
+                    }
+                }
+            }
+            (Ty::Error, _) => return None,
+            (_, Ty::Error | Ty::Diverge) => return None,
+            _ => {}
+        };
+        if expected != ty {
+            Some(TypeMismatch {
+                expected: expected.clone(),
+                actual: ty.clone(),
+            })
+        } else {
+            None
+        }
     }
 }
 
@@ -2098,17 +2142,6 @@ fn infer_struct_instantiation<'a>(def: &StructDef, expected: &'a Ty) -> Option<&
         }
     }
     None
-}
-
-fn expect_ty(expected: &Ty, ty: &Ty) -> Option<TyErrorData> {
-    if *expected != Ty::Error && !matches!(ty, Ty::Error | Ty::Diverge) && expected != ty {
-        Some(TypeMismatch {
-            expected: expected.clone(),
-            actual: ty.clone(),
-        })
-    } else {
-        None
-    }
 }
 
 // `match_ty` is non-commutative unification. Only variables on the left are allowed to be solved, and we limit

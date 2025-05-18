@@ -346,6 +346,7 @@ fn typ(p: &mut Parser) -> Progress {
 }
 
 fn ty_cons(p: &mut Parser, c: Checkpoint) {
+    qualifier(p);
     p.expect(T![upper_ident]);
     ty_arg_list(p);
     p.finish_at(c, SyntaxKind::TyCons)
