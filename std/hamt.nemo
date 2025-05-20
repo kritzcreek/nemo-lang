@@ -16,6 +16,54 @@ fn new[a]() -> Hamt[a] {
   Hamt { root = Node::Mapped { bitmap = 0, nodes = [] } }
 }
 
+fn get[a](hamt : Hamt[a], hash : I32) -> option::Option[a] {
+  match get_with_anchor(hamt.root, 0, hash).payload {
+    GetResultPayload::Success s => {
+      option::Option::Some { val = s.node.value }
+    },
+    GetResultPayload::Missing _ => { option::Option::None {} },
+    GetResultPayload::Conflict _ => { option::Option::None {} },
+  };
+}
+
+fn add[a](hamt : Hamt[a], hash : I32, value : a) -> option::Option[a] {
+  let get_result = get_with_anchor(hamt.root, 0, hash);
+  match get_result.payload {
+    GetResultPayload::Missing _ => {
+      let n = get_result.anchor;
+      let pos = bitpos(hash, get_result.shift);
+      set n.bitmap = i32_or(n.bitmap, pos);
+      let ix = index(n.bitmap, pos);
+      set n.nodes = insert_node(n.nodes, ix, Node::Leaf { hash = hash, value = value });
+      option::Option::None {};
+    },
+    GetResultPayload::Conflict c => {
+      let pos = bitpos(hash, get_result.shift);
+      let ix = index(get_result.anchor.bitmap, pos);
+      let new_node = merge_leafs(get_result.shift + 5, c.node, hash, value);
+      set n.nodes[ix] = new_node;
+      option::Option::None {};
+    },
+    GetResultPayload::Success s => {
+      let prev = s.node.value;
+      set s.node.value = value;
+      option::Option::Some { val = prev };
+    },
+  };
+}
+
+fn remove[a](hamt : Hamt[a], hash : I32) -> option::Option[a] {
+  match remove_rec(hamt.root, 0, hash) {
+    RemoveResult::Success s => {
+      option::Option::Some { val = s.node.value }
+    },
+    RemoveResult::Gathered g => {
+      option::Option::Some { val = g.removed.value }
+    },
+    RemoveResult::NotFound n => { option::Option::None {} },
+  };
+}
+
 fn mask(hash : I32, shift : I32) -> I32 {
   i32_shr_u(hash, i32_and(shift, 31))
 }
@@ -28,64 +76,28 @@ fn index(bitmap : I32, pos : I32) -> I32 {
   i32_popcnt(i32_and(bitmap, (pos - 1)))
 }
 
-fn get[a](hamt : Hamt[a], hash : I32) -> option::Option[a] {
-  match get_with_anchor(hamt.root, 0, hash).payload {
-    GetResultPayload::Success s => {
-      option::Option::Some { val = s.node.value }
-    },
-    GetResultPayload::Missing _ => { option::Option::None {} },
-    GetResultPayload::Conflict _ => { option::Option::None {} },
-  };
-}
-
-fn add[a](hamt : Hamt[a], hash : I32, value : a) {
-  let get_result = get_with_anchor(hamt.root, 0, hash);
-  match get_result.payload {
-    GetResultPayload::Missing _ => {
-      let n = get_result.anchor;
-      let pos = bitpos(hash, get_result.shift);
-      set n.bitmap = i32_or(n.bitmap, pos);
-      let ix = index(n.bitmap, pos);
-      set n.nodes = insert_node(n.nodes, ix, Node::Leaf { hash = hash, value = value });
-    },
-    GetResultPayload::Success s => {
-      set s.node.value = value;
-    },
-    GetResultPayload::Conflict c => {
-      let n = get_result.anchor;
-      let pos = bitpos(hash, get_result.shift);
-      let ix = index(n.bitmap, pos);
-      let new_node = merge_leafs(get_result.shift + 5, c.node.hash, c.node.value, hash, value);
-      set n.nodes[ix] = new_node;
-    }
-  };
-}
-
-fn remove[a](hamt : Hamt[a], hash : I32) {
-  let _ = remove_rec(hamt.root, 0, hash);
-}
-
-fn merge_leafs[a](shift : I32, h1 : I32, v1 : a, h2 : I32, v2 : a) -> Node[a] {
-  let next_pos1 = bitpos(h1, shift);
-  let next_pos2 = bitpos(h2, shift);
+fn merge_leafs[a](shift : I32, left : Node::Leaf[a], hash : I32, value : a) -> Node[a] {
+  let next_pos1 = bitpos(left.hash, shift);
+  let next_pos2 = bitpos(hash, shift);
   if next_pos1 != next_pos2 {
     let bitmap = i32_or(next_pos1, next_pos2);
+    let right = Node::Leaf { hash = hash, value = value };
     let nodes : Array[Node[a]] = if next_pos1 < next_pos2 {
-      [Node::Leaf { hash = h1, value = v1 }, Node::Leaf { hash = h2, value = v2 }]
+      [left, right]
     } else {
-      [Node::Leaf { hash = h2, value = v2 }, Node::Leaf { hash = h1, value = v1 }]
+      [right, left]
     };
-    Node::Mapped { bitmap = bitmap, nodes = nodes }
+    Node::Mapped { bitmap = bitmap, nodes = nodes };
   } else {
     let bitmap = next_pos1;
-    let newNode = merge_leafs(shift + 5, h1, v1, h2, v2);
-    Node::Mapped { bitmap = bitmap, nodes = [newNode] }
+    let new_node = merge_leafs(shift + 5, left, hash, value);
+    Node::Mapped { bitmap = bitmap, nodes = [new_node] };
   };
 }
 
 variant RemoveResult[a] {
   struct Success {
-    node : Node::Leaf[a]
+    node : Node::Leaf[a],
   },
   struct NotFound {},
   struct Gathered {
@@ -107,11 +119,11 @@ fn remove_rec[a](node : Node::Mapped[a], shift : I32, hash : I32) -> RemoveResul
       match res {
         RemoveResult::Gathered gathered => {
           if shift != 0 && i32_popcnt(n.bitmap) == 1 {
-            res
+            res;
           } else {
             set n.nodes[ix] = gathered.new_node;
             RemoveResult::Success { node = gathered.removed };
-          }
+          };
         },
         _ => { res },
       };
@@ -125,9 +137,8 @@ fn remove_rec[a](node : Node::Mapped[a], shift : I32, hash : I32) -> RemoveResul
         if rows == 1 && shift == 0 {
           set node.bitmap = 0;
           set node.nodes = [];
-          return RemoveResult::Success { node = l }
+          return RemoveResult::Success { node = l };
         } else {};
-
         if rows == 2 {
           let other = if ix == 0 { node.nodes[1] } else { node.nodes[0] };
           match other {
@@ -140,14 +151,14 @@ fn remove_rec[a](node : Node::Mapped[a], shift : I32, hash : I32) -> RemoveResul
           };
           set node.bitmap = i32_and(node.bitmap, i32_xor(pos, 0 - 1));
           set node.nodes = [other];
-          RemoveResult::Success { node = l }
+          RemoveResult::Success { node = l };
         } else {
           let new_nodes = remove_node(node.nodes, ix);
           set node.bitmap = i32_and(node.bitmap, i32_xor(pos, 0 - 1));
           set node.nodes = new_nodes;
-          RemoveResult::Success { node = l }
+          RemoveResult::Success { node = l };
         };
-      }
+      };
     },
   };
 }
@@ -155,31 +166,31 @@ fn remove_rec[a](node : Node::Mapped[a], shift : I32, hash : I32) -> RemoveResul
 fn remove_node[a](as : Array[a], ix : I32) -> Array[a] {
   let old_len = array_len#[a](as);
   if old_len == 1 {
-    []
+    [];
   } else {
     let res = array_new#[a](as[0], old_len - 1);
     array_copy#[a](res, 0, as, 0, ix);
     array_copy#[a](res, ix, as, ix + 1, old_len - ix - 1);
-    res
-  }
+    res;
+  };
 }
 
 fn insert_node[a](as : Array[a], ix : I32, elem : a) -> Array[a] {
   let old_len = array_len#[a](as);
   if old_len == 0 {
-    [elem]
+    [elem];
   } else {
     let res = array_new#[a](elem, old_len + 1);
     array_copy#[a](res, 0, as, 0, ix);
     array_copy#[a](res, ix + 1, as, ix, old_len - ix);
-    res
-  }
+    res;
+  };
 }
 
 struct GetResult[a] {
   shift : I32,
   anchor : Node::Mapped[a],
-  payload : GetResultPayload[a]
+  payload : GetResultPayload[a],
 }
 
 variant GetResultPayload[a] {
@@ -190,24 +201,37 @@ variant GetResultPayload[a] {
 
 fn get_with_anchor[a](
   anchor : Node::Mapped[a],
-  shift : I32, hash : I32
+  shift : I32,
+  hash : I32,
 ) -> GetResult[a] {
   let pos = bitpos(hash, shift);
   if i32_and(anchor.bitmap, pos) == 0 {
-    GetResult { shift = shift, anchor = anchor, payload = GetResultPayload::Missing {} };
+    GetResult {
+      shift = shift,
+      anchor = anchor,
+      payload = GetResultPayload::Missing {},
+    };
   } else {
     let ix = index(anchor.bitmap, pos);
     let n = anchor.nodes[ix];
     match n {
       Node::Mapped anchor => {
-        get_with_anchor(anchor, shift + 5, hash)
+        get_with_anchor(anchor, shift + 5, hash);
       },
       Node::Leaf leaf => {
         if leaf.hash == hash {
-          GetResult { shift = shift, anchor = anchor, payload = GetResultPayload::Success { node = leaf } };
+          GetResult {
+            shift = shift,
+            anchor = anchor,
+            payload = GetResultPayload::Success { node = leaf },
+          };
         } else {
-          GetResult { shift = shift, anchor = anchor, payload = GetResultPayload::Conflict { node = leaf } };
-        }
+          GetResult {
+            shift = shift,
+            anchor = anchor,
+            payload = GetResultPayload::Conflict { node = leaf },
+          };
+        };
       },
     };
   };
