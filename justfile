@@ -19,6 +19,7 @@ ci:
     git diff-index --quiet HEAD crates/frontend/src/syntax/nodes.rs
     just test
     cargo fmt --all --check
+    just check-std
     just build-playground
 
 gen:
@@ -36,6 +37,9 @@ run-wasm FILE:
 
 dev FILE:
     watchexec --quiet --no-vcs-ignore -e nemo,rs,mjs just run-wasm {{ FILE }}
+
+check-std:
+    cargo run --bin nemo check std/*
 
 playground: build-wasm-lib
     cd playground && npm i && npm run dev
