@@ -157,7 +157,10 @@ fn test_run(path: &Path) -> Result<()> {
 
 fn test_check(path: &Path) -> Result<()> {
     let paths = collect_test_input(path)?;
-    assert_cmd_snapshot!(cli().env("RUST_BACKTRACE", "0").args(check_args(&paths)));
+    assert_cmd_snapshot!(cli()
+        .env("RUST_BACKTRACE", "0")
+        .env("NO_COLOR", "1")
+        .args(check_args(&paths)));
     Ok(())
 }
 

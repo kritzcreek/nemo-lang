@@ -6,19 +6,20 @@ info:
     - check
     - tests/check/unknown_function.nemo
   env:
+    NO_COLOR: "1"
     RUST_BACKTRACE: "0"
 input_file: crates/cli/tests/check/unknown_function.nemo
 ---
 success: false
 exit_code: 1
 ----- stdout -----
-[31m[05] Error:[0m Unknown variable unknown
-   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m tests/check/unknown_function.nemo:2:3 [38;5;246m][0m
-   [38;5;246m│[0m
- [38;5;246m2 │[0m [38;5;249m [0m[38;5;249m [0munknown[38;5;249m([0m[38;5;249m)[0m
- [38;5;240m  │[0m   ───┬───  
- [38;5;240m  │[0m      ╰───── Unknown variable unknown
-[38;5;246m───╯[0m
+[05] Error: Unknown variable unknown
+   ╭─[ tests/check/unknown_function.nemo:2:3 ]
+   │
+ 2 │   unknown()
+   │   ───┬───  
+   │      ╰───── Unknown variable unknown
+───╯
 
 
 ----- stderr -----

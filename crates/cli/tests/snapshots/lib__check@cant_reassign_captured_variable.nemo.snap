@@ -6,19 +6,20 @@ info:
     - check
     - tests/check/cant_reassign_captured_variable.nemo
   env:
+    NO_COLOR: "1"
     RUST_BACKTRACE: "0"
 input_file: crates/cli/tests/check/cant_reassign_captured_variable.nemo
 ---
 success: false
 exit_code: 1
 ----- stdout -----
-[31m[25] Error:[0m Can't reassign the captured variable 'local'. Maybe you want to box this variable in a struct?
-   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m tests/check/cant_reassign_captured_variable.nemo:4:13 [38;5;246m][0m
-   [38;5;246m│[0m
- [38;5;246m4 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249ms[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249m [0mlocal [38;5;249m=[0m[38;5;249m [0m[38;5;249m2[0m[38;5;249m0[0m[38;5;249m;[0m
- [38;5;240m  │[0m             ───┬──  
- [38;5;240m  │[0m                ╰──── Can't reassign the captured variable 'local'. Maybe you want to box this variable in a struct?
-[38;5;246m───╯[0m
+[25] Error: Can't reassign the captured variable 'local'. Maybe you want to box this variable in a struct?
+   ╭─[ tests/check/cant_reassign_captured_variable.nemo:4:13 ]
+   │
+ 4 │         set local = 20;
+   │             ───┬──  
+   │                ╰──── Can't reassign the captured variable 'local'. Maybe you want to box this variable in a struct?
+───╯
 
 
 ----- stderr -----

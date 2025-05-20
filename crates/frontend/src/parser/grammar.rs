@@ -346,6 +346,7 @@ fn typ(p: &mut Parser) -> Progress {
 }
 
 fn ty_cons(p: &mut Parser, c: Checkpoint) {
+    qualifier(p);
     p.expect(T![upper_ident]);
     ty_arg_list(p);
     p.finish_at(c, SyntaxKind::TyCons)
@@ -388,7 +389,7 @@ fn expr_bp(p: &mut Parser, min_bp: u32) -> Progress {
             break;
         };
 
-        if op_bp < min_bp {
+        if op_bp <= min_bp {
             break;
         }
 

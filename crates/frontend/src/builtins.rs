@@ -157,7 +157,13 @@ static BUILTINS: LazyLock<HashMap<&'static str, Fn>> = LazyLock::new(|| {
             name: "array_copy",
             ty_params: vec![TODO_NAME],
             ty: FuncTy {
-                arguments: vec![Ty::Array(Box::new(Ty::Var(TODO_NAME))), Ty::I32, Ty::Array(Box::new(Ty::Var(TODO_NAME))), Ty::I32, Ty::I32],
+                arguments: vec![
+                    Ty::Array(Box::new(Ty::Var(TODO_NAME))),
+                    Ty::I32,
+                    Ty::Array(Box::new(Ty::Var(TODO_NAME))),
+                    Ty::I32,
+                    Ty::I32,
+                ],
                 result: Ty::Unit,
             },
         },

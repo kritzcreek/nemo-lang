@@ -6,35 +6,36 @@ info:
     - check
     - tests/check/unknown_field.nemo
   env:
+    NO_COLOR: "1"
     RUST_BACKTRACE: "0"
 input_file: crates/cli/tests/check/unknown_field.nemo
 ---
 success: false
 exit_code: 1
 ----- stdout -----
-[31m[13] Error:[0m Unknown field. F does not have a field named y
-   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m tests/check/unknown_field.nemo:6:15 [38;5;246m][0m
-   [38;5;246m│[0m
- [38;5;246m6 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249mF[0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m [0m[38;5;249mx[0m[38;5;249m [0m[38;5;249m=[0m[38;5;249m [0m[38;5;249m1[0m[38;5;249m0[0m[38;5;249m,[0m[38;5;249m [0my[38;5;249m [0m[38;5;249m=[0m[38;5;249m [0m[38;5;249m2[0m[38;5;249m0[0m[38;5;249m [0m[38;5;249m}[0m[38;5;249m.[0m[38;5;249my[0m[38;5;249m;[0m
- [38;5;240m  │[0m               ┬  
- [38;5;240m  │[0m               ╰── Unknown field. F does not have a field named y
-[38;5;246m───╯[0m
+[13] Error: Unknown field. F does not have a field named y
+   ╭─[ tests/check/unknown_field.nemo:6:15 ]
+   │
+ 6 │   F { x = 10, y = 20 }.y;
+   │               ┬  
+   │               ╰── Unknown field. F does not have a field named y
+───╯
 
-[31m[13] Error:[0m Unknown field. F does not have a field named y
-   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m tests/check/unknown_field.nemo:6:24 [38;5;246m][0m
-   [38;5;246m│[0m
- [38;5;246m6 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249mF[0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m [0m[38;5;249mx[0m[38;5;249m [0m[38;5;249m=[0m[38;5;249m [0m[38;5;249m1[0m[38;5;249m0[0m[38;5;249m,[0m[38;5;249m [0m[38;5;249my[0m[38;5;249m [0m[38;5;249m=[0m[38;5;249m [0m[38;5;249m2[0m[38;5;249m0[0m[38;5;249m [0m[38;5;249m}[0m[38;5;249m.[0my[38;5;249m;[0m
- [38;5;240m  │[0m                        ┬  
- [38;5;240m  │[0m                        ╰── Unknown field. F does not have a field named y
-[38;5;246m───╯[0m
+[13] Error: Unknown field. F does not have a field named y
+   ╭─[ tests/check/unknown_field.nemo:6:24 ]
+   │
+ 6 │   F { x = 10, y = 20 }.y;
+   │                        ┬  
+   │                        ╰── Unknown field. F does not have a field named y
+───╯
 
-[31m[13] Error:[0m Unknown field. F does not have a field named y
-   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m tests/check/unknown_field.nemo:8:9 [38;5;246m][0m
-   [38;5;246m│[0m
- [38;5;246m8 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249ms[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249m [0m[38;5;249mf[0m[38;5;249m.[0my[38;5;249m [0m[38;5;249m=[0m[38;5;249m [0m[38;5;249m2[0m[38;5;249m0[0m[38;5;249m;[0m
- [38;5;240m  │[0m         ┬  
- [38;5;240m  │[0m         ╰── Unknown field. F does not have a field named y
-[38;5;246m───╯[0m
+[13] Error: Unknown field. F does not have a field named y
+   ╭─[ tests/check/unknown_field.nemo:8:9 ]
+   │
+ 8 │   set f.y = 20;
+   │         ┬  
+   │         ╰── Unknown field. F does not have a field named y
+───╯
 
 
 ----- stderr -----

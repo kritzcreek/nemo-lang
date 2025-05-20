@@ -6,27 +6,28 @@ info:
     - check
     - tests/check/unknown_alternative.nemo
   env:
+    NO_COLOR: "1"
     RUST_BACKTRACE: "0"
 input_file: crates/cli/tests/check/unknown_alternative.nemo
 ---
 success: false
 exit_code: 1
 ----- stdout -----
-[31m[07] Error:[0m Unknown type V::Unknown
-   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m tests/check/unknown_alternative.nemo:6:6 [38;5;246m][0m
-   [38;5;246m│[0m
- [38;5;246m6 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249mV[0m[38;5;249m:[0m[38;5;249m:[0mUnknown[38;5;249m [0m[38;5;249m{[0m[38;5;249m}[0m[38;5;249m;[0m
- [38;5;240m  │[0m      ───┬───  
- [38;5;240m  │[0m         ╰───── Unknown type V::Unknown
-[38;5;246m───╯[0m
+[07] Error: Unknown type V::Unknown
+   ╭─[ tests/check/unknown_alternative.nemo:6:6 ]
+   │
+ 6 │   V::Unknown {};
+   │      ───┬───  
+   │         ╰───── Unknown type V::Unknown
+───╯
 
-[31m[07] Error:[0m Unknown type V::Unknown
-   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m tests/check/unknown_alternative.nemo:9:8 [38;5;246m][0m
-   [38;5;246m│[0m
- [38;5;246m9 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249mV[0m[38;5;249m:[0m[38;5;249m:[0mUnknown[38;5;249m [0m[38;5;249m_[0m[38;5;249m [0m[38;5;249m=[0m[38;5;249m>[0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m}[0m
- [38;5;240m  │[0m        ───┬───  
- [38;5;240m  │[0m           ╰───── Unknown type V::Unknown
-[38;5;246m───╯[0m
+[07] Error: Unknown type V::Unknown
+   ╭─[ tests/check/unknown_alternative.nemo:9:8 ]
+   │
+ 9 │     V::Unknown _ => {}
+   │        ───┬───  
+   │           ╰───── Unknown type V::Unknown
+───╯
 
 
 ----- stderr -----
