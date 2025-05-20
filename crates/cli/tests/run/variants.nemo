@@ -23,10 +23,18 @@ fn print_enum(e : Enum) {
   {};
 }
 
+fn print_circle(c : Shape::Circle) {
+  log_f32(c.radius);
+}
+
+fn circle(radius : F32) -> Shape::Circle {
+  Shape::Circle { radius = radius }
+}
+
 fn print_shape(s : Shape) {
   match s {
     Shape::Circle c => {
-      log_f32(c.radius);
+      print_circle(c);
     },
     Shape::Rectangle r => {
       log_f32(r.len);

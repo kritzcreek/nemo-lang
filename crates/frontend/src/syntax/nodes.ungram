@@ -51,7 +51,7 @@ TyFloat = 'F32'
 TyBool = 'Bool'
 TyBytes = 'Bytes'
 TyUnit = 'Unit'
-TyCons = ModQualifier? 'upper_ident' type_args:Type*
+TyCons = ModQualifier? Qualifier? 'upper_ident' type_args:Type*
 TyVar = 'ident'
 
 ModQualifier = 'ident' '::'

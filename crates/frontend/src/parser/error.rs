@@ -1,4 +1,4 @@
-use ariadne::{Color, Config, Label, Report, ReportKind, Source};
+use ariadne::{Color, Label, Report, ReportKind, Source};
 use camino::Utf8Path;
 use line_index::{LineCol, LineIndex};
 use std::{fmt, str};
@@ -15,13 +15,11 @@ impl ParseError {
         &'err self,
         path: &'src Utf8Path,
         source: &'src str,
-        colors: bool,
     ) -> ParseErrorDisplay<'src, 'err> {
         ParseErrorDisplay {
             path,
             source,
             parse_error: self,
-            colors,
         }
     }
 
@@ -36,12 +34,11 @@ pub struct ParseErrorDisplay<'src, 'err> {
     path: &'src Utf8Path,
     source: &'src str,
     parse_error: &'err ParseError,
-    colors: bool,
 }
 
 impl fmt::Display for ParseErrorDisplay<'_, '_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        render_parse_error(self.path, self.source, self.parse_error, self.colors, f);
+        render_parse_error(self.path, self.source, self.parse_error, f);
         Ok(())
     }
 }
@@ -50,7 +47,6 @@ fn render_parse_error(
     path: &Utf8Path,
     source: &str,
     error: &ParseError,
-    colors: bool,
     output: &mut fmt::Formatter,
 ) {
     let out = Color::Fixed(81);
@@ -66,7 +62,6 @@ fn render_parse_error(
                 .with_message(error.it.to_string())
                 .with_color(out),
         )
-        .with_config(Config::default().with_color(colors))
         .finish()
         .write(cache, &mut out_buf)
         .unwrap();

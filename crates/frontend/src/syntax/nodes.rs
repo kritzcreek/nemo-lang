@@ -342,6 +342,9 @@ impl TyCons {
     pub fn mod_qualifier(&self) -> Option<ModQualifier> {
         support::child(&self.syntax)
     }
+    pub fn qualifier(&self) -> Option<Qualifier> {
+        support::child(&self.syntax)
+    }
     pub fn upper_ident_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T![upper_ident])
     }

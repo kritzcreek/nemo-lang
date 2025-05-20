@@ -42,13 +42,13 @@ impl FrontendResult<'_> {
             let path = self.ctx.get_module_path(module.parse_result.id);
             for error in &module.parse_result.parse_errors {
                 count += 1;
-                println!("{}", error.display(path, module.parse_result.source, true));
+                println!("{}", error.display(path, module.parse_result.source));
             }
             for error in &module.ty_errors {
                 count += 1;
                 println!(
                     "{}",
-                    error.display(&self.ctx, path, module.parse_result.source, true)
+                    error.display(&self.ctx, path, module.parse_result.source)
                 );
             }
         }

@@ -148,7 +148,7 @@ impl<'a> Codegen<'a> {
             ExprData::Call { func, arguments } => {
                 let mut arg_instrs = vec![];
                 // TODO: Hack to support the array_copy instruction
-                let first_arg_ty = arguments.first().map(|e|e.ty.clone());
+                let first_arg_ty = arguments.first().map(|e| e.ty.clone());
                 for arg in arguments {
                     arg_instrs.extend(self.compile_expr(body, arg));
                 }
@@ -196,7 +196,7 @@ impl<'a> Codegen<'a> {
                             let array_ty = self.builder.array_type(&first_arg_ty.unwrap());
                             instrs.push(Instruction::ArrayCopy {
                                 array_type_index_dst: array_ty,
-                                array_type_index_src: array_ty
+                                array_type_index_src: array_ty,
                             });
                             instrs.push(Instruction::I32Const(0))
                         } else if builtin == "bytes_get" {
