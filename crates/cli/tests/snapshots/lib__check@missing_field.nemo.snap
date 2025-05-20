@@ -6,19 +6,20 @@ info:
     - check
     - tests/check/missing_field.nemo
   env:
+    NO_COLOR: "1"
     RUST_BACKTRACE: "0"
 input_file: crates/cli/tests/check/missing_field.nemo
 ---
 success: false
 exit_code: 1
 ----- stdout -----
-[31m[14] Error:[0m Missing field. F.x was not provided
-   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m tests/check/missing_field.nemo:6:3 [38;5;246m][0m
-   [38;5;246m│[0m
- [38;5;246m6 │[0m [38;5;249m [0m[38;5;249m [0mF[38;5;249m [0m[38;5;249m{[0m[38;5;249m [0m[38;5;249m}[0m
- [38;5;240m  │[0m   ┬  
- [38;5;240m  │[0m   ╰── Missing field. F.x was not provided
-[38;5;246m───╯[0m
+[14] Error: Missing field. F.x was not provided
+   ╭─[ tests/check/missing_field.nemo:6:3 ]
+   │
+ 6 │   F { }
+   │   ┬  
+   │   ╰── Missing field. F.x was not provided
+───╯
 
 
 ----- stderr -----

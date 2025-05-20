@@ -6,19 +6,20 @@ info:
     - check
     - tests/check/operator_type_mismatch.nemo
   env:
+    NO_COLOR: "1"
     RUST_BACKTRACE: "0"
 input_file: crates/cli/tests/check/operator_type_mismatch.nemo
 ---
 success: false
 exit_code: 1
 ----- stdout -----
-[31m[03] Error:[0m Invalid operator + for lhs of type I32 and rhs of type F32
-   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m tests/check/operator_type_mismatch.nemo:2:6 [38;5;246m][0m
-   [38;5;246m│[0m
- [38;5;246m2 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m1[0m[38;5;249m [0m+[38;5;249m [0m[38;5;249m2[0m[38;5;249m.[0m[38;5;249m0[0m
- [38;5;240m  │[0m      ┬  
- [38;5;240m  │[0m      ╰── Invalid operator + for lhs of type I32 and rhs of type F32
-[38;5;246m───╯[0m
+[03] Error: Invalid operator + for lhs of type I32 and rhs of type F32
+   ╭─[ tests/check/operator_type_mismatch.nemo:2:6 ]
+   │
+ 2 │    1 + 2.0
+   │      ┬  
+   │      ╰── Invalid operator + for lhs of type I32 and rhs of type F32
+───╯
 
 
 ----- stderr -----

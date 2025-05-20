@@ -6,19 +6,20 @@ info:
     - check
     - tests/check/not_a_function.nemo
   env:
+    NO_COLOR: "1"
     RUST_BACKTRACE: "0"
 input_file: crates/cli/tests/check/not_a_function.nemo
 ---
 success: false
 exit_code: 1
 ----- stdout -----
-[31m[16] Error:[0m Can't a call a value of type I32 as a function
-   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m tests/check/not_a_function.nemo:3:3 [38;5;246m][0m
-   [38;5;246m│[0m
- [38;5;246m3 │[0m [38;5;249m [0m[38;5;249m [0mx[38;5;249m([0m[38;5;249m0[0m[38;5;249m)[0m
- [38;5;240m  │[0m   ┬  
- [38;5;240m  │[0m   ╰── Can't a call a value of type I32 as a function
-[38;5;246m───╯[0m
+[16] Error: Can't a call a value of type I32 as a function
+   ╭─[ tests/check/not_a_function.nemo:3:3 ]
+   │
+ 3 │   x(0)
+   │   ┬  
+   │   ╰── Can't a call a value of type I32 as a function
+───╯
 
 
 ----- stderr -----

@@ -1,6 +1,6 @@
 use crate::ir::{Ctx, Name, Ty};
 use crate::syntax::{AstNode, SyntaxNode, SyntaxToken};
-use ariadne::{Config, Label, Report, ReportKind, Source};
+use ariadne::{Label, Report, ReportKind, Source};
 use camino::Utf8Path;
 use core::fmt;
 use line_index::{LineCol, LineIndex};
@@ -82,14 +82,12 @@ impl TyError {
         ctx: &'src Ctx,
         path: &'src Utf8Path,
         source: &'src str,
-        colors: bool,
     ) -> TyErrorDisplay<'src, 'err> {
         TyErrorDisplay {
             source,
             path,
             ctx,
             ty_error: self,
-            colors,
         }
     }
 
@@ -109,19 +107,11 @@ pub struct TyErrorDisplay<'src, 'err> {
     source: &'src str,
     path: &'src Utf8Path,
     ctx: &'src Ctx,
-    colors: bool,
 }
 
 impl fmt::Display for TyErrorDisplay<'_, '_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        render_ty_error(
-            self.ctx,
-            self.path,
-            self.source,
-            self.ty_error,
-            self.colors,
-            f,
-        );
+        render_ty_error(self.ctx, self.path, self.source, self.ty_error, f);
         Ok(())
     }
 }
@@ -320,7 +310,6 @@ pub fn render_ty_error(
     path: &Utf8Path,
     source: &str,
     ty_error: &TyError,
-    colors: bool,
     output: &mut fmt::Formatter,
 ) {
     let cache = (path, Source::from(source));
@@ -333,7 +322,6 @@ pub fn render_ty_error(
             Label::new((path, ty_error.at.start().into()..ty_error.at.end().into()))
                 .with_message(error_label(&ty_error.it, ctx)),
         )
-        .with_config(Config::default().with_color(colors))
         .finish()
         .write(cache, &mut out_buf)
         .unwrap();

@@ -6,27 +6,28 @@ info:
     - check
     - tests/check/cant_instantiate_function_ref.nemo
   env:
+    NO_COLOR: "1"
     RUST_BACKTRACE: "0"
 input_file: crates/cli/tests/check/cant_instantiate_function_ref.nemo
 ---
 success: false
 exit_code: 1
 ----- stdout -----
-[31m[05] Error:[0m Unknown variable id
-   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m tests/check/cant_instantiate_function_ref.nemo:6:15 [38;5;246m][0m
-   [38;5;246m│[0m
- [38;5;246m6 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249ml[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249m [0m[38;5;249mm[0m[38;5;249my[0m[38;5;249m_[0m[38;5;249mi[0m[38;5;249md[0m[38;5;249m [0m[38;5;249m=[0m[38;5;249m [0mid[38;5;249m;[0m
- [38;5;240m  │[0m               ─┬  
- [38;5;240m  │[0m                ╰── Unknown variable id
-[38;5;246m───╯[0m
+[05] Error: Unknown variable id
+   ╭─[ tests/check/cant_instantiate_function_ref.nemo:6:15 ]
+   │
+ 6 │   let my_id = id;
+   │               ─┬  
+   │                ╰── Unknown variable id
+───╯
 
-[31m[21] Error:[0m Can't instantiate function reference. Only top-level functions may be polymorphic at this time.
-   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m tests/check/cant_instantiate_function_ref.nemo:7:3 [38;5;246m][0m
-   [38;5;246m│[0m
- [38;5;246m7 │[0m [38;5;249m [0m[38;5;249m [0mmy_id[38;5;249m#[0m[38;5;249m[[0m[38;5;249mI[0m[38;5;249m3[0m[38;5;249m2[0m[38;5;249m][0m[38;5;249m([0m[38;5;249m1[0m[38;5;249m0[0m[38;5;249m)[0m
- [38;5;240m  │[0m   ──┬──  
- [38;5;240m  │[0m     ╰──── Can't instantiate function reference. Only top-level functions may be polymorphic at this time.
-[38;5;246m───╯[0m
+[21] Error: Can't instantiate function reference. Only top-level functions may be polymorphic at this time.
+   ╭─[ tests/check/cant_instantiate_function_ref.nemo:7:3 ]
+   │
+ 7 │   my_id#[I32](10)
+   │   ──┬──  
+   │     ╰──── Can't instantiate function reference. Only top-level functions may be polymorphic at this time.
+───╯
 
 
 ----- stderr -----

@@ -6,27 +6,28 @@ info:
     - check
     - tests/check/field_type_mismatch.nemo
   env:
+    NO_COLOR: "1"
     RUST_BACKTRACE: "0"
 input_file: crates/cli/tests/check/field_type_mismatch.nemo
 ---
 success: false
 exit_code: 1
 ----- stdout -----
-[31m[15] Error:[0m Type mismatch. Expected I32, but got Bool
-   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m tests/check/field_type_mismatch.nemo:6:11 [38;5;246m][0m
-   [38;5;246m│[0m
- [38;5;246m6 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249mF[0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m [0m[38;5;249mx[0m[38;5;249m [0m[38;5;249m=[0m[38;5;249m [0mtrue [38;5;249m}[0m
- [38;5;240m  │[0m           ──┬──  
- [38;5;240m  │[0m             ╰──── Type mismatch. Expected I32, but got Bool
-[38;5;246m───╯[0m
+[15] Error: Type mismatch. Expected I32, but got Bool
+   ╭─[ tests/check/field_type_mismatch.nemo:6:11 ]
+   │
+ 6 │   F { x = true }
+   │           ──┬──  
+   │             ╰──── Type mismatch. Expected I32, but got Bool
+───╯
 
-[31m[15] Error:[0m Type mismatch. Expected Unit, but got F
-   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m tests/check/field_type_mismatch.nemo:6:3 [38;5;246m][0m
-   [38;5;246m│[0m
- [38;5;246m6 │[0m [38;5;249m [0m[38;5;249m [0mF { x = true }
- [38;5;240m  │[0m   ───────┬──────  
- [38;5;240m  │[0m          ╰──────── Type mismatch. Expected Unit, but got F
-[38;5;246m───╯[0m
+[15] Error: Type mismatch. Expected Unit, but got F
+   ╭─[ tests/check/field_type_mismatch.nemo:6:3 ]
+   │
+ 6 │   F { x = true }
+   │   ───────┬──────  
+   │          ╰──────── Type mismatch. Expected Unit, but got F
+───╯
 
 
 ----- stderr -----
