@@ -1,5 +1,5 @@
 module option
-exports (Option, some, none, map, is_none, is_some)
+exports (Option, some, none, map, flat_map, is_none, is_some)
 
 variant Option[t] {
   struct Some { val: t },
@@ -18,6 +18,13 @@ fn map[t, u](option: Option[t], f: fn(t) -> u) -> Option[u] {
   match option {
     Option::Some s => { Option::Some { val = f(s.val) } },
     Option::None _ => { none() },
+  }
+}
+
+fn flat_map[t, u](option: Option[t], f: fn(t) -> Option[u]) -> Option[u] {
+  match option {
+    Option::Some s => { f(s.val) },
+    Option::None _ => { Option::None#[u] {} },
   }
 }
 

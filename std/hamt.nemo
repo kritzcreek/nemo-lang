@@ -1,10 +1,11 @@
 module hamt
-exports (Hamt, get, add, remove)
+exports (Hamt, new, get, add, remove)
 
 use option
 
 struct Hamt[a] {
   root : Node::Mapped[a],
+  size : I32,
 }
 
 variant Node[a] {
@@ -13,7 +14,7 @@ variant Node[a] {
 }
 
 fn new[a]() -> Hamt[a] {
-  Hamt { root = Node::Mapped { bitmap = 0, nodes = [] } }
+  Hamt { root = Node::Mapped { bitmap = 0, nodes = [] }, size = 0 }
 }
 
 fn get[a](hamt : Hamt[a], hash : I32) -> option::Option[a] {
@@ -30,6 +31,7 @@ fn add[a](hamt : Hamt[a], hash : I32, value : a) -> option::Option[a] {
   let get_result = get_with_anchor(hamt.root, 0, hash);
   match get_result.payload {
     GetResultPayload::Missing _ => {
+      set hamt.size = hamt.size + 1;
       let n = get_result.anchor;
       let pos = bitpos(hash, get_result.shift);
       set n.bitmap = i32_or(n.bitmap, pos);
@@ -38,6 +40,7 @@ fn add[a](hamt : Hamt[a], hash : I32, value : a) -> option::Option[a] {
       option::Option::None {};
     },
     GetResultPayload::Conflict c => {
+      set hamt.size = hamt.size + 1;
       let n = get_result.anchor;
       let pos = bitpos(hash, get_result.shift);
       let ix = index(n.bitmap, pos);
@@ -56,9 +59,11 @@ fn add[a](hamt : Hamt[a], hash : I32, value : a) -> option::Option[a] {
 fn remove[a](hamt : Hamt[a], hash : I32) -> option::Option[a] {
   match remove_rec(hamt.root, 0, hash) {
     RemoveResult::Success s => {
+      set hamt.size = hamt.size - 1;
       option::Option::Some { val = s.node.value }
     },
     RemoveResult::Gathered g => {
+      set hamt.size = hamt.size - 1;
       option::Option::Some { val = g.removed.value }
     },
     RemoveResult::NotFound n => { option::Option::None {} },
@@ -90,9 +95,8 @@ fn merge_leafs[a](shift : I32, left : Node::Leaf[a], hash : I32, value : a) -> N
     };
     Node::Mapped { bitmap = bitmap, nodes = nodes };
   } else {
-    let bitmap = next_pos1;
     let new_node = merge_leafs(shift + 5, left, hash, value);
-    Node::Mapped { bitmap = bitmap, nodes = [new_node] };
+    Node::Mapped { bitmap = next_pos1, nodes = [new_node] };
   };
 }
 

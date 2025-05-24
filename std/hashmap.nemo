@@ -1,0 +1,115 @@
+module hashmap
+exports (HashMap, new, add, get)
+
+use io
+use hamt
+use option
+
+variant Bucket[k, v] {
+  struct Single { key : k, value : v },
+  struct Conflict { key : k, value : v, next : Bucket[k, v] },
+}
+
+fn bucket_key[k, v](b : Bucket[k, v]) -> k {
+  match b {
+    Bucket::Single s => { s.key },
+    Bucket::Conflict c => { c.key },
+  };
+}
+
+fn bucket_value[k, v](b : Bucket[k, v]) -> v {
+  match b {
+    Bucket::Single s => { s.value },
+    Bucket::Conflict c => { c.value },
+  };
+}
+
+fn bucket_set_value[k, v](b : Bucket[k, v], value : v) {
+  match b {
+    Bucket::Single s => { set s.value = value },
+    Bucket::Conflict c => { set c.value = value },
+  };
+}
+
+fn bucket_add[k, v](b : Bucket[k, v], key : k, value : v) -> Bucket[k, v] {
+  Bucket::Conflict { key = key, value = value, next = b }
+}
+
+fn bucket_find[k, v](
+  b : Bucket[k, v],
+  key : k,
+  eq : fn (k, k) -> Bool
+) -> option::Option[Bucket[k, v]] {
+  match b {
+    Bucket::Single single => {
+      if eq(single.key, key) {
+        option::Option::Some { val = single };
+      } else {
+        option::Option::None {};
+      }
+    },
+    Bucket::Conflict conflict => {
+      if eq(conflict.key, key) {
+        option::Option::Some { val = conflict };
+      } else {
+        bucket_find(conflict.next, key, eq)
+      }
+    },
+  }
+}
+
+fn bucket_get[k, v](
+  b : Bucket[k, v],
+  key : k,
+  eq : fn (k, k) -> Bool
+) -> option::Option[v] {
+  option::map(bucket_find(b, key, eq), \(b) { bucket_value(b) })
+}
+
+struct HashMap[k, v] {
+  hash : fn (k) -> I32,
+  eq : fn (k, k) -> Bool,
+  hamt : hamt::Hamt[Bucket[k, v]],
+  size : I32,
+}
+
+fn new[k, v](hash : fn (k) -> I32, eq : fn (k, k) -> Bool) -> HashMap[k, v] {
+  HashMap { hash = hash, eq = eq, hamt = hamt::new(), size = 0 }
+}
+
+fn add[k, v](map : HashMap[k, v], key : k, value : v) -> option::Option[v] {
+  let hash = map.hash(key);
+  match hamt::get(map.hamt, hash) {
+    option::Option::Some s => {
+      match bucket_find(s.val, key, map.eq) {
+        option::Option::Some conflict => {
+          let old_value = bucket_value(conflict.val);
+          bucket_set_value(conflict.val, value);
+          option::Option::Some { val = old_value }
+        },
+        option::Option::None _ => {
+          hamt::add(map.hamt, hash, bucket_add(s.val, key, value));
+          set map.size = map.size + 1;
+          option::Option::None {};
+        }
+      };
+    },
+    option::Option::None _ => {
+      hamt::add(map.hamt, hash, Bucket::Single { key = key, value = value });
+      set map.size = map.size + 1;
+      option::Option::None {}
+    },
+  };
+}
+
+fn get[k, v](map : HashMap[k, v], key : k) -> option::Option[v] {
+  let hash = map.hash(key);
+  match hamt::get(map.hamt, hash) {
+    option::Option::Some bucket => {
+      bucket_get(bucket.val, key, map.eq)
+    },
+    option::Option::None _ => {
+      option::Option::None {};
+    },
+  };
+}
