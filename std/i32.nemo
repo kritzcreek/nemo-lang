@@ -1,0 +1,50 @@
+module i32
+exports (print, print_binary, print_hex, print_radix)
+
+use string
+use byte
+use vec
+
+global alphabet : Array[I32] = [48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 65, 66, 67, 68, 69, 70]
+
+fn print(i : I32) -> string::Str {
+  print_radix(i, 10)
+}
+
+fn print_binary(i : I32) -> string::Str {
+  print_radix(i, 2)
+}
+
+fn print_hex(i : I32) -> string::Str {
+  print_radix(i, 16)
+}
+
+fn print_radix(i : I32, radix : I32) -> string::Str {
+  if i == 0 {
+    return string::unsafe_new("0");
+  } else {};
+  let is_negative = i < 0;
+  if is_negative {
+    set i = i * (0 - 1);
+  } else {};
+
+  let chars : vec::Vec[I32] = vec::new(0);
+  while i != 0 {
+    let digit = i32_rem_s(i, radix);
+    vec::push(chars, alphabet[digit]);
+    set i = i / radix;
+  };
+
+  if is_negative {
+    vec::push(chars, 45);
+  } else {};
+
+  let char_count = chars.len;
+  let bytes = bytes_new(0, char_count);
+  let j = 0;
+  while j < char_count {
+    bytes_set(bytes, char_count - j - 1, chars.buf[j]);
+    set j = j + 1;
+  };
+  string::unsafe_new(bytes)
+}
