@@ -1,7 +1,77 @@
 module hamt
-exports (Hamt, new, get, add, remove)
+exports (Hamt, new, get, add, remove, values, print)
 
 use option
+use vec
+use string
+
+fn print_hash(hash : I32) -> string::Str {
+  let chars : vec::Vec[I32] = vec::new(0);
+  let i = 0;
+  while i < 32 {
+    if i != 0 && i32_rem_u(i, 5) == 0 {
+      vec::push(chars, 95)
+    } else {};
+    if i32_and(hash, 1) == 0 { vec::push(chars, 48) } else { vec::push(chars, 49) };
+    set hash = i32_shr_u(hash, 1);
+    set i = i + 1;
+  };
+
+  let char_count = chars.len;
+  let bytes = bytes_new(0, char_count);
+  let j = 0;
+  while j < char_count {
+    bytes_set(bytes, char_count - j - 1, chars.buf[j]);
+    set j = j + 1;
+  };
+  string::unsafe_new(bytes)
+}
+
+fn print_bitmap(bitmap : I32) -> string::Str {
+  let chars : vec::Vec[I32] = vec::new(0);
+  let i = 0;
+  while i < 32 {
+    if i32_and(bitmap, 1) == 0 { vec::push(chars, 48) } else { vec::push(chars, 49) };
+    set bitmap = i32_shr_u(bitmap, 1);
+    set i = i + 1;
+  };
+
+  let char_count = chars.len;
+  let bytes = bytes_new(0, char_count);
+  let j = 0;
+  while j < char_count {
+    bytes_set(bytes, char_count - j - 1, chars.buf[j]);
+    set j = j + 1;
+  };
+  string::unsafe_new(bytes)
+}
+
+fn print[a](hamt : Hamt[a]) -> string::Str {
+  print_node#[a](hamt.root)
+}
+
+fn print_node[a](node : Node[a]) -> string::Str {
+  match node {
+    Node::Leaf l => {
+      string::concat(string::concat(string::unsafe_new("(#leaf "), print_hash(l.hash)), string::unsafe_new(")"));
+    },
+    Node::Mapped m => {
+      let nodes = string::unsafe_new("");
+      let i = 0;
+      while i < array_len#[Node[a]](m.nodes) {
+        set nodes = string::concat(string::concat(nodes, string::unsafe_new(" ")), print_node(m.nodes[i]));
+        set i = i + 1;
+      };
+      string::concat(
+        string::concat(
+          string::concat(
+            string::unsafe_new("(#mapd "),
+            print_bitmap(m.bitmap)),
+          nodes),
+        string::unsafe_new(")"));
+    },
+  };
+}
 
 struct Hamt[a] {
   root : Node::Mapped[a],
@@ -70,8 +140,50 @@ fn remove[a](hamt : Hamt[a], hash : I32) -> option::Option[a] {
   };
 }
 
+fn find_any[a](node : Node[a]) -> option::Option[a] {
+  match node {
+    Node::Leaf l => { option::Option::Some { val = l.value } },
+    Node::Mapped m => {
+      let i = 0;
+      let len = array_len#[Node[a]](m.nodes);
+      while i < len {
+        match find_any(m.nodes[i]) {
+          option::Option::Some s => { return s },
+          option::Option::None _ => { },
+        };
+        set i = i + 1;
+      };
+      option::Option::None {};
+    },
+  };
+}
+
+fn values[a](hamt : Hamt[a]) -> option::Option[vec::Vec[a]] {
+  let zero = find_any#[a](hamt.root);
+  let result = match zero {
+    option::Option::Some s => { vec::new(s.val) },
+    option::Option::None _ => { return option::Option::None {} },
+  };
+  values_node(result, hamt.root);
+  option::Option::Some { val = result };
+}
+
+fn values_node[a](vec : vec::Vec[a], node : Node[a]) {
+  match node {
+    Node::Leaf l => { vec::push(vec, l.value) },
+    Node::Mapped m => {
+      let i = 0;
+      let len = array_len#[Node[a]](m.nodes);
+      while i < len {
+        values_node(vec, m.nodes[i]);
+        set i = i + 1;
+      };
+    },
+  };
+}
+
 fn mask(hash : I32, shift : I32) -> I32 {
-  i32_shr_u(hash, i32_and(shift, 31))
+  i32_and(i32_shr_u(hash, shift), 31)
 }
 
 fn bitpos(hash : I32, shift : I32) -> I32 {
@@ -88,7 +200,7 @@ fn merge_leafs[a](shift : I32, left : Node::Leaf[a], hash : I32, value : a) -> N
   if next_pos1 != next_pos2 {
     let bitmap = i32_or(next_pos1, next_pos2);
     let right = Node::Leaf { hash = hash, value = value };
-    let nodes : Array[Node[a]] = if next_pos1 < next_pos2 {
+    let nodes : Array[Node[a]] = if i32_lt_u(next_pos1, next_pos2) {
       [left, right]
     } else {
       [right, left]

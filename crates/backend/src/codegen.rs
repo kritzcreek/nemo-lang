@@ -772,6 +772,8 @@ fn builtin_instruction(builtin: &str) -> Instruction<'static> {
         "i32_shl" => Instruction::I32Shl,
         "i32_shr_u" => Instruction::I32ShrU,
         "i32_shr_s" => Instruction::I32ShrS,
+        "i32_lt_u" => Instruction::I32LtU,
+        "i32_le_u" => Instruction::I32LeU,
         "i32_trunc_f32_s" => Instruction::I32TruncF32S,
         "i32_reinterpret_f32" => Instruction::I32ReinterpretF32,
         "array_len" => Instruction::ArrayLen,
