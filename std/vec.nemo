@@ -86,3 +86,11 @@ fn subarray[a](vec : Vec[a], start : I32, len : I32) -> Vec[a] {
   };
   return new_vec;
 }
+
+fn for_each[a](vec : Vec[a], f : fn (a) -> Unit) {
+  let i = 0;
+  let len = vec.len;
+  while i < len {
+    f(vec.buf[i])
+  };
+}
