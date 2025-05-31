@@ -294,6 +294,10 @@ fn typ(p: &mut Parser) -> Progress {
             p.bump(T![I32]);
             p.finish_at(c, SyntaxKind::TyInt)
         }
+        T![U32] => {
+            p.bump(T![U32]);
+            p.finish_at(c, SyntaxKind::TyUInt)
+        }
         T![F32] => {
             p.bump(T![F32]);
             p.finish_at(c, SyntaxKind::TyFloat)

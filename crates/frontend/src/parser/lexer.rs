@@ -178,6 +178,9 @@ pub enum SyntaxKind {
     #[token("I32")]
     I32_BUILTIN,
 
+    #[token("U32")]
+    U32_BUILTIN,
+
     #[token("F32")]
     F32_BUILTIN,
 
@@ -199,13 +202,13 @@ pub enum SyntaxKind {
     #[regex(r"[0-9]+\.[0-9]+")]
     FLOAT_LIT,
 
-    #[regex("[0-9]+")]
+    #[regex("[0-9]+u?")]
     INT_LIT,
 
-    #[regex("0b[0-1]+")]
+    #[regex("0b[0-1]+u?")]
     BINARY_LIT,
 
-    #[regex("0x[0-9a-fA-f]+")]
+    #[regex("0x[0-9a-fA-f]+u?")]
     HEX_LIT,
 
     #[regex("\"[^\"]*\"")]
@@ -317,6 +320,7 @@ pub enum SyntaxKind {
 
     // Types
     TyInt,
+    TyUInt,
     TyFloat,
     TyBool,
     TyUnit,
@@ -445,6 +449,7 @@ macro_rules ! T {
     [true] => { SyntaxKind::TRUE_KW };
     [false] => { SyntaxKind::FALSE_KW };
     [I32] => { SyntaxKind::I32_BUILTIN };
+    [U32] => { SyntaxKind::U32_BUILTIN };
     [F32] => { SyntaxKind::F32_BUILTIN };
     [Bool] => { SyntaxKind::BOOL_BUILTIN };
     [Bytes] => { SyntaxKind::BYTES_BUILTIN };

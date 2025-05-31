@@ -30,7 +30,7 @@ fn print_radix(i : I32, radix : I32) -> string::Str {
 
   let chars : vec::Vec[I32] = vec::new(0);
   while i != 0 {
-    let digit = i32_rem_s(i, radix);
+    let digit = i32_rem(i, radix);
     vec::push(chars, alphabet[digit]);
     set i = i / radix;
   };

@@ -67,13 +67,13 @@ fn bucket_get[k, v](
 }
 
 struct HashMap[k, v] {
-  hash : fn (k) -> I32,
+  hash : fn (k) -> U32,
   eq : fn (k, k) -> Bool,
   hamt : hamt::Hamt[Bucket[k, v]],
   size : I32,
 }
 
-fn new[k, v](hash : fn (k) -> I32, eq : fn (k, k) -> Bool) -> HashMap[k, v] {
+fn new[k, v](hash : fn (k) -> U32, eq : fn (k, k) -> Bool) -> HashMap[k, v] {
   HashMap { hash = hash, eq = eq, hamt = hamt::new(), size = 0 }
 }
 

@@ -22,11 +22,11 @@ exit_code: 1
 ───╯
 
 [11] Error: Mismatched arg count. Expected 2 arguments, but got 3
-   ╭─[ tests/check/arg_count_mismatch.nemo:7:12 ]
+   ╭─[ tests/check/arg_count_mismatch.nemo:7:10 ]
    │
- 7 │   i32_rem_s(1, 2, 3);
-   │            ────┬────  
-   │                ╰────── Mismatched arg count. Expected 2 arguments, but got 3
+ 7 │   i32_rem(1, 2, 3);
+   │          ────┬────  
+   │              ╰────── Mismatched arg count. Expected 2 arguments, but got 3
 ───╯
 
 

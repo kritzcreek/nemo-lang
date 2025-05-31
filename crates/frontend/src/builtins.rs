@@ -41,6 +41,17 @@ fn i32_func_unary(name: &'static str) -> Fn {
     }
 }
 
+fn u32_func_unary(name: &'static str) -> Fn {
+    Fn {
+        name,
+        ty_params: vec![],
+        ty: FuncTy {
+            arguments: vec![Ty::U32],
+            result: Ty::U32,
+        },
+    }
+}
+
 fn i32_func_binary(name: &'static str) -> Fn {
     Fn {
         name,
@@ -48,6 +59,17 @@ fn i32_func_binary(name: &'static str) -> Fn {
         ty: FuncTy {
             arguments: vec![Ty::I32, Ty::I32],
             result: Ty::I32,
+        },
+    }
+}
+
+fn u32_func_binary(name: &'static str) -> Fn {
+    Fn {
+        name,
+        ty_params: vec![],
+        ty: FuncTy {
+            arguments: vec![Ty::U32, Ty::U32],
+            result: Ty::U32,
         },
     }
 }
@@ -72,9 +94,9 @@ static BUILTINS: LazyLock<HashMap<&'static str, Fn>> = LazyLock::new(|| {
     m.insert("f32_min", f32_func_binary("f32_min"));
     m.insert("f32_max", f32_func_binary("f32_max"));
     m.insert(
-        "f32_convert_i32_s",
+        "f32_convert_i32",
         Fn {
-            name: "f32_convert_i32_s",
+            name: "f32_convert_i32",
             ty_params: vec![],
             ty: FuncTy {
                 arguments: vec![Ty::I32],
@@ -83,12 +105,12 @@ static BUILTINS: LazyLock<HashMap<&'static str, Fn>> = LazyLock::new(|| {
         },
     );
     m.insert(
-        "f32_convert_i32_u",
+        "f32_convert_u32",
         Fn {
-            name: "f32_convert_i32_u",
+            name: "f32_convert_u32",
             ty_params: vec![],
             ty: FuncTy {
-                arguments: vec![Ty::I32],
+                arguments: vec![Ty::U32],
                 result: Ty::F32,
             },
         },
@@ -102,13 +124,23 @@ static BUILTINS: LazyLock<HashMap<&'static str, Fn>> = LazyLock::new(|| {
     m.insert("i32_and", i32_func_binary("i32_and"));
     m.insert("i32_or", i32_func_binary("i32_or"));
     m.insert("i32_xor", i32_func_binary("i32_xor"));
-    m.insert("i32_lt_u", i32_func_binary("i32_lt_u"));
-    m.insert("i32_le_u", i32_func_binary("i32_le_u"));
-    m.insert("i32_rem_s", i32_func_binary("i32_rem_s"));
-    m.insert("i32_rem_u", i32_func_binary("i32_rem_u"));
+    m.insert("i32_rem", i32_func_binary("i32_rem"));
+    m.insert("u32_rem", i32_func_binary("u32_rem"));
     m.insert("i32_shl", i32_func_binary("i32_shl"));
-    m.insert("i32_shr_u", i32_func_binary("i32_shr_u"));
-    m.insert("i32_shr_s", i32_func_binary("i32_shr_s"));
+    m.insert("i32_shr", i32_func_binary("i32_shr"));
+
+    m.insert("u32_clz", u32_func_unary("u32_clz"));
+    m.insert("u32_ctz", u32_func_unary("u32_ctz"));
+    m.insert("u32_popcnt", u32_func_unary("u32_popcnt"));
+    m.insert("u32_rotl", u32_func_unary("u32_rotl"));
+    m.insert("u32_rotr", u32_func_unary("u32_rotr"));
+    m.insert("u32_and", u32_func_binary("u32_and"));
+    m.insert("u32_or", u32_func_binary("u32_or"));
+    m.insert("u32_xor", u32_func_binary("u32_xor"));
+    m.insert("u32_rem", u32_func_binary("u32_rem"));
+    m.insert("u32_rem", u32_func_binary("u32_rem"));
+    m.insert("u32_shl", u32_func_binary("u32_shl"));
+    m.insert("u32_shr", u32_func_binary("u32_shr"));
     m.insert(
         "i32_trunc_f32_s",
         Fn {
@@ -127,6 +159,28 @@ static BUILTINS: LazyLock<HashMap<&'static str, Fn>> = LazyLock::new(|| {
             ty_params: vec![],
             ty: FuncTy {
                 arguments: vec![Ty::F32],
+                result: Ty::I32,
+            },
+        },
+    );
+    m.insert(
+        "i32_to_u32",
+        Fn {
+            name: "i32_to_u32",
+            ty_params: vec![],
+            ty: FuncTy {
+                arguments: vec![Ty::I32],
+                result: Ty::U32,
+            },
+        },
+    );
+    m.insert(
+        "u32_to_i32",
+        Fn {
+            name: "u32_to_i32",
+            ty_params: vec![],
+            ty: FuncTy {
+                arguments: vec![Ty::U32],
                 result: Ty::I32,
             },
         },
