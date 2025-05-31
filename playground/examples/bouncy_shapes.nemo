@@ -92,7 +92,7 @@ global particles = RingBuffer {
 fn add_particle(p : Particle) {
   set particles.buffer[particles.watermark] = p;
   set particles.watermark =
-    i32_rem_s(particles.watermark + 1, array_len#[Particle](particles.buffer))
+    i32_rem(particles.watermark + 1, array_len#[Particle](particles.buffer))
 }
 
 fn clamp(min : F32, val : F32, max : F32) -> F32 {
