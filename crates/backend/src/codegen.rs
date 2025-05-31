@@ -47,7 +47,7 @@ impl<'a> Codegen<'a> {
 
     fn const_init_for_ty(&mut self, ty: &Ty) -> ConstExpr {
         match ty {
-            Ty::I32 | Ty::Unit | Ty::Bool => ConstExpr::i32_const(0),
+            Ty::I32 | Ty::U32 | Ty::Unit | Ty::Bool => ConstExpr::i32_const(0),
             Ty::F32 => ConstExpr::f32_const(0.0),
             Ty::Bytes => {
                 let ty_idx = self.builder.bytes_ty();
@@ -80,6 +80,7 @@ impl<'a> Codegen<'a> {
     fn compile_lit(&mut self, lit: Lit) -> Vec<Instruction<'a>> {
         match lit.it {
             LitData::I32(i) => vec![Instruction::I32Const(i)],
+            LitData::U32(i) => vec![Instruction::I32Const(i as i32)],
             LitData::F32(f) => vec![Instruction::F32Const(f)],
             LitData::Bool(t) => vec![Instruction::I32Const(if t { 1 } else { 0 })],
             LitData::Bytes(s) => {
@@ -109,6 +110,18 @@ impl<'a> Codegen<'a> {
             OpData::I32Ge => Instruction::I32GeS,
             OpData::I32Eq => Instruction::I32Eq,
             OpData::I32Ne => Instruction::I32Ne,
+
+            OpData::U32Add => Instruction::I32Add,
+            OpData::U32Sub => Instruction::I32Sub,
+            OpData::U32Mul => Instruction::I32Mul,
+            OpData::U32Div => Instruction::I32DivU,
+            OpData::U32Lt => Instruction::I32LtU,
+            OpData::U32Gt => Instruction::I32GtU,
+            OpData::U32Le => Instruction::I32LeU,
+            OpData::U32Ge => Instruction::I32GeU,
+            OpData::U32Eq => Instruction::I32Eq,
+            OpData::U32Ne => Instruction::I32Ne,
+
             OpData::F32Add => Instruction::F32Add,
             OpData::F32Sub => Instruction::F32Sub,
             OpData::F32Mul => Instruction::F32Mul,
@@ -757,24 +770,27 @@ fn builtin_instruction(builtin: &str) -> Instruction<'static> {
         "f32_copysign" => Instruction::F32Copysign,
         "f32_min" => Instruction::F32Min,
         "f32_max" => Instruction::F32Max,
-        "f32_convert_i32_s" => Instruction::F32ConvertI32S,
-        "f32_convert_i32_u" => Instruction::F32ConvertI32U,
-        "i32_clz" => Instruction::I32Clz,
-        "i32_ctz" => Instruction::I32Ctz,
-        "i32_popcnt" => Instruction::I32Popcnt,
-        "i32_rotl" => Instruction::I32Rotl,
-        "i32_rotr" => Instruction::I32Rotr,
-        "i32_and" => Instruction::I32And,
-        "i32_or" => Instruction::I32Or,
-        "i32_xor" => Instruction::I32Xor,
-        "i32_rem_s" => Instruction::I32RemS,
-        "i32_rem_u" => Instruction::I32RemU,
-        "i32_shl" => Instruction::I32Shl,
-        "i32_shr_u" => Instruction::I32ShrU,
-        "i32_shr_s" => Instruction::I32ShrS,
-        "i32_lt_u" => Instruction::I32LtU,
-        "i32_le_u" => Instruction::I32LeU,
-        "i32_trunc_f32_s" => Instruction::I32TruncF32S,
+        "f32_convert_i32" => Instruction::F32ConvertI32S,
+        "f32_convert_u32" => Instruction::F32ConvertI32U,
+
+        "i32_clz" | "u32_clz" => Instruction::I32Clz,
+        "i32_ctz" | "u32_ctz" => Instruction::I32Ctz,
+        "i32_popcnt" | "u32_popcnt" => Instruction::I32Popcnt,
+        "i32_rotl" | "u32_rotl" => Instruction::I32Rotl,
+        "i32_rotr" | "u32_rotr" => Instruction::I32Rotr,
+        "i32_and" | "u32_and" => Instruction::I32And,
+        "i32_or" | "u32_or" => Instruction::I32Or,
+        "i32_xor" | "u32_xor" => Instruction::I32Xor,
+        "i32_shl" | "u32_shl" => Instruction::I32Shl,
+
+        "i32_rem" => Instruction::I32RemS,
+        "u32_rem" => Instruction::I32RemU,
+        "i32_shr" => Instruction::I32ShrS,
+        "u32_shr" => Instruction::I32ShrU,
+
+        "i32_to_u32" | "u32_to_i32" => Instruction::Nop,
+
+        "u32_trunc_f32_s" => Instruction::I32TruncF32S,
         "i32_reinterpret_f32" => Instruction::I32ReinterpretF32,
         "array_len" => Instruction::ArrayLen,
         "array_new" => unreachable!("array_new needs special handling"),

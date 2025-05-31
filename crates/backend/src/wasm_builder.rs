@@ -486,7 +486,7 @@ impl<'a> Builder<'a> {
     pub fn val_ty(&mut self, ty: &Ty) -> ValType {
         match ty {
             Ty::F32 => ValType::F32,
-            Ty::I32 | Ty::Unit | Ty::Bool => ValType::I32,
+            Ty::I32 | Ty::U32 | Ty::Unit | Ty::Bool => ValType::I32,
             Ty::Bytes => {
                 let idx = self.bytes_ty();
                 ValType::Ref(RefType {

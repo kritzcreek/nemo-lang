@@ -4,5 +4,5 @@ fn func(x : I32) -> I32 {
 
 fn main() -> I32 {
   func(1, 2, 3);
-  i32_rem_s(1, 2, 3);
+  i32_rem(1, 2, 3);
 }

@@ -290,6 +290,15 @@ impl TyInt {
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct TyUInt {
+    pub(crate) syntax: SyntaxNode,
+}
+impl TyUInt {
+    pub fn u32_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![U32])
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TyFloat {
     pub(crate) syntax: SyntaxNode,
 }
@@ -818,6 +827,7 @@ pub enum ModExport {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Type {
     TyInt(TyInt),
+    TyUInt(TyUInt),
     TyFloat(TyFloat),
     TyBool(TyBool),
     TyBytes(TyBytes),
@@ -1156,6 +1166,21 @@ impl AstNode for Param {
 impl AstNode for TyInt {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == TyInt
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+impl AstNode for TyUInt {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == TyUInt
     }
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         if Self::can_cast(syntax.kind()) {
@@ -1835,6 +1860,11 @@ impl From<TyInt> for Type {
         Type::TyInt(node)
     }
 }
+impl From<TyUInt> for Type {
+    fn from(node: TyUInt) -> Type {
+        Type::TyUInt(node)
+    }
+}
 impl From<TyFloat> for Type {
     fn from(node: TyFloat) -> Type {
         Type::TyFloat(node)
@@ -1873,13 +1903,14 @@ impl From<TyFn> for Type {
 impl AstNode for Type {
     fn can_cast(kind: SyntaxKind) -> bool {
         match kind {
-            TyInt | TyFloat | TyBool | TyBytes | TyUnit | TyVar | TyCons | TyFn => true,
+            TyInt | TyUInt | TyFloat | TyBool | TyBytes | TyUnit | TyVar | TyCons | TyFn => true,
             _ => false,
         }
     }
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         let res = match syntax.kind() {
             TyInt => Type::TyInt(TyInt { syntax }),
+            TyUInt => Type::TyUInt(TyUInt { syntax }),
             TyFloat => Type::TyFloat(TyFloat { syntax }),
             TyBool => Type::TyBool(TyBool { syntax }),
             TyBytes => Type::TyBytes(TyBytes { syntax }),
@@ -1894,6 +1925,7 @@ impl AstNode for Type {
     fn syntax(&self) -> &SyntaxNode {
         match self {
             Type::TyInt(it) => &it.syntax,
+            Type::TyUInt(it) => &it.syntax,
             Type::TyFloat(it) => &it.syntax,
             Type::TyBool(it) => &it.syntax,
             Type::TyBytes(it) => &it.syntax,
@@ -2320,6 +2352,11 @@ impl std::fmt::Display for Param {
     }
 }
 impl std::fmt::Display for TyInt {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for TyUInt {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
     }

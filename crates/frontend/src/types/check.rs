@@ -656,6 +656,7 @@ impl Typechecker<'_> {
     fn check_ty(&self, errors: &mut TyErrors, scope: &mut Scope, ty: &Type) -> Ty {
         match ty {
             Type::TyInt(_) => Ty::I32,
+            Type::TyUInt(_) => Ty::U32,
             Type::TyFloat(_) => Ty::F32,
             Type::TyBool(_) => Ty::Bool,
             Type::TyUnit(_) => Ty::Unit,
@@ -835,20 +836,40 @@ impl Typechecker<'_> {
                 }
             }
             Literal::LitInt(l) => {
-                let int = if let Some(tkn) = l.int_lit_token() {
-                    tkn.text().parse()
+                let mut is_signed = true;
+                let lit_data = if let Some(tkn) = l.int_lit_token() {
+                    let text = tkn.text();
+                    if let Some(text) = text.strip_suffix("u") {
+                        is_signed = false;
+                        text.parse().map(ir::LitData::U32)
+                    } else {
+                        text.parse().map(ir::LitData::I32)
+                    }
                 } else if let Some(tkn) = l.binary_lit_token() {
-                    i32::from_str_radix(tkn.text().strip_prefix("0b").unwrap(), 2)
+                    let text = tkn.text().strip_prefix("0b").unwrap();
+                    if let Some(text) = text.strip_suffix("u") {
+                        is_signed = false;
+                        u32::from_str_radix(text, 2).map(ir::LitData::U32)
+                    } else {
+                        i32::from_str_radix(text, 2).map(ir::LitData::I32)
+                    }
                 } else if let Some(tkn) = l.hex_lit_token() {
-                    i32::from_str_radix(tkn.text().strip_prefix("0x").unwrap(), 16)
+                    let text = tkn.text().strip_prefix("0x").unwrap();
+                    if let Some(text) = text.strip_suffix("u") {
+                        is_signed = false;
+                        u32::from_str_radix(text, 16).map(ir::LitData::U32)
+                    } else {
+                        i32::from_str_radix(text, 16).map(ir::LitData::I32)
+                    }
                 } else {
                     panic!("No token for int literal");
                 };
-                if let Ok(int) = int {
-                    (Ty::I32, Some(ir::LitData::I32(int)))
+                let ty = if is_signed { Ty::I32 } else { Ty::U32 };
+                if let Ok(lit_data) = lit_data {
+                    (ty, Some(lit_data))
                 } else {
                     errors.report(l, InvalidLiteral);
-                    (Ty::I32, None)
+                    (ty, None)
                 }
             }
             Literal::LitBytes(s) => {
@@ -2099,6 +2120,17 @@ fn check_op(op: &SyntaxToken, ty_left: &Ty, ty_right: &Ty) -> Option<(ir::OpData
         (T![>=], Ty::I32, Ty::I32) => (ir::OpData::I32Ge, Ty::Bool),
         (T![==], Ty::I32, Ty::I32) => (ir::OpData::I32Eq, Ty::Bool),
         (T![!=], Ty::I32, Ty::I32) => (ir::OpData::I32Ne, Ty::Bool),
+
+        (T![+], Ty::U32, Ty::U32) => (ir::OpData::U32Add, Ty::U32),
+        (T![-], Ty::U32, Ty::U32) => (ir::OpData::U32Sub, Ty::U32),
+        (T![*], Ty::U32, Ty::U32) => (ir::OpData::U32Mul, Ty::U32),
+        (T![/], Ty::U32, Ty::U32) => (ir::OpData::U32Div, Ty::U32),
+        (T![<], Ty::U32, Ty::U32) => (ir::OpData::U32Lt, Ty::Bool),
+        (T![<=], Ty::U32, Ty::U32) => (ir::OpData::U32Le, Ty::Bool),
+        (T![>], Ty::U32, Ty::U32) => (ir::OpData::U32Gt, Ty::Bool),
+        (T![>=], Ty::U32, Ty::U32) => (ir::OpData::U32Ge, Ty::Bool),
+        (T![==], Ty::U32, Ty::U32) => (ir::OpData::U32Eq, Ty::Bool),
+        (T![!=], Ty::U32, Ty::U32) => (ir::OpData::U32Ne, Ty::Bool),
 
         (T![+], Ty::F32, Ty::F32) => (ir::OpData::F32Add, Ty::F32),
         (T![-], Ty::F32, Ty::F32) => (ir::OpData::F32Sub, Ty::F32),

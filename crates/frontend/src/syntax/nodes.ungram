@@ -38,6 +38,7 @@ ParamTy = 'ident'
 // Types
 Type
   = TyInt
+  | TyUInt
   | TyFloat
   | TyBool
   | TyBytes
@@ -47,6 +48,7 @@ Type
   | TyFn
 
 TyInt = 'I32'
+TyUInt = 'U32'
 TyFloat = 'F32'
 TyBool = 'Bool'
 TyBytes = 'Bytes'

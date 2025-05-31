@@ -13,6 +13,7 @@ use text_size::TextRange;
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub enum Ty {
     I32,
+    U32,
     F32,
     Unit,
     Bool,
@@ -35,7 +36,14 @@ impl Ty {
 
     fn vars_inner(&self, acc: &mut HashSet<Name>) {
         match self {
-            Ty::I32 | Ty::F32 | Ty::Unit | Ty::Bool | Ty::Bytes | Ty::Error | Ty::Diverge => {}
+            Ty::I32
+            | Ty::U32
+            | Ty::F32
+            | Ty::Unit
+            | Ty::Bool
+            | Ty::Bytes
+            | Ty::Error
+            | Ty::Diverge => {}
             Ty::Array(t) => t.vars_inner(acc),
             Ty::Cons { name: _, ty_args } => {
                 for ty in ty_args.0.values() {
@@ -70,6 +78,7 @@ impl fmt::Display for TyDisplay<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.ty {
             Ty::I32 => write!(f, "I32"),
+            Ty::U32 => write!(f, "U32"),
             Ty::F32 => write!(f, "F32"),
             Ty::Bool => write!(f, "Bool"),
             Ty::Unit => write!(f, "Unit"),
@@ -166,7 +175,14 @@ impl Substitution {
         }
         match ty {
             Ty::Var(n) => self.0.get(&n).cloned().unwrap_or(ty),
-            Ty::I32 | Ty::F32 | Ty::Unit | Ty::Bool | Ty::Bytes | Ty::Error | Ty::Diverge => ty,
+            Ty::I32
+            | Ty::U32
+            | Ty::F32
+            | Ty::Unit
+            | Ty::Bool
+            | Ty::Bytes
+            | Ty::Error
+            | Ty::Diverge => ty,
             Ty::Array(t) => Ty::Array(Box::new(self.apply(*t))),
             Ty::Func(f) => Ty::Func(Box::new(self.apply_func(*f))),
             Ty::Cons { name, ty_args } => Ty::Cons {
@@ -236,6 +252,17 @@ pub enum OpData {
     I32Eq,
     I32Ne,
 
+    U32Add,
+    U32Sub,
+    U32Mul,
+    U32Div,
+    U32Lt,
+    U32Gt,
+    U32Le,
+    U32Ge,
+    U32Eq,
+    U32Ne,
+
     F32Add,
     F32Sub,
     F32Mul,
@@ -263,6 +290,7 @@ pub struct Lit {
 #[derive(Debug, PartialEq, Clone)]
 pub enum LitData {
     I32(i32),
+    U32(u32),
     F32(f32),
     Bool(bool),
     Bytes(String),

@@ -1,37 +1,37 @@
 module hash
 exports (FnvHasher, newHasher, write, write_i32, hash_i32, hash_bytes)
 
-global fnv_prime = 16777619
-// 2166136261 as a signed integer
-global fnv_offset_basis = 0 - 2128831035
+global fnv_prime = 16777619u
+global fnv_offset_basis = 2166136261u
 
 // http://www.isthe.com/chongo/tech/comp/fnv/#FNV-1a
-fn fnv_1a(hash : I32, input : Bytes) -> I32 {
+fn fnv_1a(hash : U32, input : Bytes) -> U32 {
   let len = bytes_len(input);
   let i = 0;
   while i < len {
-    set hash = i32_xor(hash, bytes_get(input, i)) * fnv_prime;
+    set hash = u32_xor(hash, i32_to_u32(bytes_get(input, i))) * fnv_prime;
     set i = i + 1;
   };
   hash
 }
 
-fn fnv_1a_i32(hash : I32, input : I32) -> I32 {
-  set hash = i32_xor(hash, i32_and(input, 0xFF)) * fnv_prime;
-  set hash = i32_xor(hash, i32_and(i32_shr_u(input, 8), 0xFF)) * fnv_prime;
-  set hash = i32_xor(hash, i32_and(i32_shr_u(input, 16), 0xFF)) * fnv_prime;
-  i32_xor(hash, i32_shr_u(input, 24)) * fnv_prime
+fn fnv_1a_i32(hash : U32, input : I32) -> U32 {
+  let input = i32_to_u32(input);
+  set hash = u32_xor(hash, u32_and(input, 0xFFu)) * fnv_prime;
+  set hash = u32_xor(hash, u32_and(u32_shr(input, 8u), 0xFFu)) * fnv_prime;
+  set hash = u32_xor(hash, u32_and(u32_shr(input, 16u), 0xFFu)) * fnv_prime;
+  u32_xor(hash, u32_shr(input, 24u)) * fnv_prime
 }
 
-fn hash_i32(i : I32) -> I32 {
+fn hash_i32(i : I32) -> U32 {
   fnv_1a_i32(fnv_offset_basis, i)
 }
 
-fn hash_bytes(i : Bytes) -> I32 {
+fn hash_bytes(i : Bytes) -> U32 {
   fnv_1a(fnv_offset_basis, i)
 }
 
-struct FnvHasher { hash : I32 }
+struct FnvHasher { hash : U32 }
 
 fn newHasher() -> FnvHasher {
   FnvHasher { hash = fnv_offset_basis }
