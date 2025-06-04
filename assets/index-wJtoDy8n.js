@@ -424,7 +424,7 @@ fn round(x : F32) -> I32 {
 }
 
 fn random_int(low : I32, high : I32) -> I32 {
-  let scaled = random() * f32_convert_i32_s(high - low);
+  let scaled = random() * f32_convert_i32(high - low);
   low + round(scaled)
 }
 `,gc=`// Shows how to use a variant type to implement a simple linked list
@@ -744,7 +744,7 @@ fn round(x : F32) -> I32 {
 }
 
 fn random_int(low : I32, high : I32) -> I32 {
-  let scaled = random() * f32_convert_i32_s(high - low);
+  let scaled = random() * f32_convert_i32(high - low);
   low + round(scaled)
 }
 import move_to : fn (F32, F32) -> Unit from move_to
@@ -759,8 +759,8 @@ import clear : fn () -> Unit from clear_canvas
 fn render_canvas(buckets: Array[I32]) {
   let i = 0;
   while i < array_len#[I32](buckets) {
-    let x = f32_convert_i32_s(i * 100);
-    let y = f32_convert_i32_s(buckets[i] * 50);
+    let x = f32_convert_i32(i * 100);
+    let y = f32_convert_i32(buckets[i] * 50);
     draw_rect(x, 500.0 - y, 100.0, y);
     set i = i + 1
   }
@@ -866,7 +866,7 @@ fn draw_stick(stick : Stick) {
 }
 
 fn rad(deg : I32) -> F32 {
- f32_convert_i32_s(deg) * two_pi / 360.0
+ f32_convert_i32(deg) * two_pi / 360.0
 }
 
 struct Vec2 {
