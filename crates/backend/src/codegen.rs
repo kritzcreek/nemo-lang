@@ -787,10 +787,11 @@ fn builtin_instruction(builtin: &str) -> Instruction<'static> {
         "u32_rem" => Instruction::I32RemU,
         "i32_shr" => Instruction::I32ShrS,
         "u32_shr" => Instruction::I32ShrU,
+        "i32_trunc_f32" => Instruction::I32TruncF32S,
+        "u32_trunc_f32" => Instruction::I32TruncF32U,
 
         "i32_to_u32" | "u32_to_i32" => Instruction::Nop,
 
-        "u32_trunc_f32_s" => Instruction::I32TruncF32S,
         "i32_reinterpret_f32" => Instruction::I32ReinterpretF32,
         "array_len" => Instruction::ArrayLen,
         "array_new" => unreachable!("array_new needs special handling"),

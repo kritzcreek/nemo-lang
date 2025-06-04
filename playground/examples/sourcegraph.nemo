@@ -95,7 +95,7 @@ fn tick_stick(stick : Stick, time : F32) {
     set stick.velocity.y = stick.velocity.y + (time * 500.0);
   } else {};
   tick_position(stick.position, stick.velocity, time);
-  set stick.degree = stick.degree + i32_trunc_f32_s(stick.turns_per_sec * 360.0 * time);
+  set stick.degree = stick.degree + i32_trunc_f32(stick.turns_per_sec * 360.0 * time);
 }
 
 fn zero_stick() -> Stick {

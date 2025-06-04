@@ -202,7 +202,7 @@ fn size_node[k, v](node : Node[k, v]) -> I32 {
 
 fn round(x : F32) -> I32 {
   let y = x + 0.5;
-  i32_trunc_f32_s(y)
+  i32_trunc_f32(y)
 }
 
 fn random_int(low : I32, high : I32) -> I32 {
