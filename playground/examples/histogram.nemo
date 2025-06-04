@@ -53,7 +53,7 @@ import random : fn () -> F32 from random
 
 fn round(x : F32) -> I32 {
   let y = x + 0.5;
-  i32_trunc_f32_s(y)
+  i32_trunc_f32(y)
 }
 
 fn random_int(low : I32, high : I32) -> I32 {
