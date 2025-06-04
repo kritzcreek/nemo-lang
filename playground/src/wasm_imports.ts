@@ -80,6 +80,16 @@ function setupWasmImports(): WebAssembly.Imports {
     console.log(x);
   }
 
+  function log_int(x: any) {
+    consoleBuffer += x + "\n";
+    console.log(x);
+  }
+
+  function log_float(x: any) {
+    consoleBuffer += x + "\n";
+    console.log(x);
+  }
+
   function random(): number {
     return Math.random();
   }
@@ -93,6 +103,8 @@ function setupWasmImports(): WebAssembly.Imports {
   const imports = {
     env: {
       log,
+      log_int,
+      log_float,
       print_char,
       random,
       clear_canvas,
