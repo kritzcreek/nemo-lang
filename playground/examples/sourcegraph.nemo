@@ -58,7 +58,7 @@ fn draw_stick(stick : Stick) {
 }
 
 fn rad(deg : I32) -> F32 {
- f32_convert_i32_s(deg) * two_pi / 360.0
+ f32_convert_i32(deg) * two_pi / 360.0
 }
 
 struct Vec2 {

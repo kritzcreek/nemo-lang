@@ -206,6 +206,6 @@ fn round(x : F32) -> I32 {
 }
 
 fn random_int(low : I32, high : I32) -> I32 {
-  let scaled = random() * f32_convert_i32_s(high - low);
+  let scaled = random() * f32_convert_i32(high - low);
   low + round(scaled)
 }
