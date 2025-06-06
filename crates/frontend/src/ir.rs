@@ -377,6 +377,9 @@ impl Expr {
                         free_vars_inner(current, arg)
                     }
                 }
+                ExprData::Unary { op: _, expr } => {
+                    free_vars_inner(current, expr);
+                }
                 ExprData::Binary { op: _, left, right } => {
                     free_vars_inner(current, left);
                     free_vars_inner(current, right);
@@ -491,6 +494,10 @@ pub enum ExprData {
     Call {
         func: Callee,
         arguments: Vec<Expr>,
+    },
+    Unary {
+        op: Op,
+        expr: Expr,
     },
     Binary {
         op: Op,

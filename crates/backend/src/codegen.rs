@@ -239,6 +239,23 @@ impl<'a> Codegen<'a> {
                 }
                 instrs
             }
+            ExprData::Unary { op, expr } => {
+                let mut instrs = self.compile_expr(body, expr);
+                match op.it {
+                    OpData::I32Sub => {
+                        instrs.push(Instruction::I32Const(-1));
+                        instrs.push(Instruction::I32Xor);
+                    }
+                    OpData::F32Sub => {
+                        instrs.push(Instruction::F32Neg);
+                    }
+                    OpData::I32Add | OpData::F32Add => {}
+                    _ => {
+                        panic!("Unknown unary operator in backend: {op:?}");
+                    }
+                }
+                instrs
+            }
             ExprData::Binary { op, left, right } => {
                 let mut instrs = self.compile_expr(body, left);
                 // BoolOr and BoolAnd get compiled to ifs because their second

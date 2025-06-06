@@ -1,7 +1,10 @@
 use crate::syntax::{SyntaxKind, SyntaxNode, SyntaxNodeChildren, SyntaxToken};
 use std::marker::PhantomData;
 
-use super::nodes::{EArrayIdx, EBinary, EIf, Expr};
+use super::{
+    nodes::{EArrayIdx, EBinary, EIf, Expr},
+    EUnary,
+};
 
 /// The main trait to go from untyped `SyntaxNode`  to a typed ast. The
 /// conversion itself has zero runtime cost: ast and syntax nodes have exactly
@@ -90,6 +93,22 @@ impl EIf {
 impl EArrayIdx {
     pub(crate) fn index(&self) -> Option<Expr> {
         support::children(self.syntax()).nth(1)
+    }
+}
+impl EUnary {
+    pub(crate) fn op(&self) -> Option<SyntaxToken> {
+        self.syntax()
+            .children()
+            .find(|n| n.kind() == SyntaxKind::UnOp)?
+            .children_with_tokens()
+            .find_map(|t| {
+                let tkn = t.as_token()?;
+                if tkn.kind().is_whitespace() {
+                    None
+                } else {
+                    Some(tkn.clone())
+                }
+            })
     }
 }
 
