@@ -642,6 +642,15 @@ fn atom(p: &mut Parser) -> Progress {
         return Progress::Made;
     }
 
+    if p.eat(T![-]) {
+        p.finish_at(c, SyntaxKind::UnOp);
+        if !atom(p).made_progress() {
+            p.error("expected an expression")
+        }
+        p.finish_at(c, SyntaxKind::EUnary);
+        return Progress::Made;
+    }
+
     if p.eat(T!['(']) {
         if !expr(p).made_progress() {
             p.error("expected an expression")

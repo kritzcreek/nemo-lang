@@ -1034,6 +1034,28 @@ impl Typechecker<'_> {
                 builder.index(Some(field_name));
                 (ty, builder.build())
             }
+            Expr::EUnary(un_expr) => {
+                let mut builder = ir::UnaryBuilder::default();
+                let (expr_ty, expr_ir) = self.infer_expr(errors, scope, &un_expr.expr()?);
+                builder.expr(expr_ir);
+                let op_tkn = un_expr.op()?;
+                match check_un_op(&op_tkn, &expr_ty) {
+                    None => {
+                        errors.report(
+                            &op_tkn,
+                            InvalidUnaryOperator(op_tkn.text().to_string(), expr_ty),
+                        );
+                        return None;
+                    }
+                    Some((op_data, ty)) => {
+                        builder.op(Some(ir::Op {
+                            it: op_data,
+                            at: op_tkn.text_range(),
+                        }));
+                        (ty, builder.build())
+                    }
+                }
+            }
             Expr::EBinary(bin_expr) => {
                 let mut builder = ir::BinaryBuilder::default();
                 let (lhs_ty, lhs_ir) = self.infer_expr(errors, scope, &bin_expr.lhs()?);
@@ -2106,6 +2128,15 @@ impl Typechecker<'_> {
             None
         }
     }
+}
+
+fn check_un_op(op: &SyntaxToken, ty: &Ty) -> Option<(ir::OpData, Ty)> {
+    let op_data = match (op.kind(), ty) {
+        (T![+], Ty::I32) => (ir::OpData::I32Add, Ty::I32),
+        (T![-], Ty::I32) => (ir::OpData::I32Sub, Ty::I32),
+        _ => return None,
+    };
+    Some(op_data)
 }
 
 fn check_op(op: &SyntaxToken, ty_left: &Ty, ty_right: &Ty) -> Option<(ir::OpData, Ty)> {

@@ -78,6 +78,7 @@ Expr
   | EStruct
   | ECall
   | EParen
+  | EUnary
   | EBinary
   | EArrayIdx
   | EStructIdx
@@ -97,6 +98,7 @@ ECall = Expr ETyArgList? EArgList
 EArgList = '(' Expr* ')'
 ETyArgList = Type*
 
+EUnary = op:('+' | '-') Expr
 EBinary = lhs:Expr op:('+' | '-') rhs:Expr
 
 EStruct = ModQualifier? Qualifier? 'upper_ident' ETyArgList? '{' EStructField* '}'

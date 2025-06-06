@@ -114,8 +114,7 @@ fn add[a](hamt : Hamt[a], hash : U32, value : a) -> option::Option[a] {
       let n = get_result.anchor;
       let pos = bitpos(hash, get_result.shift);
       let ix = index(n.bitmap, pos);
-      let new_node = merge_leafs(get_result.shift + 5u, c.node, hash, value);
-      set n.nodes[ix] = new_node;
+      set n.nodes[ix] = merge_leafs(get_result.shift + 5u, c.node, hash, value);
       option::Option::None {};
     },
     GetResultPayload::Success s => {

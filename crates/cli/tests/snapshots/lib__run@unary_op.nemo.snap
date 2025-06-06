@@ -1,0 +1,10 @@
+---
+source: crates/cli/tests/lib.rs
+expression: output
+input_file: crates/cli/tests/run/unary_op.nemo
+---
+Success: 0
+-2
+-2
+-11
+-21

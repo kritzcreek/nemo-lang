@@ -557,6 +557,15 @@ impl EParen {
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct EUnary {
+    pub(crate) syntax: SyntaxNode,
+}
+impl EUnary {
+    pub fn expr(&self) -> Option<Expr> {
+        support::child(&self.syntax)
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EBinary {
     pub(crate) syntax: SyntaxNode,
 }
@@ -844,6 +853,7 @@ pub enum Expr {
     EStruct(EStruct),
     ECall(ECall),
     EParen(EParen),
+    EUnary(EUnary),
     EBinary(EBinary),
     EArrayIdx(EArrayIdx),
     EStructIdx(EStructIdx),
@@ -1493,6 +1503,21 @@ impl AstNode for EParen {
         &self.syntax
     }
 }
+impl AstNode for EUnary {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == EUnary
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
 impl AstNode for EBinary {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == EBinary
@@ -1966,6 +1991,11 @@ impl From<EParen> for Expr {
         Expr::EParen(node)
     }
 }
+impl From<EUnary> for Expr {
+    fn from(node: EUnary) -> Expr {
+        Expr::EUnary(node)
+    }
+}
 impl From<EBinary> for Expr {
     fn from(node: EBinary) -> Expr {
         Expr::EBinary(node)
@@ -2009,8 +2039,8 @@ impl From<EReturn> for Expr {
 impl AstNode for Expr {
     fn can_cast(kind: SyntaxKind) -> bool {
         match kind {
-            ELit | EVar | EArray | EStruct | ECall | EParen | EBinary | EArrayIdx | EStructIdx
-            | EIf | EMatch | ELambda | EBlock | EReturn => true,
+            ELit | EVar | EArray | EStruct | ECall | EParen | EUnary | EBinary | EArrayIdx
+            | EStructIdx | EIf | EMatch | ELambda | EBlock | EReturn => true,
             _ => false,
         }
     }
@@ -2022,6 +2052,7 @@ impl AstNode for Expr {
             EStruct => Expr::EStruct(EStruct { syntax }),
             ECall => Expr::ECall(ECall { syntax }),
             EParen => Expr::EParen(EParen { syntax }),
+            EUnary => Expr::EUnary(EUnary { syntax }),
             EBinary => Expr::EBinary(EBinary { syntax }),
             EArrayIdx => Expr::EArrayIdx(EArrayIdx { syntax }),
             EStructIdx => Expr::EStructIdx(EStructIdx { syntax }),
@@ -2042,6 +2073,7 @@ impl AstNode for Expr {
             Expr::EStruct(it) => &it.syntax,
             Expr::ECall(it) => &it.syntax,
             Expr::EParen(it) => &it.syntax,
+            Expr::EUnary(it) => &it.syntax,
             Expr::EBinary(it) => &it.syntax,
             Expr::EArrayIdx(it) => &it.syntax,
             Expr::EStructIdx(it) => &it.syntax,
@@ -2457,6 +2489,11 @@ impl std::fmt::Display for ECall {
     }
 }
 impl std::fmt::Display for EParen {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for EUnary {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
     }

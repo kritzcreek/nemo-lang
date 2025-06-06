@@ -90,6 +90,9 @@ impl Formatter<'_> {
                 elems.extend(arguments.iter().map(|e| self.expr(e)));
                 Value::list(elems)
             }
+            ExprData::Unary { op, expr } => {
+                Value::list(vec![Value::symbol(format!("{:?}", op.it)), self.expr(expr)])
+            }
             ExprData::Binary { op, left, right } => Value::list(vec![
                 Value::symbol(format!("{:?}", op.it)),
                 self.expr(left),

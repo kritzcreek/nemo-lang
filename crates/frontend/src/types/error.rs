@@ -126,6 +126,7 @@ pub enum TyErrorData {
     TypeParamInVariantStruct,
     CantReturnFromGlobal,
     InvalidOperator(String, Ty, Ty),
+    InvalidUnaryOperator(String, Ty),
     UnknownVar(String),
     UnknownFunction(String),
     UnknownType(String),
@@ -173,6 +174,7 @@ fn code_for_error(err_data: &TyErrorData) -> i32 {
         TyErrorData::MissingNode(_) => 1,
         TyErrorData::InvalidLiteral => 2,
         TyErrorData::InvalidOperator(_, _, _) => 3,
+        TyErrorData::InvalidUnaryOperator(_, _) => 4,
         TyErrorData::UnknownVar(_) => 5,
         TyErrorData::UnknownFunction(_) => 6,
         TyErrorData::UnknownType(_) => 7,
@@ -207,6 +209,7 @@ fn error_label(err_data: &TyErrorData, ctx: &Ctx) -> String {
             lhs.display(ctx),
             rhs.display(ctx)
         ),
+        TyErrorData::InvalidUnaryOperator(op, ty) => format!("Invalid operator {} for expression of type {}", op, ty.display(ctx)),
         TyErrorData::CantInferEmptyArray => "Can't infer type of an empty array".to_string(),
         TyErrorData::CantInferLambda => "Can't infer type of unannotated lambda".to_string(),
         TyErrorData::CantInstantiateFunctionRef => "Can't instantiate function reference. Only top-level functions may be polymorphic at this time.".to_string(),
