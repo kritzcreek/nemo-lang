@@ -1048,7 +1048,7 @@ impl Typechecker<'_> {
                         return None;
                     }
                     Some((op_data, ty)) => {
-                        builder.op(Some(ir::Op {
+                        builder.op(Some(ir::UnOp {
                             it: op_data,
                             at: op_tkn.text_range(),
                         }));
@@ -2130,10 +2130,12 @@ impl Typechecker<'_> {
     }
 }
 
-fn check_un_op(op: &SyntaxToken, ty: &Ty) -> Option<(ir::OpData, Ty)> {
+fn check_un_op(op: &SyntaxToken, ty: &Ty) -> Option<(ir::UnOpData, Ty)> {
     let op_data = match (op.kind(), ty) {
-        (T![+], Ty::I32) => (ir::OpData::I32Add, Ty::I32),
-        (T![-], Ty::I32) => (ir::OpData::I32Sub, Ty::I32),
+        (T![-], Ty::I32) => (ir::UnOpData::I32Neg, Ty::I32),
+        (T![-], Ty::F32) => (ir::UnOpData::F32Neg, Ty::F32),
+        (T![^], Ty::I32) => (ir::UnOpData::I32Not, Ty::I32),
+        (T![^], Ty::U32) => (ir::UnOpData::U32Not, Ty::U32),
         _ => return None,
     };
     Some(op_data)
@@ -2145,6 +2147,8 @@ fn check_op(op: &SyntaxToken, ty_left: &Ty, ty_right: &Ty) -> Option<(ir::OpData
         (T![-], Ty::I32, Ty::I32) => (ir::OpData::I32Sub, Ty::I32),
         (T![*], Ty::I32, Ty::I32) => (ir::OpData::I32Mul, Ty::I32),
         (T![/], Ty::I32, Ty::I32) => (ir::OpData::I32Div, Ty::I32),
+        (T![<<], Ty::I32, Ty::I32) => (ir::OpData::I32Shl, Ty::I32),
+        (T![>>], Ty::I32, Ty::I32) => (ir::OpData::I32Shr, Ty::I32),
         (T![<], Ty::I32, Ty::I32) => (ir::OpData::I32Lt, Ty::Bool),
         (T![<=], Ty::I32, Ty::I32) => (ir::OpData::I32Le, Ty::Bool),
         (T![>], Ty::I32, Ty::I32) => (ir::OpData::I32Gt, Ty::Bool),
@@ -2156,6 +2160,8 @@ fn check_op(op: &SyntaxToken, ty_left: &Ty, ty_right: &Ty) -> Option<(ir::OpData
         (T![-], Ty::U32, Ty::U32) => (ir::OpData::U32Sub, Ty::U32),
         (T![*], Ty::U32, Ty::U32) => (ir::OpData::U32Mul, Ty::U32),
         (T![/], Ty::U32, Ty::U32) => (ir::OpData::U32Div, Ty::U32),
+        (T![<<], Ty::U32, Ty::U32) => (ir::OpData::U32Shl, Ty::U32),
+        (T![>>], Ty::U32, Ty::U32) => (ir::OpData::U32Shr, Ty::U32),
         (T![<], Ty::U32, Ty::U32) => (ir::OpData::U32Lt, Ty::Bool),
         (T![<=], Ty::U32, Ty::U32) => (ir::OpData::U32Le, Ty::Bool),
         (T![>], Ty::U32, Ty::U32) => (ir::OpData::U32Gt, Ty::Bool),

@@ -4,7 +4,13 @@ expression: output
 input_file: crates/cli/tests/run/unary_op.nemo
 ---
 Success: 0
--2
--2
+-1
+-1
+-10
+-20
+20
+5
 -11
--21
+2
+0
+-2
