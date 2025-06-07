@@ -7,14 +7,14 @@ use string
 
 fn print_hash(hash : U32) -> string::Str {
   let chars : vec::Vec[I32] = vec::new(0);
-  let i = 0;
-  while i < 32 {
-    if i != 0 && u32_rem(i32_to_u32(i), 5u) == 0u {
+  let i = 0u;
+  while i < 32u {
+    if i != 0u && i % 5u == 0u {
       vec::push(chars, 95)
     } else {};
-    if u32_and(hash, 1u) == 0u { vec::push(chars, 48) } else { vec::push(chars, 49) };
-    set hash = u32_shr(hash, 1u);
-    set i = i + 1;
+    if hash & 1u == 0u { vec::push(chars, 48) } else { vec::push(chars, 49) };
+    set hash = hash >> 1u;
+    set i = i + 1u;
   };
 
   let char_count = chars.len;
@@ -31,8 +31,8 @@ fn print_bitmap(bitmap : U32) -> string::Str {
   let chars : vec::Vec[I32] = vec::new(0);
   let i = 0;
   while i < 32 {
-    if u32_and(bitmap, 1u) == 0u { vec::push(chars, 48) } else { vec::push(chars, 49) };
-    set bitmap = u32_shr(bitmap, 1u);
+    if bitmap & 1u == 0u { vec::push(chars, 48) } else { vec::push(chars, 49) };
+    set bitmap = bitmap >> 1u;
     set i = i + 1;
   };
 
@@ -104,7 +104,7 @@ fn add[a](hamt : Hamt[a], hash : U32, value : a) -> option::Option[a] {
       set hamt.size = hamt.size + 1;
       let n = get_result.anchor;
       let pos = bitpos(hash, get_result.shift);
-      set n.bitmap = u32_or(n.bitmap, pos);
+      set n.bitmap = n.bitmap | pos;
       let ix = index(n.bitmap, pos);
       set n.nodes = insert_node(n.nodes, ix, Node::Leaf { hash = hash, value = value });
       option::Option::None {};
@@ -182,22 +182,22 @@ fn values_node[a](vec : vec::Vec[a], node : Node[a]) {
 }
 
 fn mask(hash : U32, shift : U32) -> U32 {
-  u32_and(u32_shr(hash, shift), 31u)
+  hash >> shift & 31u
 }
 
 fn bitpos(hash : U32, shift : U32) -> U32 {
-   i32_shl(1, mask(hash, shift))
+   1u << mask(hash, shift)
 }
 
 fn index(bitmap : U32, pos : U32) -> I32 {
-  u32_to_i32(u32_popcnt(u32_and(bitmap, (pos - 1u))))
+  u32_to_i32(u32_popcnt(bitmap & (pos - 1u)))
 }
 
 fn merge_leafs[a](shift : U32, left : Node::Leaf[a], hash : U32, value : a) -> Node[a] {
   let next_pos1 = bitpos(left.hash, shift);
   let next_pos2 = bitpos(hash, shift);
   if next_pos1 != next_pos2 {
-    let bitmap = u32_or(next_pos1, next_pos2);
+    let bitmap = next_pos1 | next_pos2;
     let right = Node::Leaf { hash = hash, value = value };
     let nodes : Array[Node[a]] = if next_pos1 < next_pos2 {
       [left, right]
@@ -224,7 +224,7 @@ variant RemoveResult[a] {
 
 fn remove_rec[a](node : Node::Mapped[a], shift : U32, hash : U32) -> RemoveResult[a] {
   let pos = bitpos(hash, shift);
-  if u32_and(pos, node.bitmap) == 0u {
+  if pos & node.bitmap == 0u {
     return RemoveResult::NotFound {};
   } else {};
   let ix = index(node.bitmap, pos);
@@ -265,12 +265,12 @@ fn remove_rec[a](node : Node::Mapped[a], shift : U32, hash : U32) -> RemoveResul
             },
             _ => {},
           };
-          set node.bitmap = u32_and(node.bitmap, u32_xor(pos, 0u - 1u));
+          set node.bitmap = node.bitmap & ^pos);
           set node.nodes = [other];
           RemoveResult::Success { node = l };
         } else {
           let new_nodes = remove_node(node.nodes, ix);
-          set node.bitmap = u32_and(node.bitmap, u32_xor(pos, 0u - 1u));
+          set node.bitmap = node.bitmap & ^pos;
           set node.nodes = new_nodes;
           RemoveResult::Success { node = l };
         };
@@ -321,7 +321,7 @@ fn get_with_anchor[a](
   hash : U32,
 ) -> GetResult[a] {
   let pos = bitpos(hash, shift);
-  if u32_and(anchor.bitmap, pos) == 0u {
+  if anchor.bitmap & pos == 0u {
     GetResult {
       shift = shift,
       anchor = anchor,

@@ -232,6 +232,9 @@ pub enum SyntaxKind {
     #[token("/")]
     SLASH,
 
+    #[token("%")]
+    PERCENT,
+
     #[token("^")]
     CARET,
 
@@ -241,8 +244,14 @@ pub enum SyntaxKind {
     #[token("=")]
     EQUALS,
 
+    #[token("&")]
+    AND,
+
     #[token("&&")]
     ANDAND,
+
+    #[token("|")]
+    OR,
 
     #[token("||")]
     OROR,
@@ -270,9 +279,6 @@ pub enum SyntaxKind {
 
     #[token("}")]
     R_BRACE,
-
-    #[token("|")]
-    PIPE,
 
     #[token("#")]
     HASH,
@@ -436,7 +442,6 @@ macro_rules ! T {
     ['}'] => { SyntaxKind::R_BRACE };
     ['['] => { SyntaxKind::L_BRACKET };
     [']'] => { SyntaxKind::R_BRACKET };
-    [|] => { SyntaxKind::PIPE };
     [#] => { SyntaxKind::HASH };
     [<] => { SyntaxKind::L_ANGLE };
     [>] => { SyntaxKind::R_ANGLE };
@@ -449,7 +454,10 @@ macro_rules ! T {
     [^] => { SyntaxKind::CARET };
     [*] => { SyntaxKind::STAR };
     [/] => { SyntaxKind::SLASH };
+    [%] => { SyntaxKind::PERCENT };
+    [&] => { SyntaxKind::AND };
     [&&] => { SyntaxKind::ANDAND };
+    [|] => { SyntaxKind::OR };
     [||] => { SyntaxKind::OROR };
     [==] => { SyntaxKind::DOUBLE_EQUALS };
     [!=] => { SyntaxKind::NOT_EQUALS };
