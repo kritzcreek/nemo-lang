@@ -1,9 +1,18 @@
 import log : fn (I32) -> Unit from log
 
 fn main() {
-    log(-1);
-    log(1 + (-2));
-    let x = 10;
-    log(-x);
-    log(-(x + x));
+  log(-1);
+  log(1 + (-2));
+
+  let x = 10;
+  log(-x);
+  log(-(x + x));
+  log(x << 1);
+  log(x >> 1);
+  log(^x);
+
+  let u = 1u;
+  log(u32_to_i32(u << 1u));
+  log(u32_to_i32(u >> 1u));
+  log(u32_to_i32(^u));
 }

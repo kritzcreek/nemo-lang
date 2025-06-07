@@ -234,6 +234,20 @@ impl Substitution {
 }
 
 #[derive(Debug, PartialEq, Clone)]
+pub struct UnOp {
+    pub it: UnOpData,
+    pub at: TextRange,
+}
+
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
+pub enum UnOpData {
+    I32Neg,
+    F32Neg,
+    I32Not,
+    U32Not,
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub struct Op {
     pub it: OpData,
     pub at: TextRange,
@@ -245,6 +259,8 @@ pub enum OpData {
     I32Sub,
     I32Mul,
     I32Div,
+    I32Shl,
+    I32Shr,
     I32Lt,
     I32Gt,
     I32Le,
@@ -256,6 +272,8 @@ pub enum OpData {
     U32Sub,
     U32Mul,
     U32Div,
+    U32Shl,
+    U32Shr,
     U32Lt,
     U32Gt,
     U32Le,
@@ -496,7 +514,7 @@ pub enum ExprData {
         arguments: Vec<Expr>,
     },
     Unary {
-        op: Op,
+        op: UnOp,
         expr: Expr,
     },
     Binary {

@@ -5,7 +5,7 @@ use crate::wasm_builder::{BodyBuilder, Builder};
 use frontend::ir::{
     Callee, Ctx, Declaration, DeclarationData, Expr, ExprData, Func, Lit, LitData, ModuleId, Name,
     NameTag, Op, OpData, Pattern, PatternData, Program, SetTarget, SetTargetData, Substitution, Ty,
-    TypeDef,
+    TypeDef, UnOpData,
 };
 use text_size::TextRange;
 use wasm_encoder::{BlockType, ConstExpr, HeapType, Instruction, RefType, ValType};
@@ -104,6 +104,8 @@ impl<'a> Codegen<'a> {
             OpData::I32Sub => Instruction::I32Sub,
             OpData::I32Mul => Instruction::I32Mul,
             OpData::I32Div => Instruction::I32DivS,
+            OpData::I32Shl => Instruction::I32Shl,
+            OpData::I32Shr => Instruction::I32ShrS,
             OpData::I32Lt => Instruction::I32LtS,
             OpData::I32Gt => Instruction::I32GtS,
             OpData::I32Le => Instruction::I32LeS,
@@ -115,6 +117,8 @@ impl<'a> Codegen<'a> {
             OpData::U32Sub => Instruction::I32Sub,
             OpData::U32Mul => Instruction::I32Mul,
             OpData::U32Div => Instruction::I32DivU,
+            OpData::U32Shl => Instruction::I32Shl,
+            OpData::U32Shr => Instruction::I32ShrU,
             OpData::U32Lt => Instruction::I32LtU,
             OpData::U32Gt => Instruction::I32GtU,
             OpData::U32Le => Instruction::I32LeU,
@@ -240,18 +244,21 @@ impl<'a> Codegen<'a> {
                 instrs
             }
             ExprData::Unary { op, expr } => {
-                let mut instrs = self.compile_expr(body, expr);
+                let mut instrs = vec![];
                 match op.it {
-                    OpData::I32Sub => {
+                    UnOpData::I32Not | UnOpData::U32Not => {
+                        instrs.extend(self.compile_expr(body, expr));
                         instrs.push(Instruction::I32Const(-1));
                         instrs.push(Instruction::I32Xor);
+                    },
+                    UnOpData::I32Neg => {
+                        instrs.push(Instruction::I32Const(0));
+                        instrs.extend(self.compile_expr(body, expr));
+                        instrs.push(Instruction::I32Sub);
                     }
-                    OpData::F32Sub => {
+                    UnOpData::F32Neg => {
+                        instrs.extend(self.compile_expr(body, expr));
                         instrs.push(Instruction::F32Neg);
-                    }
-                    OpData::I32Add | OpData::F32Add => {}
-                    _ => {
-                        panic!("Unknown unary operator in backend: {op:?}");
                     }
                 }
                 instrs

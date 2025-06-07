@@ -232,6 +232,9 @@ pub enum SyntaxKind {
     #[token("/")]
     SLASH,
 
+    #[token("^")]
+    CARET,
+
     #[token("\\")]
     BACKSLASH,
 
@@ -285,6 +288,12 @@ pub enum SyntaxKind {
 
     #[token(">=")]
     R_ANGLE_EQ,
+
+    #[token("<<")]
+    DOUBLE_L_ANGLE,
+
+    #[token(">>")]
+    DOUBLE_R_ANGLE,
 
     #[token("::")]
     DOUBLE_COLON,
@@ -433,8 +442,11 @@ macro_rules ! T {
     [>] => { SyntaxKind::R_ANGLE };
     [<=] => { SyntaxKind::L_ANGLE_EQ };
     [>=] => { SyntaxKind::R_ANGLE_EQ };
+    [<<] => { SyntaxKind::DOUBLE_L_ANGLE };
+    [>>] => { SyntaxKind::DOUBLE_R_ANGLE };
     [+] => { SyntaxKind::PLUS };
     [-] => { SyntaxKind::MINUS };
+    [^] => { SyntaxKind::CARET };
     [*] => { SyntaxKind::STAR };
     [/] => { SyntaxKind::SLASH };
     [&&] => { SyntaxKind::ANDAND };

@@ -415,8 +415,9 @@ fn current_bin_op(p: &mut Parser) -> Option<(u32, SyntaxKind)> {
         T![&&] => Some((1, c)),
         T![||] => Some((2, c)),
         T![==] | T![!=] | T![<] | T![>] | T![<=] | T![>=] => Some((3, c)),
-        T![+] | T![-] => Some((4, c)),
-        T![*] | T![/] => Some((5, c)),
+        T![<<] | T![>>] => Some((4, c)),
+        T![+] | T![-] => Some((5, c)),
+        T![*] | T![/] => Some((6, c)),
         _ => None,
     }
 }
@@ -642,7 +643,7 @@ fn atom(p: &mut Parser) -> Progress {
         return Progress::Made;
     }
 
-    if p.eat(T![-]) {
+    if p.eat(T![-]) || p.eat(T![^]) {
         p.finish_at(c, SyntaxKind::UnOp);
         if !atom(p).made_progress() {
             p.error("expected an expression")
