@@ -265,7 +265,7 @@ fn remove_rec[a](node : Node::Mapped[a], shift : U32, hash : U32) -> RemoveResul
             },
             _ => {},
           };
-          set node.bitmap = node.bitmap & ^pos);
+          set node.bitmap = node.bitmap & ^pos;
           set node.nodes = [other];
           RemoveResult::Success { node = l };
         } else {
