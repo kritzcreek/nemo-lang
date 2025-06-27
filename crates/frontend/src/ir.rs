@@ -57,7 +57,9 @@ impl Ty {
                 for t in &func_ty.arguments {
                     t.vars_inner(acc)
                 }
-                func_ty.result.vars_inner(acc)
+                for t in &func_ty.results {
+                    t.vars_inner(acc)
+                }
             }
         }
     }
@@ -112,7 +114,7 @@ impl fmt::Display for TyDisplay<'_> {
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub struct FuncTy {
     pub arguments: Vec<Ty>,
-    pub result: Ty,
+    pub results: Vec<Ty>,
 }
 
 impl FuncTy {
@@ -137,7 +139,12 @@ impl fmt::Display for FuncTyDisplay<'_> {
                 .map(|a| format!("{}", a.display(self.ctx)))
                 .collect::<Vec<String>>()
                 .join(", "),
-            self.func_ty.result.display(self.ctx)
+            self.func_ty
+                .results
+                .iter()
+                .map(|a| format!("{}", a.display(self.ctx)))
+                .collect::<Vec<String>>()
+                .join(", "),
         )
     }
 }
@@ -198,7 +205,7 @@ impl Substitution {
         }
         FuncTy {
             arguments: ty.arguments.into_iter().map(|t| self.apply(t)).collect(),
-            result: self.apply(ty.result),
+            results: ty.results.into_iter().map(|t| self.apply(t)).collect(),
         }
     }
 
@@ -638,7 +645,7 @@ pub struct Func {
     pub name: Name,
     pub ty_params: Vec<Name>,
     pub params: Vec<(Name, Ty)>,
-    pub return_ty: Ty,
+    pub return_tys: Vec<Ty>,
     pub body: Expr,
 }
 
@@ -646,7 +653,7 @@ impl Func {
     pub fn func_ty(&self) -> FuncTy {
         FuncTy {
             arguments: self.params.iter().map(|(_, t)| t.clone()).collect(),
-            result: self.return_ty.clone(),
+            results: self.return_tys.clone(),
         }
     }
     pub fn is_monomorphic(&self) -> bool {

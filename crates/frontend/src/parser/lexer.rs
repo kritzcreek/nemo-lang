@@ -329,6 +329,7 @@ pub enum SyntaxKind {
     UnOp,
     BinOp,
     TyArgList,
+    TyResultList,
     EArgList,
     ETyArgList,
     Qualifier,

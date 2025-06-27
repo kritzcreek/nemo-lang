@@ -256,7 +256,7 @@ impl<'a> Codegen<'a> {
                         instrs.extend(self.compile_expr(body, expr));
                         instrs.push(Instruction::I32Const(-1));
                         instrs.push(Instruction::I32Xor);
-                    },
+                    }
                     UnOpData::I32Neg => {
                         instrs.push(Instruction::I32Const(0));
                         instrs.extend(self.compile_expr(body, expr));

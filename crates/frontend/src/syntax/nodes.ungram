@@ -30,7 +30,7 @@ StructField = 'ident' ':' Type
 
 TopVariant = 'variant' 'upper_ident' type_params:ParamTy* '{' TopStruct* '}'
 
-TopFn = 'fn' 'ident' ParamTy* ParamList ('->' Type)? body:EBlock
+TopFn = 'fn' 'ident' ParamTy* ParamList TyResultList body:EBlock
 ParamList = Param*
 Param = 'ident' ':' Type
 ParamTy = 'ident'
@@ -59,8 +59,9 @@ TyVar = 'ident'
 ModQualifier = 'ident' '::'
 Qualifier = 'upper_ident' '::'
 
-TyFn = 'fn' TyArgList '->' result:Type
+TyFn = 'fn' TyArgList '->' TyResultList
 TyArgList = '(' Type* ')'
+TyResultList = Type*
 
 // Literals
 Literal = LitBool | LitFloat | LitInt | LitBytes

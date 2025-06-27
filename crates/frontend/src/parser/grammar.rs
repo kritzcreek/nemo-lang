@@ -204,7 +204,7 @@ fn top_func(p: &mut Parser) {
     }
     typ_param_list(p);
     param_list(p, TypAnnot::Required);
-    if p.eat(T![->]) && !typ(p).made_progress() {
+    if p.eat(T![->]) && !ty_result_list(p).made_progress() {
         p.error("expected a return type")
     }
     if !block_expr(p).made_progress() {
@@ -251,6 +251,19 @@ fn param_list(p: &mut Parser, typ_annot_opt: TypAnnot) {
         // TODO recover
     }
     p.finish_at(c, SyntaxKind::ParamList);
+}
+
+fn ty_result_list(p: &mut Parser) -> Progress {
+    let c = p.checkpoint();
+    let mut progress = Progress::None;
+    while typ(p).made_progress() {
+        progress = Progress::Made;
+        if !p.eat(SyntaxKind::COMMA) {
+            break;
+        }
+    }
+    p.finish_at(c, SyntaxKind::TyResultList);
+    progress
 }
 
 fn qualifier(p: &mut Parser) -> Progress {
@@ -338,7 +351,7 @@ fn typ(p: &mut Parser) -> Progress {
             p.expect(T![')']);
             p.finish_at(c_arg, SyntaxKind::TyArgList);
             p.expect(T![->]);
-            if !typ(p).made_progress() {
+            if !ty_result_list(p).made_progress() {
                 p.error("expected a return type")
             }
             p.finish_at(c, SyntaxKind::TyFn)

@@ -14,7 +14,7 @@ fn f32_func_unary(name: &'static str) -> Fn {
         ty_params: vec![],
         ty: FuncTy {
             arguments: vec![Ty::F32],
-            result: Ty::F32,
+            results: vec![Ty::F32],
         },
     }
 }
@@ -25,7 +25,7 @@ fn f32_func_binary(name: &'static str) -> Fn {
         ty_params: vec![],
         ty: FuncTy {
             arguments: vec![Ty::F32, Ty::F32],
-            result: Ty::F32,
+            results: vec![Ty::F32],
         },
     }
 }
@@ -36,7 +36,7 @@ fn i32_func_unary(name: &'static str) -> Fn {
         ty_params: vec![],
         ty: FuncTy {
             arguments: vec![Ty::I32],
-            result: Ty::I32,
+            results: vec![Ty::I32],
         },
     }
 }
@@ -47,7 +47,7 @@ fn u32_func_unary(name: &'static str) -> Fn {
         ty_params: vec![],
         ty: FuncTy {
             arguments: vec![Ty::U32],
-            result: Ty::U32,
+            results: vec![Ty::U32],
         },
     }
 }
@@ -58,7 +58,7 @@ fn i32_func_binary(name: &'static str) -> Fn {
         ty_params: vec![],
         ty: FuncTy {
             arguments: vec![Ty::I32, Ty::I32],
-            result: Ty::I32,
+            results: vec![Ty::I32],
         },
     }
 }
@@ -69,7 +69,7 @@ fn u32_func_binary(name: &'static str) -> Fn {
         ty_params: vec![],
         ty: FuncTy {
             arguments: vec![Ty::U32, Ty::U32],
-            result: Ty::U32,
+            results: vec![Ty::U32],
         },
     }
 }
@@ -100,7 +100,7 @@ static BUILTINS: LazyLock<HashMap<&'static str, Fn>> = LazyLock::new(|| {
             ty_params: vec![],
             ty: FuncTy {
                 arguments: vec![Ty::I32],
-                result: Ty::F32,
+                results: vec![Ty::F32],
             },
         },
     );
@@ -111,7 +111,7 @@ static BUILTINS: LazyLock<HashMap<&'static str, Fn>> = LazyLock::new(|| {
             ty_params: vec![],
             ty: FuncTy {
                 arguments: vec![Ty::U32],
-                result: Ty::F32,
+                results: vec![Ty::F32],
             },
         },
     );
@@ -148,7 +148,7 @@ static BUILTINS: LazyLock<HashMap<&'static str, Fn>> = LazyLock::new(|| {
             ty_params: vec![],
             ty: FuncTy {
                 arguments: vec![Ty::F32],
-                result: Ty::I32,
+                results: vec![Ty::I32],
             },
         },
     );
@@ -159,7 +159,7 @@ static BUILTINS: LazyLock<HashMap<&'static str, Fn>> = LazyLock::new(|| {
             ty_params: vec![],
             ty: FuncTy {
                 arguments: vec![Ty::F32],
-                result: Ty::U32,
+                results: vec![Ty::U32],
             },
         },
     );
@@ -170,7 +170,7 @@ static BUILTINS: LazyLock<HashMap<&'static str, Fn>> = LazyLock::new(|| {
             ty_params: vec![],
             ty: FuncTy {
                 arguments: vec![Ty::F32],
-                result: Ty::I32,
+                results: vec![Ty::I32],
             },
         },
     );
@@ -181,7 +181,7 @@ static BUILTINS: LazyLock<HashMap<&'static str, Fn>> = LazyLock::new(|| {
             ty_params: vec![],
             ty: FuncTy {
                 arguments: vec![Ty::I32],
-                result: Ty::U32,
+                results: vec![Ty::U32],
             },
         },
     );
@@ -192,7 +192,7 @@ static BUILTINS: LazyLock<HashMap<&'static str, Fn>> = LazyLock::new(|| {
             ty_params: vec![],
             ty: FuncTy {
                 arguments: vec![Ty::U32],
-                result: Ty::I32,
+                results: vec![Ty::I32],
             },
         },
     );
@@ -203,7 +203,7 @@ static BUILTINS: LazyLock<HashMap<&'static str, Fn>> = LazyLock::new(|| {
             ty_params: vec![TODO_NAME],
             ty: FuncTy {
                 arguments: vec![Ty::Array(Box::new(Ty::Var(TODO_NAME)))],
-                result: Ty::I32,
+                results: vec![Ty::I32],
             },
         },
     );
@@ -214,7 +214,7 @@ static BUILTINS: LazyLock<HashMap<&'static str, Fn>> = LazyLock::new(|| {
             ty_params: vec![TODO_NAME],
             ty: FuncTy {
                 arguments: vec![Ty::Var(TODO_NAME), Ty::I32],
-                result: Ty::Array(Box::new(Ty::Var(TODO_NAME))),
+                results: vec![Ty::Array(Box::new(Ty::Var(TODO_NAME)))],
             },
         },
     );
@@ -231,7 +231,7 @@ static BUILTINS: LazyLock<HashMap<&'static str, Fn>> = LazyLock::new(|| {
                     Ty::I32,
                     Ty::I32,
                 ],
-                result: Ty::Unit,
+                results: vec![Ty::Unit],
             },
         },
     );
@@ -242,7 +242,7 @@ static BUILTINS: LazyLock<HashMap<&'static str, Fn>> = LazyLock::new(|| {
             ty_params: vec![],
             ty: FuncTy {
                 arguments: vec![Ty::Bytes, Ty::I32],
-                result: Ty::I32,
+                results: vec![Ty::I32],
             },
         },
     );
@@ -253,7 +253,7 @@ static BUILTINS: LazyLock<HashMap<&'static str, Fn>> = LazyLock::new(|| {
             ty_params: vec![],
             ty: FuncTy {
                 arguments: vec![Ty::Bytes, Ty::I32, Ty::I32],
-                result: Ty::Unit,
+                results: vec![Ty::Unit],
             },
         },
     );
@@ -264,7 +264,7 @@ static BUILTINS: LazyLock<HashMap<&'static str, Fn>> = LazyLock::new(|| {
             ty_params: vec![],
             ty: FuncTy {
                 arguments: vec![Ty::Bytes],
-                result: Ty::I32,
+                results: vec![Ty::I32],
             },
         },
     );
@@ -275,7 +275,7 @@ static BUILTINS: LazyLock<HashMap<&'static str, Fn>> = LazyLock::new(|| {
             ty_params: vec![],
             ty: FuncTy {
                 arguments: vec![Ty::I32, Ty::I32],
-                result: Ty::Bytes,
+                results: vec![Ty::Bytes],
             },
         },
     );
@@ -286,7 +286,7 @@ static BUILTINS: LazyLock<HashMap<&'static str, Fn>> = LazyLock::new(|| {
             ty_params: vec![],
             ty: FuncTy {
                 arguments: vec![Ty::Bytes, Ty::I32, Ty::Bytes, Ty::I32, Ty::I32],
-                result: Ty::Unit,
+                results: vec![Ty::Unit],
             },
         },
     );
