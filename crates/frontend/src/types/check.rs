@@ -30,7 +30,7 @@ use text_size::TextRange;
 struct Scope {
     values: Vec<HashMap<Symbol, (Ty, Name)>>,
     type_vars: HashMap<Symbol, Name>,
-    return_type: Option<Rc<Ty>>,
+    return_types: Option<Rc<Vec<Ty>>>,
 }
 
 impl Scope {
@@ -38,7 +38,7 @@ impl Scope {
         Scope {
             values: vec![],
             type_vars: HashMap::new(),
-            return_type: None,
+            return_types: None,
         }
     }
 
@@ -66,16 +66,16 @@ impl Scope {
         self.type_vars.clear()
     }
 
-    fn return_type(&self) -> Option<Rc<Ty>> {
-        self.return_type.clone()
+    fn return_types(&self) -> Option<Rc<Vec<Ty>>> {
+        self.return_types.clone()
     }
 
-    fn set_return_type(&mut self, ty: Ty) -> Option<Rc<Ty>> {
-        mem::replace(&mut self.return_type, Some(Rc::new(ty)))
+    fn set_return_types(&mut self, ty: Vec<Ty>) -> Option<Rc<Vec<Ty>>> {
+        mem::replace(&mut self.return_types, Some(Rc::new(ty)))
     }
 
-    fn restore_return_type(&mut self, ty: Option<Rc<Ty>>) {
-        self.return_type = ty
+    fn restore_return_type(&mut self, tys: Option<Rc<Vec<Ty>>>) {
+        self.return_types = tys
     }
 
     fn enter_block(&mut self) {
@@ -382,14 +382,14 @@ impl Typechecker<'_> {
                             }
                             FuncTy {
                                 arguments: vec![],
-                                result: Ty::Error,
+                                results: vec![],
                             }
                         }
                     }
                 } else {
                     FuncTy {
                         arguments: vec![],
-                        result: Ty::Error,
+                        results: vec![],
                     }
                 };
                 if let Some(import) = self.build_import_ir(&i, name, &ty) {
@@ -584,12 +584,13 @@ impl Typechecker<'_> {
                 }
                 let (name, sym) = self.name_supply.func_idx(&fn_name_tkn);
                 self.record_def(&fn_name_tkn, name);
-                let result = top_fn
-                    .ty()
-                    .map(|t| self.check_ty(errors, &mut scope, &t))
-                    .unwrap_or(Ty::Unit);
+                let results = if let Some(ty_result_list) = top_fn.ty_result_list() {
+                    ty_result_list.types().map(|ty| self.check_ty(errors, &mut scope, &ty)).collect()
+                } else {
+                    vec![]
+                };
                 self.context
-                    .add_func(sym, name, ty_args, FuncTy { arguments, result });
+                    .add_func(sym, name, ty_args, FuncTy { arguments, results });
             }
         }
     }
@@ -709,15 +710,18 @@ impl Typechecker<'_> {
             }
             Type::TyFn(t) => {
                 let mut arguments = vec![];
+                let mut results = vec![];
                 if let Some(arg_list) = t.ty_arg_list() {
                     for arg in arg_list.types() {
                         arguments.push(self.check_ty(errors, scope, &arg))
                     }
                 }
-                let result = t
-                    .result()
-                    .map_or_else(|| Ty::Error, |t| self.check_ty(errors, scope, &t));
-                let func_ty = FuncTy { arguments, result };
+                if let Some(result_list) = t.ty_result_list() {
+                    for res in result_list.types() {
+                        results.push(self.check_ty(errors, scope, &res))
+                    }
+                }
+                let func_ty = FuncTy { arguments, results };
                 Ty::Func(Box::new(func_ty))
             }
         }
@@ -803,9 +807,9 @@ impl Typechecker<'_> {
                     scope.add_var(sym, ty, name);
                 }
 
-                builder.return_ty(Some(func_ty.result.clone()));
+                builder.return_tys(Some(func_ty.results.clone()));
                 // It's fine to drop any previous return type here
-                let _ = scope.set_return_type(func_ty.result.clone());
+                let _ = scope.set_return_types(func_ty.results.clone());
 
                 if let Some(body) = top_fn.body() {
                     // println!("Checking body {}", func_name.text());

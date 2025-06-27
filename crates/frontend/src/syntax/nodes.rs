@@ -189,10 +189,7 @@ impl TopFn {
     pub fn param_list(&self) -> Option<ParamList> {
         support::child(&self.syntax)
     }
-    pub fn arrow_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T![->])
-    }
-    pub fn ty(&self) -> Option<Type> {
+    pub fn ty_result_list(&self) -> Option<TyResultList> {
         support::child(&self.syntax)
     }
     pub fn body(&self) -> Option<EBlock> {
@@ -247,6 +244,15 @@ pub struct ParamList {
 }
 impl ParamList {
     pub fn params(&self) -> AstChildren<Param> {
+        support::children(&self.syntax)
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct TyResultList {
+    pub(crate) syntax: SyntaxNode,
+}
+impl TyResultList {
+    pub fn types(&self) -> AstChildren<Type> {
         support::children(&self.syntax)
     }
 }
@@ -375,7 +381,7 @@ impl TyFn {
     pub fn arrow_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T![->])
     }
-    pub fn result(&self) -> Option<Type> {
+    pub fn ty_result_list(&self) -> Option<TyResultList> {
         support::child(&self.syntax)
     }
 }
@@ -1131,6 +1137,21 @@ impl AstNode for StructField {
 impl AstNode for ParamList {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == ParamList
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+impl AstNode for TyResultList {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == TyResultList
     }
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         if Self::can_cast(syntax.kind()) {
@@ -2369,6 +2390,11 @@ impl std::fmt::Display for StructField {
     }
 }
 impl std::fmt::Display for ParamList {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for TyResultList {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
     }
