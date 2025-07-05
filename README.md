@@ -1,6 +1,6 @@
 # nemo-lang
 
-nemo is a small procedural programming language that compiles to Wasm GC
+nemo is a small programming language that compiles to Wasm GC
 
 ## Playground
 
