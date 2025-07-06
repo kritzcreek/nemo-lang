@@ -22,7 +22,6 @@ use crate::{
 };
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
-use std::mem;
 use std::rc::Rc;
 use text_size::TextRange;
 
@@ -71,7 +70,7 @@ impl Scope {
     }
 
     fn set_return_type(&mut self, ty: Ty) -> Option<Rc<Ty>> {
-        mem::replace(&mut self.return_type, Some(Rc::new(ty)))
+        self.return_type.replace(Rc::new(ty))
     }
 
     fn restore_return_type(&mut self, ty: Option<Rc<Ty>>) {
@@ -1039,22 +1038,8 @@ impl Typechecker<'_> {
                 let (expr_ty, expr_ir) = self.infer_expr(errors, scope, &un_expr.expr()?);
                 builder.expr(expr_ir);
                 let op_tkn = un_expr.op()?;
-                match check_un_op(&op_tkn, &expr_ty) {
-                    None => {
-                        errors.report(
-                            &op_tkn,
-                            InvalidUnaryOperator(op_tkn.text().to_string(), expr_ty),
-                        );
-                        return None;
-                    }
-                    Some((op_data, ty)) => {
-                        builder.op(Some(ir::UnOp {
-                            it: op_data,
-                            at: op_tkn.text_range(),
-                        }));
-                        (ty, builder.build())
-                    }
-                }
+                builder.op(check_un_op(errors, &op_tkn, &expr_ty));
+                (expr_ty, builder.build())
             }
             Expr::EBinary(bin_expr) => {
                 let mut builder = ir::BinaryBuilder::default();
@@ -1063,26 +1048,13 @@ impl Typechecker<'_> {
                 // TODO could maybe check the rhs based on operator and lhs?
                 let (rhs_ty, rhs_ir) = self.infer_expr(errors, scope, &bin_expr.rhs()?);
                 builder.right(rhs_ir);
-                let op_tkn = bin_expr.op()?;
                 if lhs_ty == Ty::Error || rhs_ty == Ty::Error {
                     return None;
                 }
-                match check_op(&op_tkn, &lhs_ty, &rhs_ty) {
-                    None => {
-                        errors.report(
-                            &op_tkn,
-                            InvalidOperator(op_tkn.text().to_string(), lhs_ty, rhs_ty),
-                        );
-                        return None;
-                    }
-                    Some((op_data, ty)) => {
-                        builder.op(Some(ir::Op {
-                            it: op_data,
-                            at: op_tkn.text_range(),
-                        }));
-                        (ty, builder.build())
-                    }
-                }
+                let op_tkn = bin_expr.op()?;
+                let (op, ty) = check_op(errors, &op_tkn, &lhs_ty, &rhs_ty)?;
+                builder.op(Some(op));
+                (ty, builder.build())
             }
             Expr::ELambda(lambda) => {
                 let mut ty_func = FuncTy {
@@ -2130,19 +2102,30 @@ impl Typechecker<'_> {
     }
 }
 
-fn check_un_op(op: &SyntaxToken, ty: &Ty) -> Option<(ir::UnOpData, Ty)> {
+fn check_un_op(errors: &mut TyErrors, op: &SyntaxToken, ty: &Ty) -> Option<ir::UnOp> {
     let op_data = match (op.kind(), ty) {
-        (T![-], Ty::I32) => (ir::UnOpData::I32Neg, Ty::I32),
-        (T![-], Ty::F32) => (ir::UnOpData::F32Neg, Ty::F32),
-        (T![^], Ty::I32) => (ir::UnOpData::I32Not, Ty::I32),
-        (T![^], Ty::U32) => (ir::UnOpData::U32Not, Ty::U32),
-        _ => return None,
+        (T![-], Ty::I32) => ir::UnOpData::I32Neg,
+        (T![-], Ty::F32) => ir::UnOpData::F32Neg,
+        (T![^], Ty::I32) => ir::UnOpData::I32Not,
+        (T![^], Ty::U32) => ir::UnOpData::U32Not,
+        _ => {
+            errors.report(op, InvalidUnaryOperator(op.text().to_string(), ty.clone()));
+            return None;
+        }
     };
-    Some(op_data)
+    Some(ir::UnOp {
+        it: op_data,
+        at: op.text_range(),
+    })
 }
 
-fn check_op(op: &SyntaxToken, ty_left: &Ty, ty_right: &Ty) -> Option<(ir::OpData, Ty)> {
-    let op_data = match (op.kind(), ty_left, ty_right) {
+fn check_op(
+    errors: &mut TyErrors,
+    op: &SyntaxToken,
+    ty_left: &Ty,
+    ty_right: &Ty,
+) -> Option<(ir::Op, Ty)> {
+    let (op_data, ty) = match (op.kind(), ty_left, ty_right) {
         (T![+], Ty::I32, Ty::I32) => (ir::OpData::I32Add, Ty::I32),
         (T![-], Ty::I32, Ty::I32) => (ir::OpData::I32Sub, Ty::I32),
         (T![*], Ty::I32, Ty::I32) => (ir::OpData::I32Mul, Ty::I32),
@@ -2190,9 +2173,21 @@ fn check_op(op: &SyntaxToken, ty_left: &Ty, ty_right: &Ty) -> Option<(ir::OpData
         (T![!=], Ty::Bool, Ty::Bool) => (ir::OpData::BoolNe, Ty::Bool),
         (T![&&], Ty::Bool, Ty::Bool) => (ir::OpData::BoolAnd, Ty::Bool),
         (T![||], Ty::Bool, Ty::Bool) => (ir::OpData::BoolOr, Ty::Bool),
-        (_, _, _) => return None,
+        (_, _, _) => {
+            errors.report(
+                op,
+                InvalidOperator(op.text().to_string(), ty_left.clone(), ty_right.clone()),
+            );
+            return None;
+        }
     };
-    Some(op_data)
+    Some((
+        ir::Op {
+            it: op_data,
+            at: op.text_range(),
+        },
+        ty,
+    ))
 }
 
 fn unit_lit(range: TextRange) -> Option<ir::Expr> {
