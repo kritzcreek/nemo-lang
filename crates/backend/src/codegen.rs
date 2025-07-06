@@ -26,6 +26,11 @@ struct PolyFunc {
     instances: HashMap<Vec<Ty>, Name>,
 }
 
+struct CompiledPattern<'a> {
+    check: Option<Vec<Instruction<'a>>>,
+    deconstruct: Vec<Instruction<'a>>,
+}
+
 struct Codegen<'a> {
     builder: Builder<'a>,
     poly_funcs: HashMap<Name, PolyFunc>,
@@ -367,12 +372,16 @@ impl<'a> Codegen<'a> {
                 for (depth, branch) in branches.into_iter().enumerate() {
                     let depth = depth as u32;
                     instrs.push(Instruction::Block(BlockType::Empty));
-                    let (check, setup) =
-                        self.compile_pattern(body, branch.pattern, scrutinee_local);
-                    checks.extend(check);
-                    checks.push(Instruction::BrIf(depth));
-
-                    bodies.extend(setup);
+                    let compiled_pattern = self.compile_pattern(body, branch.pattern);
+                    if let Some(check) = compiled_pattern.check {
+                        checks.push(Instruction::LocalGet(scrutinee_local));
+                        checks.extend(check);
+                        checks.push(Instruction::BrIf(depth));
+                    } else {
+                        checks.push(Instruction::Br(depth))
+                    }
+                    bodies.push(Instruction::LocalGet(scrutinee_local));
+                    bodies.extend(compiled_pattern.deconstruct);
                     bodies.extend(self.compile_expr(body, branch.body));
                     bodies.push(Instruction::Br(branch_count - depth));
                     bodies.push(Instruction::End)
@@ -507,23 +516,16 @@ impl<'a> Codegen<'a> {
         }
     }
 
-    fn compile_pattern(
-        &mut self,
-        body: &mut BodyBuilder,
-        pattern: Pattern,
-        scrutinee_idx: u32,
-    ) -> (Vec<Instruction<'a>>, Vec<Instruction<'a>>) {
+    // Expects the scrutinee on the stack
+    fn compile_pattern(&mut self, body: &mut BodyBuilder, pattern: Pattern) -> CompiledPattern<'a> {
         match *pattern.it {
             PatternData::PatVar { var } => {
                 let ty = self.builder.val_ty(&pattern.ty);
                 let idx = body.new_local(var, ty);
-                (
-                    vec![Instruction::I32Const(1)],
-                    vec![
-                        Instruction::LocalGet(scrutinee_idx),
-                        Instruction::LocalSet(idx),
-                    ],
-                )
+                CompiledPattern {
+                    check: None,
+                    deconstruct: vec![Instruction::LocalSet(idx)],
+                }
             }
             PatternData::PatVariant {
                 variant,
@@ -537,7 +539,6 @@ impl<'a> Codegen<'a> {
 
                 let variant_type_idx = self.builder.heap_type(variant, &subst);
                 let check = vec![
-                    Instruction::LocalGet(scrutinee_idx),
                     Instruction::StructGet {
                         struct_type_index: variant_type_idx,
                         // The tag field is always field 0
@@ -551,12 +552,14 @@ impl<'a> Codegen<'a> {
                     nullable: false,
                     heap_type: HeapType::Concrete(struct_type_idx),
                 });
-                let setup = vec![
-                    Instruction::LocalGet(scrutinee_idx),
+                let deconstruct = vec![
                     Instruction::RefCastNonNull(HeapType::Concrete(struct_type_idx)),
                     Instruction::LocalSet(body.new_local(binder, val_ty)),
                 ];
-                (check, setup)
+                CompiledPattern {
+                    check: Some(check),
+                    deconstruct,
+                }
             }
         }
     }
