@@ -38,7 +38,7 @@ pub struct Parse {
 impl Parse {
     pub fn debug_tree(&self) -> String {
         let syntax_node = SyntaxNode::new_root(self.green_node.clone());
-        let formatted = format!("{:#?}", syntax_node);
+        let formatted = format!("{syntax_node:#?}");
         formatted.trim_end_matches('\n').to_string()
     }
 

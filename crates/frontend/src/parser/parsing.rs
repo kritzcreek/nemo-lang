@@ -100,7 +100,7 @@ impl<'a> Parser<'a> {
             true
         } else {
             // TODO: Avoid extra allocation
-            self.error(&format!("expected {:?}", kind));
+            self.error(&format!("expected {kind:?}"));
             false
         }
     }

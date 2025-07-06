@@ -201,7 +201,7 @@ pub fn run_frontend(sources: &[(Utf8PathBuf, String)]) -> Result<FrontendResult,
 pub fn check_program(sources: &[(Utf8PathBuf, String)]) -> Result<(), String> {
     let check_result = run_frontend(sources)?;
     if let Some(count) = check_result.display_errors() {
-        return Err(format!("Check failed with {} errors", count));
+        return Err(format!("Check failed with {count} errors"));
     }
     Ok(())
 }

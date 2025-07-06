@@ -118,9 +118,9 @@ impl ModuleId {
         Self(NonZeroU16::new(id).expect("ModuleId must be non-zero"))
     }
 
-    pub const PRIM: Self = ModuleId(unsafe { NonZeroU16::new_unchecked(1) });
-    pub const CODEGEN: Self = ModuleId(unsafe { NonZeroU16::new_unchecked(2) });
-    const FIRST_NON_RESERVED: NonZeroU16 = unsafe { NonZeroU16::new_unchecked(3) };
+    pub const PRIM: Self = ModuleId(NonZeroU16::new(1).unwrap());
+    pub const CODEGEN: Self = ModuleId(NonZeroU16::new(2).unwrap());
+    const FIRST_NON_RESERVED: NonZeroU16 = NonZeroU16::new(3).unwrap();
 }
 
 impl From<ModuleId> for u16 {
