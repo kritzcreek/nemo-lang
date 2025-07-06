@@ -977,9 +977,21 @@ impl Typechecker<'_> {
                 let (ty, ir) = self.infer_expr(errors, scope, &e.expr()?);
                 (ty, ir.map(|x| *x.it))
             }
+            Expr::EWhen(when_expr) => {
+                let mut builder = ir::IfBuilder::default();
+                if let Some(condition) = when_expr.condition().and_then(|c| c.expr()) {
+                    builder.condition(self.check_expr(errors, scope, &condition, &Ty::Bool));
+                }
+                if let Some(branch) = when_expr.branch() {
+                    let ir = self.check_expr(errors, scope, &branch, &Ty::Unit);
+                    builder.then_branch(ir);
+                    builder.else_branch(unit_lit(branch.syntax().text_range()));
+                }
+                (Ty::Unit, builder.build())
+            }
             Expr::EIf(if_expr) => {
                 let mut builder = ir::IfBuilder::default();
-                if let Some(condition) = if_expr.condition() {
+                if let Some(condition) = if_expr.condition().and_then(|c| c.expr()) {
                     builder.condition(self.check_expr(errors, scope, &condition, &Ty::Bool));
                 }
                 let mut ty = Ty::Error;
@@ -1668,7 +1680,7 @@ impl Typechecker<'_> {
             }
             (Expr::EIf(expr), ty) => {
                 let mut builder = ir::IfBuilder::default();
-                if let Some(condition) = expr.condition() {
+                if let Some(condition) = expr.condition().and_then(|c| c.expr()) {
                     builder.condition(self.check_expr(errors, scope, &condition, &Ty::Bool));
                 }
                 if let Some(then_branch) = expr.then_branch() {

@@ -30,9 +30,9 @@ fn capacity[a](vec : Vec[a]) -> I32 {
 }
 
 fn grow[a](vec : Vec[a], new_len : I32) {
-  if capacity(vec) >= new_len {
+  when capacity(vec) >= new_len {
     return {};
-  } else {};
+  };
   let new_capacity = if vec.len < 4 { 4 } else { vec.len };
   while new_capacity < new_len {
     set new_capacity = new_capacity * 2;

@@ -83,6 +83,7 @@ Expr
   | EArrayIdx
   | EStructIdx
   | EIf
+  | EWhen
   | EMatch
   | ELambda
   | EBlock
@@ -105,7 +106,9 @@ EStruct = ModQualifier? Qualifier? 'upper_ident' ETyArgList? '{' EStructField* '
 EStructField = 'ident' '=' Expr
 
 EStructIdx = Expr '.' 'ident'
-EIf = 'if' condition:Expr then_branch:EBlock 'else' else_branch:EBlock
+EIf = Condition then_branch:EBlock else_branch:EBlock
+EWhen = Condition branch:Expr
+Condition = Expr
 
 EMatch = 'match' scrutinee:Expr '{' EMatchBranch* '}'
 EMatchBranch = Pattern '=>' body:EBlock

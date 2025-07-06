@@ -32,6 +32,7 @@ pub fn highlight(module: &Module, occurrences: &OccurrenceMap) -> Vec<Highlight>
             | T![set]
             | T![global]
             | T![match]
+            | T![when]
             | T![if]
             | T![else]
             | T![while]

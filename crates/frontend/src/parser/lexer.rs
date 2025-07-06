@@ -148,6 +148,9 @@ pub enum SyntaxKind {
     #[token("set")]
     SET_KW,
 
+    #[token("when")]
+    WHEN_KW,
+
     #[token("if")]
     IF_KW,
 
@@ -378,12 +381,15 @@ pub enum SyntaxKind {
     EBinary,
     EArrayIdx,
     EStructIdx,
+    EWhen,
     EIf,
     EMatch,
     EBlock,
     ELambda,
     EReturn,
 
+    // If/When conditions
+    Condition,
     // Match expressions
     EMatchBranch,
 
@@ -484,6 +490,7 @@ macro_rules ! T {
     [global] => { SyntaxKind::GLOBAL_KW };
     [import] => { SyntaxKind::IMPORT_KW };
     [from] => { SyntaxKind::FROM_KW };
+    [when] => { SyntaxKind::WHEN_KW };
     [if] => { SyntaxKind::IF_KW };
     [else] => { SyntaxKind::ELSE_KW };
     [match] => { SyntaxKind::MATCH_KW };

@@ -20,13 +20,13 @@ fn print_hex(i : I32) -> string::Str {
 }
 
 fn print_radix(i : I32, radix : I32) -> string::Str {
-  if i == 0 {
+  when i == 0 {
     return string::unsafe_new("0");
-  } else {};
+  };
   let is_negative = i < 0;
-  if is_negative {
+  when is_negative {
     set i = i * (0 - 1);
-  } else {};
+  };
 
   let chars : vec::Vec[I32] = vec::new(0);
   while i != 0 {
@@ -35,9 +35,9 @@ fn print_radix(i : I32, radix : I32) -> string::Str {
     set i = i / radix;
   };
 
-  if is_negative {
+  when is_negative {
     vec::push(chars, 45);
-  } else {};
+  };
 
   let char_count = chars.len;
   let bytes = bytes_new(0, char_count);

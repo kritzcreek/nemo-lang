@@ -83,11 +83,11 @@ pub(crate) mod support {
 
 impl EIf {
     pub(crate) fn then_branch(&self) -> Option<Expr> {
-        support::children(self.syntax()).nth(1)
+        support::children(self.syntax()).nth(0)
     }
     // TODO: This isn't right if the then branch is missing
     pub(crate) fn else_branch(&self) -> Option<Expr> {
-        support::children(self.syntax()).nth(2)
+        support::children(self.syntax()).nth(1)
     }
 }
 impl EArrayIdx {

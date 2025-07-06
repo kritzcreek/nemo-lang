@@ -424,34 +424,43 @@ fn current_bin_op(p: &mut Parser) -> Option<(u32, SyntaxKind)> {
 }
 
 fn expr(p: &mut Parser) -> Progress {
-    if p.at(T![if]) {
-        if_expr(p);
-        return Progress::Made;
+    match p.current() {
+        T![when] => when_expr(p),
+        T![if] => if_expr(p),
+        T![match] => match_expr(p),
+        T![lambda] => lambda_expr(p),
+        T![return] => return_expr(p),
+        T!['{'] => {
+            block_expr(p);
+        }
+        _ => return expr_bp(p, 0),
     }
-    if p.at(T!['{']) {
-        return block_expr(p);
+    Progress::Made
+}
+
+fn condition(p: &mut Parser) {
+    let c = p.checkpoint();
+    if expr(p).made_progress() {
+        p.finish_at(c, SyntaxKind::Condition)
+    } else {
+        p.error("expected a condition")
     }
-    if p.at(T![match]) {
-        match_expr(p);
-        return Progress::Made;
+}
+
+fn when_expr(p: &mut Parser) {
+    let c = p.checkpoint();
+    p.bump(T![when]);
+    condition(p);
+    if !block_expr(p).made_progress() {
+        p.error("expected a block")
     }
-    if p.at(T![lambda]) {
-        lambda_expr(p);
-        return Progress::Made;
-    }
-    if p.at(T![return]) {
-        return_expr(p);
-        return Progress::Made;
-    }
-    expr_bp(p, 0)
+    p.finish_at(c, SyntaxKind::EWhen)
 }
 
 fn if_expr(p: &mut Parser) {
     let c = p.checkpoint();
     p.bump(T![if]);
-    if !expr(p).made_progress() {
-        p.error("expected a condition")
-    }
+    condition(p);
     if !block_expr(p).made_progress() {
         p.error("expected a block as the then branch")
     }

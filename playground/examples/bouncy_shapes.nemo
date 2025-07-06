@@ -130,19 +130,19 @@ fn draw_shape(shape : Shape) {
 }
 
 fn draw_particle(particle : Particle) {
-  if particle.time > 0.0 {
+  when particle.time > 0.0 {
     begin_path();
     arc(particle.x, particle.y, (particle_timer - particle.time) / 2.0, 0.0, two_pi);
     set_stroke_color(particle.color.r, particle.color.g, particle.color.b);
     stroke()
-  } else {}
+  }
 }
 
 fn collide_shapes(c1 : Shape, c2 : Shape) {
   let overlap_x = c1.x < c2.x + size(c2.body) && c1.x + size(c1.body) > c2.x;
   let overlap_y = c1.y < c2.y + size(c2.body) && c1.y + size(c1.body) > c2.y;
 
-  if overlap_y && overlap_x {
+  when overlap_y && overlap_x {
     add_particle(Particle { x = c1.x, y = c1.y, color = c1.color, time = particle_timer });
 
     let delta_x = c1.x - c2.x;
@@ -152,7 +152,7 @@ fn collide_shapes(c1 : Shape, c2 : Shape) {
     } else {
       set c1.vy = f32_copysign(c1.vy, delta_y)
     }
-  } else {}
+  }
 }
 
 fn collide_shape(shape : Shape) {
@@ -172,13 +172,13 @@ fn tick_shape(shape : Shape, elapsed_time_ms : F32) {
   set shape.x = shape.x + shape.vx * elapsed_factor;
   set shape.y = shape.y + shape.vy * elapsed_factor;
 
-  if shape.x < 0.0 || shape.x > 500.0 {
+  when shape.x < 0.0 || shape.x > 500.0 {
     set shape.x = clamp(0.0, shape.x, 500.0);
     set shape.vx = f32_neg(shape.vx)
-  } else {};
+  };
 
-  if shape.y < 0.0 || shape.y > 500.0 {
+  when shape.y < 0.0 || shape.y > 500.0 {
     set shape.y = clamp(0.0, shape.y, 500.0);
     set shape.vy = f32_neg(shape.vy)
-  } else {}
+  };
 }

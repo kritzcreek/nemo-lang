@@ -9,9 +9,9 @@ fn print_hash(hash : U32) -> string::Str {
   let chars : vec::Vec[I32] = vec::new(0);
   let i = 0u;
   while i < 32u {
-    if i != 0u && i % 5u == 0u {
+    when i != 0u && i % 5u == 0u {
       vec::push(chars, 95)
-    } else {};
+    };
     if hash & 1u == 0u { vec::push(chars, 48) } else { vec::push(chars, 49) };
     set hash = hash >> 1u;
     set i = i + 1u;
@@ -224,9 +224,9 @@ variant RemoveResult[a] {
 
 fn remove_rec[a](node : Node::Mapped[a], shift : U32, hash : U32) -> RemoveResult[a] {
   let pos = bitpos(hash, shift);
-  if pos & node.bitmap == 0u {
+  when pos & node.bitmap == 0u {
     return RemoveResult::NotFound {};
-  } else {};
+  };
   let ix = index(node.bitmap, pos);
   let next_node = node.nodes[ix];
   match next_node {
@@ -250,18 +250,18 @@ fn remove_rec[a](node : Node::Mapped[a], shift : U32, hash : U32) -> RemoveResul
       } else {
         let rows = u32_popcnt(node.bitmap);
         // We never gather the root node
-        if rows == 1u && shift == 0u {
+        when rows == 1u && shift == 0u {
           set node.bitmap = 0u;
           set node.nodes = [];
           return RemoveResult::Success { node = l };
-        } else {};
+        };
         if rows == 2u {
           let other = if ix == 0 { node.nodes[1] } else { node.nodes[0] };
           match other {
             Node::Leaf other_l => {
-              if shift != 0u {
+              when shift != 0u {
                 return RemoveResult::Gathered { new_node = other_l, removed = l };
-              } else {};
+              };
             },
             _ => {},
           };

@@ -3,14 +3,14 @@ exports (eq, concat)
 
 fn eq(a: Bytes, b: Bytes) -> Bool {
   let len = bytes_len(a);
-  if len != bytes_len(b) {
+  when len != bytes_len(b) {
     return false;
-  } else {};
+  };
   let i = 0;
   while i < len {
-    if bytes_get(a, i) != bytes_get(b, i) {
+    when bytes_get(a, i) != bytes_get(b, i) {
       return false;
-    } else {};
+    };
     set i = i + 1;
   };
   true

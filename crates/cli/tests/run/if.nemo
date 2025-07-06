@@ -3,4 +3,6 @@ import log : fn (I32) -> Unit from log
 fn main() {
   if true { log(1) } else { log(2) };
   if false { log(1) } else { log(2) };
+  when true { log(3) };
+  when false { log(4) };
 }

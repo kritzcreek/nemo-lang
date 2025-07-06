@@ -605,14 +605,20 @@ pub struct EIf {
     pub(crate) syntax: SyntaxNode,
 }
 impl EIf {
-    pub fn if_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T![if])
-    }
-    pub fn condition(&self) -> Option<Expr> {
+    pub fn condition(&self) -> Option<Condition> {
         support::child(&self.syntax)
     }
-    pub fn else_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T![else])
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct EWhen {
+    pub(crate) syntax: SyntaxNode,
+}
+impl EWhen {
+    pub fn condition(&self) -> Option<Condition> {
+        support::child(&self.syntax)
+    }
+    pub fn branch(&self) -> Option<Expr> {
+        support::child(&self.syntax)
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -698,6 +704,15 @@ impl EStructField {
     pub fn eq_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T![=])
     }
+    pub fn expr(&self) -> Option<Expr> {
+        support::child(&self.syntax)
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Condition {
+    pub(crate) syntax: SyntaxNode,
+}
+impl Condition {
     pub fn expr(&self) -> Option<Expr> {
         support::child(&self.syntax)
     }
@@ -858,6 +873,7 @@ pub enum Expr {
     EArrayIdx(EArrayIdx),
     EStructIdx(EStructIdx),
     EIf(EIf),
+    EWhen(EWhen),
     EMatch(EMatch),
     ELambda(ELambda),
     EBlock(EBlock),
@@ -1578,6 +1594,21 @@ impl AstNode for EIf {
         &self.syntax
     }
 }
+impl AstNode for EWhen {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == EWhen
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
 impl AstNode for EMatch {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == EMatch
@@ -1656,6 +1687,21 @@ impl AstNode for EArgList {
 impl AstNode for EStructField {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == EStructField
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+impl AstNode for Condition {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == Condition
     }
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         if Self::can_cast(syntax.kind()) {
@@ -2016,6 +2062,11 @@ impl From<EIf> for Expr {
         Expr::EIf(node)
     }
 }
+impl From<EWhen> for Expr {
+    fn from(node: EWhen) -> Expr {
+        Expr::EWhen(node)
+    }
+}
 impl From<EMatch> for Expr {
     fn from(node: EMatch) -> Expr {
         Expr::EMatch(node)
@@ -2040,7 +2091,7 @@ impl AstNode for Expr {
     fn can_cast(kind: SyntaxKind) -> bool {
         match kind {
             ELit | EVar | EArray | EStruct | ECall | EParen | EUnary | EBinary | EArrayIdx
-            | EStructIdx | EIf | EMatch | ELambda | EBlock | EReturn => true,
+            | EStructIdx | EIf | EWhen | EMatch | ELambda | EBlock | EReturn => true,
             _ => false,
         }
     }
@@ -2057,6 +2108,7 @@ impl AstNode for Expr {
             EArrayIdx => Expr::EArrayIdx(EArrayIdx { syntax }),
             EStructIdx => Expr::EStructIdx(EStructIdx { syntax }),
             EIf => Expr::EIf(EIf { syntax }),
+            EWhen => Expr::EWhen(EWhen { syntax }),
             EMatch => Expr::EMatch(EMatch { syntax }),
             ELambda => Expr::ELambda(ELambda { syntax }),
             EBlock => Expr::EBlock(EBlock { syntax }),
@@ -2078,6 +2130,7 @@ impl AstNode for Expr {
             Expr::EArrayIdx(it) => &it.syntax,
             Expr::EStructIdx(it) => &it.syntax,
             Expr::EIf(it) => &it.syntax,
+            Expr::EWhen(it) => &it.syntax,
             Expr::EMatch(it) => &it.syntax,
             Expr::ELambda(it) => &it.syntax,
             Expr::EBlock(it) => &it.syntax,
@@ -2518,6 +2571,11 @@ impl std::fmt::Display for EIf {
         std::fmt::Display::fmt(self.syntax(), f)
     }
 }
+impl std::fmt::Display for EWhen {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
 impl std::fmt::Display for EMatch {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
@@ -2544,6 +2602,11 @@ impl std::fmt::Display for EArgList {
     }
 }
 impl std::fmt::Display for EStructField {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for Condition {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
     }
