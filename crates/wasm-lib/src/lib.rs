@@ -23,7 +23,7 @@ pub struct Highlight {
 impl Highlight {
     pub fn new(start: usize, end: usize, kind: highlight::HighlightKind) -> Self {
         Highlight {
-            kind: format!("{:?}", kind),
+            kind: format!("{kind:?}"),
             start,
             end,
         }

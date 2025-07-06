@@ -664,7 +664,7 @@ impl<'a> Codegen<'a> {
                 return *existing;
             }
             let func_name = self.builder.ctx.display_qualified_name(name);
-            let mut it = format!("{}#", func_name);
+            let mut it = format!("{func_name}#");
             for param in &tys {
                 write!(&mut it, "_{}", param.display(&self.builder.ctx)).unwrap()
             }

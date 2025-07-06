@@ -270,7 +270,7 @@ fn generate_syntax() -> Result<()> {
         .join("syntax")
         .join("nodes.rs");
     let mut file: File = File::create(nodes_path)?;
-    write!(file, "{}", src)?;
+    write!(file, "{src}")?;
     Ok(())
 }
 
@@ -341,7 +341,7 @@ fn lower_rule(acc: &mut Vec<Field>, grammar: &Grammar, label: Option<&String>, r
             let mut name = grammar[*token].name.clone();
             if name != "int_number" && name != "string" {
                 if "[]{}()".contains(&name) {
-                    name = format!("'{}'", name);
+                    name = format!("'{name}'");
                 }
                 let field = Field::Token(name);
                 acc.push(field);
@@ -449,7 +449,7 @@ fn to_lower_snake_case(s: &str) -> String {
 }
 
 fn pluralize(s: &str) -> String {
-    format!("{}s", s)
+    format!("{s}s")
 }
 
 impl Field {

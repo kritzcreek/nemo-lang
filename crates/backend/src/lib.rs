@@ -9,7 +9,7 @@ pub fn compile_program(sources: &[(Utf8PathBuf, String)]) -> Result<Vec<u8>, Str
     let check_result = run_frontend(sources)?;
 
     if let Some(count) = check_result.display_errors() {
-        return Err(format!("Compiling failed with {} errors", count));
+        return Err(format!("Compiling failed with {count} errors"));
     }
 
     let (ctx, ir) = check_result.consume();

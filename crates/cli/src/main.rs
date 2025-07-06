@@ -109,7 +109,7 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
             let instance = linker.instantiate(&mut store, &module)?;
             let main_func = find_wasm_main(&instance, &mut store)?;
             let result = main_func.call(&mut store, ())?;
-            println!("Result: {:?}", result);
+            println!("Result: {result:?}");
             Ok(())
         }
     }
