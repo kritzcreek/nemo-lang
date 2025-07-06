@@ -3,9 +3,9 @@ use std::fmt::Write;
 
 use crate::wasm_builder::{BodyBuilder, Builder};
 use frontend::ir::{
-    Callee, Ctx, Declaration, DeclarationData, Expr, ExprData, Func, Lit, LitData, ModuleId, Name,
-    NameTag, Op, OpData, Pattern, PatternData, Program, SetTarget, SetTargetData, Substitution, Ty,
-    TypeDef, UnOpData,
+    Callee, Ctx, Declaration, DeclarationData, Expr, ExprData, Func, Global, Lit, LitData,
+    ModuleId, Name, NameTag, Op, OpData, Pattern, PatternData, Program, SetTarget, SetTargetData,
+    Substitution, Ty, TypeDef, UnOpData,
 };
 use text_size::TextRange;
 use wasm_encoder::{BlockType, ConstExpr, HeapType, Instruction, RefType, ValType};
@@ -697,6 +697,35 @@ impl<'a> Codegen<'a> {
         new_name
     }
 
+    fn initialize_globals(&mut self, globals: Vec<Global>) {
+        let mut start_body = BodyBuilder::new(vec![]);
+        let mut start_instrs = vec![];
+        for global in globals {
+            match Self::const_expr(&global.init) {
+                Some(e) => {
+                    self.builder
+                        .declare_global(global.binder, &global.init.ty, e);
+                }
+                None => {
+                    let pre_init = self.const_init_for_ty(&global.init.ty);
+                    let index =
+                        self.builder
+                            .declare_global(global.binder, &global.init.ty, pre_init);
+
+                    start_instrs.extend(self.compile_expr(&mut start_body, global.init));
+                    start_instrs.push(Instruction::GlobalSet(index))
+                }
+            }
+        }
+        let (start_fn, _) =
+            self.builder
+                .name_supply()
+                .func_idx(ModuleId::CODEGEN, "start", TextRange::default());
+        let start_locals = start_body.get_locals();
+        self.builder.declare_start(start_fn);
+        self.builder.fill_func(start_fn, start_locals, start_instrs);
+    }
+
     pub fn compile_program(&mut self, program: Program) {
         for import in program.imports {
             self.builder.declare_import(import);
@@ -710,7 +739,7 @@ impl<'a> Codegen<'a> {
             }
         }
 
-        for func in program.funcs.iter() {
+        for func in &program.funcs {
             if func.is_monomorphic() {
                 self.builder.declare_func(func.name, func.func_ty());
             } else {
@@ -724,35 +753,7 @@ impl<'a> Codegen<'a> {
             }
         }
 
-        {
-            let mut start_body = BodyBuilder::new(vec![]);
-            let mut start_instrs = vec![];
-            for global in program.globals {
-                match Self::const_expr(&global.init) {
-                    Some(e) => {
-                        self.builder
-                            .declare_global(global.binder, &global.init.ty, e);
-                    }
-                    None => {
-                        let pre_init = self.const_init_for_ty(&global.init.ty);
-                        let index =
-                            self.builder
-                                .declare_global(global.binder, &global.init.ty, pre_init);
-
-                        start_instrs.extend(self.compile_expr(&mut start_body, global.init));
-                        start_instrs.push(Instruction::GlobalSet(index))
-                    }
-                }
-            }
-            let (start_fn, _) = self.builder.name_supply().func_idx(
-                ModuleId::CODEGEN,
-                "start",
-                TextRange::default(),
-            );
-            let start_locals = start_body.get_locals();
-            self.builder.declare_start(start_fn);
-            self.builder.fill_func(start_fn, start_locals, start_instrs);
-        }
+        self.initialize_globals(program.globals);
 
         for func in program.funcs {
             if func.is_polymorphic() {
