@@ -1,5 +1,6 @@
 pub mod codegen;
 mod wasm_builder;
+mod passes;
 
 use camino::Utf8PathBuf;
 use codegen::codegen;
@@ -13,6 +14,7 @@ pub fn compile_program(sources: &[(Utf8PathBuf, String)]) -> Result<Vec<u8>, Str
     }
 
     let (ctx, ir) = check_result.consume();
+    passes::run_passes(&ir);
     let (wasm, _) = codegen(ir, ctx);
     Ok(wasm)
 }
