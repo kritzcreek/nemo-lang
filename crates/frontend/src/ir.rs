@@ -5,8 +5,7 @@ use core::fmt;
 use derive_ir::IrBuilder;
 pub use names::{CompactId, Ctx, Id, ModuleId, ModuleIdGen, Name, NameSupply, NameTag, Symbol};
 use std::{
-    collections::{BTreeMap, HashMap, HashSet},
-    fmt::Debug,
+    cell::OnceCell, collections::{BTreeMap, HashMap, HashSet}, fmt::Debug
 };
 use text_size::TextRange;
 
@@ -369,6 +368,7 @@ impl MatchBranch {
 pub struct Expr {
     pub it: Box<ExprData>,
     pub at: TextRange,
+    pub size: OnceCell<u32>,
     pub ty: Ty,
 }
 
