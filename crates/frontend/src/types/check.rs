@@ -104,7 +104,7 @@ struct TyCtx<'ctx> {
 }
 
 impl TyCtx<'_> {
-    fn new(uses: HashMap<Symbol, &Interface>) -> TyCtx {
+    fn new(uses: HashMap<Symbol, &Interface>) -> TyCtx<'_> {
         TyCtx {
             functions: HashMap::new(),
             uses,
@@ -165,7 +165,7 @@ impl TyCtx<'_> {
             .copied()
     }
 
-    fn lookup_type_def(&self, name: Name) -> Option<TypeDef> {
+    fn lookup_type_def(&self, name: Name) -> Option<TypeDef<'_>> {
         self.variants.get(&name).map(TypeDef::Variant).or_else(|| {
             self.structs.get(&name).map(TypeDef::Struct).or_else(|| {
                 self.uses
@@ -175,7 +175,7 @@ impl TyCtx<'_> {
         })
     }
 
-    fn lookup_type(&self, v: Symbol) -> Option<TypeDef> {
+    fn lookup_type(&self, v: Symbol) -> Option<TypeDef<'_>> {
         let n = self.lookup_type_name(v)?;
         let def = self
             .lookup_type_def(n)
@@ -197,13 +197,13 @@ impl TyCtx<'_> {
         }
     }
 
-    fn lookup_qual_type_name(&self, q: Symbol, n: Name) -> Option<TypeDef> {
+    fn lookup_qual_type_name(&self, q: Symbol, n: Name) -> Option<TypeDef<'_>> {
         self.uses
             .get(&q)
             .and_then(|interface| interface.lookup_type_name(n))
     }
 
-    fn lookup_qual_type(&self, q: Symbol, v: &str) -> Option<TypeDef> {
+    fn lookup_qual_type(&self, q: Symbol, v: &str) -> Option<TypeDef<'_>> {
         self.uses
             .get(&q)
             .and_then(|interface| interface.lookup_type(v))
@@ -599,7 +599,7 @@ impl Typechecker<'_> {
         mod_qualifier: Option<ModQualifier>,
         qualifier: Option<Qualifier>,
         ty_tkn: &SyntaxToken,
-    ) -> Option<TypeDef> {
+    ) -> Option<TypeDef<'_>> {
         let mod_qualifier_tkn = mod_qualifier.map(|q| q.ident_token().unwrap());
         if let Some(variant_tkn) = qualifier.map(|q| q.upper_ident_token().unwrap()) {
             let opt_def = if let Some(ref mod_qual_tkn) = mod_qualifier_tkn {

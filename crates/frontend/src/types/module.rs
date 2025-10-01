@@ -207,7 +207,7 @@ impl Interface {
         }
     }
 
-    pub fn lookup_type(&self, name: &str) -> Option<TypeDef> {
+    pub fn lookup_type(&self, name: &str) -> Option<TypeDef<'_>> {
         self.variant_names
             .get(name)
             .map(|n| TypeDef::Variant(self.variants.get(n).unwrap()))
@@ -218,7 +218,7 @@ impl Interface {
             })
     }
 
-    pub fn lookup_type_name(&self, name: Name) -> Option<TypeDef> {
+    pub fn lookup_type_name(&self, name: Name) -> Option<TypeDef<'_>> {
         self.structs
             .get(&name)
             .map(TypeDef::Struct)

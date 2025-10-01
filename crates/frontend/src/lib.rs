@@ -24,7 +24,7 @@ pub struct FrontendResult<'src> {
 }
 
 impl FrontendResult<'_> {
-    pub fn errors(&self) -> impl Iterator<Item = CheckError> {
+    pub fn errors(&self) -> impl Iterator<Item = CheckError<'_>> {
         self.modules.iter().flat_map(|module| {
             module.ty_errors.iter().map(CheckError::TypeError).chain(
                 module
@@ -108,7 +108,7 @@ fn extract_module_header(module: &Module) -> (String, Vec<Id>) {
 /// Runs the full frontend on `sources` and returns the generated IR and other structures.
 /// If there are any errors, the generated IR should _not_ be used. It's returned here for
 /// debugging purposes.
-pub fn run_frontend(sources: &[(Utf8PathBuf, String)]) -> Result<FrontendResult, String> {
+pub fn run_frontend(sources: &[(Utf8PathBuf, String)]) -> Result<FrontendResult<'_>, String> {
     let mut id_gen = ModuleIdGen::new();
     let mut parsed_modules: HashMap<ModuleId, ModuleParseResult> = HashMap::new();
     for (path, source) in sources {
