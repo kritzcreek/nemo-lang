@@ -10,9 +10,10 @@ pub mod types;
 use camino::Utf8PathBuf;
 pub use error::CheckError;
 use ir::{Ctx, Id, ModuleId, ModuleIdGen, Program};
+use lasso::ThreadedRodeo;
 use module_dag::{ModuleInfo, SortResult};
 use parser::{parse_prog, ParseError};
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 use syntax::Module;
 pub use types::CheckResult;
 use types::{OccurrenceMap, TyError};
@@ -159,7 +160,7 @@ pub fn run_frontend(sources: &[(Utf8PathBuf, String)]) -> Result<FrontendResult<
             unknown_modules,
         } => (sorted, unknown_modules),
     };
-    let mut ctx = Ctx::new(sources.len() as u16);
+    let mut ctx = Ctx::new(sources.len() as u16, Arc::new(ThreadedRodeo::default()));
     let mut checked_ids = vec![];
     let mut checked_modules = vec![];
     for id in sorted {

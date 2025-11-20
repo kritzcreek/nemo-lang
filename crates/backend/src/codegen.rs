@@ -350,9 +350,12 @@ impl<'a> Codegen<'a> {
             } => {
                 let mut instrs = vec![];
 
-                let (gen_name, _) = self.builder.name_supply().local_idx(
+                let gen_name = self.builder.name_supply().local_idx(
                     ModuleId::CODEGEN,
-                    "$match_scrutinee",
+                    self.builder
+                        .ctx
+                        .get_interner()
+                        .get_or_intern("$match_scrutinee"),
                     scrutinee.at,
                 );
                 let scrutinee_ty = self.builder.val_ty(&scrutinee.ty);
@@ -457,9 +460,9 @@ impl<'a> Codegen<'a> {
                 let (func_name, func_idx) = self
                     .builder
                     .declare_anon_func(expr.at, closure_info.closure_func_ty);
-                let (env_name, _) = self.builder.name_supply().local_idx(
+                let env_name = self.builder.name_supply().local_idx(
                     ModuleId::CODEGEN,
-                    "env",
+                    self.builder.ctx.get_interner().get_or_intern_static("env"),
                     TextRange::default(),
                 );
                 let mut func_params = vec![(
@@ -671,9 +674,9 @@ impl<'a> Codegen<'a> {
             for param in &tys {
                 write!(&mut it, "_{}", param.display(&self.builder.ctx)).unwrap()
             }
-            let (new_name, _) = self.builder.name_supply().func_idx(
+            let new_name = self.builder.name_supply().func_idx(
                 ModuleId::CODEGEN,
-                &func_name,
+                self.builder.ctx.get_interner().get_or_intern(&func_name),
                 TextRange::default(),
             );
             poly_func.instances.insert(tys, new_name);
@@ -720,10 +723,14 @@ impl<'a> Codegen<'a> {
                 }
             }
         }
-        let (start_fn, _) =
+        let start_fn = self.builder.name_supply().func_idx(
+            ModuleId::CODEGEN,
             self.builder
-                .name_supply()
-                .func_idx(ModuleId::CODEGEN, "start", TextRange::default());
+                .ctx
+                .get_interner()
+                .get_or_intern_static("start"),
+            TextRange::default(),
+        );
         let start_locals = start_body.get_locals();
         self.builder.declare_start(start_fn);
         self.builder.fill_func(start_fn, start_locals, start_instrs);

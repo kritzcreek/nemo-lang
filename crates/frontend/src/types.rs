@@ -33,7 +33,7 @@ pub fn check_module(
     for id in checked_ids {
         dependencies.push((ctx.get_module_name(*id), ctx.get_interface(*id)));
     }
-    let mut checker = Typechecker::new(module_id, &dependencies);
+    let mut checker = Typechecker::new(module_id, &dependencies, ctx.get_interner());
     let (ir, interface, errors) = checker.infer_module(&module);
     let (names, _) = checker.name_supply.take();
     CheckResult {

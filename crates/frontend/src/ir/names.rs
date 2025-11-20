@@ -1,14 +1,13 @@
+use crate::types::Interface;
 use camino::{Utf8Path, Utf8PathBuf};
+use lasso::{Spur, ThreadedRodeo};
 use std::{
     cell::{Cell, RefCell},
     fmt,
     num::NonZeroU16,
+    sync::Arc,
 };
-use string_interner::{DefaultStringInterner, DefaultSymbol};
-
 use text_size::TextRange;
-
-use crate::types::Interface;
 
 // Indexed by ModuleId
 #[derive(Debug)]
@@ -17,10 +16,11 @@ pub struct Ctx {
     module_paths: Vec<Utf8PathBuf>,
     interfaces: Vec<Interface>,
     name_supplies: Vec<NameSupply>,
+    interner: Arc<ThreadedRodeo>,
 }
 
 impl Ctx {
-    pub fn new(module_count: u16) -> Ctx {
+    pub fn new(module_count: u16, interner: Arc<ThreadedRodeo>) -> Ctx {
         // Includes the reserved modules
         let all_module_count = (module_count + ModuleId::FIRST_NON_RESERVED.get() - 1) as usize;
 
@@ -39,6 +39,7 @@ impl Ctx {
             module_paths,
             interfaces,
             name_supplies,
+            interner,
         };
         ctx.set_module_name(ModuleId::PRIM, "#prim".to_string());
         ctx.set_module_name(ModuleId::CODEGEN, "#codegen".to_string());
@@ -68,11 +69,14 @@ impl Ctx {
     pub fn get_name_supply(&self, module: ModuleId) -> &NameSupply {
         &self.name_supplies[(module.0.get() - 1) as usize]
     }
+    pub fn get_interner(&self) -> Arc<ThreadedRodeo> {
+        Arc::clone(&self.interner)
+    }
     pub fn resolve(&self, name: Name) -> (String, &Utf8Path, TextRange) {
         let supply = self.get_name_supply(name.module);
         let id = supply.lookup(name);
         (
-            supply.lookup_symbol(id.it),
+            self.interner.resolve(&id.it).to_owned(),
             self.get_module_path(name.module),
             id.at,
         )
@@ -154,11 +158,11 @@ pub struct Name {
     pub idx: u32,
 }
 
-pub type Symbol = DefaultSymbol;
+pub type Symbol = Spur;
 
 #[derive(Debug, Copy, Clone)]
 pub struct CompactId {
-    pub it: Symbol,
+    pub it: Spur,
     pub at: TextRange,
 }
 
@@ -166,13 +170,6 @@ pub struct CompactId {
 pub struct NameSupply {
     supply: Cell<u32>,
     name_map: RefCell<Vec<CompactId>>,
-    strings: RefCell<DefaultStringInterner>,
-}
-
-impl Default for NameSupply {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 impl NameSupply {
@@ -180,50 +177,36 @@ impl NameSupply {
         Self {
             supply: Cell::new(0),
             name_map: RefCell::new(Vec::new()),
-            strings: RefCell::new(DefaultStringInterner::default()),
         }
     }
-    pub fn new_name(
-        &self,
-        tag: NameTag,
-        module: ModuleId,
-        it: &str,
-        at: TextRange,
-    ) -> (Name, Symbol) {
+    pub fn new_name(&self, tag: NameTag, module: ModuleId, it: Spur, at: TextRange) -> Name {
         let idx = self.supply.get();
         self.supply.set(idx + 1);
-        let it = self.strings.borrow_mut().get_or_intern(it);
         self.name_map.borrow_mut().push(CompactId { it, at });
-        (Name { tag, module, idx }, it)
+        Name { tag, module, idx }
     }
-    pub fn local_idx(&self, module: ModuleId, it: &str, at: TextRange) -> (Name, Symbol) {
+    pub fn local_idx(&self, module: ModuleId, it: Spur, at: TextRange) -> Name {
         self.new_name(NameTag::Local, module, it, at)
     }
-    pub fn global_idx(&self, module: ModuleId, it: &str, at: TextRange) -> (Name, Symbol) {
+    pub fn global_idx(&self, module: ModuleId, it: Spur, at: TextRange) -> Name {
         self.new_name(NameTag::Global, module, it, at)
     }
-    pub fn func_idx(&self, module: ModuleId, it: &str, at: TextRange) -> (Name, Symbol) {
+    pub fn func_idx(&self, module: ModuleId, it: Spur, at: TextRange) -> Name {
         self.new_name(NameTag::Func, module, it, at)
     }
-    pub fn type_idx(&self, module: ModuleId, it: &str, at: TextRange) -> (Name, Symbol) {
+    pub fn type_idx(&self, module: ModuleId, it: Spur, at: TextRange) -> Name {
         self.new_name(NameTag::Type, module, it, at)
     }
-    pub fn type_var_idx(&self, module: ModuleId, it: &str, at: TextRange) -> (Name, Symbol) {
+    pub fn type_var_idx(&self, module: ModuleId, it: Spur, at: TextRange) -> Name {
         self.new_name(NameTag::TypeVar, module, it, at)
     }
-    pub fn field_idx(&self, module: ModuleId, it: &str, at: TextRange) -> (Name, Symbol) {
+    pub fn field_idx(&self, module: ModuleId, it: Spur, at: TextRange) -> Name {
         self.new_name(NameTag::Field, module, it, at)
     }
-    pub fn gen_idx(&self, module: ModuleId, it: &str) -> (Name, Symbol) {
+    pub fn gen_idx(&self, module: ModuleId, it: Spur) -> Name {
         self.new_name(NameTag::Gen, module, it, TextRange::default())
-    }
-    pub fn get_or_intern(&self, s: &str) -> Symbol {
-        self.strings.borrow_mut().get_or_intern(s)
     }
     pub fn lookup(&self, name: Name) -> CompactId {
         *self.name_map.borrow().get(name.idx as usize).unwrap()
-    }
-    pub fn lookup_symbol(&self, sym: Symbol) -> String {
-        self.strings.borrow().resolve(sym).unwrap().to_string()
     }
 }

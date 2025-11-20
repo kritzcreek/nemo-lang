@@ -20,9 +20,11 @@ use crate::{
     builtins::lookup_builtin,
     ir::{ModuleId, NameTag},
 };
+use lasso::ThreadedRodeo;
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
+use std::sync::Arc;
 use text_size::TextRange;
 
 #[derive(Debug)]
@@ -243,8 +245,9 @@ impl Typechecker<'_> {
     pub fn new<'ctx>(
         module: ModuleId,
         deps: &'ctx [(&'ctx str, &'ctx Interface)],
+        interner: Arc<ThreadedRodeo>,
     ) -> Typechecker<'ctx> {
-        let name_supply = NameSupply::new(module);
+        let name_supply = NameSupply::new(module, interner);
         let mut uses = HashMap::new();
         for (name, interface) in deps {
             uses.insert(name_supply.get_or_intern(name), *interface);

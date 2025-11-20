@@ -15,6 +15,6 @@ text-size = "1.1.1"
 line-index = "0.1.1"
 lexpr = "0.2.7"
 derive_ir = { path = "../derive_ir" }
-string-interner = "0.19"
+lasso = { version = "0.7", features = ["ahasher", "multi-threaded"] }
 topological-sort = "0.2.2"
 camino = "1.1.9"

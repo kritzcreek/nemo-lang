@@ -716,9 +716,13 @@ impl<'a> Builder<'a> {
 
     pub fn declare_anon_func(&mut self, at: TextRange, ty: TypeIdx) -> (Name, FuncIdx) {
         let index = (self.imports.len() + self.funcs.len()) as u32;
-        let (name, _) =
-            self.name_supply()
-                .func_idx(ModuleId::CODEGEN, &format!("closure-{index}"), at);
+        let name = self.name_supply().func_idx(
+            ModuleId::CODEGEN,
+            self.ctx
+                .get_interner()
+                .get_or_intern(&format!("closure-{index}")),
+            at,
+        );
         self.funcs.insert(
             name,
             FuncData {
@@ -757,9 +761,11 @@ impl<'a> Builder<'a> {
             return *idx;
         }
         let (mod_name, it) = self.resolve_qualified_name(name);
-        let (func_name, _) = self.name_supply().func_idx(
+        let func_name = self.name_supply().func_idx(
             ModuleId::CODEGEN,
-            &format!("{mod_name}::{it}#ref"),
+            self.ctx
+                .get_interner()
+                .get_or_intern(&format!("{mod_name}::{it}#ref")),
             TextRange::default(),
         );
         let mut instrs: Vec<Instruction> = (0..ty.arguments.len())
