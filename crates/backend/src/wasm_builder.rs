@@ -720,7 +720,7 @@ impl<'a> Builder<'a> {
             ModuleId::CODEGEN,
             self.ctx
                 .get_interner()
-                .get_or_intern(&format!("closure-{index}")),
+                .get_or_intern(format!("closure-{index}")),
             at,
         );
         self.funcs.insert(
@@ -765,7 +765,7 @@ impl<'a> Builder<'a> {
             ModuleId::CODEGEN,
             self.ctx
                 .get_interner()
-                .get_or_intern(&format!("{mod_name}::{it}#ref")),
+                .get_or_intern(format!("{mod_name}::{it}#ref")),
             TextRange::default(),
         );
         let mut instrs: Vec<Instruction> = (0..ty.arguments.len())

@@ -172,6 +172,12 @@ pub struct NameSupply {
     name_map: RefCell<Vec<CompactId>>,
 }
 
+impl Default for NameSupply {
+    fn default() -> NameSupply {
+        NameSupply::new()
+    }
+}
+
 impl NameSupply {
     pub fn new() -> Self {
         Self {
