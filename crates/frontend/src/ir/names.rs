@@ -9,7 +9,7 @@ use std::{
 };
 use text_size::TextRange;
 
-// Indexed by ModuleId
+// Indexed by ModuleId (SoA)
 #[derive(Debug)]
 pub struct Ctx {
     module_names: Vec<String>,

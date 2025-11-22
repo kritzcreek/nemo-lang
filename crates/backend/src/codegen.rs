@@ -350,6 +350,7 @@ impl<'a> Codegen<'a> {
             } => {
                 let mut instrs = vec![];
 
+                // TODO(no-intern-in-codegen): static
                 let gen_name = self.builder.name_supply().local_idx(
                     ModuleId::CODEGEN,
                     self.builder
@@ -462,6 +463,7 @@ impl<'a> Codegen<'a> {
                     .declare_anon_func(expr.at, closure_info.closure_func_ty);
                 let env_name = self.builder.name_supply().local_idx(
                     ModuleId::CODEGEN,
+                    // TODO(no-intern-in-codegen): static
                     self.builder.ctx.get_interner().get_or_intern_static("env"),
                     TextRange::default(),
                 );
@@ -674,6 +676,7 @@ impl<'a> Codegen<'a> {
             for param in &tys {
                 write!(&mut it, "_{}", param.display(&self.builder.ctx)).unwrap()
             }
+            // TODO(no-intern-in-codegen): Monomorphization creates new functions that need names
             let new_name = self.builder.name_supply().func_idx(
                 ModuleId::CODEGEN,
                 self.builder.ctx.get_interner().get_or_intern(&func_name),
@@ -728,6 +731,7 @@ impl<'a> Codegen<'a> {
             self.builder
                 .ctx
                 .get_interner()
+                // TODO(no-intern-in-codegen): static
                 .get_or_intern_static("start"),
             TextRange::default(),
         );

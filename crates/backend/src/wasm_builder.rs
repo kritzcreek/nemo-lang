@@ -716,6 +716,8 @@ impl<'a> Builder<'a> {
 
     pub fn declare_anon_func(&mut self, at: TextRange, ty: TypeIdx) -> (Name, FuncIdx) {
         let index = (self.imports.len() + self.funcs.len()) as u32;
+
+        // TODO(no-intern-in-codegen): Lambdas, need better naming scheme
         let name = self.name_supply().func_idx(
             ModuleId::CODEGEN,
             self.ctx
@@ -761,6 +763,8 @@ impl<'a> Builder<'a> {
             return *idx;
         }
         let (mod_name, it) = self.resolve_qualified_name(name);
+
+        // TODO(no-intern-in-codegen): closure wrapper?
         let func_name = self.name_supply().func_idx(
             ModuleId::CODEGEN,
             self.ctx
