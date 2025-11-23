@@ -192,7 +192,7 @@ impl TyCtx<'_> {
         d.clone()
     }
 
-    fn set_fields(&mut self, name: Name, fields: HashMap<String, (Name, Ty)>) {
+    fn set_fields(&mut self, name: Name, fields: HashMap<Symbol, (Name, Ty)>) {
         // TODO: expect?
         if let Some(def) = self.structs.get_mut(&name) {
             def.fields = fields;
@@ -205,13 +205,13 @@ impl TyCtx<'_> {
             .and_then(|interface| interface.lookup_type_name(n))
     }
 
-    fn lookup_qual_type(&self, q: Symbol, v: &str) -> Option<TypeDef<'_>> {
+    fn lookup_qual_type(&self, q: Symbol, v: Symbol) -> Option<TypeDef<'_>> {
         self.uses
             .get(&q)
             .and_then(|interface| interface.lookup_type(v))
     }
 
-    fn lookup_qual_func(&self, q: Symbol, v: &str) -> Option<&FuncDef> {
+    fn lookup_qual_func(&self, q: Symbol, v: Symbol) -> Option<&FuncDef> {
         self.uses
             .get(&q)
             .and_then(|interface| interface.lookup_func(v))
@@ -292,12 +292,11 @@ impl Typechecker<'_> {
             match export {
                 ModExport::ModExportVal(n) => {
                     let tkn = n.ident_token().unwrap();
-                    let str_name = tkn.text().to_string();
-                    let name = self.sym(&str_name);
+                    let name = self.sym(tkn.text());
                     match self.context.lookup_func(name) {
                         Some(f) => {
                             self.record_ref(&tkn, f.name);
-                            interface.functions.insert(str_name, (*f).clone());
+                            interface.functions.insert(name, (*f).clone());
                         }
                         None => errors.report(
                             &n,
@@ -307,17 +306,16 @@ impl Typechecker<'_> {
                 }
                 ModExport::ModExportTy(n) => {
                     let tkn = n.upper_ident_token().unwrap();
-                    let str_name = tkn.text().to_string();
-                    let name = self.sym(&str_name);
+                    let name = self.sym(tkn.text());
                     match self.context.lookup_type(name) {
                         Some(TypeDef::Struct(def)) => {
                             self.record_ref(&tkn, def.name);
-                            interface.struct_names.insert(str_name, def.name);
+                            interface.struct_names.insert(name, def.name);
                             interface.structs.insert(def.name, def.clone());
                         }
                         Some(TypeDef::Variant(def)) => {
                             self.record_ref(&tkn, def.name);
-                            interface.variant_names.insert(str_name, def.name);
+                            interface.variant_names.insert(name, def.name);
                             interface.variants.insert(def.name, def.clone());
                             for alt_name in def.alternatives.values() {
                                 interface
@@ -489,7 +487,7 @@ impl Typechecker<'_> {
                                 fields: HashMap::new(),
                             },
                         );
-                        alternatives.insert(tkn.text().to_string(), alt_name);
+                        alternatives.insert(alt_sym, alt_name);
                         struct_defs.push((alt_name, s))
                     }
 
@@ -528,10 +526,10 @@ impl Typechecker<'_> {
                     Some(field_ty) => self.check_ty(errors, &mut scope, &field_ty),
                     None => Ty::Error,
                 };
-                let (name, _) = self.name_supply.field_idx(&field_name);
+                let (name, field_sym) = self.name_supply.field_idx(&field_name);
                 self.record_def(&field_name, name);
 
-                fields.insert(field_name.text().to_string(), (name, ty));
+                fields.insert(field_sym, (name, ty));
             }
             self.context.set_fields(name, fields);
         }
@@ -607,7 +605,7 @@ impl Typechecker<'_> {
         if let Some(variant_tkn) = qualifier.map(|q| q.upper_ident_token().unwrap()) {
             let opt_def = if let Some(ref mod_qual_tkn) = mod_qualifier_tkn {
                 self.context
-                    .lookup_qual_type(self.sym(mod_qual_tkn.text()), variant_tkn.text())
+                    .lookup_qual_type(self.sym(mod_qual_tkn.text()), self.sym(variant_tkn.text()))
             } else {
                 self.context.lookup_type(self.sym(variant_tkn.text()))
             };
@@ -618,7 +616,7 @@ impl Typechecker<'_> {
             };
             self.record_ref(&variant_tkn, def.name);
 
-            let Some(name) = def.alternatives.get(ty_tkn.text()) else {
+            let Some(name) = def.alternatives.get(&self.sym(ty_tkn.text())) else {
                 errors.report(
                     ty_tkn,
                     UnknownType(format!("{}::{}", variant_tkn.text(), ty_tkn.text())),
@@ -639,15 +637,15 @@ impl Typechecker<'_> {
             );
             opt_struct_def
         } else {
-            let ty_name = ty_tkn.text();
+            let ty_name = self.sym(ty_tkn.text());
             let opt_def = if let Some(mod_qual) = mod_qualifier_tkn {
                 self.context
                     .lookup_qual_type(self.sym(mod_qual.text()), ty_name)
             } else {
-                self.context.lookup_type(self.sym(ty_name))
+                self.context.lookup_type(ty_name)
             };
             let Some(def) = opt_def else {
-                errors.report(ty_tkn, UnknownType(ty_name.to_string()));
+                errors.report(ty_tkn, UnknownType(ty_tkn.text().to_string()));
                 return None;
             };
             self.record_ref(ty_tkn, def.name());
@@ -941,7 +939,7 @@ impl Typechecker<'_> {
                 if let Some(mod_qual_tkn) = mod_qual_tkn {
                     match self
                         .context
-                        .lookup_qual_func(self.sym(mod_qual_tkn.text()), var_tkn.text())
+                        .lookup_qual_func(self.sym(mod_qual_tkn.text()), self.sym(var_tkn.text()))
                     {
                         None => {
                             errors.report(&var_tkn, UnknownVar(var_tkn.text().to_string()));
@@ -1160,11 +1158,11 @@ impl Typechecker<'_> {
         Some((ty, ir_expr))
     }
 
-    fn lookup_func(&self, qual: Option<SyntaxToken>, name: &str) -> Option<&FuncDef> {
+    fn lookup_func(&self, qual: Option<SyntaxToken>, name: Symbol) -> Option<&FuncDef> {
         if let Some(qual) = qual {
             self.context.lookup_qual_func(self.sym(qual.text()), name)
         } else {
-            self.context.lookup_func(self.sym(name))
+            self.context.lookup_func(name)
         }
     }
 
@@ -1187,14 +1185,15 @@ impl Typechecker<'_> {
         let callee = if let Expr::EVar(v) = &func_expr {
             let mod_qual_tkn = v.mod_qualifier().map(|q| q.ident_token().unwrap());
             let var_tkn = v.ident_token().unwrap();
-            if mod_qual_tkn.is_none() && scope.lookup_var(self.sym(var_tkn.text())).is_some() {
+            let var_sym = self.sym(var_tkn.text());
+            if mod_qual_tkn.is_none() && scope.lookup_var(var_sym).is_some() {
                 if !ty_args.is_empty() {
                     errors.report(&var_tkn, CantInstantiateFunctionRef);
                     return None;
                 }
                 let (ty, ir) = self.infer_expr(errors, scope, &func_expr);
                 (ty, ir.map(ir::Callee::FuncRef))
-            } else if let Some(def) = self.lookup_func(mod_qual_tkn, var_tkn.text()) {
+            } else if let Some(def) = self.lookup_func(mod_qual_tkn, var_sym) {
                 self.record_ref(&var_tkn, def.name);
                 let ty_params: &[Name] = &def.ty_params;
                 // NOTE(early-return-control-flow)
@@ -1424,7 +1423,7 @@ impl Typechecker<'_> {
             .context
             .lookup_struct_name(struct_name)
             .fields
-            .get(field_tkn.text())
+            .get(&self.sym(field_tkn.text()))
             .cloned()
         else {
             errors.report(
@@ -1763,7 +1762,7 @@ impl Typechecker<'_> {
                         self.context
                             .lookup_struct_name(*name)
                             .fields
-                            .get(field_name_tkn.text())
+                            .get(&self.sym(field_name_tkn.text()))
                             .cloned(),
                     ),
                     TypeDef::Variant(_) => {

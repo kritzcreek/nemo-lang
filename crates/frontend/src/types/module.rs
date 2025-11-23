@@ -10,7 +10,7 @@ pub struct StructDef {
     pub span: TextRange,
     pub variant: Option<Name>,
     pub ty_params: Vec<Name>,
-    pub fields: HashMap<String, (Name, Ty)>,
+    pub fields: HashMap<Symbol, (Name, Ty)>,
 }
 
 impl StructDef {
@@ -63,12 +63,12 @@ pub struct VariantDef {
     pub span: TextRange,
     pub ty_params: Vec<Name>,
     // TODO: The ordering of these alternatives needs to be deterministic
-    pub alternatives: HashMap<String, Name>,
+    pub alternatives: HashMap<Symbol, Name>,
 }
 
 impl VariantDef {
-    pub fn lookup_alternative(&self, name: &str) -> Option<Name> {
-        self.alternatives.get(name).copied()
+    pub fn lookup_alternative(&self, name: Symbol) -> Option<Name> {
+        self.alternatives.get(&name).copied()
     }
 
     pub fn display<'a>(&'a self, ctx: &'a Ctx) -> VariantDefDisplay<'a> {
@@ -193,10 +193,10 @@ impl fmt::Display for FuncDefDisplay<'_> {
 pub struct Interface {
     pub structs: HashMap<Name, StructDef>,
     // NOTE: Does not contain mappings for variant alternatives
-    pub struct_names: HashMap<String, Name>,
+    pub struct_names: HashMap<Symbol, Name>,
     pub variants: HashMap<Name, VariantDef>,
-    pub variant_names: HashMap<String, Name>,
-    pub functions: HashMap<String, FuncDef>,
+    pub variant_names: HashMap<Symbol, Name>,
+    pub functions: HashMap<Symbol, FuncDef>,
 }
 
 impl Interface {
@@ -207,13 +207,13 @@ impl Interface {
         }
     }
 
-    pub fn lookup_type(&self, name: &str) -> Option<TypeDef<'_>> {
+    pub fn lookup_type(&self, name: Symbol) -> Option<TypeDef<'_>> {
         self.variant_names
-            .get(name)
+            .get(&name)
             .map(|n| TypeDef::Variant(self.variants.get(n).unwrap()))
             .or_else(|| {
                 self.struct_names
-                    .get(name)
+                    .get(&name)
                     .map(|n| TypeDef::Struct(self.structs.get(n).unwrap()))
             })
     }
@@ -225,8 +225,8 @@ impl Interface {
             .or_else(|| self.variants.get(&name).map(TypeDef::Variant))
     }
 
-    pub fn lookup_func(&self, name: &str) -> Option<&FuncDef> {
-        self.functions.get(name)
+    pub fn lookup_func(&self, name: Symbol) -> Option<&FuncDef> {
+        self.functions.get(&name)
     }
 }
 
