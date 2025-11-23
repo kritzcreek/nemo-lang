@@ -20,7 +20,8 @@ pub struct Ctx {
 }
 
 impl Ctx {
-    pub fn new(module_count: u16, interner: Arc<ThreadedRodeo>) -> Ctx {
+    pub fn new(module_count: u16) -> Ctx {
+        let interner = Arc::new(ThreadedRodeo::default());
         // Includes the reserved modules
         let all_module_count = (module_count + ModuleId::FIRST_NON_RESERVED.get() - 1) as usize;
 
