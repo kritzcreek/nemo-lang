@@ -107,11 +107,12 @@ impl fmt::Display for VariantDefDisplay<'_> {
 }
 
 #[derive(Debug, Clone)]
-pub enum TypeDef<'a> {
-    Struct(&'a StructDef),
-    Variant(&'a VariantDef),
+pub enum TypeDef {
+    Struct(StructDef),
+    Variant(VariantDef),
 }
-impl TypeDef<'_> {
+
+impl TypeDef {
     pub fn name(&self) -> Name {
         match self {
             TypeDef::Struct(x) => x.name,
@@ -191,15 +192,16 @@ impl fmt::Display for FuncDefDisplay<'_> {
 /// this module
 #[derive(Debug, Default, Clone)]
 pub struct Interface {
-    pub structs: HashMap<Name, StructDef>,
-    // NOTE: Does not contain mappings for variant alternatives
-    pub struct_names: HashMap<Symbol, Name>,
-    pub variants: HashMap<Name, VariantDef>,
-    pub variant_names: HashMap<Symbol, Name>,
     pub functions: HashMap<Symbol, FuncDef>,
+    pub type_names: HashMap<Symbol, Name>,
+    pub types: HashMap<Name, TypeDef>,
 }
 
 impl Interface {
+    pub fn new() -> Interface {
+        Interface::default()
+    }
+
     pub fn display<'a>(&'a self, ctx: &'a Ctx) -> InterfaceDisplay<'a> {
         InterfaceDisplay {
             interface: self,
@@ -207,22 +209,13 @@ impl Interface {
         }
     }
 
-    pub fn lookup_type(&self, name: Symbol) -> Option<TypeDef<'_>> {
-        self.variant_names
-            .get(&name)
-            .map(|n| TypeDef::Variant(self.variants.get(n).unwrap()))
-            .or_else(|| {
-                self.struct_names
-                    .get(&name)
-                    .map(|n| TypeDef::Struct(self.structs.get(n).unwrap()))
-            })
+    pub fn lookup_type(&self, name: Symbol) -> Option<&TypeDef> {
+        let n = self.type_names.get(&name)?;
+        self.types.get(n)
     }
 
-    pub fn lookup_type_name(&self, name: Name) -> Option<TypeDef<'_>> {
-        self.structs
-            .get(&name)
-            .map(TypeDef::Struct)
-            .or_else(|| self.variants.get(&name).map(TypeDef::Variant))
+    pub fn lookup_type_name(&self, name: Name) -> Option<&TypeDef> {
+        self.types.get(&name)
     }
 
     pub fn lookup_func(&self, name: Symbol) -> Option<&FuncDef> {
@@ -237,13 +230,13 @@ pub struct InterfaceDisplay<'a> {
 
 impl fmt::Display for InterfaceDisplay<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        writeln!(f, "Structs:")?;
-        for def in self.interface.structs.values() {
-            writeln!(f, "  {}", def.display(self.ctx))?;
-        }
-        writeln!(f, "Variants:")?;
-        for def in self.interface.variants.values() {
-            writeln!(f, "  {}", def.display(self.ctx))?;
+        for def in self.interface.types.values() {
+            match def {
+                TypeDef::Struct(struct_def) => writeln!(f, "  {}", struct_def.display(self.ctx))?,
+                TypeDef::Variant(variant_def) => {
+                    writeln!(f, "  {}", variant_def.display(self.ctx))?
+                }
+            }
         }
         writeln!(f, "Functions:")?;
         for def in self.interface.functions.values() {

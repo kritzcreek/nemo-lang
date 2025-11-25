@@ -6,8 +6,7 @@ license = "MIT"
 
 [dependencies]
 ariadne = { version = "0.6", features = ["auto-color"] }
-yansi = "1"
-logos = "0.15"
+logos = "0.16"
 num-derive = "0.4.2"
 num-traits = "0.2.18"
 rowan = "0.16"
@@ -18,3 +17,7 @@ derive_ir = { path = "../derive_ir" }
 lasso = { version = "0.7", features = ["ahasher", "multi-threaded"] }
 topological-sort = "0.2.2"
 camino = "1.1.9"
+rayon = "1.11.0"
+crossbeam = "0.8.4"
+crossbeam-deque = "0.8.6"
+crossbeam-channel = "0.5.15"

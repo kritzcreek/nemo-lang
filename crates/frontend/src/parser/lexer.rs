@@ -115,7 +115,7 @@ pub enum SyntaxKind {
     #[regex(" +")]
     SPACE,
 
-    #[regex(r"//[^\r\n]*")]
+    #[regex(r"//[^\r\n]*", allow_greedy = true)]
     LINE_COMMENT,
 
     #[regex("\n|\r\n")]

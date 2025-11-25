@@ -2,7 +2,7 @@ use anyhow::Result;
 use backend::compile_program;
 use camino::Utf8PathBuf;
 use clap::{Parser, Subcommand};
-use std::{error::Error, fs, io};
+use std::{error::Error, fs, thread};
 use wasmtime::{Config, Engine, Instance, Linker, Module, Store, TypedFunc};
 
 /// The nemo language
@@ -20,36 +20,37 @@ enum Commands {
     Compile {
         /// The *.nemo files to check
         input_files: Vec<Utf8PathBuf>,
+
         /// Output Wasm with the given filename
         #[arg(long)]
         output: Utf8PathBuf,
+
+        /// Number of jobs to be run in parallel
+        #[arg(short, long)]
+        jobs: Option<usize>,
     },
     /// Checks Nemo programs and reports any errors. Does not generate Wasm.
     Check {
         /// The *.nemo files to check
         input_files: Vec<Utf8PathBuf>,
+
+        /// Number of jobs to be run in parallel
+        #[arg(short, long)]
+        jobs: Option<usize>,
     },
     Run {
         /// The *.nemo files to check
         input_files: Vec<Utf8PathBuf>,
+
+        /// Number of jobs to be run in parallel
+        #[arg(short, long)]
+        jobs: Option<usize>,
     },
     /// Runs the language server
     LanguageServer {
         #[arg(long)]
         stdio: bool,
     },
-}
-
-fn read_source_files(
-    input_files: Vec<Utf8PathBuf>,
-) -> Result<Vec<(Utf8PathBuf, String)>, io::Error> {
-    input_files
-        .into_iter()
-        .map(|input_file| {
-            let source = fs::read_to_string(&input_file)?;
-            Ok((input_file, source))
-        })
-        .collect()
 }
 
 fn find_wasm_main<T>(instance: &Instance, mut store: &mut Store<T>) -> Result<TypedFunc<(), i32>> {
@@ -66,24 +67,28 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
         Commands::Compile {
             input_files,
             output,
+            jobs,
         } => {
-            let sources = read_source_files(input_files)?;
-            let wasm = compile_program(&sources)?;
+            let worker_count =
+                jobs.unwrap_or_else(|| (thread::available_parallelism().unwrap().get() / 2).max(1));
+            let wasm = compile_program(&input_files, worker_count)?;
             fs::write(output, wasm)?;
             Ok(())
         }
-        Commands::Check { input_files } => {
-            let sources: Vec<_> = read_source_files(input_files)?;
-            frontend::check_program(&sources)?;
+        Commands::Check { input_files, jobs } => {
+            let worker_count =
+                jobs.unwrap_or_else(|| (thread::available_parallelism().unwrap().get() / 2).max(1));
+            frontend::check_program(&input_files, worker_count)?;
             Ok(())
         }
         Commands::LanguageServer { .. } => {
             // start_language_server()
             todo!();
         }
-        Commands::Run { input_files } => {
-            let sources: Vec<_> = read_source_files(input_files)?;
-            let wasm = compile_program(&sources)?;
+        Commands::Run { input_files, jobs } => {
+            let worker_count =
+                jobs.unwrap_or_else(|| (thread::available_parallelism().unwrap().get() / 2).max(1));
+            let wasm = compile_program(&input_files, worker_count)?;
             let engine = Engine::new(Config::new().wasm_function_references(true).wasm_gc(true))?;
             let mut store = Store::new(&engine, ());
             let mut linker = Linker::new(&engine);

@@ -2,28 +2,29 @@ pub mod builtins;
 mod error;
 pub mod highlight;
 pub mod ir;
-mod module_dag;
 pub mod parser;
+mod scheduler;
 pub mod syntax;
 pub mod types;
 
 use camino::Utf8PathBuf;
 pub use error::CheckError;
 use ir::{Ctx, Id, ModuleId, ModuleIdGen, Program};
-use module_dag::{ModuleInfo, SortResult};
 use parser::{parse_prog, ParseError};
-use std::collections::HashMap;
+use rayon::prelude::*;
+use rowan::GreenNode;
+use std::{collections::HashMap, fs};
 use syntax::Module;
 pub use types::CheckResult;
 use types::{OccurrenceMap, TyError};
 
 #[derive(Debug)]
-pub struct FrontendResult<'src> {
+pub struct FrontendResult {
     pub ctx: Ctx,
-    pub modules: Vec<ModuleResult<'src>>,
+    pub modules: Vec<ModuleResult>,
 }
 
-impl FrontendResult<'_> {
+impl FrontendResult {
     pub fn errors(&self) -> impl Iterator<Item = CheckError<'_>> {
         self.modules.iter().flat_map(|module| {
             module.ty_errors.iter().map(CheckError::TypeError).chain(
@@ -42,13 +43,13 @@ impl FrontendResult<'_> {
             let path = self.ctx.get_module_path(module.parse_result.id);
             for error in &module.parse_result.parse_errors {
                 count += 1;
-                println!("{}", error.display(path, module.parse_result.source));
+                println!("{}", error.display(path, &module.parse_result.source));
             }
             for error in &module.ty_errors {
                 count += 1;
                 println!(
                     "{}",
-                    error.display(&self.ctx, path, module.parse_result.source)
+                    error.display(&self.ctx, path, &module.parse_result.source)
                 );
             }
         }
@@ -69,19 +70,19 @@ impl FrontendResult<'_> {
 }
 
 #[derive(Debug)]
-pub struct ModuleResult<'src> {
-    pub parse_result: ModuleParseResult<'src>,
+pub struct ModuleResult {
+    pub parse_result: ModuleParseResult,
     pub occurrences: OccurrenceMap,
     pub ty_errors: Vec<TyError>,
     pub ir: Program,
 }
 
 #[derive(Debug)]
-pub struct ModuleParseResult<'src> {
+pub struct ModuleParseResult {
     pub id: ModuleId,
     pub parse_errors: Vec<ParseError>,
-    pub source: &'src str,
-    pub parse: Module,
+    pub source: String,
+    pub parse: GreenNode,
     pub path: Utf8PathBuf,
     pub name: String,
     pub dependencies: Vec<Id>,
@@ -105,101 +106,138 @@ fn extract_module_header(module: &Module) -> (String, Vec<Id>) {
     (name, dependencies)
 }
 
-/// Runs the full frontend on `sources` and returns the generated IR and other structures.
-/// If there are any errors, the generated IR should _not_ be used. It's returned here for
-/// debugging purposes.
-pub fn run_frontend(sources: &[(Utf8PathBuf, String)]) -> Result<FrontendResult<'_>, String> {
-    let mut id_gen = ModuleIdGen::new();
+fn parse_module(
+    path: &Utf8PathBuf,
+    id: ModuleId,
+    source: String,
+) -> Result<ModuleParseResult, String> {
+    let parse_result = parse_prog(&source);
+    let (name, dependencies) = extract_module_header(&parse_result.root().module().unwrap());
+    let (parse, parse_errors) = parse_result.take();
+    Ok(ModuleParseResult {
+        id,
+        source,
+        name,
+        dependencies,
+        parse_errors,
+        parse,
+        path: path.clone(),
+    })
+}
+
+fn parse_paths(
+    paths: &[Utf8PathBuf],
+    worker_count: usize,
+) -> Vec<Result<ModuleParseResult, String>> {
+    let pool = rayon::ThreadPoolBuilder::new()
+        .num_threads(worker_count)
+        .build()
+        .unwrap();
+    let id_gen = ModuleIdGen::new();
+    pool.install(|| {
+        paths
+            .into_par_iter()
+            .map(|path| -> Result<ModuleParseResult, String> {
+                let bytes = fs::read(path).map_err(|e| e.to_string())?;
+                let source = String::from_utf8(bytes).map_err(|e| e.to_string())?;
+                let id = id_gen.next_id();
+                parse_module(path, id, source)
+            })
+            .collect()
+    })
+}
+
+pub fn parse_sources(
+    sources: Vec<(Utf8PathBuf, String)>,
+) -> Vec<Result<ModuleParseResult, String>> {
+    let id_gen = ModuleIdGen::new();
+    sources
+        .into_iter()
+        .map(|(path, source)| parse_module(&path, id_gen.next_id(), source))
+        .collect()
+}
+
+fn check_modules(
+    parse_results: Vec<Result<ModuleParseResult, String>>,
+    worker_count: usize,
+) -> Result<FrontendResult, String> {
     let mut parsed_modules: HashMap<ModuleId, ModuleParseResult> = HashMap::new();
-    for (path, source) in sources {
-        let id = id_gen.next_id();
-        let (parse_root, parse_errors) = parse_prog(source).take();
-        let parse = parse_root
-            .module()
-            .expect("Failed to parse a module from file: {path}");
-        let (name, dependencies) = extract_module_header(&parse);
-        parsed_modules.insert(
-            id,
-            ModuleParseResult {
-                id,
-                source,
-                name,
-                dependencies,
-                parse_errors,
-                parse,
-                path: path.clone(),
-            },
-        );
+    let mut module_lookup: HashMap<String, ModuleId> = HashMap::new();
+    for parse_result in parse_results {
+        match parse_result {
+            Ok(res) => {
+                if module_lookup.insert(res.name.clone(), res.id).is_some() {
+                    return Err(format!("Duplicate module name declared: '{}'", res.name));
+                };
+                assert!(parsed_modules.insert(res.id, res).is_none());
+            }
+            Err(err) => return Err(err),
+        }
     }
-    let module_sort_input: Vec<_> = parsed_modules
+    let mut unknown_modules = vec![];
+    let scheduler_input: HashMap<ModuleId, Vec<ModuleId>> = parsed_modules
         .values()
-        .map(|parsed_module| ModuleInfo {
-            id: parsed_module.id,
-            name: parsed_module.name.as_str(),
-            uses: parsed_module.dependencies.as_slice(),
+        .map(|res| {
+            let deps: Vec<ModuleId> = res
+                .dependencies
+                .iter()
+                .filter_map(|dep| {
+                    let Some(id) = module_lookup.get(&dep.it) else {
+                        unknown_modules.push((res.id, dep.clone()));
+                        return None;
+                    };
+                    Some(*id)
+                })
+                .collect();
+            (res.id, deps)
         })
         .collect();
-
-    // TODO: Group all module resolution related errors and report them properly
-    let sorted_modules = module_dag::toposort_modules(module_sort_input);
-    let (sorted, unknown_modules) = match sorted_modules {
-        SortResult::Cycle(module_ids) => {
-            // TODO: Early return with just parsed modules here?
-            // We could try to gracefully recover by checking the SCCs
-            // that don't participate in the cycle(s)
-            return Err(format!(
-                "Cycle detected in module dependencies: {module_ids:?}"
-            ));
-        }
-        SortResult::Duplicate(name) => {
-            return Err(format!("Duplicate module name declared: '{name}'"))
-        }
-        SortResult::Sorted {
-            sorted,
-            unknown_modules,
-        } => (sorted, unknown_modules),
-    };
-    let mut ctx = Ctx::new(sources.len() as u16);
-    let mut checked_ids = vec![];
-    let mut checked_modules = vec![];
-    for id in sorted {
-        let mut parsed_module = parsed_modules.remove(&id).unwrap();
-        parsed_module
+    for (mid, um) in unknown_modules {
+        parsed_modules
+            .get_mut(&mid)
+            .unwrap()
             .parse_errors
-            .extend(unknown_modules.iter().filter_map(|(i, at, s)| {
-                if *i == id {
-                    Some(ParseError {
-                        it: format!("Unknown module '{s}'"),
-                        at: *at,
-                    })
-                } else {
-                    None
-                }
-            }));
-        let check_result = types::check_module(&ctx, parsed_module.parse.clone(), id, &checked_ids);
-        ctx.set_module_name(id, parsed_module.name.clone());
-        ctx.set_module_path(id, parsed_module.path.clone());
-        ctx.set_interface(id, check_result.interface);
-        ctx.set_name_supply(id, check_result.names);
-        checked_ids.push(id);
-        checked_modules.push(ModuleResult {
-            parse_result: parsed_module,
-            occurrences: check_result.occurrences,
-            ty_errors: check_result.errors,
-            ir: check_result.ir,
-        });
+            .push(ParseError {
+                it: format!("Unknown module '{}'", um.it),
+                at: um.at,
+            });
     }
+    let mut inverted_module_lookup = HashMap::new();
+    for (k, v) in &module_lookup {
+        inverted_module_lookup.insert(*v, k.as_str());
+    }
+    let state = scheduler::make_state(scheduler_input, inverted_module_lookup)?;
+    if worker_count == 1 {
+        Ok(scheduler::run_single_threaded(
+            state,
+            module_lookup,
+            parsed_modules,
+        ))
+    } else {
+        Ok(scheduler::run(
+            state,
+            module_lookup,
+            parsed_modules,
+            worker_count,
+        ))
+    }
+}
 
-    Ok(FrontendResult {
-        ctx,
-        modules: checked_modules,
-    })
+pub fn run_frontend(
+    sources: &[Utf8PathBuf],
+    worker_count: usize,
+) -> Result<FrontendResult, String> {
+    check_modules(parse_paths(sources, worker_count), worker_count)
+}
+
+pub fn run_frontend_pure(sources: Vec<(Utf8PathBuf, String)>) -> Result<FrontendResult, String> {
+    check_modules(parse_sources(sources), 1)
 }
 
 /// Checks the given sources and prints any parse or type errors.
 /// If there are any errors returns a summary message in Err otherwise Ok.
-pub fn check_program(sources: &[(Utf8PathBuf, String)]) -> Result<(), String> {
-    let check_result = run_frontend(sources)?;
+pub fn check_program(sources: &[Utf8PathBuf], worker_count: usize) -> Result<(), String> {
+    let check_result = run_frontend(sources, worker_count)?;
     if let Some(count) = check_result.display_errors() {
         return Err(format!("Check failed with {count} errors"));
     }

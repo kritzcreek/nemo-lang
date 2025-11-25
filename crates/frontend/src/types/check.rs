@@ -9,7 +9,7 @@ use super::{
 };
 use super::{FuncDef, StructDef, TypeDef, VariantDef};
 use crate::ir::{
-    self, ExprBuilder, FuncTy, LambdaBuilder, LitBuilder, Name, PatVarBuilder, ReturnBuilder,
+    self, Ctx, ExprBuilder, FuncTy, LambdaBuilder, LitBuilder, Name, PatVarBuilder, ReturnBuilder,
     Substitution, Symbol, Ty, VarBuilder,
 };
 use crate::parser::SyntaxKind;
@@ -20,11 +20,9 @@ use crate::{
     builtins::lookup_builtin,
     ir::{ModuleId, NameTag},
 };
-use lasso::ThreadedRodeo;
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
-use std::sync::Arc;
 use text_size::TextRange;
 
 #[derive(Debug)]
@@ -95,25 +93,17 @@ impl Scope {
 /// and passed as an explicit mutable reference throughout the checking process
 #[derive(Debug)]
 struct TyCtx<'ctx> {
-    functions: HashMap<Symbol, FuncDef>,
-    uses: HashMap<Symbol, &'ctx Interface>,
-
-    structs: HashMap<Name, StructDef>,
-    variants: HashMap<Name, VariantDef>,
-    // NOTE: Does not contain mappings for variant alternatives
-    struct_names: HashMap<Symbol, Name>,
-    variant_names: HashMap<Symbol, Name>,
+    ctx: &'ctx Ctx,
+    toplevel: Interface,
+    namespaces: HashMap<Symbol, ModuleId>,
 }
 
 impl TyCtx<'_> {
-    fn new(uses: HashMap<Symbol, &Interface>) -> TyCtx<'_> {
+    fn new<'ctx>(ctx: &'ctx Ctx) -> TyCtx<'ctx> {
         TyCtx {
-            functions: HashMap::new(),
-            uses,
-            structs: HashMap::new(),
-            variants: HashMap::new(),
-            struct_names: HashMap::new(),
-            variant_names: HashMap::new(),
+            ctx,
+            toplevel: Interface::new(),
+            namespaces: HashMap::new(),
         }
     }
 
@@ -131,11 +121,11 @@ impl TyCtx<'_> {
     }
 
     fn lookup_func(&self, name: Symbol) -> Option<&FuncDef> {
-        self.functions.get(&name)
+        self.toplevel.lookup_func(name)
     }
 
     fn add_func(&mut self, v: Symbol, name: Name, ty_params: Vec<Name>, ty: FuncTy) {
-        self.functions.insert(
+        self.toplevel.functions.insert(
             v,
             FuncDef {
                 name,
@@ -150,39 +140,24 @@ impl TyCtx<'_> {
         // We don't record String -> Name mapping for variant structs
         // as those are looked up via their Variant name
         if !is_sub_struct {
-            self.struct_names.insert(v, name);
+            self.toplevel.type_names.insert(v, name);
         }
-        self.structs.insert(name, def);
+        self.toplevel.types.insert(name, TypeDef::Struct(def));
     }
 
     fn declare_variant_def(&mut self, v: Symbol, name: Name, def: VariantDef) {
-        self.variant_names.insert(v, name);
-        self.variants.insert(name, def);
+        self.toplevel.type_names.insert(v, name);
+        self.toplevel.types.insert(name, TypeDef::Variant(def));
     }
 
-    fn lookup_type_name(&self, v: Symbol) -> Option<Name> {
-        self.variant_names
-            .get(&v)
-            .or_else(|| self.struct_names.get(&v))
-            .copied()
+    fn lookup_type_def(&self, name: Name) -> Option<&TypeDef> {
+        self.toplevel
+            .lookup_type_name(name)
+            .or_else(|| self.ctx.get_interface(name.module).lookup_type_name(name))
     }
 
-    fn lookup_type_def(&self, name: Name) -> Option<TypeDef<'_>> {
-        self.variants.get(&name).map(TypeDef::Variant).or_else(|| {
-            self.structs.get(&name).map(TypeDef::Struct).or_else(|| {
-                self.uses
-                    .values()
-                    .find_map(|iface| iface.lookup_type_name(name))
-            })
-        })
-    }
-
-    fn lookup_type(&self, v: Symbol) -> Option<TypeDef<'_>> {
-        let n = self.lookup_type_name(v)?;
-        let def = self
-            .lookup_type_def(n)
-            .expect("type declared but not defined");
-        Some(def)
+    fn lookup_type(&self, v: Symbol) -> Option<&TypeDef> {
+        self.toplevel.lookup_type(v)
     }
 
     fn lookup_struct_name(&self, name: Name) -> StructDef {
@@ -193,28 +168,26 @@ impl TyCtx<'_> {
     }
 
     fn set_fields(&mut self, name: Name, fields: HashMap<Symbol, (Name, Ty)>) {
-        // TODO: expect?
-        if let Some(def) = self.structs.get_mut(&name) {
+        if let Some(TypeDef::Struct(def)) = self.toplevel.types.get_mut(&name) {
             def.fields = fields;
+        } else {
+            panic!("Tried to set_fields on a non-struct type")
         }
     }
 
-    fn lookup_qual_type_name(&self, q: Symbol, n: Name) -> Option<TypeDef<'_>> {
-        self.uses
-            .get(&q)
-            .and_then(|interface| interface.lookup_type_name(n))
+    fn lookup_qual_type_name(&self, q: Symbol, n: Name) -> Option<&TypeDef> {
+        let ns = self.namespaces.get(&q)?;
+        self.ctx.get_interface(*ns).lookup_type_name(n)
     }
 
-    fn lookup_qual_type(&self, q: Symbol, v: Symbol) -> Option<TypeDef<'_>> {
-        self.uses
-            .get(&q)
-            .and_then(|interface| interface.lookup_type(v))
+    fn lookup_qual_type(&self, q: Symbol, v: Symbol) -> Option<&TypeDef> {
+        let ns = self.namespaces.get(&q)?;
+        self.ctx.get_interface(*ns).lookup_type(v)
     }
 
     fn lookup_qual_func(&self, q: Symbol, v: Symbol) -> Option<&FuncDef> {
-        self.uses
-            .get(&q)
-            .and_then(|interface| interface.lookup_func(v))
+        let ns = self.namespaces.get(&q)?;
+        self.ctx.get_interface(*ns).lookup_func(v)
     }
 }
 
@@ -242,17 +215,9 @@ pub struct Typechecker<'ctx> {
 }
 
 impl Typechecker<'_> {
-    pub fn new<'ctx>(
-        module: ModuleId,
-        deps: &'ctx [(&'ctx str, &'ctx Interface)],
-        interner: Arc<ThreadedRodeo>,
-    ) -> Typechecker<'ctx> {
-        let name_supply = NameSupply::new(module, interner);
-        let mut uses = HashMap::new();
-        for (name, interface) in deps {
-            uses.insert(name_supply.get_or_intern(name), *interface);
-        }
-        let context = TyCtx::new(uses);
+    pub fn new<'ctx>(module: ModuleId, ctx: &'ctx Ctx) -> Typechecker<'ctx> {
+        let name_supply = NameSupply::new(module, ctx.get_interner());
+        let context = TyCtx::new(ctx);
         Typechecker {
             occurrences: RefCell::new(HashMap::new()),
             name_supply,
@@ -307,20 +272,26 @@ impl Typechecker<'_> {
                 ModExport::ModExportTy(n) => {
                     let tkn = n.upper_ident_token().unwrap();
                     let name = self.sym(tkn.text());
+                    // TODO: Could take/delete from the context here to avoid a clone
                     match self.context.lookup_type(name) {
                         Some(TypeDef::Struct(def)) => {
                             self.record_ref(&tkn, def.name);
-                            interface.struct_names.insert(name, def.name);
-                            interface.structs.insert(def.name, def.clone());
+                            interface.type_names.insert(name, def.name);
+                            interface
+                                .types
+                                .insert(def.name, TypeDef::Struct(def.clone()));
                         }
                         Some(TypeDef::Variant(def)) => {
                             self.record_ref(&tkn, def.name);
-                            interface.variant_names.insert(name, def.name);
-                            interface.variants.insert(def.name, def.clone());
+                            interface.type_names.insert(name, def.name);
+                            interface
+                                .types
+                                .insert(def.name, TypeDef::Variant(def.clone()));
                             for alt_name in def.alternatives.values() {
-                                interface
-                                    .structs
-                                    .insert(*alt_name, self.context.lookup_struct_name(*alt_name));
+                                interface.types.insert(
+                                    *alt_name,
+                                    TypeDef::Struct(self.context.lookup_struct_name(*alt_name)),
+                                );
                             }
                         }
                         None => errors.report(
@@ -336,6 +307,17 @@ impl Typechecker<'_> {
     }
 
     fn infer_module_inner(&mut self, errors: &mut TyErrors, module: &Module) -> ir::Program {
+        for use_ in module.mod_uses() {
+            let Some(mod_name) = use_.ident_token() else {
+                continue;
+            };
+            let Some(id) = self.context.ctx.get_module_id(mod_name.text()) else {
+                continue;
+            };
+            self.context
+                .namespaces
+                .insert(self.sym(mod_name.text()), id);
+        }
         // TODO: There should be no need for a top-level scope here.
         // Globals should get their own field on TyCtx
         let mut scope = Scope::new();
@@ -431,6 +413,7 @@ impl Typechecker<'_> {
         // Because types can be mutually recursive we need two passes:
         // - 1. Forward declare all types and their "shapes"
         let mut struct_defs = vec![];
+        let mut declared_types = vec![];
         for top_level in module.top_levels() {
             match top_level {
                 TopLevel::TopStruct(s) => {
@@ -438,6 +421,7 @@ impl Typechecker<'_> {
                         continue;
                     };
                     let (name, sym) = self.name_supply.type_idx(&tkn);
+                    declared_types.push(name);
                     self.record_def(&tkn, name);
 
                     let ty_params = s.type_params().map(|p| self.check_ty_param(&p)).collect();
@@ -459,6 +443,7 @@ impl Typechecker<'_> {
                         continue;
                     };
                     let (variant_name, variant_sym) = self.name_supply.type_idx(&tkn);
+                    declared_types.push(variant_name);
                     self.record_def(&tkn, variant_name);
 
                     let ty_params: Vec<Name> =
@@ -470,6 +455,7 @@ impl Typechecker<'_> {
                             continue;
                         };
                         let (alt_name, alt_sym) = self.name_supply.type_idx(&tkn);
+                        declared_types.push(alt_name);
                         self.record_def(&tkn, alt_name);
 
                         if s.type_params().next().is_some() {
@@ -533,23 +519,22 @@ impl Typechecker<'_> {
             }
             self.context.set_fields(name, fields);
         }
-        let mut type_defs = vec![];
-        for (name, def) in &self.context.structs {
-            type_defs.push(ir::TypeDef::Struct(ir::Struct {
-                name: *name,
-                span: def.span,
-                variant: def.variant,
-                fields: def.fields.values().cloned().collect(),
-            }))
-        }
-        for (name, def) in &self.context.variants {
-            type_defs.push(ir::TypeDef::Variant(ir::Variant {
-                name: *name,
-                span: def.span,
-                alternatives: def.alternatives.values().copied().collect(),
-            }))
-        }
-        type_defs
+        declared_types
+            .into_iter()
+            .map(|name| match self.context.lookup_type_def(name).unwrap() {
+                TypeDef::Struct(def) => ir::TypeDef::Struct(ir::Struct {
+                    name,
+                    span: def.span,
+                    variant: def.variant,
+                    fields: def.fields.values().cloned().collect(),
+                }),
+                TypeDef::Variant(def) => ir::TypeDef::Variant(ir::Variant {
+                    name,
+                    span: def.span,
+                    alternatives: def.alternatives.values().copied().collect(),
+                }),
+            })
+            .collect()
     }
 
     fn check_function_headers(&mut self, errors: &mut TyErrors, module: &Module) {
@@ -600,7 +585,7 @@ impl Typechecker<'_> {
         mod_qualifier: Option<ModQualifier>,
         qualifier: Option<Qualifier>,
         ty_tkn: &SyntaxToken,
-    ) -> Option<TypeDef<'_>> {
+    ) -> Option<&TypeDef> {
         let mod_qualifier_tkn = mod_qualifier.map(|q| q.ident_token().unwrap());
         if let Some(variant_tkn) = qualifier.map(|q| q.upper_ident_token().unwrap()) {
             let opt_def = if let Some(ref mod_qual_tkn) = mod_qualifier_tkn {

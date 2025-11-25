@@ -2,9 +2,11 @@ use std::fmt::Write;
 use std::iter;
 use std::{collections::HashMap, mem};
 
+use camino::Utf8Path;
 use frontend::ir::{
     Ctx, FuncTy, Import, ModuleId, Name, NameSupply, Struct, Substitution, Ty, Variant,
 };
+use frontend::types::Interface;
 use text_size::TextRange;
 use wasm_encoder::{
     self, ArrayType, CodeSection, CompositeInnerType, CompositeType, ConstExpr, DataCountSection,
@@ -98,6 +100,7 @@ pub struct ClosureInfo {
 #[derive(Debug)]
 pub struct Builder<'a> {
     pub(crate) ctx: Ctx,
+    name_supply: NameSupply,
     funcs: HashMap<Name, FuncData<'a>>,
     globals: HashMap<Name, GlobalData>,
     types: Vec<SubType>,
@@ -126,6 +129,7 @@ impl<'a> Builder<'a> {
     pub fn new(ctx: Ctx) -> Builder<'a> {
         Builder {
             ctx,
+            name_supply: NameSupply::new(),
             funcs: HashMap::new(),
             globals: HashMap::new(),
             datas: vec![],
@@ -146,7 +150,7 @@ impl<'a> Builder<'a> {
     }
 
     pub fn name_supply(&self) -> &NameSupply {
-        self.ctx.get_name_supply(ModuleId::CODEGEN)
+        &self.name_supply
     }
 
     // fn _print_funcs(&self) {
@@ -160,6 +164,13 @@ impl<'a> Builder<'a> {
     pub fn finish(self) -> (Vec<u8>, Ctx) {
         let mut module = Module::new();
         let ctx = self.ctx;
+        ctx.set_module(
+            ModuleId::CODEGEN,
+            "#codegen".to_string(),
+            Utf8Path::new("<codegen>").to_path_buf(),
+            Interface::default(),
+            self.name_supply,
+        );
         // self._print_funcs();
 
         // type_section
@@ -877,6 +888,8 @@ impl BodyBuilder {
 
 fn composite_func(ty: FuncType) -> CompositeType {
     CompositeType {
+        describes: None,
+        descriptor: None,
         shared: false,
         inner: CompositeInnerType::Func(ty),
     }
@@ -884,6 +897,8 @@ fn composite_func(ty: FuncType) -> CompositeType {
 
 fn composite_array(ty: ArrayType) -> CompositeType {
     CompositeType {
+        describes: None,
+        descriptor: None,
         shared: false,
         inner: CompositeInnerType::Array(ty),
     }
@@ -891,6 +906,8 @@ fn composite_array(ty: ArrayType) -> CompositeType {
 
 fn composite_struct(ty: StructType) -> CompositeType {
     CompositeType {
+        describes: None,
+        descriptor: None,
         shared: false,
         inner: CompositeInnerType::Struct(ty),
     }

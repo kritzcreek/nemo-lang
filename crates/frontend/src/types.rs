@@ -23,17 +23,8 @@ pub struct CheckResult {
     pub parse: Module,
 }
 
-pub fn check_module(
-    ctx: &Ctx,
-    module: Module,
-    module_id: ModuleId,
-    checked_ids: &[ModuleId],
-) -> CheckResult {
-    let mut dependencies: Vec<(&str, &Interface)> = vec![];
-    for id in checked_ids {
-        dependencies.push((ctx.get_module_name(*id), ctx.get_interface(*id)));
-    }
-    let mut checker = Typechecker::new(module_id, &dependencies, ctx.get_interner());
+pub fn check_module(ctx: &Ctx, module: Module, module_id: ModuleId) -> CheckResult {
+    let mut checker = Typechecker::new(module_id, ctx);
     let (ir, interface, errors) = checker.infer_module(&module);
     let (names, _) = checker.name_supply.take();
     CheckResult {
