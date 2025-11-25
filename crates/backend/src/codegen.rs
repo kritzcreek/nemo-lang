@@ -45,7 +45,7 @@ impl<'a> Codegen<'a> {
             LitData::Bool(false) => Some(ConstExpr::i32_const(0)),
             LitData::Bool(true) => Some(ConstExpr::i32_const(1)),
             LitData::I32(n) => Some(ConstExpr::i32_const(n)),
-            LitData::F32(n) => Some(ConstExpr::f32_const(n)),
+            LitData::F32(n) => Some(ConstExpr::f32_const(n.into())),
             _ => None,
         }
     }
@@ -53,7 +53,7 @@ impl<'a> Codegen<'a> {
     fn const_init_for_ty(&mut self, ty: &Ty) -> ConstExpr {
         match ty {
             Ty::I32 | Ty::U32 | Ty::Unit | Ty::Bool => ConstExpr::i32_const(0),
-            Ty::F32 => ConstExpr::f32_const(0.0),
+            Ty::F32 => ConstExpr::f32_const((0.0).into()),
             Ty::Bytes => {
                 let ty_idx = self.builder.bytes_ty();
                 ConstExpr::ref_null(HeapType::Concrete(ty_idx))
@@ -86,7 +86,7 @@ impl<'a> Codegen<'a> {
         match lit.it {
             LitData::I32(i) => vec![Instruction::I32Const(i)],
             LitData::U32(i) => vec![Instruction::I32Const(i as i32)],
-            LitData::F32(f) => vec![Instruction::F32Const(f)],
+            LitData::F32(f) => vec![Instruction::F32Const(f.into())],
             LitData::Bool(t) => vec![Instruction::I32Const(if t { 1 } else { 0 })],
             LitData::Bytes(s) => {
                 let bytes = s.as_bytes().to_vec();

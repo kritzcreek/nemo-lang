@@ -5,7 +5,7 @@ edition = "2021"
 license = "MIT"
 
 [dependencies]
-ariadne = { version = "0.5", features = ["auto-color"] }
+ariadne = { version = "0.6", features = ["auto-color"] }
 yansi = "1"
 logos = "0.15"
 num-derive = "0.4.2"

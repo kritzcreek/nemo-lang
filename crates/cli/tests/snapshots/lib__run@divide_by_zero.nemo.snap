@@ -4,4 +4,4 @@ expression: output
 input_file: crates/cli/tests/run/divide_by_zero.nemo
 ---
 Trapped: error while executing at wasm backtrace:
-    0:   0x43 - <unknown>!::main
+    0:     0x43 - <unknown>!::main
