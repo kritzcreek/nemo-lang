@@ -2,9 +2,11 @@ use std::fmt::Write;
 use std::iter;
 use std::{collections::HashMap, mem};
 
+use camino::Utf8Path;
 use frontend::ir::{
     Ctx, FuncTy, Import, ModuleId, Name, NameSupply, Struct, Substitution, Ty, Variant,
 };
+use frontend::types::Interface;
 use text_size::TextRange;
 use wasm_encoder::{
     self, ArrayType, CodeSection, CompositeInnerType, CompositeType, ConstExpr, DataCountSection,
@@ -98,6 +100,7 @@ pub struct ClosureInfo {
 #[derive(Debug)]
 pub struct Builder<'a> {
     pub(crate) ctx: Ctx,
+    name_supply: NameSupply,
     funcs: HashMap<Name, FuncData<'a>>,
     globals: HashMap<Name, GlobalData>,
     types: Vec<SubType>,
@@ -126,6 +129,7 @@ impl<'a> Builder<'a> {
     pub fn new(ctx: Ctx) -> Builder<'a> {
         Builder {
             ctx,
+            name_supply: NameSupply::new(),
             funcs: HashMap::new(),
             globals: HashMap::new(),
             datas: vec![],
@@ -146,7 +150,7 @@ impl<'a> Builder<'a> {
     }
 
     pub fn name_supply(&self) -> &NameSupply {
-        self.ctx.get_name_supply(ModuleId::CODEGEN)
+        &self.name_supply
     }
 
     // fn _print_funcs(&self) {
@@ -160,6 +164,13 @@ impl<'a> Builder<'a> {
     pub fn finish(self) -> (Vec<u8>, Ctx) {
         let mut module = Module::new();
         let ctx = self.ctx;
+        ctx.set_module(
+            ModuleId::CODEGEN,
+            "#codegen".to_string(),
+            Utf8Path::new("<codegen>").to_path_buf(),
+            Interface::default(),
+            self.name_supply,
+        );
         // self._print_funcs();
 
         // type_section
@@ -716,9 +727,15 @@ impl<'a> Builder<'a> {
 
     pub fn declare_anon_func(&mut self, at: TextRange, ty: TypeIdx) -> (Name, FuncIdx) {
         let index = (self.imports.len() + self.funcs.len()) as u32;
-        let (name, _) =
-            self.name_supply()
-                .func_idx(ModuleId::CODEGEN, &format!("closure-{index}"), at);
+
+        // TODO(no-intern-in-codegen): Lambdas, need better naming scheme
+        let name = self.name_supply().func_idx(
+            ModuleId::CODEGEN,
+            self.ctx
+                .get_interner()
+                .get_or_intern(format!("closure-{index}")),
+            at,
+        );
         self.funcs.insert(
             name,
             FuncData {
@@ -757,9 +774,13 @@ impl<'a> Builder<'a> {
             return *idx;
         }
         let (mod_name, it) = self.resolve_qualified_name(name);
-        let (func_name, _) = self.name_supply().func_idx(
+
+        // TODO(no-intern-in-codegen): closure wrapper?
+        let func_name = self.name_supply().func_idx(
             ModuleId::CODEGEN,
-            &format!("{mod_name}::{it}#ref"),
+            self.ctx
+                .get_interner()
+                .get_or_intern(format!("{mod_name}::{it}#ref")),
             TextRange::default(),
         );
         let mut instrs: Vec<Instruction> = (0..ty.arguments.len())
@@ -867,6 +888,8 @@ impl BodyBuilder {
 
 fn composite_func(ty: FuncType) -> CompositeType {
     CompositeType {
+        describes: None,
+        descriptor: None,
         shared: false,
         inner: CompositeInnerType::Func(ty),
     }
@@ -874,6 +897,8 @@ fn composite_func(ty: FuncType) -> CompositeType {
 
 fn composite_array(ty: ArrayType) -> CompositeType {
     CompositeType {
+        describes: None,
+        descriptor: None,
         shared: false,
         inner: CompositeInnerType::Array(ty),
     }
@@ -881,6 +906,8 @@ fn composite_array(ty: ArrayType) -> CompositeType {
 
 fn composite_struct(ty: StructType) -> CompositeType {
     CompositeType {
+        describes: None,
+        descriptor: None,
         shared: false,
         inner: CompositeInnerType::Struct(ty),
     }

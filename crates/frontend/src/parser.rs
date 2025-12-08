@@ -42,10 +42,11 @@ impl Parse {
         formatted.trim_end_matches('\n').to_string()
     }
 
-    pub fn take(self) -> (Root, Vec<ParseError>) {
-        (
-            Root::cast(SyntaxNode::new_root(self.green_node)).unwrap(),
-            self.errors,
-        )
+    pub fn root(&self) -> Root {
+        Root::cast(SyntaxNode::new_root(self.green_node.clone())).unwrap()
+    }
+
+    pub fn take(self) -> (GreenNode, Vec<ParseError>) {
+        (self.green_node, self.errors)
     }
 }

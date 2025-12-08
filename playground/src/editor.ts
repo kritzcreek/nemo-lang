@@ -165,7 +165,7 @@ function compile(
     // Using synchronous module instantiation
     // (not recommended, but makes working with the Codemirror API much simpler)
     try {
-      const mod = new WebAssembly.Module(result.wasm);
+      const mod = new WebAssembly.Module(new Uint8Array(result.wasm));
       instance = new WebAssembly.Instance(mod, imports);
     } catch (e) {
       console.error("Instantiating Wasm instance failed", e);

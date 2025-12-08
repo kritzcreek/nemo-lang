@@ -1,8 +1,10 @@
+use rowan::GreenNode;
+
 use crate::syntax::{SyntaxKind, SyntaxNode, SyntaxNodeChildren, SyntaxToken};
 use std::marker::PhantomData;
 
 use super::{
-    nodes::{EArrayIdx, EBinary, EIf, Expr},
+    nodes::{EArrayIdx, EBinary, EIf, Expr, Module, Root},
     EUnary,
 };
 
@@ -78,6 +80,15 @@ pub(crate) mod support {
             .children_with_tokens()
             .filter_map(|it| it.into_token())
             .find(|it| it.kind() == kind)
+    }
+}
+
+impl Module {
+    pub fn from_root(root: GreenNode) -> Module {
+        Root::cast(SyntaxNode::new_root(root.clone()))
+            .unwrap()
+            .module()
+            .unwrap()
     }
 }
 

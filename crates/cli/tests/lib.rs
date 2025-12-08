@@ -8,16 +8,6 @@ use std::process::Command;
 use std::{fs, path::Path};
 use wasmtime::{Caller, Config, Engine, Linker, Module, Store};
 
-fn read_source_files(input_files: Vec<Utf8PathBuf>) -> Result<Vec<(Utf8PathBuf, String)>> {
-    input_files
-        .into_iter()
-        .map(|input_file| {
-            let source = fs::read_to_string(&input_file)?;
-            Ok((input_file, source))
-        })
-        .collect()
-}
-
 fn render_slash_path(path: &Utf8Path) -> String {
     assert!(path.is_relative());
     path.components()
@@ -148,8 +138,7 @@ fn wasmtime_runner(wasm: Vec<u8>) -> Result<Run> {
 
 fn test_run(path: &Path) -> Result<()> {
     let paths = collect_test_input(path)?;
-    let sources = read_source_files(paths)?;
-    let wasm = compile_program(&sources).map_err(|msg| anyhow!(msg))?;
+    let wasm = compile_program(&paths, 4).map_err(|msg| anyhow!(msg))?;
     let output = wasmtime_runner(wasm)?;
     assert_snapshot!(output);
     Ok(())
@@ -180,8 +169,9 @@ fn run() {
     let cwd = std::env::current_dir().unwrap();
     glob!("run/*", |path| {
         let path = path.strip_prefix(&cwd).unwrap();
-        test_run(path)
-            .context(format!("When running: {}", path.display()))
-            .unwrap();
+        match test_run(path).context(format!("When running: {}", path.display())) {
+            Ok(_) => (),
+            Err(e) => panic!("{e:?}"),
+        }
     });
 }

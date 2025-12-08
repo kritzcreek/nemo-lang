@@ -1,6 +1,6 @@
 use backend::codegen::codegen;
 use camino::Utf8Path;
-use frontend::highlight;
+use frontend::{highlight, syntax::Module};
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen(getter_with_clone)]
@@ -60,7 +60,7 @@ pub fn compile(input: &str) -> CompileResult {
     let input_path = Utf8Path::new("input");
     sources.push((input_path.to_path_buf(), input.to_string()));
     // TODO: Report this properly
-    let check_result = frontend::run_frontend(&sources).unwrap();
+    let check_result = frontend::run_frontend_pure(sources).unwrap();
     let mut highlights = vec![];
     for module in &check_result.modules {
         if module.parse_result.path != input_path {
@@ -69,7 +69,10 @@ pub fn compile(input: &str) -> CompileResult {
         highlights.extend(
             highlight::translate_to_utf16(
                 input,
-                highlight::highlight(&module.parse_result.parse, &module.occurrences),
+                highlight::highlight(
+                    &Module::from_root(module.parse_result.parse.clone()),
+                    &module.occurrences,
+                ),
             )
             .into_iter()
             .map(|(start, end, kind)| Highlight::new(start, end, kind)),

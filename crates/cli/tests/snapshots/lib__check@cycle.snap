@@ -4,9 +4,10 @@ info:
   program: nemo
   args:
     - check
-    - tests/check/cycle/moda.nemo
     - tests/check/cycle/modb.nemo
+    - tests/check/cycle/moda.nemo
   env:
+    NO_COLOR: "1"
     RUST_BACKTRACE: "0"
 input_file: crates/cli/tests/check/cycle
 ---
@@ -15,4 +16,4 @@ exit_code: 1
 ----- stdout -----
 
 ----- stderr -----
-Error: "Cycle detected in module dependencies: []"
+Error: "Cycle detected in module dependencies:\nmoda -> modb"
