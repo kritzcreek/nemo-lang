@@ -199,7 +199,7 @@ pub type Symbol = Spur;
 
 #[derive(Debug, Copy, Clone)]
 pub struct CompactId {
-    pub it: Spur,
+    pub it: Symbol,
     pub at: TextRange,
 }
 
@@ -222,31 +222,31 @@ impl NameSupply {
             name_map: RefCell::new(Vec::new()),
         }
     }
-    pub fn new_name(&self, tag: NameTag, module: ModuleId, it: Spur, at: TextRange) -> Name {
+    pub fn new_name(&self, tag: NameTag, module: ModuleId, it: Symbol, at: TextRange) -> Name {
         let idx = self.supply.get();
         self.supply.set(idx + 1);
         self.name_map.borrow_mut().push(CompactId { it, at });
         Name { tag, module, idx }
     }
-    pub fn local_idx(&self, module: ModuleId, it: Spur, at: TextRange) -> Name {
+    pub fn local_idx(&self, module: ModuleId, it: Symbol, at: TextRange) -> Name {
         self.new_name(NameTag::Local, module, it, at)
     }
-    pub fn global_idx(&self, module: ModuleId, it: Spur, at: TextRange) -> Name {
+    pub fn global_idx(&self, module: ModuleId, it: Symbol, at: TextRange) -> Name {
         self.new_name(NameTag::Global, module, it, at)
     }
-    pub fn func_idx(&self, module: ModuleId, it: Spur, at: TextRange) -> Name {
+    pub fn func_idx(&self, module: ModuleId, it: Symbol, at: TextRange) -> Name {
         self.new_name(NameTag::Func, module, it, at)
     }
-    pub fn type_idx(&self, module: ModuleId, it: Spur, at: TextRange) -> Name {
+    pub fn type_idx(&self, module: ModuleId, it: Symbol, at: TextRange) -> Name {
         self.new_name(NameTag::Type, module, it, at)
     }
-    pub fn type_var_idx(&self, module: ModuleId, it: Spur, at: TextRange) -> Name {
+    pub fn type_var_idx(&self, module: ModuleId, it: Symbol, at: TextRange) -> Name {
         self.new_name(NameTag::TypeVar, module, it, at)
     }
-    pub fn field_idx(&self, module: ModuleId, it: Spur, at: TextRange) -> Name {
+    pub fn field_idx(&self, module: ModuleId, it: Symbol, at: TextRange) -> Name {
         self.new_name(NameTag::Field, module, it, at)
     }
-    pub fn gen_idx(&self, module: ModuleId, it: Spur) -> Name {
+    pub fn gen_idx(&self, module: ModuleId, it: Symbol) -> Name {
         self.new_name(NameTag::Gen, module, it, TextRange::default())
     }
     pub fn lookup(&self, name: Name) -> CompactId {

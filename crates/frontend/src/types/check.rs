@@ -225,6 +225,10 @@ impl Typechecker<'_> {
         }
     }
 
+    fn sym(&self, s: &str) -> Symbol {
+        self.name_supply.get_or_intern(s)
+    }
+
     fn record_def(&self, token: &SyntaxToken, name: Name) {
         let previous_def = self
             .occurrences
@@ -337,10 +341,6 @@ impl Typechecker<'_> {
             globals,
             funcs,
         }
-    }
-
-    fn sym(&self, s: &str) -> Symbol {
-        self.name_supply.get_or_intern(s)
     }
 
     fn check_imports(&mut self, errors: &mut TyErrors, module: &Module) -> Vec<ir::Import> {
