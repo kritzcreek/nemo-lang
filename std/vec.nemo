@@ -1,27 +1,27 @@
 module vec
-exports (Vec, new, push, pop, extend, for_each)
+exports (Vec, new, with_capacity, index, set_index, push, pop, extend, subvec, for_each, to_array)
 
 use option
 
 struct Vec[a] {
   zero : a,
-  buf : Array[a],
   len : I32,
+  buf : Array[a],
 }
 
 fn new[a](zero : a) -> Vec[a] {
   Vec {
     zero = zero,
-    buf = [],
     len = 0,
+    buf = [],
   }
 }
 
 fn with_capacity[a](zero : a, capacity : I32) -> Vec[a] {
   Vec {
     zero = zero,
-    buf = array_new#[a](zero, capacity),
     len = 0,
+    buf = array_new#[a](zero, capacity),
   }
 }
 
@@ -45,6 +45,16 @@ fn grow[a](vec : Vec[a], new_len : I32) {
   };
 
   set vec.buf = new_buf;
+}
+
+fn index[a](vec : Vec[a] ix : I32) -> a {
+  // TODO: assert vec.len < ix
+  vec.buf[ix]
+}
+
+fn set_index[a](vec : Vec[a] ix : I32, elem : a) {
+  // TODO: assert vec.len < ix
+  set vec.buf[ix] = elem;
 }
 
 fn push[a](vec : Vec[a], elem : a) {
@@ -74,17 +84,12 @@ fn extend[a](vec : Vec[a], other : Vec[a]) {
   set vec.len = vec.len + other.len;
 }
 
-fn subarray[a](vec : Vec[a], start : I32, len : I32) -> Vec[a] {
+fn subvec[a](vec : Vec[a], start : I32, len : I32) -> Vec[a] {
   // TODO assert start >= 0 && len >= 0 && start + len <= vec.len
-  let end = start + len;
   let new_vec = with_capacity(vec.zero, len);
-  // TODO(perf): directly modify new_vec.buf and new_vec.len
-  let i = start;
-  while i < end {
-    push(new_vec, vec.buf[i]);
-    set i = i + 1;
-  };
-  return new_vec;
+  array_copy#[a](new_vec.buf, 0, vec.buf, start, len);
+  set new_vec.len = len;
+  new_vec
 }
 
 fn for_each[a](vec : Vec[a], f : fn (a) -> Unit) {
@@ -93,4 +98,10 @@ fn for_each[a](vec : Vec[a], f : fn (a) -> Unit) {
   while i < len {
     f(vec.buf[i])
   };
+}
+
+fn to_array[a](vec : Vec[a]) -> Array[a] {
+  let res = array_new#[a](vec.zero, vec.len);
+  array_copy#[a](res, 0, vec.buf, 0, vec.len);
+  res
 }

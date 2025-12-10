@@ -15,9 +15,9 @@ fn early_return() -> I32 {
 fn loop_return() -> F32 {
   let i = 0.0;
   while true {
-    if i > 10.0 {
+    when i > 10.0 {
         return i;
-    } else {};
+    };
     set i = i + 1.0;
   };
   0.0;
