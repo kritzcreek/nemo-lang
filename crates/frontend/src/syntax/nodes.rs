@@ -557,6 +557,33 @@ impl EParen {
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ETuple {
+    pub(crate) syntax: SyntaxNode,
+}
+impl ETuple {
+    pub fn l_paren_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T!['('])
+    }
+    pub fn exprs(&self) -> AstChildren<Expr> {
+        support::children(&self.syntax)
+    }
+    pub fn r_paren_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![')'])
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ETupleIdx {
+    pub(crate) syntax: SyntaxNode,
+}
+impl ETupleIdx {
+    pub fn expr(&self) -> Option<Expr> {
+        support::child(&self.syntax)
+    }
+    pub fn int_lit_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![int_lit])
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EUnary {
     pub(crate) syntax: SyntaxNode,
 }
@@ -868,6 +895,8 @@ pub enum Expr {
     EStruct(EStruct),
     ECall(ECall),
     EParen(EParen),
+    ETuple(ETuple),
+    ETupleIdx(ETupleIdx),
     EUnary(EUnary),
     EBinary(EBinary),
     EArrayIdx(EArrayIdx),
@@ -1519,6 +1548,36 @@ impl AstNode for EParen {
         &self.syntax
     }
 }
+impl AstNode for ETuple {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == ETuple
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+impl AstNode for ETupleIdx {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == ETupleIdx
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
 impl AstNode for EUnary {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == EUnary
@@ -2037,6 +2096,16 @@ impl From<EParen> for Expr {
         Expr::EParen(node)
     }
 }
+impl From<ETuple> for Expr {
+    fn from(node: ETuple) -> Expr {
+        Expr::ETuple(node)
+    }
+}
+impl From<ETupleIdx> for Expr {
+    fn from(node: ETupleIdx) -> Expr {
+        Expr::ETupleIdx(node)
+    }
+}
 impl From<EUnary> for Expr {
     fn from(node: EUnary) -> Expr {
         Expr::EUnary(node)
@@ -2090,8 +2159,9 @@ impl From<EReturn> for Expr {
 impl AstNode for Expr {
     fn can_cast(kind: SyntaxKind) -> bool {
         match kind {
-            ELit | EVar | EArray | EStruct | ECall | EParen | EUnary | EBinary | EArrayIdx
-            | EStructIdx | EIf | EWhen | EMatch | ELambda | EBlock | EReturn => true,
+            ELit | EVar | EArray | EStruct | ECall | EParen | ETuple | ETupleIdx | EUnary
+            | EBinary | EArrayIdx | EStructIdx | EIf | EWhen | EMatch | ELambda | EBlock
+            | EReturn => true,
             _ => false,
         }
     }
@@ -2103,6 +2173,8 @@ impl AstNode for Expr {
             EStruct => Expr::EStruct(EStruct { syntax }),
             ECall => Expr::ECall(ECall { syntax }),
             EParen => Expr::EParen(EParen { syntax }),
+            ETuple => Expr::ETuple(ETuple { syntax }),
+            ETupleIdx => Expr::ETupleIdx(ETupleIdx { syntax }),
             EUnary => Expr::EUnary(EUnary { syntax }),
             EBinary => Expr::EBinary(EBinary { syntax }),
             EArrayIdx => Expr::EArrayIdx(EArrayIdx { syntax }),
@@ -2125,6 +2197,8 @@ impl AstNode for Expr {
             Expr::EStruct(it) => &it.syntax,
             Expr::ECall(it) => &it.syntax,
             Expr::EParen(it) => &it.syntax,
+            Expr::ETuple(it) => &it.syntax,
+            Expr::ETupleIdx(it) => &it.syntax,
             Expr::EUnary(it) => &it.syntax,
             Expr::EBinary(it) => &it.syntax,
             Expr::EArrayIdx(it) => &it.syntax,
@@ -2542,6 +2616,16 @@ impl std::fmt::Display for ECall {
     }
 }
 impl std::fmt::Display for EParen {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for ETuple {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for ETupleIdx {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
     }

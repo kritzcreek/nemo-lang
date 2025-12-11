@@ -636,9 +636,14 @@ fn postfix_expr(p: &mut Parser, c: Checkpoint) {
             T![.] => {
                 p.bump(T![.]);
                 if !p.eat(T![ident]) {
-                    p.error("expected a field index")
+                    if !p.eat(T![int_lit]) {
+                        p.error("expected a field or tuple index")
+                    } else {
+                        p.finish_at(c, SyntaxKind::ETupleIdx)
+                    }
+                } else {
+                    p.finish_at(c, SyntaxKind::EStructIdx)
                 }
-                p.finish_at(c, SyntaxKind::EStructIdx)
             }
             _ => break,
         }
@@ -663,11 +668,24 @@ fn atom(p: &mut Parser) -> Progress {
     }
 
     if p.eat(T!['(']) {
-        if !expr(p).made_progress() {
-            p.error("expected an expression")
+        let mut count = 0;
+        while !p.at(SyntaxKind::EOF) && !p.at(T![')']) {
+            if !expr(p).made_progress() {
+                break;
+            }
+            count += 1;
+            if !p.at(T![')']) && !p.expect(T![,]) {
+                break;
+            }
         }
         p.expect(T![')']);
-        p.finish_at(c, SyntaxKind::EParen);
+        if count == 0 {
+            p.error("expected an expression")
+        } else if count == 1 {
+            p.finish_at(c, SyntaxKind::EParen);
+        } else {
+            p.finish_at(c, SyntaxKind::ETuple);
+        }
         return Progress::Made;
     }
 

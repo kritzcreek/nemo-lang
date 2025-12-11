@@ -10,7 +10,7 @@ use super::{
 use super::{FuncDef, StructDef, TypeDef, VariantDef};
 use crate::ir::{
     self, Ctx, ExprBuilder, FuncTy, LambdaBuilder, LitBuilder, Name, PatVarBuilder, ReturnBuilder,
-    Substitution, Symbol, Ty, VarBuilder,
+    Substitution, Symbol, TupleBuilder, TupleIdxBuilder, Ty, VarBuilder,
 };
 use crate::parser::SyntaxKind;
 use crate::syntax::token_ptr::SyntaxTokenPtr;
@@ -1131,6 +1131,43 @@ impl Typechecker<'_> {
                     builder.expr(self.check_expr(errors, scope, &return_value, return_ty.as_ref()));
                 }
                 (Ty::Diverge, builder.build())
+            }
+            Expr::ETuple(tuple_expr) => {
+                let mut builder = TupleBuilder::default();
+                let mut tys = vec![];
+                for expr in tuple_expr.exprs() {
+                    let (ty, ir) = self.infer_expr(errors, scope, &expr);
+                    tys.push(ty);
+                    builder.exprs(ir);
+                }
+                (Ty::Tuple(tys), builder.build())
+            }
+            Expr::ETupleIdx(idx_expr) => {
+                let mut builder = TupleIdxBuilder::default();
+                let tup = idx_expr.expr()?;
+                let (tuple_ty, ir) = self.infer_expr(errors, scope, &tup);
+                builder.expr(ir);
+
+                let Ty::Tuple(ts) = tuple_ty else {
+                    if matches!(tuple_ty, Ty::Error | Ty::Diverge) {
+                        return Some((tuple_ty, None));
+                    } else {
+                        errors.report(&tup, TyErrorData::NonTupleIdx(tuple_ty));
+                        return None;
+                    }
+                };
+
+                let tkn = idx_expr.int_lit_token()?;
+                let Ok(index) = tkn.text().parse::<u32>() else {
+                    errors.report(&tkn, TyErrorData::InvalidLiteral);
+                    return None;
+                };
+                let Some(t) = ts.get(index as usize) else {
+                    errors.report(&tkn, TyErrorData::TupleIdxOutOfRange(Ty::Tuple(ts), index));
+                    return None;
+                };
+                builder.index(Some(index));
+                (t.clone(), builder.build())
             }
         };
 

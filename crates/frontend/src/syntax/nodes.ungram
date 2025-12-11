@@ -78,6 +78,8 @@ Expr
   | EStruct
   | ECall
   | EParen
+  | ETuple
+  | ETupleIdx
   | EUnary
   | EBinary
   | EArrayIdx
@@ -93,6 +95,8 @@ ELit = Literal
 EVar = ModQualifier? 'ident'
 EArray = '[' Expr* ']'
 EParen = '(' Expr ')'
+ETuple = '(' Expr* ')'
+ETupleIdx = Expr 'int_lit'
 EArrayIdx = Expr '[' index:Expr ']'
 
 ECall = Expr ETyArgList? EArgList

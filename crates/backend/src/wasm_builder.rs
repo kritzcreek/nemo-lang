@@ -115,8 +115,9 @@ pub struct Builder<'a> {
     bytes_ty: Option<TypeIdx>,
     // Stores the type index for all array types we've declared so far.
     // Uses the arrays _ELEM TYPE_ as the key
-    func_tys: HashMap<FuncType, TypeIdx>,
     arrays: HashMap<ValType, TypeIdx>,
+    tuples: HashMap<Vec<ValType>, TypeIdx>,
+    func_tys: HashMap<FuncType, TypeIdx>,
     structs: HashMap<Name, StructInfo>,
     variants: HashMap<Name, VariantInfo>,
     // TODO: Could use `FuncType` as the key, and avoid creating duplicated closure types
@@ -135,6 +136,7 @@ impl<'a> Builder<'a> {
             datas: vec![],
             types: vec![],
             arrays: HashMap::new(),
+            tuples: HashMap::new(),
             func_tys: HashMap::new(),
             structs: HashMap::new(),
             variants: HashMap::new(),
@@ -388,6 +390,31 @@ impl<'a> Builder<'a> {
         self.variant_type(variant).tag(alternative)
     }
 
+    pub fn tuple_type(&mut self, tys: &[Ty]) -> TypeIdx {
+        let fields: Vec<_> = tys.iter().map(|t| self.val_ty(t)).collect();
+        if let Some(idx) = self.tuples.get(&fields) {
+            *idx
+        } else {
+            let field_types: Vec<_> = fields
+                .iter()
+                .map(|t| FieldType {
+                    mutable: false,
+                    element_type: StorageType::Val(t.clone()),
+                })
+                .collect();
+            let idx = self.types.len() as u32;
+            self.tuples.insert(fields, idx);
+            self.types.push(SubType {
+                is_final: true,
+                supertype_idx: None,
+                composite_type: composite_struct(StructType {
+                    fields: field_types.into_boxed_slice(),
+                }),
+            });
+            idx
+        }
+    }
+
     pub fn heap_type(&mut self, name: Name, ty_params: &Substitution) -> TypeIdx {
         let tys = self
             .substitution()
@@ -500,6 +527,13 @@ impl<'a> Builder<'a> {
             Ty::I32 | Ty::U32 | Ty::Unit | Ty::Bool => ValType::I32,
             Ty::Bytes => {
                 let idx = self.bytes_ty();
+                ValType::Ref(RefType {
+                    nullable: true,
+                    heap_type: HeapType::Concrete(idx),
+                })
+            }
+            Ty::Tuple(ts) => {
+                let idx = self.tuple_type(&ts);
                 ValType::Ref(RefType {
                     nullable: true,
                     heap_type: HeapType::Concrete(idx),

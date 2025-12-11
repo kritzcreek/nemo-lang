@@ -133,6 +133,8 @@ pub enum TyErrorData {
     UnknownIntrinsic(String, usize),
     NonArrayIdx(Ty),
     NonStructIdx(Ty),
+    NonTupleIdx(Ty),
+    TupleIdxOutOfRange(Ty, u32),
     NotAFunction(Ty),
     NonFunctionImport {
         name: Name,
@@ -198,6 +200,8 @@ fn code_for_error(err_data: &TyErrorData) -> i32 {
         TyErrorData::CantReassignCapturedVariable(_) => 25,
         TyErrorData::CantInferTypeParam(_) => 26,
         TyErrorData::CantInferLambda => 27,
+        TyErrorData::NonTupleIdx(_) => 28,
+        TyErrorData::TupleIdxOutOfRange(_, _) => 29,
     }
 }
 
@@ -226,6 +230,15 @@ fn error_label(err_data: &TyErrorData, ctx: &Ctx) -> String {
         ),
         TyErrorData::NonStructIdx(ty) => format!(
             "Tried to index into a non-struct type {}",
+            ty.display(ctx)
+        ),
+        TyErrorData::NonTupleIdx(ty) => format!(
+            "Tried to index into a non-tuple type {}",
+            ty.display(ctx)
+        ),
+        TyErrorData::TupleIdxOutOfRange(ty, idx) => format!(
+            "Index {} is out-of-range for tuple type {}",
+            idx,
             ty.display(ctx)
         ),
         TyErrorData::NotAFunction(ty) => format!(

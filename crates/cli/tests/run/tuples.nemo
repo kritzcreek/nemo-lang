@@ -1,0 +1,8 @@
+import log_int : fn (I32) -> Unit from log_int
+import log_float : fn (F32) -> Unit from log_float
+
+fn main() {
+  let x = (1, 1.0);
+  log_int(x.0);
+  log_float(x.1);
+}
