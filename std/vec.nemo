@@ -48,12 +48,16 @@ fn grow[a](vec : Vec[a], new_len : I32) {
 }
 
 fn index[a](vec : Vec[a] ix : I32) -> a {
-  // TODO: assert vec.len < ix
+  when vec.len <= ix {
+    panic();
+  };
   vec.buf[ix]
 }
 
 fn set_index[a](vec : Vec[a] ix : I32, elem : a) {
-  // TODO: assert vec.len < ix
+  when vec.len <= ix {
+    panic();
+  };
   set vec.buf[ix] = elem;
 }
 
@@ -85,7 +89,9 @@ fn extend[a](vec : Vec[a], other : Vec[a]) {
 }
 
 fn subvec[a](vec : Vec[a], start : I32, len : I32) -> Vec[a] {
-  // TODO assert start >= 0 && len >= 0 && start + len <= vec.len
+  when start < 0 || len < 0 || start + len >= vec.len {
+    panic()
+  };
   let new_vec = with_capacity(vec.zero, len);
   array_copy#[a](new_vec.buf, 0, vec.buf, start, len);
   set new_vec.len = len;

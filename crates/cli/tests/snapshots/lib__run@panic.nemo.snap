@@ -1,0 +1,8 @@
+---
+source: crates/cli/tests/lib.rs
+expression: output
+input_file: crates/cli/tests/run/panic.nemo
+---
+Trapped: error while executing at wasm backtrace:
+    0:     0x54 - <unknown>!::main
+1

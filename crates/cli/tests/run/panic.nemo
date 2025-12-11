@@ -1,0 +1,7 @@
+import log : fn (I32) -> Unit from log
+
+fn main() {
+  log(1);
+  panic();
+  log(2);
+}

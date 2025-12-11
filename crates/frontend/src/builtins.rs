@@ -280,6 +280,13 @@ static BUILTINS: LazyLock<HashMap<&'static str, Fn>> = LazyLock::new(|| {
         },
     );
     m.insert(
+        "panic",
+        Fn {
+            name: "panic",
+            ty_params: vec![],
+            ty: FuncTy { arguments: vec![], result: Ty::Diverge }
+        });
+    m.insert(
         "bytes_copy",
         Fn {
             name: "bytes_copy",

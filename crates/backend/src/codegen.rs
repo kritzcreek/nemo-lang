@@ -835,6 +835,7 @@ fn builtin_instruction(builtin: &str) -> Instruction<'static> {
         "array_len" => Instruction::ArrayLen,
         "array_new" => unreachable!("array_new needs special handling"),
         "array_copy" => unreachable!("array_copy needs special handling"),
+        "panic" => Instruction::Unreachable,
         b => unreachable!("Unknown builtin {b}"),
     }
 }
