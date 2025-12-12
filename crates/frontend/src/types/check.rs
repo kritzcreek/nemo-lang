@@ -682,6 +682,10 @@ impl Typechecker<'_> {
                     ty_args: Substitution::new(ty_param_names, &ty_args),
                 }
             }
+            Type::TyTuple(tup) => {
+                let tys = tup.types().map(|ty| self.check_ty(errors, scope, &ty)).collect();
+                Ty::Tuple(tys)
+            }
             Type::TyVar(v) => {
                 let tkn = v.ident_token().unwrap();
                 if let Some(name) = scope.lookup_type_var(self.sym(tkn.text())) {

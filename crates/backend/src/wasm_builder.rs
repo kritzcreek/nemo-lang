@@ -399,7 +399,7 @@ impl<'a> Builder<'a> {
                 .iter()
                 .map(|t| FieldType {
                     mutable: false,
-                    element_type: StorageType::Val(t.clone()),
+                    element_type: StorageType::Val(*t),
                 })
                 .collect();
             let idx = self.types.len() as u32;
@@ -533,7 +533,7 @@ impl<'a> Builder<'a> {
                 })
             }
             Ty::Tuple(ts) => {
-                let idx = self.tuple_type(&ts);
+                let idx = self.tuple_type(ts);
                 ValType::Ref(RefType {
                     nullable: true,
                     heap_type: HeapType::Concrete(idx),

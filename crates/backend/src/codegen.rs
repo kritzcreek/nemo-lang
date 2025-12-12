@@ -59,7 +59,7 @@ impl<'a> Codegen<'a> {
                 ConstExpr::ref_null(HeapType::Concrete(ty_idx))
             }
             Ty::Tuple(ts) => {
-                let ty_idx = self.builder.tuple_type(&ts);
+                let ty_idx = self.builder.tuple_type(ts);
                 ConstExpr::ref_null(HeapType::Concrete(ty_idx))
             }
             Ty::Array(t) => {
@@ -454,7 +454,7 @@ impl<'a> Codegen<'a> {
                 let Ty::Tuple(ts) = &expr.ty else {
                     panic!("Can't index a non-tuple type")
                 };
-                let ty_idx = self.builder.tuple_type(&ts);
+                let ty_idx = self.builder.tuple_type(ts);
                 let mut instrs = self.compile_expr(body, expr);
                 instrs.push(Instruction::StructGet {
                     struct_type_index: ty_idx,

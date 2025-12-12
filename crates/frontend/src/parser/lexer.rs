@@ -345,6 +345,7 @@ pub enum SyntaxKind {
     TyUnit,
     TyBytes,
     TyArray,
+    TyTuple,
     TyFn,
     TyCons,
     TyVar,

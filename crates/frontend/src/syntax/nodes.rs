@@ -362,6 +362,15 @@ impl TyCons {
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct TyTuple {
+    pub(crate) syntax: SyntaxNode,
+}
+impl TyTuple {
+    pub fn types(&self) -> AstChildren<Type> {
+        support::children(&self.syntax)
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TyFn {
     pub(crate) syntax: SyntaxNode,
 }
@@ -885,6 +894,7 @@ pub enum Type {
     TyUnit(TyUnit),
     TyVar(TyVar),
     TyCons(TyCons),
+    TyTuple(TyTuple),
     TyFn(TyFn),
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -1326,6 +1336,21 @@ impl AstNode for TyVar {
 impl AstNode for TyCons {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == TyCons
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+impl AstNode for TyTuple {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == TyTuple
     }
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         if Self::can_cast(syntax.kind()) {
@@ -2025,6 +2050,11 @@ impl From<TyCons> for Type {
         Type::TyCons(node)
     }
 }
+impl From<TyTuple> for Type {
+    fn from(node: TyTuple) -> Type {
+        Type::TyTuple(node)
+    }
+}
 impl From<TyFn> for Type {
     fn from(node: TyFn) -> Type {
         Type::TyFn(node)
@@ -2033,7 +2063,8 @@ impl From<TyFn> for Type {
 impl AstNode for Type {
     fn can_cast(kind: SyntaxKind) -> bool {
         match kind {
-            TyInt | TyUInt | TyFloat | TyBool | TyBytes | TyUnit | TyVar | TyCons | TyFn => true,
+            TyInt | TyUInt | TyFloat | TyBool | TyBytes | TyUnit | TyVar | TyCons | TyTuple
+            | TyFn => true,
             _ => false,
         }
     }
@@ -2047,6 +2078,7 @@ impl AstNode for Type {
             TyUnit => Type::TyUnit(TyUnit { syntax }),
             TyVar => Type::TyVar(TyVar { syntax }),
             TyCons => Type::TyCons(TyCons { syntax }),
+            TyTuple => Type::TyTuple(TyTuple { syntax }),
             TyFn => Type::TyFn(TyFn { syntax }),
             _ => return None,
         };
@@ -2062,6 +2094,7 @@ impl AstNode for Type {
             Type::TyUnit(it) => &it.syntax,
             Type::TyVar(it) => &it.syntax,
             Type::TyCons(it) => &it.syntax,
+            Type::TyTuple(it) => &it.syntax,
             Type::TyFn(it) => &it.syntax,
         }
     }
@@ -2546,6 +2579,11 @@ impl std::fmt::Display for TyVar {
     }
 }
 impl std::fmt::Display for TyCons {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for TyTuple {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
     }
