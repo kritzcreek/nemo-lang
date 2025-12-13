@@ -10,7 +10,7 @@ use super::{
 use super::{FuncDef, StructDef, TypeDef, VariantDef};
 use crate::ir::{
     self, Ctx, ExprBuilder, FuncTy, LambdaBuilder, LitBuilder, Name, PatVarBuilder, ReturnBuilder,
-    Substitution, Symbol, Ty, VarBuilder,
+    Substitution, Symbol, TupleBuilder, TupleIdxBuilder, Ty, VarBuilder,
 };
 use crate::parser::SyntaxKind;
 use crate::syntax::token_ptr::SyntaxTokenPtr;
@@ -682,6 +682,13 @@ impl Typechecker<'_> {
                     ty_args: Substitution::new(ty_param_names, &ty_args),
                 }
             }
+            Type::TyTuple(tup) => {
+                let tys = tup
+                    .types()
+                    .map(|ty| self.check_ty(errors, scope, &ty))
+                    .collect();
+                Ty::Tuple(tys)
+            }
             Type::TyVar(v) => {
                 let tkn = v.ident_token().unwrap();
                 if let Some(name) = scope.lookup_type_var(self.sym(tkn.text())) {
@@ -1131,6 +1138,43 @@ impl Typechecker<'_> {
                     builder.expr(self.check_expr(errors, scope, &return_value, return_ty.as_ref()));
                 }
                 (Ty::Diverge, builder.build())
+            }
+            Expr::ETuple(tuple_expr) => {
+                let mut builder = TupleBuilder::default();
+                let mut tys = vec![];
+                for expr in tuple_expr.exprs() {
+                    let (ty, ir) = self.infer_expr(errors, scope, &expr);
+                    tys.push(ty);
+                    builder.exprs(ir);
+                }
+                (Ty::Tuple(tys), builder.build())
+            }
+            Expr::ETupleIdx(idx_expr) => {
+                let mut builder = TupleIdxBuilder::default();
+                let tup = idx_expr.expr()?;
+                let (tuple_ty, ir) = self.infer_expr(errors, scope, &tup);
+                builder.expr(ir);
+
+                let Ty::Tuple(ts) = tuple_ty else {
+                    if matches!(tuple_ty, Ty::Error | Ty::Diverge) {
+                        return Some((tuple_ty, None));
+                    } else {
+                        errors.report(&tup, TyErrorData::NonTupleIdx(tuple_ty));
+                        return None;
+                    }
+                };
+
+                let tkn = idx_expr.int_lit_token()?;
+                let Ok(index) = tkn.text().parse::<u32>() else {
+                    errors.report(&tkn, TyErrorData::InvalidLiteral);
+                    return None;
+                };
+                let Some(t) = ts.get(index as usize) else {
+                    errors.report(&tkn, TyErrorData::TupleIdxOutOfRange(Ty::Tuple(ts), index));
+                    return None;
+                };
+                builder.index(Some(index));
+                (t.clone(), builder.build())
             }
         };
 
@@ -1664,6 +1708,26 @@ impl Typechecker<'_> {
                     );
                 }
                 ir
+            }
+            (Expr::ETuple(tuple), Ty::Tuple(tys)) => {
+                let mut builder = ir::TupleBuilder::default();
+                let exprs = tuple.exprs().collect::<Vec<_>>();
+                for (expr, ty) in exprs.iter().zip(tys.iter()) {
+                    builder.exprs(self.check_expr(errors, scope, expr, ty));
+                }
+                if tys.len() != exprs.len() {
+                    errors.report(
+                        expr,
+                        TupleCountMismatch {
+                            expected: tys.len(),
+                            actual: exprs.len(),
+                            ty: expected.clone(),
+                        },
+                    );
+                    None
+                } else {
+                    builder.build()
+                }
             }
             (Expr::EIf(expr), ty) => {
                 let mut builder = ir::IfBuilder::default();

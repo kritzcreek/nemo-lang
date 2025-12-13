@@ -1,5 +1,5 @@
 module io
-exports (println, println_bytes, print_int, print_float, print_bool)
+exports (println, print_bytes, println_bytes, print_int, print_float, print_bool)
 
 use string
 use option
@@ -25,6 +25,20 @@ fn print_chars(next: fn () -> option::Option[I32]) {
 
 fn println(s : string::Str) {
   print_chars(string::chars(s))
+}
+
+fn print_bytes(b : Bytes) {
+  let next = string::chars(string::unsafe_new(b));
+  while true {
+    match next() {
+      option::Option::None _ => {
+        return {}
+      },
+      option::Option::Some char => {
+        print_char(char.val)
+      }
+    }
+  };
 }
 
 fn println_bytes(b : Bytes) {

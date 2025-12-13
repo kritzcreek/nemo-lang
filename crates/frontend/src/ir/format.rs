@@ -138,6 +138,16 @@ impl Formatter<'_> {
                 self.expr(expr),
                 self.name(index),
             ]),
+            ExprData::Tuple { exprs } => {
+                let mut elems = vec![Value::symbol("tuple")];
+                elems.extend(exprs.iter().map(|e| self.expr(e)));
+                Value::list(elems)
+            }
+            ExprData::TupleIdx { expr, index } => Value::list(vec![
+                Value::symbol("tuple_idx"),
+                self.expr(expr),
+                Value::symbol(format!("{index}")),
+            ]),
             ExprData::Match { .. } => "match".into(),
             ExprData::Lambda {
                 captures,

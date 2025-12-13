@@ -18,6 +18,7 @@ pub enum Ty {
     Unit,
     Bool,
     Bytes,
+    Tuple(Vec<Ty>),
     Array(Box<Ty>),
     Cons { name: Name, ty_args: Substitution },
     Var(Name),
@@ -45,6 +46,11 @@ impl Ty {
             | Ty::Error
             | Ty::Diverge => {}
             Ty::Array(t) => t.vars_inner(acc),
+            Ty::Tuple(ts) => {
+                for ty in ts {
+                    ty.vars_inner(acc)
+                }
+            }
             Ty::Cons { name: _, ty_args } => {
                 for ty in ty_args.0.values() {
                     ty.vars_inner(acc)
@@ -84,6 +90,14 @@ impl fmt::Display for TyDisplay<'_> {
             Ty::Unit => write!(f, "Unit"),
             Ty::Bytes => write!(f, "Bytes"),
             Ty::Diverge => write!(f, "!"),
+            Ty::Tuple(ts) => write!(
+                f,
+                "({})",
+                ts.iter()
+                    .map(|t| t.display(self.ctx).to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ),
             Ty::Array(t) => write!(f, "[{}]", t.display(self.ctx)),
             Ty::Cons {
                 name: t,
@@ -183,6 +197,7 @@ impl Substitution {
             | Ty::Bytes
             | Ty::Error
             | Ty::Diverge => ty,
+            Ty::Tuple(ts) => Ty::Tuple(ts.into_iter().map(|t| self.apply(t)).collect()),
             Ty::Array(t) => Ty::Array(Box::new(self.apply(*t))),
             Ty::Func(f) => Ty::Func(Box::new(self.apply_func(*f))),
             Ty::Cons { name, ty_args } => Ty::Cons {
@@ -470,6 +485,12 @@ impl Expr {
                     }
                 }
                 ExprData::StructIdx { expr, index: _ } => free_vars_inner(current, expr),
+                ExprData::Tuple { exprs } => {
+                    for expr in exprs {
+                        free_vars_inner(current, expr);
+                    }
+                }
+                ExprData::TupleIdx { expr, index: _ } => free_vars_inner(current, expr),
                 ExprData::Match {
                     scrutinee,
                     branches,
@@ -552,6 +573,13 @@ pub enum ExprData {
     StructIdx {
         expr: Expr,
         index: Name,
+    },
+    Tuple {
+        exprs: Vec<Expr>,
+    },
+    TupleIdx {
+        expr: Expr,
+        index: u32,
     },
     Match {
         scrutinee: Expr,

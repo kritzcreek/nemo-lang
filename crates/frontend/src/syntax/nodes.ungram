@@ -45,6 +45,7 @@ Type
   | TyUnit
   | TyVar
   | TyCons
+  | TyTuple
   | TyFn
 
 TyInt = 'I32'
@@ -54,6 +55,7 @@ TyBool = 'Bool'
 TyBytes = 'Bytes'
 TyUnit = 'Unit'
 TyCons = ModQualifier? Qualifier? 'upper_ident' type_args:Type*
+TyTuple = Type*
 TyVar = 'ident'
 
 ModQualifier = 'ident' '::'
@@ -78,6 +80,8 @@ Expr
   | EStruct
   | ECall
   | EParen
+  | ETuple
+  | ETupleIdx
   | EUnary
   | EBinary
   | EArrayIdx
@@ -93,6 +97,8 @@ ELit = Literal
 EVar = ModQualifier? 'ident'
 EArray = '[' Expr* ']'
 EParen = '(' Expr ')'
+ETuple = '(' Expr* ')'
+ETupleIdx = Expr 'int_lit'
 EArrayIdx = Expr '[' index:Expr ']'
 
 ECall = Expr ETyArgList? EArgList

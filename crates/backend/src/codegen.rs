@@ -58,6 +58,10 @@ impl<'a> Codegen<'a> {
                 let ty_idx = self.builder.bytes_ty();
                 ConstExpr::ref_null(HeapType::Concrete(ty_idx))
             }
+            Ty::Tuple(ts) => {
+                let ty_idx = self.builder.tuple_type(ts);
+                ConstExpr::ref_null(HeapType::Concrete(ty_idx))
+            }
             Ty::Array(t) => {
                 let ty_idx = self.builder.array_type_elem(t);
                 ConstExpr::ref_null(HeapType::Concrete(ty_idx))
@@ -431,6 +435,30 @@ impl<'a> Codegen<'a> {
                 instrs.push(Instruction::StructGet {
                     struct_type_index,
                     field_index,
+                });
+                instrs
+            }
+            ExprData::Tuple { exprs } => {
+                let Ty::Tuple(ts) = &expr.ty else {
+                    panic!("Can't create a non-tuple type from tuple")
+                };
+                let ty = self.builder.tuple_type(ts);
+                let mut instrs = vec![];
+                for e in exprs {
+                    instrs.extend(self.compile_expr(body, e));
+                }
+                instrs.push(Instruction::StructNew(ty));
+                instrs
+            }
+            ExprData::TupleIdx { expr, index } => {
+                let Ty::Tuple(ts) = &expr.ty else {
+                    panic!("Can't index a non-tuple type")
+                };
+                let ty_idx = self.builder.tuple_type(ts);
+                let mut instrs = self.compile_expr(body, expr);
+                instrs.push(Instruction::StructGet {
+                    struct_type_index: ty_idx,
+                    field_index: index,
                 });
                 instrs
             }

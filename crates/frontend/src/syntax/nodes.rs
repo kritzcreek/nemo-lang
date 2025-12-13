@@ -362,6 +362,15 @@ impl TyCons {
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct TyTuple {
+    pub(crate) syntax: SyntaxNode,
+}
+impl TyTuple {
+    pub fn types(&self) -> AstChildren<Type> {
+        support::children(&self.syntax)
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TyFn {
     pub(crate) syntax: SyntaxNode,
 }
@@ -554,6 +563,33 @@ impl EParen {
     }
     pub fn r_paren_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T![')'])
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ETuple {
+    pub(crate) syntax: SyntaxNode,
+}
+impl ETuple {
+    pub fn l_paren_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T!['('])
+    }
+    pub fn exprs(&self) -> AstChildren<Expr> {
+        support::children(&self.syntax)
+    }
+    pub fn r_paren_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![')'])
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ETupleIdx {
+    pub(crate) syntax: SyntaxNode,
+}
+impl ETupleIdx {
+    pub fn expr(&self) -> Option<Expr> {
+        support::child(&self.syntax)
+    }
+    pub fn int_lit_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![int_lit])
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -858,6 +894,7 @@ pub enum Type {
     TyUnit(TyUnit),
     TyVar(TyVar),
     TyCons(TyCons),
+    TyTuple(TyTuple),
     TyFn(TyFn),
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -868,6 +905,8 @@ pub enum Expr {
     EStruct(EStruct),
     ECall(ECall),
     EParen(EParen),
+    ETuple(ETuple),
+    ETupleIdx(ETupleIdx),
     EUnary(EUnary),
     EBinary(EBinary),
     EArrayIdx(EArrayIdx),
@@ -1309,6 +1348,21 @@ impl AstNode for TyCons {
         &self.syntax
     }
 }
+impl AstNode for TyTuple {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == TyTuple
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
 impl AstNode for TyFn {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == TyFn
@@ -1507,6 +1561,36 @@ impl AstNode for ECall {
 impl AstNode for EParen {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == EParen
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+impl AstNode for ETuple {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == ETuple
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+impl AstNode for ETupleIdx {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == ETupleIdx
     }
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         if Self::can_cast(syntax.kind()) {
@@ -1966,6 +2050,11 @@ impl From<TyCons> for Type {
         Type::TyCons(node)
     }
 }
+impl From<TyTuple> for Type {
+    fn from(node: TyTuple) -> Type {
+        Type::TyTuple(node)
+    }
+}
 impl From<TyFn> for Type {
     fn from(node: TyFn) -> Type {
         Type::TyFn(node)
@@ -1974,7 +2063,8 @@ impl From<TyFn> for Type {
 impl AstNode for Type {
     fn can_cast(kind: SyntaxKind) -> bool {
         match kind {
-            TyInt | TyUInt | TyFloat | TyBool | TyBytes | TyUnit | TyVar | TyCons | TyFn => true,
+            TyInt | TyUInt | TyFloat | TyBool | TyBytes | TyUnit | TyVar | TyCons | TyTuple
+            | TyFn => true,
             _ => false,
         }
     }
@@ -1988,6 +2078,7 @@ impl AstNode for Type {
             TyUnit => Type::TyUnit(TyUnit { syntax }),
             TyVar => Type::TyVar(TyVar { syntax }),
             TyCons => Type::TyCons(TyCons { syntax }),
+            TyTuple => Type::TyTuple(TyTuple { syntax }),
             TyFn => Type::TyFn(TyFn { syntax }),
             _ => return None,
         };
@@ -2003,6 +2094,7 @@ impl AstNode for Type {
             Type::TyUnit(it) => &it.syntax,
             Type::TyVar(it) => &it.syntax,
             Type::TyCons(it) => &it.syntax,
+            Type::TyTuple(it) => &it.syntax,
             Type::TyFn(it) => &it.syntax,
         }
     }
@@ -2035,6 +2127,16 @@ impl From<ECall> for Expr {
 impl From<EParen> for Expr {
     fn from(node: EParen) -> Expr {
         Expr::EParen(node)
+    }
+}
+impl From<ETuple> for Expr {
+    fn from(node: ETuple) -> Expr {
+        Expr::ETuple(node)
+    }
+}
+impl From<ETupleIdx> for Expr {
+    fn from(node: ETupleIdx) -> Expr {
+        Expr::ETupleIdx(node)
     }
 }
 impl From<EUnary> for Expr {
@@ -2090,8 +2192,9 @@ impl From<EReturn> for Expr {
 impl AstNode for Expr {
     fn can_cast(kind: SyntaxKind) -> bool {
         match kind {
-            ELit | EVar | EArray | EStruct | ECall | EParen | EUnary | EBinary | EArrayIdx
-            | EStructIdx | EIf | EWhen | EMatch | ELambda | EBlock | EReturn => true,
+            ELit | EVar | EArray | EStruct | ECall | EParen | ETuple | ETupleIdx | EUnary
+            | EBinary | EArrayIdx | EStructIdx | EIf | EWhen | EMatch | ELambda | EBlock
+            | EReturn => true,
             _ => false,
         }
     }
@@ -2103,6 +2206,8 @@ impl AstNode for Expr {
             EStruct => Expr::EStruct(EStruct { syntax }),
             ECall => Expr::ECall(ECall { syntax }),
             EParen => Expr::EParen(EParen { syntax }),
+            ETuple => Expr::ETuple(ETuple { syntax }),
+            ETupleIdx => Expr::ETupleIdx(ETupleIdx { syntax }),
             EUnary => Expr::EUnary(EUnary { syntax }),
             EBinary => Expr::EBinary(EBinary { syntax }),
             EArrayIdx => Expr::EArrayIdx(EArrayIdx { syntax }),
@@ -2125,6 +2230,8 @@ impl AstNode for Expr {
             Expr::EStruct(it) => &it.syntax,
             Expr::ECall(it) => &it.syntax,
             Expr::EParen(it) => &it.syntax,
+            Expr::ETuple(it) => &it.syntax,
+            Expr::ETupleIdx(it) => &it.syntax,
             Expr::EUnary(it) => &it.syntax,
             Expr::EBinary(it) => &it.syntax,
             Expr::EArrayIdx(it) => &it.syntax,
@@ -2476,6 +2583,11 @@ impl std::fmt::Display for TyCons {
         std::fmt::Display::fmt(self.syntax(), f)
     }
 }
+impl std::fmt::Display for TyTuple {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
 impl std::fmt::Display for TyFn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
@@ -2542,6 +2654,16 @@ impl std::fmt::Display for ECall {
     }
 }
 impl std::fmt::Display for EParen {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for ETuple {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for ETupleIdx {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
     }
