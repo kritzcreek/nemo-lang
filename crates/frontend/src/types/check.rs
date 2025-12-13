@@ -683,7 +683,10 @@ impl Typechecker<'_> {
                 }
             }
             Type::TyTuple(tup) => {
-                let tys = tup.types().map(|ty| self.check_ty(errors, scope, &ty)).collect();
+                let tys = tup
+                    .types()
+                    .map(|ty| self.check_ty(errors, scope, &ty))
+                    .collect();
                 Ty::Tuple(tys)
             }
             Type::TyVar(v) => {
@@ -1705,6 +1708,26 @@ impl Typechecker<'_> {
                     );
                 }
                 ir
+            }
+            (Expr::ETuple(tuple), Ty::Tuple(tys)) => {
+                let mut builder = ir::TupleBuilder::default();
+                let exprs = tuple.exprs().collect::<Vec<_>>();
+                for (expr, ty) in exprs.iter().zip(tys.iter()) {
+                    builder.exprs(self.check_expr(errors, scope, expr, ty));
+                }
+                if tys.len() != exprs.len() {
+                    errors.report(
+                        expr,
+                        TupleCountMismatch {
+                            expected: tys.len(),
+                            actual: exprs.len(),
+                            ty: expected.clone(),
+                        },
+                    );
+                    None
+                } else {
+                    builder.build()
+                }
             }
             (Expr::EIf(expr), ty) => {
                 let mut builder = ir::IfBuilder::default();

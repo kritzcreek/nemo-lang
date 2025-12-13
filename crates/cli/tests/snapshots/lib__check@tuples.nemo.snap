@@ -1,0 +1,50 @@
+---
+source: crates/cli/tests/lib.rs
+info:
+  program: nemo
+  args:
+    - check
+    - tests/check/tuples.nemo
+  env:
+    NO_COLOR: "1"
+    RUST_BACKTRACE: "0"
+input_file: crates/cli/tests/check/tuples.nemo
+---
+success: false
+exit_code: 1
+----- stdout -----
+[15] Error: Type mismatch. Expected I32, but got F32
+   ╭─[ tests/check/tuples.nemo:2:25 ]
+   │
+ 2 │   let x : (I32, F32) = (1.0, "hello");
+   │                         ─┬─  
+   │                          ╰─── Type mismatch. Expected I32, but got F32
+───╯
+
+[15] Error: Type mismatch. Expected F32, but got Bytes
+   ╭─[ tests/check/tuples.nemo:2:30 ]
+   │
+ 2 │   let x : (I32, F32) = (1.0, "hello");
+   │                              ───┬───  
+   │                                 ╰───── Type mismatch. Expected F32, but got Bytes
+───╯
+
+[30] Error: Expected 3 tuple elements, but saw 2. Expected type (I32, I32, I32)
+   ╭─[ tests/check/tuples.nemo:3:29 ]
+   │
+ 3 │   let y : (I32, I32, I32) = (1, 2);
+   │                             ───┬──  
+   │                                ╰──── Expected 3 tuple elements, but saw 2. Expected type (I32, I32, I32)
+───╯
+
+[30] Error: Expected 2 tuple elements, but saw 3. Expected type (I32, I32)
+   ╭─[ tests/check/tuples.nemo:4:24 ]
+   │
+ 4 │   let z : (I32, I32) = (1, 2, 3);
+   │                        ────┬────  
+   │                            ╰────── Expected 2 tuple elements, but saw 3. Expected type (I32, I32)
+───╯
+
+
+----- stderr -----
+Error: "Check failed with 4 errors"

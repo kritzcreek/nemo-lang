@@ -133,6 +133,11 @@ pub enum TyErrorData {
     UnknownIntrinsic(String, usize),
     NonArrayIdx(Ty),
     NonStructIdx(Ty),
+    TupleCountMismatch {
+        expected: usize,
+        actual: usize,
+        ty: Ty,
+    },
     NonTupleIdx(Ty),
     TupleIdxOutOfRange(Ty, u32),
     NotAFunction(Ty),
@@ -202,6 +207,7 @@ fn code_for_error(err_data: &TyErrorData) -> i32 {
         TyErrorData::CantInferLambda => 27,
         TyErrorData::NonTupleIdx(_) => 28,
         TyErrorData::TupleIdxOutOfRange(_, _) => 29,
+        TyErrorData::TupleCountMismatch { .. } => 30,
     }
 }
 
@@ -210,9 +216,9 @@ fn error_label(err_data: &TyErrorData, ctx: &Ctx) -> String {
         TyErrorData::MissingNode(n) => format!("Internal/Parse error: Expected a node labeled {n}"),
         TyErrorData::InvalidLiteral => "Invalid literal couldn't be parsed".to_string(),
         TyErrorData::InvalidOperator(op, lhs, rhs) => format!("Invalid operator {} for lhs of type {} and rhs of type {}", op,
-            lhs.display(ctx),
-            rhs.display(ctx)
-        ),
+                lhs.display(ctx),
+                rhs.display(ctx)
+            ),
         TyErrorData::InvalidUnaryOperator(op, ty) => format!("Invalid operator {} for expression of type {}", op, ty.display(ctx)),
         TyErrorData::CantInferEmptyArray => "Can't infer type of an empty array".to_string(),
         TyErrorData::CantInferLambda => "Can't infer type of unannotated lambda".to_string(),
@@ -222,102 +228,105 @@ fn error_label(err_data: &TyErrorData, ctx: &Ctx) -> String {
         TyErrorData::UnknownFunction(f) => format!("Unknown function {f}"),
         TyErrorData::UnknownType(t) => format!("Unknown type {t}"),
         TyErrorData::UnknownIntrinsic(f, arg_count) => {
-            format!("Unknown intrinsic {f} with argcount: {arg_count}")
-        }
+                format!("Unknown intrinsic {f} with argcount: {arg_count}")
+            }
         TyErrorData::NonArrayIdx(ty) => format!(
-            "Tried to index into a non-array type {}",
-            ty.display(ctx)
-        ),
+                "Tried to index into a non-array type {}",
+                ty.display(ctx)
+            ),
         TyErrorData::NonStructIdx(ty) => format!(
-            "Tried to index into a non-struct type {}",
-            ty.display(ctx)
+                "Tried to index into a non-struct type {}",
+                ty.display(ctx)
+            ),
+        TyErrorData::TupleCountMismatch { expected, actual, ty } => format!(
+            "Expected {expected} tuple elements, but saw {actual}. Expected type {}", ty.display(ctx)
         ),
         TyErrorData::NonTupleIdx(ty) => format!(
-            "Tried to index into a non-tuple type {}",
-            ty.display(ctx)
-        ),
+                "Tried to index into a non-tuple type {}",
+                ty.display(ctx)
+            ),
         TyErrorData::TupleIdxOutOfRange(ty, idx) => format!(
-            "Index {} is out-of-range for tuple type {}",
-            idx,
-            ty.display(ctx)
-        ),
+                "Index {} is out-of-range for tuple type {}",
+                idx,
+                ty.display(ctx)
+            ),
         TyErrorData::NotAFunction(ty) => format!(
-            "Can't a call a value of type {} as a function",
-            ty.display(ctx)
-        ),
+                "Can't a call a value of type {} as a function",
+                ty.display(ctx)
+            ),
         TyErrorData::NonFunctionImport { name, ty } => format!(
-            "Can't import a non-function value. {} is of type {}",
-            ctx.display_name(*name),
-            ty.display(ctx)
-        ),
+                "Can't import a non-function value. {} is of type {}",
+                ctx.display_name(*name),
+                ty.display(ctx)
+            ),
         TyErrorData::ArgCountMismatch(expected, actual) => format!(
-            "Mismatched arg count. Expected {expected} {}, but got {actual}",
-            if *expected == 1 {
-                "argument"
-            } else {
-                "arguments"
-            }
-        ),
+                "Mismatched arg count. Expected {expected} {}, but got {actual}",
+                if *expected == 1 {
+                    "argument"
+                } else {
+                    "arguments"
+                }
+            ),
         TyErrorData::TyArgCountMismatch(expected, actual) => format!(
-            "Mismatched type arg count. Expected {expected} {}, but got {actual}",
-            if *expected == 1 {
-                "argument"
-            } else {
-                "arguments"
-            }
-        ),
+                "Mismatched type arg count. Expected {expected} {}, but got {actual}",
+                if *expected == 1 {
+                    "argument"
+                } else {
+                    "arguments"
+                }
+            ),
         TyErrorData::FieldTypeMismatch {
-            struct_name,
-            field_name,
-            expected,
-            actual,
-        } => format!(
-            "Mismatched field type. {}.{} expects {}, but got {}",
-            ctx.display_name(*struct_name),
-            ctx.display_name(*field_name),
-            expected.display(ctx),
-            actual.display(ctx)
-        ),
+                struct_name,
+                field_name,
+                expected,
+                actual,
+            } => format!(
+                "Mismatched field type. {}.{} expects {}, but got {}",
+                ctx.display_name(*struct_name),
+                ctx.display_name(*field_name),
+                expected.display(ctx),
+                actual.display(ctx)
+            ),
         TyErrorData::UnknownAlternative {
-            variant_name,
-            alternative,
-        } => format!(
-            "Unknown alternative. {} does not have an alternative named {alternative}",
-                ctx.display_name(*variant_name),
-        ),
+                variant_name,
+                alternative,
+            } => format!(
+                "Unknown alternative. {} does not have an alternative named {alternative}",
+                    ctx.display_name(*variant_name),
+            ),
         TyErrorData::UnknownField {
-            struct_name,
-            field_name,
-        } => format!(
-            "Unknown field. {} does not have a field named {field_name}",
-            ctx.display_name(*struct_name)
-        ),
+                struct_name,
+                field_name,
+            } => format!(
+                "Unknown field. {} does not have a field named {field_name}",
+                ctx.display_name(*struct_name)
+            ),
         TyErrorData::MissingField {
-            struct_name,
-            field_name,
-        } => format!(
-            "Missing field. {}.{} was not provided",
-            ctx.display_name(*struct_name),
-            ctx.display_name(*field_name)
-        ),
+                struct_name,
+                field_name,
+            } => format!(
+                "Missing field. {}.{} was not provided",
+                ctx.display_name(*struct_name),
+                ctx.display_name(*field_name)
+            ),
         TyErrorData::TypeMismatch { expected, actual } => format!(
-            "Type mismatch. Expected {}, but got {}",
-            expected.display(ctx),
-            actual.display(ctx)
-        ),
+                "Type mismatch. Expected {}, but got {}",
+                expected.display(ctx),
+                actual.display(ctx)
+            ),
         TyErrorData::PatternTypeMismatch { expected } => format!(
-            "This pattern can't match a value of type {}",
-            expected.display(ctx),
-        ),
+                "This pattern can't match a value of type {}",
+                expected.display(ctx),
+            ),
         TyErrorData::TypeParamInVariantStruct => {
-            "Can't declare type parameters for structs in a variant.".to_string()
-        }
+                "Can't declare type parameters for structs in a variant.".to_string()
+            }
         TyErrorData::CantReassignCapturedVariable(n) => {
-            format!("Can't reassign the captured variable '{}'. Maybe you want to box this variable in a struct?", ctx.display_name(*n))
-        }
+                format!("Can't reassign the captured variable '{}'. Maybe you want to box this variable in a struct?", ctx.display_name(*n))
+            }
         TyErrorData::CantInferTypeParam(n) => {
-            format!("Can't infer type parameter '{}'. Explicitly supply the instantiation", ctx.display_name(*n))
-        },
+                format!("Can't infer type parameter '{}'. Explicitly supply the instantiation", ctx.display_name(*n))
+            },
     }
 }
 
