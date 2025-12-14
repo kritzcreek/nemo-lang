@@ -20,7 +20,7 @@ use crate::{
     builtins::lookup_builtin,
     ir::{ModuleId, NameTag},
 };
-use std::cell::RefCell;
+use std::cell::{OnceCell, RefCell};
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 use text_size::TextRange;
@@ -209,7 +209,7 @@ impl<N> Occurrence<N> {
 pub type OccurrenceMap = HashMap<SyntaxTokenPtr, Occurrence<Name>>;
 
 pub struct Typechecker<'ctx> {
-    pub occurrences: RefCell<OccurrenceMap>, // Write only
+    pub occurrences: RefCell<OccurrenceMap>, // Append only
     pub name_supply: NameSupply,
     context: TyCtx<'ctx>,
 }
@@ -1181,6 +1181,7 @@ impl Typechecker<'_> {
         let ir_expr = ir.map(|expr_data| ir::Expr {
             at: expr.syntax().text_range(),
             ty: ty.clone(),
+            size: OnceCell::new(),
             it: Box::new(expr_data),
         });
 
@@ -1789,6 +1790,7 @@ impl Typechecker<'_> {
             it: Box::new(it),
             at: expr.syntax().text_range(),
             ty: expected.clone(),
+            size: OnceCell::new(),
         })
     }
 
@@ -2264,6 +2266,7 @@ fn unit_lit(range: TextRange) -> Option<ir::Expr> {
                 it: ir::LitData::Unit,
             },
         }),
+        size: OnceCell::new(),
     })
 }
 
