@@ -102,7 +102,8 @@ fn for_each[a](vec : Vec[a], f : fn (a) -> Unit) {
   let i = 0;
   let len = vec.len;
   while i < len {
-    f(vec.buf[i])
+    f(vec.buf[i]);
+    set i = i + 1;
   };
 }
 
