@@ -815,48 +815,120 @@ impl Typechecker<'_> {
         funcs
     }
 
-    fn infer_literal(&self, errors: &mut TyErrors, lit: &Literal) -> (Ty, Option<ir::Lit>) {
+    fn infer_literal(
+        &self,
+        errors: &mut TyErrors,
+        lit: &Literal,
+        expected: Option<&Ty>,
+    ) -> (Ty, Option<ir::Lit>) {
         let (ty, it) = match lit {
-            Literal::LitBool(b) => (Ty::Bool, Some(ir::LitData::Bool(b.true_token().is_some()))),
+            Literal::LitBool(b) => match expected {
+                Some(Ty::Bool | Ty::Diverge | Ty::Error) | None => {
+                    (Ty::Bool, Some(ir::LitData::Bool(b.true_token().is_some())))
+                }
+                Some(expected) => {
+                    errors.report(
+                        lit,
+                        TypeMismatch {
+                            expected: expected.clone(),
+                            actual: Ty::Bool,
+                        },
+                    );
+                    (Ty::Bool, None)
+                }
+            },
             Literal::LitFloat(l) => {
                 let float_tkn = l.float_lit_token().unwrap();
-                if let Ok(float) = float_tkn.text().parse::<f32>() {
-                    (Ty::F32, Some(ir::LitData::F32(float)))
-                } else {
-                    errors.report(&float_tkn, InvalidLiteral);
-                    (Ty::F32, None)
+                match expected {
+                    None | Some(Ty::F32 | Ty::Diverge | Ty::Error) => {
+                        if let Ok(float) = float_tkn.text().parse::<f32>() {
+                            (Ty::F32, Some(ir::LitData::F32(float)))
+                        } else {
+                            errors.report(l, InvalidLiteral);
+                            (Ty::F32, None)
+                        }
+                    }
+                    Some(Ty::F64) => {
+                        if let Ok(float) = float_tkn.text().parse::<f64>() {
+                            (Ty::F64, Some(ir::LitData::F64(float)))
+                        } else {
+                            errors.report(l, InvalidLiteral);
+                            (Ty::F64, None)
+                        }
+                    }
+                    Some(expected) => {
+                        errors.report(
+                            lit,
+                            TypeMismatch {
+                                expected: expected.clone(),
+                                actual: Ty::F32,
+                            },
+                        );
+                        (Ty::F32, None)
+                    }
                 }
             }
             Literal::LitInt(l) => {
-                let mut is_signed = true;
-                let lit_data = if let Some(tkn) = l.int_lit_token() {
-                    let text = tkn.text();
-                    if let Some(text) = text.strip_suffix("u") {
-                        is_signed = false;
-                        text.parse().map(ir::LitData::U32)
-                    } else {
-                        text.parse().map(ir::LitData::I32)
-                    }
+                let (tkn, prefix, radix) = if let Some(tkn) = l.int_lit_token() {
+                    (tkn, "", 10)
                 } else if let Some(tkn) = l.binary_lit_token() {
-                    let text = tkn.text().strip_prefix("0b").unwrap();
-                    if let Some(text) = text.strip_suffix("u") {
-                        is_signed = false;
-                        u32::from_str_radix(text, 2).map(ir::LitData::U32)
-                    } else {
-                        i32::from_str_radix(text, 2).map(ir::LitData::I32)
-                    }
-                } else if let Some(tkn) = l.hex_lit_token() {
-                    let text = tkn.text().strip_prefix("0x").unwrap();
-                    if let Some(text) = text.strip_suffix("u") {
-                        is_signed = false;
-                        u32::from_str_radix(text, 16).map(ir::LitData::U32)
-                    } else {
-                        i32::from_str_radix(text, 16).map(ir::LitData::I32)
-                    }
+                    (tkn, "0b", 2)
                 } else {
-                    panic!("No token for int literal");
+                    (
+                        l.hex_lit_token().expect("No token for int literal"),
+                        "0x",
+                        16,
+                    )
                 };
-                let ty = if is_signed { Ty::I32 } else { Ty::U32 };
+                let text = tkn.text().strip_prefix(prefix).unwrap();
+                let (text, signed) = if let Some(stripped) = text.strip_suffix("u") {
+                    (stripped, false)
+                } else {
+                    (text, true)
+                };
+
+                let (ty, lit_data) = match expected {
+                    None | Some(Ty::Diverge | Ty::Error) => {
+                        if signed {
+                            (
+                                Ty::I32,
+                                i32::from_str_radix(text, radix).map(ir::LitData::I32),
+                            )
+                        } else {
+                            (
+                                Ty::U32,
+                                u32::from_str_radix(text, radix).map(ir::LitData::U32),
+                            )
+                        }
+                    }
+                    Some(Ty::I32) if signed => (
+                        Ty::I32,
+                        i32::from_str_radix(text, radix).map(ir::LitData::I32),
+                    ),
+                    Some(Ty::U32) if !signed => (
+                        Ty::U32,
+                        u32::from_str_radix(text, radix).map(ir::LitData::U32),
+                    ),
+                    Some(Ty::I64) if signed => (
+                        Ty::I64,
+                        i64::from_str_radix(text, radix).map(ir::LitData::I64),
+                    ),
+                    Some(Ty::U64) if !signed => (
+                        Ty::U64,
+                        u64::from_str_radix(text, radix).map(ir::LitData::U64),
+                    ),
+                    Some(t) => {
+                        let inferred = if signed { Ty::I32 } else { Ty::U32 };
+                        errors.report(
+                            &tkn,
+                            TypeMismatch {
+                                expected: t.clone(),
+                                actual: inferred.clone(),
+                            },
+                        );
+                        return (inferred, None);
+                    }
+                };
                 if let Ok(lit_data) = lit_data {
                     (ty, Some(lit_data))
                 } else {
@@ -864,18 +936,30 @@ impl Typechecker<'_> {
                     (ty, None)
                 }
             }
-            Literal::LitBytes(s) => {
-                let tkn = s.bytes_lit_token().unwrap();
-                let without_quotes = tkn
-                    .text()
-                    .strip_prefix('"')
-                    .and_then(|t| t.strip_suffix('"'))
-                    .unwrap();
-                (
-                    Ty::Bytes,
-                    Some(ir::LitData::Bytes(without_quotes.to_string())),
-                )
-            }
+            Literal::LitBytes(s) => match expected {
+                None | Some(Ty::Diverge) | Some(Ty::Error) | Some(Ty::Bytes) => {
+                    let tkn = s.bytes_lit_token().unwrap();
+                    let without_quotes = tkn
+                        .text()
+                        .strip_prefix('"')
+                        .and_then(|t| t.strip_suffix('"'))
+                        .unwrap();
+                    (
+                        Ty::Bytes,
+                        Some(ir::LitData::Bytes(without_quotes.to_string())),
+                    )
+                }
+                Some(expected) => {
+                    errors.report(
+                        s,
+                        TypeMismatch {
+                            expected: expected.clone(),
+                            actual: Ty::Bytes,
+                        },
+                    );
+                    (Ty::Bytes, None)
+                }
+            },
         };
         (
             ty.clone(),
@@ -920,7 +1004,7 @@ impl Typechecker<'_> {
                 }
             }
             Expr::ELit(l) => {
-                let (ty, ir) = self.infer_literal(errors, &l.literal().unwrap());
+                let (ty, ir) = self.infer_literal(errors, &l.literal().unwrap(), None);
                 let mut builder = LitBuilder::default();
                 builder.lit(ir);
                 (ty, builder.build())
@@ -1671,6 +1755,12 @@ impl Typechecker<'_> {
         expected: &Ty,
     ) -> Option<ir::Expr> {
         let ir = match (expr, expected) {
+            (Expr::ELit(expr), _) => {
+                let (_, ir) = self.infer_literal(errors, &expr.literal().unwrap(), Some(expected));
+                let mut builder = LitBuilder::default();
+                builder.lit(ir);
+                builder.build()
+            }
             (Expr::EArray(expr), Ty::Array(elem_ty)) => {
                 let mut builder = ir::ArrayBuilder::default();
                 for elem in expr.exprs() {
@@ -2205,6 +2295,22 @@ fn check_op(
         (T![==], Ty::I32, Ty::I32) => (ir::OpData::I32Eq, Ty::Bool),
         (T![!=], Ty::I32, Ty::I32) => (ir::OpData::I32Ne, Ty::Bool),
 
+        (T![+], Ty::I64, Ty::I64) => (ir::OpData::I64Add, Ty::I64),
+        (T![-], Ty::I64, Ty::I64) => (ir::OpData::I64Sub, Ty::I64),
+        (T![*], Ty::I64, Ty::I64) => (ir::OpData::I64Mul, Ty::I64),
+        (T![/], Ty::I64, Ty::I64) => (ir::OpData::I64Div, Ty::I64),
+        (T![<<], Ty::I64, Ty::I64) => (ir::OpData::I64Shl, Ty::I64),
+        (T![>>], Ty::I64, Ty::I64) => (ir::OpData::I64Shr, Ty::I64),
+        (T![%], Ty::I64, Ty::I64) => (ir::OpData::I64Rem, Ty::I64),
+        (T![&], Ty::I64, Ty::I64) => (ir::OpData::I64And, Ty::I64),
+        (T![|], Ty::I64, Ty::I64) => (ir::OpData::I64Or, Ty::I64),
+        (T![<], Ty::I64, Ty::I64) => (ir::OpData::I64Lt, Ty::Bool),
+        (T![<=], Ty::I64, Ty::I64) => (ir::OpData::I64Le, Ty::Bool),
+        (T![>], Ty::I64, Ty::I64) => (ir::OpData::I64Gt, Ty::Bool),
+        (T![>=], Ty::I64, Ty::I64) => (ir::OpData::I64Ge, Ty::Bool),
+        (T![==], Ty::I64, Ty::I64) => (ir::OpData::I64Eq, Ty::Bool),
+        (T![!=], Ty::I64, Ty::I64) => (ir::OpData::I64Ne, Ty::Bool),
+
         (T![+], Ty::U32, Ty::U32) => (ir::OpData::U32Add, Ty::U32),
         (T![-], Ty::U32, Ty::U32) => (ir::OpData::U32Sub, Ty::U32),
         (T![*], Ty::U32, Ty::U32) => (ir::OpData::U32Mul, Ty::U32),
@@ -2221,6 +2327,22 @@ fn check_op(
         (T![==], Ty::U32, Ty::U32) => (ir::OpData::U32Eq, Ty::Bool),
         (T![!=], Ty::U32, Ty::U32) => (ir::OpData::U32Ne, Ty::Bool),
 
+        (T![+], Ty::U64, Ty::U64) => (ir::OpData::U64Add, Ty::U64),
+        (T![-], Ty::U64, Ty::U64) => (ir::OpData::U64Sub, Ty::U64),
+        (T![*], Ty::U64, Ty::U64) => (ir::OpData::U64Mul, Ty::U64),
+        (T![/], Ty::U64, Ty::U64) => (ir::OpData::U64Div, Ty::U64),
+        (T![<<], Ty::U64, Ty::U64) => (ir::OpData::U64Shl, Ty::U64),
+        (T![>>], Ty::U64, Ty::U64) => (ir::OpData::U64Shr, Ty::U64),
+        (T![%], Ty::U64, Ty::U64) => (ir::OpData::U64Rem, Ty::U64),
+        (T![&], Ty::U64, Ty::U64) => (ir::OpData::U64And, Ty::U64),
+        (T![|], Ty::U64, Ty::U64) => (ir::OpData::U64Or, Ty::U64),
+        (T![<], Ty::U64, Ty::U64) => (ir::OpData::U64Lt, Ty::Bool),
+        (T![<=], Ty::U64, Ty::U64) => (ir::OpData::U64Le, Ty::Bool),
+        (T![>], Ty::U64, Ty::U64) => (ir::OpData::U64Gt, Ty::Bool),
+        (T![>=], Ty::U64, Ty::U64) => (ir::OpData::U64Ge, Ty::Bool),
+        (T![==], Ty::U64, Ty::U64) => (ir::OpData::U64Eq, Ty::Bool),
+        (T![!=], Ty::U64, Ty::U64) => (ir::OpData::U64Ne, Ty::Bool),
+
         (T![+], Ty::F32, Ty::F32) => (ir::OpData::F32Add, Ty::F32),
         (T![-], Ty::F32, Ty::F32) => (ir::OpData::F32Sub, Ty::F32),
         (T![*], Ty::F32, Ty::F32) => (ir::OpData::F32Mul, Ty::F32),
@@ -2231,6 +2353,17 @@ fn check_op(
         (T![>=], Ty::F32, Ty::F32) => (ir::OpData::F32Ge, Ty::Bool),
         (T![==], Ty::F32, Ty::F32) => (ir::OpData::F32Eq, Ty::Bool),
         (T![!=], Ty::F32, Ty::F32) => (ir::OpData::F32Ne, Ty::Bool),
+
+        (T![+], Ty::F64, Ty::F64) => (ir::OpData::F64Add, Ty::F64),
+        (T![-], Ty::F64, Ty::F64) => (ir::OpData::F64Sub, Ty::F64),
+        (T![*], Ty::F64, Ty::F64) => (ir::OpData::F64Mul, Ty::F64),
+        (T![/], Ty::F64, Ty::F64) => (ir::OpData::F64Div, Ty::F64),
+        (T![<], Ty::F64, Ty::F64) => (ir::OpData::F64Lt, Ty::Bool),
+        (T![<=], Ty::F64, Ty::F64) => (ir::OpData::F64Le, Ty::Bool),
+        (T![>], Ty::F64, Ty::F64) => (ir::OpData::F64Gt, Ty::Bool),
+        (T![>=], Ty::F64, Ty::F64) => (ir::OpData::F64Ge, Ty::Bool),
+        (T![==], Ty::F64, Ty::F64) => (ir::OpData::F64Eq, Ty::Bool),
+        (T![!=], Ty::F64, Ty::F64) => (ir::OpData::F64Ne, Ty::Bool),
 
         (T![==], Ty::Bool, Ty::Bool) => (ir::OpData::BoolEq, Ty::Bool),
         (T![!=], Ty::Bool, Ty::Bool) => (ir::OpData::BoolNe, Ty::Bool),

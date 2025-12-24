@@ -66,8 +66,11 @@ impl Formatter<'_> {
         match e.it.as_ref() {
             ExprData::Lit { lit } => match &lit.it {
                 LitData::I32(i) => (*i).into(),
+                LitData::I64(i) => (*i).into(),
                 LitData::U32(i) => (*i).into(),
+                LitData::U64(i) => (*i).into(),
                 LitData::F32(f) => (*f).into(),
+                LitData::F64(f) => (*f).into(),
                 LitData::Bool(b) => (*b).into(),
                 LitData::Bytes(s) => s.as_str().into(),
                 LitData::Unit => Value::symbol("unit"),

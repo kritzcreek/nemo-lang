@@ -53,7 +53,9 @@ impl<'a> Codegen<'a> {
     fn const_init_for_ty(&mut self, ty: &Ty) -> ConstExpr {
         match ty {
             Ty::I32 | Ty::U32 | Ty::Unit | Ty::Bool => ConstExpr::i32_const(0),
+            Ty::I64 | Ty::U64 => ConstExpr::i64_const(0),
             Ty::F32 => ConstExpr::f32_const((0.0).into()),
+            Ty::F64 => ConstExpr::f64_const((0.0).into()),
             Ty::Bytes => {
                 let ty_idx = self.builder.bytes_ty();
                 ConstExpr::ref_null(HeapType::Concrete(ty_idx))
@@ -89,8 +91,11 @@ impl<'a> Codegen<'a> {
     fn compile_lit(&mut self, lit: Lit) -> Vec<Instruction<'a>> {
         match lit.it {
             LitData::I32(i) => vec![Instruction::I32Const(i)],
+            LitData::I64(i) => vec![Instruction::I64Const(i)],
             LitData::U32(i) => vec![Instruction::I32Const(i as i32)],
+            LitData::U64(i) => vec![Instruction::I64Const(i as i64)],
             LitData::F32(f) => vec![Instruction::F32Const(f.into())],
+            LitData::F64(f) => vec![Instruction::F64Const(f.into())],
             LitData::Bool(t) => vec![Instruction::I32Const(if t { 1 } else { 0 })],
             LitData::Bytes(s) => {
                 let bytes = s.as_bytes().to_vec();
@@ -125,6 +130,22 @@ impl<'a> Codegen<'a> {
             OpData::I32Eq => Instruction::I32Eq,
             OpData::I32Ne => Instruction::I32Ne,
 
+            OpData::I64Add => Instruction::I64Add,
+            OpData::I64Sub => Instruction::I64Sub,
+            OpData::I64Mul => Instruction::I64Mul,
+            OpData::I64Div => Instruction::I64DivS,
+            OpData::I64Shl => Instruction::I64Shl,
+            OpData::I64Shr => Instruction::I64ShrS,
+            OpData::I64Rem => Instruction::I64RemS,
+            OpData::I64And => Instruction::I64And,
+            OpData::I64Or => Instruction::I64Or,
+            OpData::I64Lt => Instruction::I64LtS,
+            OpData::I64Gt => Instruction::I64GtS,
+            OpData::I64Le => Instruction::I64LeS,
+            OpData::I64Ge => Instruction::I64GeS,
+            OpData::I64Eq => Instruction::I64Eq,
+            OpData::I64Ne => Instruction::I64Ne,
+
             OpData::U32Add => Instruction::I32Add,
             OpData::U32Sub => Instruction::I32Sub,
             OpData::U32Mul => Instruction::I32Mul,
@@ -141,6 +162,22 @@ impl<'a> Codegen<'a> {
             OpData::U32Eq => Instruction::I32Eq,
             OpData::U32Ne => Instruction::I32Ne,
 
+            OpData::U64Add => Instruction::I32Add,
+            OpData::U64Sub => Instruction::I32Sub,
+            OpData::U64Mul => Instruction::I32Mul,
+            OpData::U64Div => Instruction::I32DivU,
+            OpData::U64Shl => Instruction::I32Shl,
+            OpData::U64Shr => Instruction::I32ShrU,
+            OpData::U64Rem => Instruction::I32RemU,
+            OpData::U64And => Instruction::I32And,
+            OpData::U64Or => Instruction::I32Or,
+            OpData::U64Lt => Instruction::I32LtU,
+            OpData::U64Gt => Instruction::I32GtU,
+            OpData::U64Le => Instruction::I32LeU,
+            OpData::U64Ge => Instruction::I32GeU,
+            OpData::U64Eq => Instruction::I32Eq,
+            OpData::U64Ne => Instruction::I32Ne,
+
             OpData::F32Add => Instruction::F32Add,
             OpData::F32Sub => Instruction::F32Sub,
             OpData::F32Mul => Instruction::F32Mul,
@@ -151,6 +188,18 @@ impl<'a> Codegen<'a> {
             OpData::F32Ge => Instruction::F32Ge,
             OpData::F32Eq => Instruction::F32Eq,
             OpData::F32Ne => Instruction::F32Ne,
+
+            OpData::F64Add => Instruction::F64Add,
+            OpData::F64Sub => Instruction::F64Sub,
+            OpData::F64Mul => Instruction::F64Mul,
+            OpData::F64Div => Instruction::F64Div,
+            OpData::F64Lt => Instruction::F64Lt,
+            OpData::F64Gt => Instruction::F64Gt,
+            OpData::F64Le => Instruction::F64Le,
+            OpData::F64Ge => Instruction::F64Ge,
+            OpData::F64Eq => Instruction::F64Eq,
+            OpData::F64Ne => Instruction::F64Ne,
+
             OpData::BoolEq => Instruction::I32Eq,
             OpData::BoolNe => Instruction::I32Eq,
             OpData::BoolAnd => Instruction::I32And,
