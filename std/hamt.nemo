@@ -1,6 +1,7 @@
 module hamt
 exports (Hamt, new, get, add, remove, values, print)
 
+use prim
 use option
 use vec
 use string
@@ -18,10 +19,10 @@ fn print_hash(hash : U32) -> string::Str {
   };
 
   let char_count = chars.len;
-  let bytes = bytes_new(0, char_count);
+  let bytes = prim::bytes_new(0, char_count);
   let j = 0;
   while j < char_count {
-    bytes_set(bytes, char_count - j - 1, chars.buf[j]);
+    prim::bytes_set(bytes, char_count - j - 1, chars.buf[j]);
     set j = j + 1;
   };
   string::unsafe_new(bytes)
@@ -37,10 +38,10 @@ fn print_bitmap(bitmap : U32) -> string::Str {
   };
 
   let char_count = chars.len;
-  let bytes = bytes_new(0, char_count);
+  let bytes = prim::bytes_new(0, char_count);
   let j = 0;
   while j < char_count {
-    bytes_set(bytes, char_count - j - 1, chars.buf[j]);
+    prim::bytes_set(bytes, char_count - j - 1, chars.buf[j]);
     set j = j + 1;
   };
   string::unsafe_new(bytes)
@@ -58,7 +59,7 @@ fn print_node[a](node : Node[a]) -> string::Str {
     Node::Mapped m => {
       let nodes = string::unsafe_new("");
       let i = 0;
-      while i < array_len#[Node[a]](m.nodes) {
+      while i < prim::array_len(m.nodes) {
         set nodes = string::concat(string::concat(nodes, string::unsafe_new(" ")), print_node(m.nodes[i]));
         set i = i + 1;
       };
@@ -144,7 +145,7 @@ fn find_any[a](node : Node[a]) -> option::Option[a] {
     Node::Leaf l => { option::Option::Some { val = l.value } },
     Node::Mapped m => {
       let i = 0;
-      let len = array_len#[Node[a]](m.nodes);
+      let len = prim::array_len(m.nodes);
       while i < len {
         match find_any(m.nodes[i]) {
           option::Option::Some s => { return s },
@@ -172,7 +173,7 @@ fn values_node[a](vec : vec::Vec[a], node : Node[a]) {
     Node::Leaf l => { vec::push(vec, l.value) },
     Node::Mapped m => {
       let i = 0;
-      let len = array_len#[Node[a]](m.nodes);
+      let len = prim::array_len(m.nodes);
       while i < len {
         values_node(vec, m.nodes[i]);
         set i = i + 1;
@@ -190,7 +191,7 @@ fn bitpos(hash : U32, shift : U32) -> U32 {
 }
 
 fn index(bitmap : U32, pos : U32) -> I32 {
-  u32_to_i32(u32_popcnt(bitmap & (pos - 1u)))
+  prim::u32_to_i32(prim::u32_popcnt(bitmap & (pos - 1u)))
 }
 
 fn merge_leafs[a](shift : U32, left : Node::Leaf[a], hash : U32, value : a) -> Node[a] {
@@ -234,7 +235,7 @@ fn remove_rec[a](node : Node::Mapped[a], shift : U32, hash : U32) -> RemoveResul
       let res = remove_rec(n, shift + 5u, hash);
       match res {
         RemoveResult::Gathered gathered => {
-          if shift != 0u && u32_popcnt(n.bitmap) == 1u {
+          if shift != 0u && prim::u32_popcnt(n.bitmap) == 1u {
             res;
           } else {
             set n.nodes[ix] = gathered.new_node;
@@ -248,7 +249,7 @@ fn remove_rec[a](node : Node::Mapped[a], shift : U32, hash : U32) -> RemoveResul
       if hash != l.hash {
         RemoveResult::NotFound {};
       } else {
-        let rows = u32_popcnt(node.bitmap);
+        let rows = prim::u32_popcnt(node.bitmap);
         // We never gather the root node
         when rows == 1u && shift == 0u {
           set node.bitmap = 0u;
@@ -280,25 +281,25 @@ fn remove_rec[a](node : Node::Mapped[a], shift : U32, hash : U32) -> RemoveResul
 }
 
 fn remove_node[a](as : Array[a], ix : I32) -> Array[a] {
-  let old_len = array_len#[a](as);
+  let old_len = prim::array_len(as);
   if old_len == 1 {
     [];
   } else {
-    let res = array_new#[a](as[0], old_len - 1);
-    array_copy#[a](res, 0, as, 0, ix);
-    array_copy#[a](res, ix, as, ix + 1, old_len - ix - 1);
+    let res = prim::array_new(as[0], old_len - 1);
+    prim::array_copy(res, 0, as, 0, ix);
+    prim::array_copy(res, ix, as, ix + 1, old_len - ix - 1);
     res;
   };
 }
 
 fn insert_node[a](as : Array[a], ix : I32, elem : a) -> Array[a] {
-  let old_len = array_len#[a](as);
+  let old_len = prim::array_len(as);
   if old_len == 0 {
     [elem];
   } else {
-    let res = array_new#[a](elem, old_len + 1);
-    array_copy#[a](res, 0, as, 0, ix);
-    array_copy#[a](res, ix + 1, as, ix, old_len - ix);
+    let res = prim::array_new(elem, old_len + 1);
+    prim::array_copy(res, 0, as, 0, ix);
+    prim::array_copy(res, ix + 1, as, ix, old_len - ix);
     res;
   };
 }

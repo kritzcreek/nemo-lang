@@ -1,6 +1,7 @@
 module string
 exports (Str, unsafe_new, concat, eq, chars, codepoint_len)
 
+use prim
 use option
 
 // TODO: We should be able to hide the implementation details of Str
@@ -12,9 +13,9 @@ struct Str {
 
 fn concat(a : Str, b : Str) -> Str {
   let len = a.len + b.len;
-  let buf = bytes_new(0, len);
-  bytes_copy(buf, 0, a.buf, a.offset, a.len);
-  bytes_copy(buf, a.len, b.buf, b.offset, b.len);
+  let buf = prim::bytes_new(0, len);
+  prim::bytes_copy(buf, 0, a.buf, a.offset, a.len);
+  prim::bytes_copy(buf, a.len, b.buf, b.offset, b.len);
   Str { buf = buf, offset = 0, len = len }
 }
 
@@ -24,7 +25,7 @@ fn eq(a : Str, b : Str) -> Bool {
   };
   let i = 0;
   while i < a.len {
-    when bytes_get(a.buf, a.offset + i) != bytes_get(b.buf, b.offset + i) {
+    when prim::bytes_get(a.buf, a.offset + i) != prim::bytes_get(b.buf, b.offset + i) {
       return false;
     };
     set i = i + 1;
@@ -34,7 +35,7 @@ fn eq(a : Str, b : Str) -> Bool {
 
 // Assumes well formed utf8
 fn unsafe_new(buf : Bytes) -> Str {
-  Str { buf = buf, offset = 0, len = bytes_len(buf) }
+  Str { buf = buf, offset = 0, len = prim::bytes_len(buf) }
 }
 
 fn chars(s : Str) -> fn () -> option::Option[I32] {
@@ -61,27 +62,27 @@ struct MutBox[a] {
 
 // Assumes well formed utf8
 fn codepoint_at_byte(offset : I32, bs : Bytes) -> CodepointAtByte {
-  let first_byte = bytes_get(bs, offset);
+  let first_byte = prim::bytes_get(bs, offset);
   // ASCII case
-  if i32_and(first_byte, 0x80) == 0 {
+  if prim::i32_and(first_byte, 0x80) == 0 {
     CodepointAtByte { codepoint = first_byte, byte_count = 1 }
   } else {
-    let extra_bytes = i32_xor(first_byte, 0 - 1);
+    let extra_bytes = prim::i32_xor(first_byte, 0 - 1);
     if extra_bytes == 1 {
-      let res = i32_shl(i32_and(first_byte, 63), 6);
-      set res = res + i32_and(bytes_get(bs, offset + 1), 63);
+      let res = (first_byte & 63) << 6;
+      set res = res + (prim::bytes_get(bs, offset + 1) & 63);
       CodepointAtByte { codepoint = res, byte_count = 2 }
     } else {
       if extra_bytes == 2 {
-        let res = i32_shl(i32_and(first_byte, 15), 6);
-        set res = i32_shl(res + i32_and(bytes_get(bs, offset + 1), 63), 6);
-        set res = res + i32_and(bytes_get(bs, offset + 2), 63);
+        let res = (first_byte & 15) << 6;
+        set res = (res + prim::bytes_get(bs, offset + 1) & 63) << 6;
+        set res = res + (prim::bytes_get(bs, offset + 2) & 63);
         CodepointAtByte { codepoint = res, byte_count = 3 }
       } else {
-        let res = i32_shl(i32_and(first_byte, 7), 6);
-        set res = i32_shl(res + i32_and(bytes_get(bs, offset + 1), 63), 6);
-        set res = i32_shl(res + i32_and(bytes_get(bs, offset + 2), 63), 6);
-        set res = res + i32_and(bytes_get(bs, offset + 3), 63);
+        let res = (first_byte & 7) << 6;
+        set res = (res + (prim::bytes_get(bs, offset + 1) & 63)) << 6;
+        set res = (res + (prim::bytes_get(bs, offset + 2) & 63)) << 6;
+        set res = res + (prim::bytes_get(bs, offset + 3) & 63);
         CodepointAtByte { codepoint = res, byte_count = 4 }
       }
     }
@@ -93,8 +94,8 @@ fn codepoint_len(str : Str) -> I32 {
   let i = str.offset;
   let bytes_len = str.len;
   while i < bytes_len {
-    let b = bytes_get(str.buf, i);
-    when i32_and(b, 0xC0) != 0x80 {
+    let b = prim::bytes_get(str.buf, i);
+    when b & 0xC0 != 0x80 {
       set result = result + 1;
     };
     set i = i + 1;

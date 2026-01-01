@@ -1,9 +1,11 @@
+use prim
+
 import log : fn (I32) -> Unit from log
 import log_f32 : fn (F32) -> Unit from log
 
 fn for_each[a](f : fn (a) -> Unit, as : Array[a]) {
   let i = 0;
-  while i < array_len#[a](as) {
+  while i < prim::array_len(as) {
     f(as[i]);
     set i = i + 1;
   };
@@ -11,8 +13,8 @@ fn for_each[a](f : fn (a) -> Unit, as : Array[a]) {
 
 fn main() {
   let xs = [1, 2, 3, 5];
-  for_each#[I32](log, xs);
+  for_each(log, xs);
 
   let fs = [1.1, 2.2, 3.3, 5.5];
-  for_each#[F32](log_f32, fs);
+  for_each(log_f32, fs);
 }

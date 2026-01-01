@@ -1,3 +1,5 @@
+use prim
+
 import log : fn (I32) -> Unit from log
 
 struct S { x : I32 }
@@ -15,7 +17,7 @@ fn main() {
 
   log(1 + S { x = 10 }.x);
 
-  if f32_abs(2.5) > f32_abs(f32_neg(2.6)) {
+  if prim::f32_abs(2.5) > prim::f32_abs(prim::f32_neg(2.6)) {
     log(1);
   } else {
     log(2);

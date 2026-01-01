@@ -16,7 +16,7 @@ struct Formatter<'a> {
 
 impl Formatter<'_> {
     fn name(&self, n: &Name) -> Value {
-        Value::symbol(self.names.display_name(*n).as_ref())
+        Value::symbol(self.names.display_name(*n))
     }
 
     fn ty(&self, ty: &Ty) -> Value {
@@ -88,7 +88,6 @@ impl Formatter<'_> {
                         }
                     }
                     Callee::FuncRef(e) => elems.push(self.expr(e)),
-                    Callee::Builtin(s) => elems.push(Value::string(*s)),
                 }
                 elems.extend(arguments.iter().map(|e| self.expr(e)));
                 Value::list(elems)

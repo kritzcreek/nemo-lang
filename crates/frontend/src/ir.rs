@@ -468,7 +468,7 @@ impl Expr {
                 ExprData::Call { func, arguments } => {
                     match func {
                         Callee::FuncRef(e) => free_vars_inner(current, e),
-                        Callee::Func { .. } | Callee::Builtin(_) => {}
+                        Callee::Func { .. } => {}
                     }
                     for arg in arguments {
                         free_vars_inner(current, arg)
@@ -583,7 +583,6 @@ impl Expr {
 pub enum Callee {
     Func { name: Name, type_args: Substitution },
     FuncRef(Expr),
-    Builtin(&'static str),
 }
 
 #[derive(Debug, PartialEq, Clone, IrBuilder)]

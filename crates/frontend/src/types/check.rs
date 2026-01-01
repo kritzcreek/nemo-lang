@@ -1,25 +1,22 @@
 use super::names::NameSupply;
+use super::{FuncDef, StructDef, TypeDef, VariantDef};
 use super::{
+    Interface,
     error::{
         TyError,
         TyErrorData::{self, *},
         TyErrors,
     },
-    Interface,
 };
-use super::{FuncDef, StructDef, TypeDef, VariantDef};
+use crate::T;
 use crate::ir::{
     self, Ctx, ExprBuilder, FuncTy, LambdaBuilder, LitBuilder, Name, PatVarBuilder, ReturnBuilder,
     Substitution, Symbol, TupleBuilder, TupleIdxBuilder, Ty, VarBuilder,
 };
+use crate::ir::{ModuleId, NameTag};
 use crate::parser::SyntaxKind;
 use crate::syntax::token_ptr::SyntaxTokenPtr;
 use crate::syntax::*;
-use crate::T;
-use crate::{
-    builtins::lookup_builtin,
-    ir::{ModuleId, NameTag},
-};
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
@@ -1306,7 +1303,7 @@ impl Typechecker<'_> {
                 }
                 let (ty, ir) = self.infer_expr(errors, scope, &func_expr);
                 (ty, ir.map(ir::Callee::FuncRef))
-            } else if let Some(def) = self.lookup_func(mod_qual_tkn, var_sym) {
+            } else if let Some(def) = self.lookup_func(mod_qual_tkn.clone(), var_sym) {
                 self.record_ref(&var_tkn, def.name);
                 let ty_params: &[Name] = &def.ty_params;
                 // NOTE(early-return-control-flow)
@@ -1328,19 +1325,6 @@ impl Typechecker<'_> {
                         name: def.name,
                         type_args: subst,
                     }),
-                )
-            } else if let Some(builtin) = lookup_builtin(var_tkn.text()) {
-                if builtin.ty_params.len() != ty_args.len() {
-                    errors.report(
-                        &func_expr,
-                        TyArgCountMismatch(builtin.ty_params.len(), ty_args.len()),
-                    );
-                    return None;
-                }
-                let subst = Substitution::new(&builtin.ty_params, &ty_args);
-                (
-                    Ty::Func(Box::new(subst.apply_func(builtin.ty.clone()))),
-                    Some(ir::Callee::Builtin(builtin.name)),
                 )
             } else {
                 errors.report(&func_expr, UnknownVar(var_tkn.text().to_string()));
@@ -1409,10 +1393,10 @@ impl Typechecker<'_> {
             let applied_ty = subst.apply(fresh_subst.apply(expected_ty));
             let ir = if applied_ty.vars().iter().any(|v| v.tag == NameTag::Gen) {
                 let (ty, ir) = self.infer_expr(errors, scope, &expr);
-                if ty != Ty::Error {
-                    if let Err(err) = match_ty(&mut subst, applied_ty, &ty) {
-                        errors.report(&expr, err);
-                    }
+                if ty != Ty::Error
+                    && let Err(err) = match_ty(&mut subst, applied_ty, &ty)
+                {
+                    errors.report(&expr, err);
                 }
                 ir
             } else {
@@ -1474,11 +1458,11 @@ impl Typechecker<'_> {
         let func_ty = fresh_subst.apply_func(def.ty.clone());
 
         let mut subst = Substitution::empty();
-        if let Some(expected) = expected {
-            if let Err(err) = match_ty(&mut subst, func_ty.result.clone(), expected) {
-                errors.report(call_expr, err);
-                return None;
-            }
+        if let Some(expected) = expected
+            && let Err(err) = match_ty(&mut subst, func_ty.result.clone(), expected)
+        {
+            errors.report(call_expr, err);
+            return None;
         }
         let args = call_expr.e_arg_list()?.exprs().collect::<Vec<_>>();
         if args.len() != func_ty.arguments.len() {
@@ -1493,10 +1477,10 @@ impl Typechecker<'_> {
             let applied_ty = subst.apply(expected_ty.clone());
             let ir = if applied_ty.vars().iter().any(|v| v.tag == NameTag::Gen) {
                 let (ty, ir) = self.infer_expr(errors, scope, arg);
-                if ty != Ty::Error {
-                    if let Err(err) = match_ty(&mut subst, applied_ty, &ty) {
-                        errors.report(arg, err);
-                    }
+                if ty != Ty::Error
+                    && let Err(err) = match_ty(&mut subst, applied_ty, &ty)
+                {
+                    errors.report(arg, err);
                 }
                 ir
             } else {
@@ -1588,7 +1572,7 @@ impl Typechecker<'_> {
                         def,
                         &struct_name_tkn,
                         struct_expr,
-                    )
+                    );
                 }
                 Some(expected) => {
                     let Some(subst) = infer_struct_instantiation(def, expected) else {
@@ -2234,10 +2218,11 @@ impl Typechecker<'_> {
                     ty_args: args2,
                 },
             ) => {
-                if let Some(TypeDef::Variant(def)) = self.context.lookup_type_def(*n1) {
-                    if def.alternatives.values().any(|alt| alt == n2) && args1 == args2 {
-                        return None;
-                    }
+                if let Some(TypeDef::Variant(def)) = self.context.lookup_type_def(*n1)
+                    && def.alternatives.values().any(|alt| alt == n2)
+                    && args1 == args2
+                {
+                    return None;
                 }
             }
             (Ty::Error, _) => return None,
@@ -2402,10 +2387,10 @@ fn unit_lit(range: TextRange) -> Option<ir::Expr> {
 
 fn infer_struct_instantiation<'a>(def: &StructDef, expected: &'a Ty) -> Option<&'a Substitution> {
     // Infer instantiation
-    if let Ty::Cons { name, ty_args } = expected {
-        if *name == def.name || def.variant.is_some_and(|v| v == *name) {
-            return Some(ty_args);
-        }
+    if let Ty::Cons { name, ty_args } = expected
+        && (*name == def.name || def.variant.is_some_and(|v| v == *name))
+    {
+        return Some(ty_args);
     }
     None
 }

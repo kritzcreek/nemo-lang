@@ -1,3 +1,5 @@
+use prim
+
 variant Enum {
   struct A {},
   struct B {},
@@ -14,9 +16,9 @@ import log_f32 : fn (F32) -> Unit from log_f32
 
 fn print_enum(e : Enum) {
   let c = match e {
-    Enum::A _ => { bytes_get("a", 0) },
-    Enum::B _ => { bytes_get("b", 0) },
-    Enum::C _ => { bytes_get("c", 0) },
+    Enum::A _ => { prim::bytes_get("a", 0) },
+    Enum::B _ => { prim::bytes_get("b", 0) },
+    Enum::C _ => { prim::bytes_get("c", 0) },
   };
   print_char(c);
   print_char(10);

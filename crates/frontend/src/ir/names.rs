@@ -1,4 +1,4 @@
-use crate::types::Interface;
+use crate::{builtins, types::Interface};
 use camino::{Utf8Path, Utf8PathBuf};
 use lasso::{Spur, ThreadedRodeo};
 use std::{
@@ -49,13 +49,7 @@ impl Ctx {
             module_lookup,
             interner,
         };
-        ctx.set_module(
-            ModuleId::PRIM,
-            "#builtin".to_string(),
-            Utf8Path::new("<builtin>").to_path_buf(),
-            Interface::default(),
-            NameSupply::new(),
-        );
+        builtins::define_prim(&ctx);
         ctx
     }
 
@@ -79,6 +73,9 @@ impl Ctx {
     }
 
     pub fn get_module_id(&self, module: &str) -> Option<ModuleId> {
+        if module == "prim" {
+            return Some(ModuleId::PRIM)
+        }
         self.module_lookup.get(module).copied()
     }
 
@@ -106,11 +103,11 @@ impl Ctx {
         Arc::clone(&self.interner)
     }
 
-    pub fn resolve(&self, name: Name) -> (String, &Utf8Path, TextRange) {
+    pub fn resolve(&self, name: Name) -> (&str, &Utf8Path, TextRange) {
         let supply = self.get_names(name.module);
         let id = supply.lookup(name);
         (
-            self.interner.resolve(&id.it).to_owned(),
+            self.interner.resolve(&id.it),
             self.get_module_path(name.module),
             id.at,
         )
@@ -124,7 +121,7 @@ impl Ctx {
         )
     }
 
-    pub fn display_name(&self, name: Name) -> String {
+    pub fn display_name(&self, name: Name) -> &str {
         self.resolve(name).0
     }
 

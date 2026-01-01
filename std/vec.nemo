@@ -1,6 +1,7 @@
 module vec
 exports (Vec, new, with_capacity, index, set_index, push, pop, extend, subvec, for_each, to_array)
 
+use prim
 use option
 
 struct Vec[a] {
@@ -21,12 +22,12 @@ fn with_capacity[a](zero : a, capacity : I32) -> Vec[a] {
   Vec {
     zero = zero,
     len = 0,
-    buf = array_new#[a](zero, capacity),
+    buf = prim::array_new(zero, capacity),
   }
 }
 
 fn capacity[a](vec : Vec[a]) -> I32 {
-  array_len#[a](vec.buf)
+  prim::array_len(vec.buf)
 }
 
 fn grow[a](vec : Vec[a], new_len : I32) {
@@ -37,7 +38,7 @@ fn grow[a](vec : Vec[a], new_len : I32) {
   while new_capacity < new_len {
     set new_capacity = new_capacity * 2;
   };
-  let new_buf = array_new#[a](vec.zero, new_capacity);
+  let new_buf = prim::array_new(vec.zero, new_capacity);
   let i = 0;
   while i < vec.len {
     set new_buf[i] = vec.buf[i];
@@ -49,14 +50,14 @@ fn grow[a](vec : Vec[a], new_len : I32) {
 
 fn index[a](vec : Vec[a] ix : I32) -> a {
   when vec.len <= ix {
-    panic();
+    prim::panic();
   };
   vec.buf[ix]
 }
 
 fn set_index[a](vec : Vec[a] ix : I32, elem : a) {
   when vec.len <= ix {
-    panic();
+    prim::panic();
   };
   set vec.buf[ix] = elem;
 }
@@ -90,10 +91,10 @@ fn extend[a](vec : Vec[a], other : Vec[a]) {
 
 fn subvec[a](vec : Vec[a], start : I32, len : I32) -> Vec[a] {
   when start < 0 || len < 0 || start + len >= vec.len {
-    panic()
+    prim::panic()
   };
   let new_vec = with_capacity(vec.zero, len);
-  array_copy#[a](new_vec.buf, 0, vec.buf, start, len);
+  prim::array_copy(new_vec.buf, 0, vec.buf, start, len);
   set new_vec.len = len;
   new_vec
 }
@@ -108,7 +109,7 @@ fn for_each[a](vec : Vec[a], f : fn (a) -> Unit) {
 }
 
 fn to_array[a](vec : Vec[a]) -> Array[a] {
-  let res = array_new#[a](vec.zero, vec.len);
-  array_copy#[a](res, 0, vec.buf, 0, vec.len);
+  let res = prim::array_new(vec.zero, vec.len);
+  prim::array_copy(res, 0, vec.buf, 0, vec.len);
   res
 }

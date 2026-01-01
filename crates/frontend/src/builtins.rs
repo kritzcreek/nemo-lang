@@ -1,309 +1,255 @@
-use crate::ir::{FuncTy, ModuleId, Name, NameTag, Ty};
+use camino::Utf8Path;
+use rowan::TextRange;
+
+use crate::ir::{Ctx, FuncTy, ModuleId, NameSupply, Ty};
+use crate::types::{FuncDef, Interface};
 use std::collections::HashMap;
-use std::sync::LazyLock;
 
-pub struct Fn {
-    pub name: &'static str,
-    pub ty_params: Vec<Name>,
-    pub ty: FuncTy,
+enum Arity {
+    Unary,
+    Binary,
 }
 
-fn f32_func_unary(name: &'static str) -> Fn {
-    Fn {
-        name,
-        ty_params: vec![],
-        ty: FuncTy {
-            arguments: vec![Ty::F32],
-            result: Ty::F32,
-        },
+pub fn define_prim(ctx: &Ctx) {
+    let mut functions = HashMap::new();
+    let names = NameSupply::new();
+
+    let numeric_prims = [
+        (Ty::F32, Arity::Unary, "f32_neg"),
+        (Ty::F32, Arity::Unary, "f32_abs"),
+        (Ty::F32, Arity::Unary, "f32_ceil"),
+        (Ty::F32, Arity::Unary, "f32_floor"),
+        (Ty::F32, Arity::Unary, "f32_trunc"),
+        (Ty::F32, Arity::Unary, "f32_nearest"),
+        (Ty::F32, Arity::Unary, "f32_sqrt"),
+        (Ty::F32, Arity::Binary, "f32_copysign"),
+        (Ty::F32, Arity::Binary, "f32_min"),
+        (Ty::F32, Arity::Binary, "f32_max"),
+        (Ty::I32, Arity::Unary, "i32_clz"),
+        (Ty::I32, Arity::Unary, "i32_ctz"),
+        (Ty::I32, Arity::Unary, "i32_popcnt"),
+        (Ty::I32, Arity::Unary, "i32_rotl"),
+        (Ty::I32, Arity::Unary, "i32_rotr"),
+        (Ty::I32, Arity::Binary, "i32_and"),
+        (Ty::I32, Arity::Binary, "i32_or"),
+        (Ty::I32, Arity::Binary, "i32_xor"),
+        (Ty::I32, Arity::Binary, "i32_rem"),
+        (Ty::I32, Arity::Binary, "i32_shl"),
+        (Ty::I32, Arity::Binary, "i32_shr"),
+        (Ty::U32, Arity::Unary, "u32_clz"),
+        (Ty::U32, Arity::Unary, "u32_ctz"),
+        (Ty::U32, Arity::Unary, "u32_popcnt"),
+        (Ty::U32, Arity::Unary, "u32_rotl"),
+        (Ty::U32, Arity::Unary, "u32_rotr"),
+        (Ty::U32, Arity::Binary, "u32_and"),
+        (Ty::U32, Arity::Binary, "u32_or"),
+        (Ty::U32, Arity::Binary, "u32_xor"),
+        (Ty::U32, Arity::Binary, "u32_rem"),
+        (Ty::U32, Arity::Binary, "u32_rem"),
+        (Ty::U32, Arity::Binary, "u32_shl"),
+        (Ty::U32, Arity::Binary, "u32_shr"),
+    ];
+
+    let conversions = [
+        (Ty::I32, Ty::F32, "f32_convert_i32"),
+        (Ty::U32, Ty::F32, "f32_convert_u32"),
+        (Ty::F32, Ty::I32, "i32_trunc_f32"),
+        (Ty::F32, Ty::U32, "u32_trunc_f32"),
+        (Ty::F32, Ty::I32, "i32_reinterpret_f32"),
+        (Ty::I32, Ty::U32, "i32_to_u32"),
+        (Ty::U32, Ty::I32, "u32_to_i32"),
+    ];
+
+    let func_name = |n| {
+        let sym = ctx.get_interner().get_or_intern_static(n);
+        let name = names.func_idx(ModuleId::PRIM, sym, TextRange::default());
+        (sym, name)
+    };
+
+    let ty_param = || {
+        let sym = ctx.get_interner().get_or_intern_static("prim_ty_var");
+        names.type_var_idx(ModuleId::PRIM, sym, TextRange::default())
+    };
+
+    for (ty, arity, name) in numeric_prims {
+        let (sym, name) = func_name(name);
+        functions.insert(
+            sym,
+            FuncDef {
+                name,
+                ty_params: vec![],
+                ty: FuncTy {
+                    arguments: match arity {
+                        Arity::Unary => vec![ty.clone()],
+                        Arity::Binary => vec![ty.clone(), ty.clone()],
+                    },
+                    result: ty,
+                },
+            },
+        );
     }
-}
-
-fn f32_func_binary(name: &'static str) -> Fn {
-    Fn {
-        name,
-        ty_params: vec![],
-        ty: FuncTy {
-            arguments: vec![Ty::F32, Ty::F32],
-            result: Ty::F32,
-        },
+    for (from, to, name) in conversions {
+        let (sym, name) = func_name(name);
+        functions.insert(
+            sym,
+            FuncDef {
+                name,
+                ty_params: vec![],
+                ty: FuncTy {
+                    arguments: vec![from],
+                    result: to,
+                },
+            },
+        );
     }
-}
-
-fn i32_func_unary(name: &'static str) -> Fn {
-    Fn {
-        name,
-        ty_params: vec![],
-        ty: FuncTy {
-            arguments: vec![Ty::I32],
-            result: Ty::I32,
-        },
+    {
+        let (sym, name) = func_name("array_len");
+        let ty_name = ty_param();
+        functions.insert(
+            sym,
+            FuncDef {
+                name,
+                ty_params: vec![ty_name],
+                ty: FuncTy {
+                    arguments: vec![Ty::Array(Box::new(Ty::Var(ty_name)))],
+                    result: Ty::I32,
+                },
+            },
+        );
     }
-}
-
-fn u32_func_unary(name: &'static str) -> Fn {
-    Fn {
-        name,
-        ty_params: vec![],
-        ty: FuncTy {
-            arguments: vec![Ty::U32],
-            result: Ty::U32,
-        },
+    {
+        let (sym, name) = func_name("array_new");
+        let ty_name = ty_param();
+        functions.insert(
+            sym,
+            FuncDef {
+                name,
+                ty_params: vec![ty_name],
+                ty: FuncTy {
+                    arguments: vec![Ty::Var(ty_name), Ty::I32],
+                    result: Ty::Array(Box::new(Ty::Var(ty_name))),
+                },
+            },
+        );
     }
-}
 
-fn i32_func_binary(name: &'static str) -> Fn {
-    Fn {
-        name,
-        ty_params: vec![],
-        ty: FuncTy {
-            arguments: vec![Ty::I32, Ty::I32],
-            result: Ty::I32,
-        },
+    {
+        let (sym, name) = func_name("array_copy");
+        let ty_name = ty_param();
+        functions.insert(
+            sym,
+            FuncDef {
+                name,
+                ty_params: vec![ty_name],
+                ty: FuncTy {
+                    arguments: vec![
+                        Ty::Array(Box::new(Ty::Var(ty_name))),
+                        Ty::I32,
+                        Ty::Array(Box::new(Ty::Var(ty_name))),
+                        Ty::I32,
+                        Ty::I32,
+                    ],
+                    result: Ty::Unit,
+                },
+            },
+        );
     }
-}
-
-fn u32_func_binary(name: &'static str) -> Fn {
-    Fn {
-        name,
-        ty_params: vec![],
-        ty: FuncTy {
-            arguments: vec![Ty::U32, Ty::U32],
-            result: Ty::U32,
-        },
+    {
+        let (sym, name) = func_name("panic");
+        functions.insert(
+            sym,
+            FuncDef {
+                name,
+                ty_params: vec![],
+                ty: FuncTy {
+                    arguments: vec![],
+                    result: Ty::Diverge,
+                },
+            },
+        );
     }
-}
+    {
+        let (sym, name) = func_name("bytes_get");
+        functions.insert(
+            sym,
+            FuncDef {
+                name,
+                ty_params: vec![],
+                ty: FuncTy {
+                    arguments: vec![Ty::Bytes, Ty::I32],
+                    result: Ty::I32,
+                },
+            },
+        );
+    }
+    {
+        let (sym, name) = func_name("bytes_set");
+        functions.insert(
+            sym,
+            FuncDef {
+                name,
+                ty_params: vec![],
+                ty: FuncTy {
+                    arguments: vec![Ty::Bytes, Ty::I32, Ty::I32],
+                    result: Ty::Unit,
+                },
+            },
+        );
+    }
+    {
+        let (sym, name) = func_name("bytes_len");
+        functions.insert(
+            sym,
+            FuncDef {
+                name,
+                ty_params: vec![],
+                ty: FuncTy {
+                    arguments: vec![Ty::Bytes],
+                    result: Ty::I32,
+                },
+            },
+        );
+    }
+    {
+        let (sym, name) = func_name("bytes_new");
+        functions.insert(
+            sym,
+            FuncDef {
+                name,
+                ty_params: vec![],
+                ty: FuncTy {
+                    arguments: vec![Ty::I32, Ty::I32],
+                    result: Ty::Bytes,
+                },
+            },
+        );
+    }
+    {
+        let (sym, name) = func_name("bytes_copy");
+        functions.insert(
+            sym,
+            FuncDef {
+                name,
+                ty_params: vec![],
+                ty: FuncTy {
+                    arguments: vec![Ty::Bytes, Ty::I32, Ty::Bytes, Ty::I32, Ty::I32],
+                    result: Ty::Unit,
+                },
+            },
+        );
+    }
 
-// Should be initialized after namemap/context is created
-static TODO_NAME: Name = Name {
-    tag: NameTag::Gen,
-    idx: 0,
-    module: ModuleId::PRIM,
-};
+    let interface = Interface {
+        functions,
+        type_names: HashMap::new(),
+        types: HashMap::new(),
+    };
 
-static BUILTINS: LazyLock<HashMap<&'static str, Fn>> = LazyLock::new(|| {
-    let mut m = HashMap::new();
-    m.insert("f32_neg", f32_func_unary("f32_neg"));
-    m.insert("f32_abs", f32_func_unary("f32_abs"));
-    m.insert("f32_ceil", f32_func_unary("f32_ceil"));
-    m.insert("f32_floor", f32_func_unary("f32_floor"));
-    m.insert("f32_trunc", f32_func_unary("f32_trunc"));
-    m.insert("f32_nearest", f32_func_unary("f32_nearest"));
-    m.insert("f32_sqrt", f32_func_unary("f32_sqrt"));
-    m.insert("f32_copysign", f32_func_binary("f32_copysign"));
-    m.insert("f32_min", f32_func_binary("f32_min"));
-    m.insert("f32_max", f32_func_binary("f32_max"));
-    m.insert(
-        "f32_convert_i32",
-        Fn {
-            name: "f32_convert_i32",
-            ty_params: vec![],
-            ty: FuncTy {
-                arguments: vec![Ty::I32],
-                result: Ty::F32,
-            },
-        },
+    ctx.set_module(
+        ModuleId::PRIM,
+        "prim".to_string(),
+        Utf8Path::new("<prim>").to_owned(),
+        interface,
+        names,
     );
-    m.insert(
-        "f32_convert_u32",
-        Fn {
-            name: "f32_convert_u32",
-            ty_params: vec![],
-            ty: FuncTy {
-                arguments: vec![Ty::U32],
-                result: Ty::F32,
-            },
-        },
-    );
-
-    m.insert("i32_clz", i32_func_unary("i32_clz"));
-    m.insert("i32_ctz", i32_func_unary("i32_ctz"));
-    m.insert("i32_popcnt", i32_func_unary("i32_popcnt"));
-    m.insert("i32_rotl", i32_func_unary("i32_rotl"));
-    m.insert("i32_rotr", i32_func_unary("i32_rotr"));
-    m.insert("i32_and", i32_func_binary("i32_and"));
-    m.insert("i32_or", i32_func_binary("i32_or"));
-    m.insert("i32_xor", i32_func_binary("i32_xor"));
-    m.insert("i32_rem", i32_func_binary("i32_rem"));
-    m.insert("u32_rem", i32_func_binary("u32_rem"));
-    m.insert("i32_shl", i32_func_binary("i32_shl"));
-    m.insert("i32_shr", i32_func_binary("i32_shr"));
-
-    m.insert("u32_clz", u32_func_unary("u32_clz"));
-    m.insert("u32_ctz", u32_func_unary("u32_ctz"));
-    m.insert("u32_popcnt", u32_func_unary("u32_popcnt"));
-    m.insert("u32_rotl", u32_func_unary("u32_rotl"));
-    m.insert("u32_rotr", u32_func_unary("u32_rotr"));
-    m.insert("u32_and", u32_func_binary("u32_and"));
-    m.insert("u32_or", u32_func_binary("u32_or"));
-    m.insert("u32_xor", u32_func_binary("u32_xor"));
-    m.insert("u32_rem", u32_func_binary("u32_rem"));
-    m.insert("u32_rem", u32_func_binary("u32_rem"));
-    m.insert("u32_shl", u32_func_binary("u32_shl"));
-    m.insert("u32_shr", u32_func_binary("u32_shr"));
-    m.insert(
-        "i32_trunc_f32",
-        Fn {
-            name: "i32_trunc_f32",
-            ty_params: vec![],
-            ty: FuncTy {
-                arguments: vec![Ty::F32],
-                result: Ty::I32,
-            },
-        },
-    );
-    m.insert(
-        "u32_trunc_f32",
-        Fn {
-            name: "u32_trunc_f32",
-            ty_params: vec![],
-            ty: FuncTy {
-                arguments: vec![Ty::F32],
-                result: Ty::U32,
-            },
-        },
-    );
-    m.insert(
-        "i32_reinterpret_f32",
-        Fn {
-            name: "i32_reinterpret_f32",
-            ty_params: vec![],
-            ty: FuncTy {
-                arguments: vec![Ty::F32],
-                result: Ty::I32,
-            },
-        },
-    );
-    m.insert(
-        "i32_to_u32",
-        Fn {
-            name: "i32_to_u32",
-            ty_params: vec![],
-            ty: FuncTy {
-                arguments: vec![Ty::I32],
-                result: Ty::U32,
-            },
-        },
-    );
-    m.insert(
-        "u32_to_i32",
-        Fn {
-            name: "u32_to_i32",
-            ty_params: vec![],
-            ty: FuncTy {
-                arguments: vec![Ty::U32],
-                result: Ty::I32,
-            },
-        },
-    );
-    m.insert(
-        "array_len",
-        Fn {
-            name: "array_len",
-            ty_params: vec![TODO_NAME],
-            ty: FuncTy {
-                arguments: vec![Ty::Array(Box::new(Ty::Var(TODO_NAME)))],
-                result: Ty::I32,
-            },
-        },
-    );
-    m.insert(
-        "array_new",
-        Fn {
-            name: "array_new",
-            ty_params: vec![TODO_NAME],
-            ty: FuncTy {
-                arguments: vec![Ty::Var(TODO_NAME), Ty::I32],
-                result: Ty::Array(Box::new(Ty::Var(TODO_NAME))),
-            },
-        },
-    );
-    m.insert(
-        "array_copy",
-        Fn {
-            name: "array_copy",
-            ty_params: vec![TODO_NAME],
-            ty: FuncTy {
-                arguments: vec![
-                    Ty::Array(Box::new(Ty::Var(TODO_NAME))),
-                    Ty::I32,
-                    Ty::Array(Box::new(Ty::Var(TODO_NAME))),
-                    Ty::I32,
-                    Ty::I32,
-                ],
-                result: Ty::Unit,
-            },
-        },
-    );
-    m.insert(
-        "bytes_get",
-        Fn {
-            name: "bytes_get",
-            ty_params: vec![],
-            ty: FuncTy {
-                arguments: vec![Ty::Bytes, Ty::I32],
-                result: Ty::I32,
-            },
-        },
-    );
-    m.insert(
-        "bytes_set",
-        Fn {
-            name: "bytes_set",
-            ty_params: vec![],
-            ty: FuncTy {
-                arguments: vec![Ty::Bytes, Ty::I32, Ty::I32],
-                result: Ty::Unit,
-            },
-        },
-    );
-    m.insert(
-        "bytes_len",
-        Fn {
-            name: "bytes_len",
-            ty_params: vec![],
-            ty: FuncTy {
-                arguments: vec![Ty::Bytes],
-                result: Ty::I32,
-            },
-        },
-    );
-    m.insert(
-        "bytes_new",
-        Fn {
-            name: "bytes_new",
-            ty_params: vec![],
-            ty: FuncTy {
-                arguments: vec![Ty::I32, Ty::I32],
-                result: Ty::Bytes,
-            },
-        },
-    );
-    m.insert(
-        "panic",
-        Fn {
-            name: "panic",
-            ty_params: vec![],
-            ty: FuncTy {
-                arguments: vec![],
-                result: Ty::Diverge,
-            },
-        },
-    );
-    m.insert(
-        "bytes_copy",
-        Fn {
-            name: "bytes_copy",
-            ty_params: vec![],
-            ty: FuncTy {
-                arguments: vec![Ty::Bytes, Ty::I32, Ty::Bytes, Ty::I32, Ty::I32],
-                result: Ty::Unit,
-            },
-        },
-    );
-    m
-});
-
-pub fn lookup_builtin(name: &str) -> Option<&'static Fn> {
-    BUILTINS.get(name)
 }

@@ -1,3 +1,5 @@
+use prim
+
 // Inserts random numbers from 0 to 100 into a binary search tree until it
 // reaches size 50, then looks up the values for 1, 11, 21, ..., 91
 fn main() {
@@ -202,10 +204,10 @@ fn size_node[k, v](node : Node[k, v]) -> I32 {
 
 fn round(x : F32) -> I32 {
   let y = x + 0.5;
-  i32_trunc_f32(y)
+  prim::i32_trunc_f32(y)
 }
 
 fn random_int(low : I32, high : I32) -> I32 {
-  let scaled = random() * f32_convert_i32(high - low);
+  let scaled = random() * prim::f32_convert_i32(high - low);
   low + round(scaled)
 }

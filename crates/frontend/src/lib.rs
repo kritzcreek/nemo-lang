@@ -102,6 +102,9 @@ fn extract_module_header(module: &Module) -> (String, Vec<Id>) {
                 at: t.text_range(),
             })
         })
+        .filter(|mod_use| {
+            mod_use.it != "prim"
+        })
         .collect();
     (name, dependencies)
 }
