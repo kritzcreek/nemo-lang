@@ -281,14 +281,28 @@ impl<'a> Codegen<'a> {
                         instrs.push(Instruction::I32Const(-1));
                         instrs.push(Instruction::I32Xor);
                     }
+                    UnOpData::I64Not | UnOpData::U64Not => {
+                        instrs.extend(self.compile_expr(body, expr));
+                        instrs.push(Instruction::I64Const(-1));
+                        instrs.push(Instruction::I64Xor);
+                    }
                     UnOpData::I32Neg => {
                         instrs.push(Instruction::I32Const(0));
                         instrs.extend(self.compile_expr(body, expr));
                         instrs.push(Instruction::I32Sub);
                     }
+                    UnOpData::I64Neg => {
+                        instrs.push(Instruction::I64Const(0));
+                        instrs.extend(self.compile_expr(body, expr));
+                        instrs.push(Instruction::I64Sub);
+                    }
                     UnOpData::F32Neg => {
                         instrs.extend(self.compile_expr(body, expr));
                         instrs.push(Instruction::F32Neg);
+                    }
+                    UnOpData::F64Neg => {
+                        instrs.extend(self.compile_expr(body, expr));
+                        instrs.push(Instruction::F64Neg);
                     }
                 }
                 instrs
@@ -815,6 +829,8 @@ impl<'a> Codegen<'a> {
             "f64_copysign" => vec![Instruction::F64Copysign],
             "f64_min" => vec![Instruction::F64Min],
             "f64_max" => vec![Instruction::F64Max],
+            "f64_convert_i64" => vec![Instruction::F64ConvertI64S],
+            "f64_convert_u64" => vec![Instruction::F64ConvertI64U],
 
             "i32_clz" | "u32_clz" => vec![Instruction::I32Clz],
             "i32_ctz" | "u32_ctz" => vec![Instruction::I32Ctz],

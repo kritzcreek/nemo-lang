@@ -270,8 +270,12 @@ pub struct UnOp {
 pub enum UnOpData {
     I32Neg,
     F32Neg,
+    I64Neg,
+    F64Neg,
     I32Not,
     U32Not,
+    I64Not,
+    U64Not,
 }
 
 #[derive(Debug, PartialEq, Clone)]

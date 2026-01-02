@@ -10,8 +10,7 @@ use super::{
 };
 use crate::T;
 use crate::ir::{
-    self, Ctx, ExprBuilder, FuncTy, LambdaBuilder, LitBuilder, Name, PatVarBuilder, ReturnBuilder,
-    Substitution, Symbol, TupleBuilder, TupleIdxBuilder, Ty, VarBuilder,
+    self, Ctx, ExprBuilder, FuncTy, LambdaBuilder, LitBuilder, Name, PatVarBuilder, ReturnBuilder, Substitution, Symbol, TupleBuilder, TupleIdxBuilder, Ty, VarBuilder
 };
 use crate::ir::{ModuleId, NameTag};
 use crate::parser::SyntaxKind;
@@ -1756,6 +1755,14 @@ impl Typechecker<'_> {
                 builder.lit(ir);
                 builder.build()
             }
+            (Expr::EUnary(expr), _) => {
+                let mut builder = ir::UnaryBuilder::default();
+                let expr_ir = self.check_expr(errors, scope, &expr.expr()?, expected);
+                builder.expr(expr_ir);
+                let op_tkn = expr.op()?;
+                builder.op(check_un_op(errors, &op_tkn, expected));
+                builder.build()
+            }
             (Expr::EArray(expr), Ty::Array(elem_ty)) => {
                 let mut builder = ir::ArrayBuilder::default();
                 for elem in expr.exprs() {
@@ -2255,8 +2262,12 @@ fn check_un_op(errors: &mut TyErrors, op: &SyntaxToken, ty: &Ty) -> Option<ir::U
     let op_data = match (op.kind(), ty) {
         (T![-], Ty::I32) => ir::UnOpData::I32Neg,
         (T![-], Ty::F32) => ir::UnOpData::F32Neg,
+        (T![-], Ty::I64) => ir::UnOpData::I64Neg,
+        (T![-], Ty::F64) => ir::UnOpData::F64Neg,
         (T![^], Ty::I32) => ir::UnOpData::I32Not,
         (T![^], Ty::U32) => ir::UnOpData::U32Not,
+        (T![^], Ty::I64) => ir::UnOpData::I64Not,
+        (T![^], Ty::U64) => ir::UnOpData::U64Not,
         _ => {
             errors.report(op, InvalidUnaryOperator(op.text().to_string(), ty.clone()));
             return None;
