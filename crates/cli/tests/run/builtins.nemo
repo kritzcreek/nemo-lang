@@ -3,11 +3,16 @@ exports (main)
 
 use prim
 
-import log_float : fn (F32) -> Unit from log_float
-import log_int : fn (I32) -> Unit from log_int
+import log_f32 : fn (F32) -> Unit from log_f32
+import log_f64 : fn (F64) -> Unit from log_f64
+import log_i32 : fn (I32) -> Unit from log_i32
+import log_i64 : fn (I64) -> Unit from log_i64
 
 fn main() {
-    log_float(prim::f32_neg(1.0));
+    log_f32(prim::f32_neg(1.0));
+    log_f64(prim::f64_neg(1.0));
+    log_i32(prim::i32_clz(1));
+    log_i64(prim::i64_clz(1));
     let xs : Array[I32] = prim::array_new(20, 10);
-    log_int(prim::array_len(xs));
+    log_i32(prim::array_len(xs));
 }
