@@ -9,10 +9,10 @@ use crossbeam_channel::unbounded;
 use crossbeam_deque::Injector;
 
 use crate::{
+    FrontendResult, ModuleParseResult, ModuleResult,
     ir::{Ctx, ModuleId, Program},
     syntax::Module,
     types::{self, OccurrenceMap, TyError},
-    FrontendResult, ModuleParseResult, ModuleResult,
 };
 
 pub struct State {
@@ -208,38 +208,40 @@ pub fn run(
             let parsed_modules = &parsed_modules;
             let ctx = &ctx;
             let remaining = &remaining;
-            s.spawn(move || loop {
-                let task = std::iter::repeat_with(|| injector.steal())
-                    .find(|s| !s.is_retry())
-                    .and_then(|s| s.success());
-                match task {
-                    Some(id) => {
-                        let parsed_module = parsed_modules.get(&id).unwrap();
-                        let res = types::check_module(
-                            ctx,
-                            Module::from_root(parsed_module.parse.clone()),
-                            id,
-                        );
-                        ctx.set_module(
-                            id,
-                            parsed_module.name.clone(),
-                            parsed_module.path.clone(),
-                            res.interface,
-                            res.names,
-                        );
-                        let module_result = TypeCheckResult {
-                            id,
-                            occurrences: res.occurrences,
-                            ty_errors: res.errors,
-                            ir: res.ir,
-                        };
-                        completion_tx.send(module_result).unwrap();
-                    }
-                    None => {
-                        if remaining.load(Ordering::Acquire) == 0 {
-                            break;
+            s.spawn(move || {
+                loop {
+                    let task = std::iter::repeat_with(|| injector.steal())
+                        .find(|s| !s.is_retry())
+                        .and_then(|s| s.success());
+                    match task {
+                        Some(id) => {
+                            let parsed_module = parsed_modules.get(&id).unwrap();
+                            let res = types::check_module(
+                                ctx,
+                                Module::from_root(parsed_module.parse.clone()),
+                                id,
+                            );
+                            ctx.set_module(
+                                id,
+                                parsed_module.name.clone(),
+                                parsed_module.path.clone(),
+                                res.interface,
+                                res.names,
+                            );
+                            let module_result = TypeCheckResult {
+                                id,
+                                occurrences: res.occurrences,
+                                ty_errors: res.errors,
+                                ir: res.ir,
+                            };
+                            completion_tx.send(module_result).unwrap();
                         }
-                        std::hint::spin_loop();
+                        None => {
+                            if remaining.load(Ordering::Acquire) == 0 {
+                                break;
+                            }
+                            std::hint::spin_loop();
+                        }
                     }
                 }
             });

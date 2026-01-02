@@ -1,5 +1,5 @@
-use super::parsing::Parser;
 use super::SyntaxKind;
+use super::parsing::Parser;
 use crate::T;
 use rowan::Checkpoint;
 
@@ -290,30 +290,6 @@ fn typ_annot(p: &mut Parser) -> Progress {
 fn typ(p: &mut Parser) -> Progress {
     let c = p.checkpoint();
     match p.current() {
-        T![I32] => {
-            p.bump(T![I32]);
-            p.finish_at(c, SyntaxKind::TyInt)
-        }
-        T![U32] => {
-            p.bump(T![U32]);
-            p.finish_at(c, SyntaxKind::TyUInt)
-        }
-        T![F32] => {
-            p.bump(T![F32]);
-            p.finish_at(c, SyntaxKind::TyFloat)
-        }
-        T![Bool] => {
-            p.bump(T![Bool]);
-            p.finish_at(c, SyntaxKind::TyBool)
-        }
-        T![Bytes] => {
-            p.bump(T![Bytes]);
-            p.finish_at(c, SyntaxKind::TyBytes)
-        }
-        T![Unit] => {
-            p.bump(T![Unit]);
-            p.finish_at(c, SyntaxKind::TyUnit)
-        }
         T![ident] => {
             if mod_qualifier(p).made_progress() {
                 ty_cons(p, c);

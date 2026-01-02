@@ -1,7 +1,7 @@
 use super::{
-    ast::{support, AstChildren, AstNode},
     SyntaxKind::{self, *},
     SyntaxNode, SyntaxToken,
+    ast::{AstChildren, AstNode, support},
 };
 use crate::T;
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -278,60 +278,6 @@ impl Param {
     }
     pub fn ty(&self) -> Option<Type> {
         support::child(&self.syntax)
-    }
-}
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct TyInt {
-    pub(crate) syntax: SyntaxNode,
-}
-impl TyInt {
-    pub fn i32_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T![I32])
-    }
-}
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct TyUInt {
-    pub(crate) syntax: SyntaxNode,
-}
-impl TyUInt {
-    pub fn u32_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T![U32])
-    }
-}
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct TyFloat {
-    pub(crate) syntax: SyntaxNode,
-}
-impl TyFloat {
-    pub fn f32_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T![F32])
-    }
-}
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct TyBool {
-    pub(crate) syntax: SyntaxNode,
-}
-impl TyBool {
-    pub fn bool_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T![Bool])
-    }
-}
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct TyBytes {
-    pub(crate) syntax: SyntaxNode,
-}
-impl TyBytes {
-    pub fn bytes_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T![Bytes])
-    }
-}
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct TyUnit {
-    pub(crate) syntax: SyntaxNode,
-}
-impl TyUnit {
-    pub fn unit_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T![Unit])
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -886,12 +832,6 @@ pub enum ModExport {
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Type {
-    TyInt(TyInt),
-    TyUInt(TyUInt),
-    TyFloat(TyFloat),
-    TyBool(TyBool),
-    TyBytes(TyBytes),
-    TyUnit(TyUnit),
     TyVar(TyVar),
     TyCons(TyCons),
     TyTuple(TyTuple),
@@ -1216,96 +1156,6 @@ impl AstNode for EBlock {
 impl AstNode for Param {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == Param
-    }
-    fn cast(syntax: SyntaxNode) -> Option<Self> {
-        if Self::can_cast(syntax.kind()) {
-            Some(Self { syntax })
-        } else {
-            None
-        }
-    }
-    fn syntax(&self) -> &SyntaxNode {
-        &self.syntax
-    }
-}
-impl AstNode for TyInt {
-    fn can_cast(kind: SyntaxKind) -> bool {
-        kind == TyInt
-    }
-    fn cast(syntax: SyntaxNode) -> Option<Self> {
-        if Self::can_cast(syntax.kind()) {
-            Some(Self { syntax })
-        } else {
-            None
-        }
-    }
-    fn syntax(&self) -> &SyntaxNode {
-        &self.syntax
-    }
-}
-impl AstNode for TyUInt {
-    fn can_cast(kind: SyntaxKind) -> bool {
-        kind == TyUInt
-    }
-    fn cast(syntax: SyntaxNode) -> Option<Self> {
-        if Self::can_cast(syntax.kind()) {
-            Some(Self { syntax })
-        } else {
-            None
-        }
-    }
-    fn syntax(&self) -> &SyntaxNode {
-        &self.syntax
-    }
-}
-impl AstNode for TyFloat {
-    fn can_cast(kind: SyntaxKind) -> bool {
-        kind == TyFloat
-    }
-    fn cast(syntax: SyntaxNode) -> Option<Self> {
-        if Self::can_cast(syntax.kind()) {
-            Some(Self { syntax })
-        } else {
-            None
-        }
-    }
-    fn syntax(&self) -> &SyntaxNode {
-        &self.syntax
-    }
-}
-impl AstNode for TyBool {
-    fn can_cast(kind: SyntaxKind) -> bool {
-        kind == TyBool
-    }
-    fn cast(syntax: SyntaxNode) -> Option<Self> {
-        if Self::can_cast(syntax.kind()) {
-            Some(Self { syntax })
-        } else {
-            None
-        }
-    }
-    fn syntax(&self) -> &SyntaxNode {
-        &self.syntax
-    }
-}
-impl AstNode for TyBytes {
-    fn can_cast(kind: SyntaxKind) -> bool {
-        kind == TyBytes
-    }
-    fn cast(syntax: SyntaxNode) -> Option<Self> {
-        if Self::can_cast(syntax.kind()) {
-            Some(Self { syntax })
-        } else {
-            None
-        }
-    }
-    fn syntax(&self) -> &SyntaxNode {
-        &self.syntax
-    }
-}
-impl AstNode for TyUnit {
-    fn can_cast(kind: SyntaxKind) -> bool {
-        kind == TyUnit
     }
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         if Self::can_cast(syntax.kind()) {
@@ -2010,36 +1860,6 @@ impl AstNode for ModExport {
         }
     }
 }
-impl From<TyInt> for Type {
-    fn from(node: TyInt) -> Type {
-        Type::TyInt(node)
-    }
-}
-impl From<TyUInt> for Type {
-    fn from(node: TyUInt) -> Type {
-        Type::TyUInt(node)
-    }
-}
-impl From<TyFloat> for Type {
-    fn from(node: TyFloat) -> Type {
-        Type::TyFloat(node)
-    }
-}
-impl From<TyBool> for Type {
-    fn from(node: TyBool) -> Type {
-        Type::TyBool(node)
-    }
-}
-impl From<TyBytes> for Type {
-    fn from(node: TyBytes) -> Type {
-        Type::TyBytes(node)
-    }
-}
-impl From<TyUnit> for Type {
-    fn from(node: TyUnit) -> Type {
-        Type::TyUnit(node)
-    }
-}
 impl From<TyVar> for Type {
     fn from(node: TyVar) -> Type {
         Type::TyVar(node)
@@ -2063,19 +1883,12 @@ impl From<TyFn> for Type {
 impl AstNode for Type {
     fn can_cast(kind: SyntaxKind) -> bool {
         match kind {
-            TyInt | TyUInt | TyFloat | TyBool | TyBytes | TyUnit | TyVar | TyCons | TyTuple
-            | TyFn => true,
+            TyVar | TyCons | TyTuple | TyFn => true,
             _ => false,
         }
     }
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         let res = match syntax.kind() {
-            TyInt => Type::TyInt(TyInt { syntax }),
-            TyUInt => Type::TyUInt(TyUInt { syntax }),
-            TyFloat => Type::TyFloat(TyFloat { syntax }),
-            TyBool => Type::TyBool(TyBool { syntax }),
-            TyBytes => Type::TyBytes(TyBytes { syntax }),
-            TyUnit => Type::TyUnit(TyUnit { syntax }),
             TyVar => Type::TyVar(TyVar { syntax }),
             TyCons => Type::TyCons(TyCons { syntax }),
             TyTuple => Type::TyTuple(TyTuple { syntax }),
@@ -2086,12 +1899,6 @@ impl AstNode for Type {
     }
     fn syntax(&self) -> &SyntaxNode {
         match self {
-            Type::TyInt(it) => &it.syntax,
-            Type::TyUInt(it) => &it.syntax,
-            Type::TyFloat(it) => &it.syntax,
-            Type::TyBool(it) => &it.syntax,
-            Type::TyBytes(it) => &it.syntax,
-            Type::TyUnit(it) => &it.syntax,
             Type::TyVar(it) => &it.syntax,
             Type::TyCons(it) => &it.syntax,
             Type::TyTuple(it) => &it.syntax,
@@ -2539,36 +2346,6 @@ impl std::fmt::Display for EBlock {
     }
 }
 impl std::fmt::Display for Param {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        std::fmt::Display::fmt(self.syntax(), f)
-    }
-}
-impl std::fmt::Display for TyInt {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        std::fmt::Display::fmt(self.syntax(), f)
-    }
-}
-impl std::fmt::Display for TyUInt {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        std::fmt::Display::fmt(self.syntax(), f)
-    }
-}
-impl std::fmt::Display for TyFloat {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        std::fmt::Display::fmt(self.syntax(), f)
-    }
-}
-impl std::fmt::Display for TyBool {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        std::fmt::Display::fmt(self.syntax(), f)
-    }
-}
-impl std::fmt::Display for TyBytes {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        std::fmt::Display::fmt(self.syntax(), f)
-    }
-}
-impl std::fmt::Display for TyUnit {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
     }

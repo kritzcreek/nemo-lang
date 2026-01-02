@@ -4,8 +4,8 @@ mod module;
 mod names;
 
 use crate::ir::{Ctx, ModuleId, Name, NameSupply, Program};
-use crate::syntax::token_ptr::SyntaxTokenPtr;
 use crate::syntax::Module;
+use crate::syntax::token_ptr::SyntaxTokenPtr;
 use check::Typechecker;
 use std::collections::HashMap;
 

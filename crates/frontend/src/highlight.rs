@@ -1,8 +1,8 @@
+use crate::T;
 use crate::ir::NameTag;
 use crate::parser::SyntaxKind;
 use crate::syntax::{AstNode, Module};
 use crate::types::OccurrenceMap;
-use crate::T;
 use text_size::TextRange;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -66,12 +66,6 @@ pub fn highlight(module: &Module, occurrences: &OccurrenceMap) -> Vec<Highlight>
                 highlights.push(Highlight {
                     range: node.text_range(),
                     kind: HighlightKind::Operator,
-                });
-            }
-            T![I32] | T![U32] | T![F32] | T![Bool] | T![Unit] => {
-                highlights.push(Highlight {
-                    range: node.text_range(),
-                    kind: HighlightKind::Type,
                 });
             }
             SyntaxKind::LINE_COMMENT => {

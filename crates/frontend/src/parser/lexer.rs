@@ -178,24 +178,6 @@ pub enum SyntaxKind {
     #[token("false")]
     FALSE_KW,
 
-    #[token("I32")]
-    I32_BUILTIN,
-
-    #[token("U32")]
-    U32_BUILTIN,
-
-    #[token("F32")]
-    F32_BUILTIN,
-
-    #[token("Bool")]
-    BOOL_BUILTIN,
-
-    #[token("Unit")]
-    UNIT_BUILTIN,
-
-    #[token("Bytes")]
-    BYTES_BUILTIN,
-
     #[regex("[a-z_][A-Za-z0-9_]*")]
     IDENT,
 
@@ -479,12 +461,6 @@ macro_rules ! T {
     [=>] => { SyntaxKind::FAT_ARROW };
     [true] => { SyntaxKind::TRUE_KW };
     [false] => { SyntaxKind::FALSE_KW };
-    [I32] => { SyntaxKind::I32_BUILTIN };
-    [U32] => { SyntaxKind::U32_BUILTIN };
-    [F32] => { SyntaxKind::F32_BUILTIN };
-    [Bool] => { SyntaxKind::BOOL_BUILTIN };
-    [Bytes] => { SyntaxKind::BYTES_BUILTIN };
-    [Unit] => { SyntaxKind::UNIT_BUILTIN };
     [module] => { SyntaxKind::MODULE_KW };
     [exports] => { SyntaxKind::EXPORTS_KW };
     [use] => { SyntaxKind::USE_KW };

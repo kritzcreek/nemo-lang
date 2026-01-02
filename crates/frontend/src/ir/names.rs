@@ -6,7 +6,7 @@ use std::{
     collections::HashMap,
     fmt,
     num::NonZeroU16,
-    sync::{atomic::AtomicU16, Arc, OnceLock},
+    sync::{Arc, OnceLock, atomic::AtomicU16},
 };
 use text_size::TextRange;
 
@@ -74,7 +74,7 @@ impl Ctx {
 
     pub fn get_module_id(&self, module: &str) -> Option<ModuleId> {
         if module == "prim" {
-            return Some(ModuleId::PRIM)
+            return Some(ModuleId::PRIM);
         }
         self.module_lookup.get(module).copied()
     }

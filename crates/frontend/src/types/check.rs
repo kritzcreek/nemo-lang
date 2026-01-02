@@ -637,27 +637,38 @@ impl Typechecker<'_> {
 
     fn check_ty(&self, errors: &mut TyErrors, scope: &mut Scope, ty: &Type) -> Ty {
         match ty {
-            Type::TyInt(_) => Ty::I32,
-            Type::TyUInt(_) => Ty::U32,
-            Type::TyFloat(_) => Ty::F32,
-            Type::TyBool(_) => Ty::Bool,
-            Type::TyUnit(_) => Ty::Unit,
-            Type::TyBytes(_) => Ty::Bytes,
             Type::TyCons(t) => {
                 let Some(ty_tkn) = t.upper_ident_token() else {
                     return Ty::Error;
                 };
-                if ty_tkn.text() == "Array" && t.mod_qualifier().is_none() {
-                    let mut ty_args: Vec<Ty> = t
-                        .type_args()
-                        .map(|t| self.check_ty(errors, scope, &t))
-                        .collect();
-                    if ty_args.len() != 1 {
-                        errors.report(t, TyArgCountMismatch(1, ty_args.len()));
-                        return Ty::Error;
+                // Handle primitives first
+                if t.mod_qualifier().is_none() {
+                    let name = ty_tkn.text();
+                    if name == "Array" {
+                        let mut ty_args: Vec<Ty> = t
+                            .type_args()
+                            .map(|t| self.check_ty(errors, scope, &t))
+                            .collect();
+                        if ty_args.len() != 1 {
+                            errors.report(t, TyArgCountMismatch(1, ty_args.len()));
+                            return Ty::Error;
+                        }
+                        let elem_ty = Box::new(ty_args.pop().unwrap());
+                        return Ty::Array(elem_ty);
                     }
-                    let elem_ty = Box::new(ty_args.pop().unwrap());
-                    return Ty::Array(elem_ty);
+
+                    match name {
+                        "I32" => return Ty::I32,
+                        "U32" => return Ty::U32,
+                        "I64" => return Ty::I64,
+                        "U64" => return Ty::U64,
+                        "F32" => return Ty::F32,
+                        "F64" => return Ty::F64,
+                        "Bool" => return Ty::Bool,
+                        "Unit" => return Ty::Unit,
+                        "Bytes" => return Ty::Bytes,
+                        _ => ()
+                    };
                 }
 
                 let Some(ty_def) =

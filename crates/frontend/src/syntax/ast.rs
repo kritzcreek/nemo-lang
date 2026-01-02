@@ -4,8 +4,8 @@ use crate::syntax::{SyntaxKind, SyntaxNode, SyntaxNodeChildren, SyntaxToken};
 use std::marker::PhantomData;
 
 use super::{
-    nodes::{EArrayIdx, EBinary, EIf, Expr, Module, Root},
     EUnary,
+    nodes::{EArrayIdx, EBinary, EIf, Expr, Module, Root},
 };
 
 /// The main trait to go from untyped `SyntaxNode`  to a typed ast. The
