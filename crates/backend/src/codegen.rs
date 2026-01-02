@@ -874,6 +874,9 @@ impl<'a> Codegen<'a> {
             "i64_extend_i32" => vec![Instruction::I64ExtendI32S],
             "u64_extend_u32" => vec![Instruction::I64ExtendI32U],
 
+            "i32_wrap_i64" => vec![Instruction::I32WrapI64],
+            "u32_wrap_u64" => vec![Instruction::I32WrapI64],
+
             "i32_reinterpret_f32" => vec![Instruction::I32ReinterpretF32],
             "i64_reinterpret_f64" => vec![Instruction::I64ReinterpretF64],
 

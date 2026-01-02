@@ -122,4 +122,6 @@ fn main() {
     log_u64(prim::u64_extend_u32(4294967295u));
     log_f64(prim::f64_promote_f32(1.5));
     log_f32(prim::f32_demote_f64(1.5));
+    log_i32(prim::i32_wrap_i64(4294967296));
+    log_u32(prim::u32_wrap_u64(4294967297u));
 }
