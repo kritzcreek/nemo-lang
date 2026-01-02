@@ -102,7 +102,7 @@ pub fn define_prim(ctx: &Ctx) {
         (Ty::I32, Ty::I64, "i64_extend_i32"),
         (Ty::U32, Ty::U64, "u64_extend_u32"),
         (Ty::F32, Ty::F64, "f64_promote_f32"),
-        (Ty::F64, Ty::F32, "f64_demote_f32"),
+        (Ty::F64, Ty::F32, "f32_demote_f64"),
     ];
 
     let func_name = |n| {

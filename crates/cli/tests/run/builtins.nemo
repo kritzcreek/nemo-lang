@@ -118,6 +118,11 @@ fn main() {
 
     log_u64(prim::i64_to_u64(-1));
 
+    log_i64(prim::i64_extend_i32(-1));
+    log_u64(prim::u64_extend_u32(4294967295u));
+    log_f64(prim::f64_promote_f32(1.5));
+    log_f32(prim::f32_demote_f64(1.5));
+
     // Arrays
     let xs : Array[I32] = prim::array_new(20, 10);
     log_i32(prim::array_len(xs));
