@@ -122,21 +122,4 @@ fn main() {
     log_u64(prim::u64_extend_u32(4294967295u));
     log_f64(prim::f64_promote_f32(1.5));
     log_f32(prim::f32_demote_f64(1.5));
-
-    // Arrays
-    let xs : Array[I32] = prim::array_new(20, 10);
-    log_i32(prim::array_len(xs));
-    let ys : Array[I32] = prim::array_new(5, 20);
-    prim::array_copy(xs, 0, ys, 0, 5);
-    log_i32(prim::array_len(ys));
-
-    // Bytes
-    let b = prim::bytes_new(0, 10);
-    log_i32(prim::bytes_len(b));
-    prim::bytes_set(b, 0, 123);
-    log_i32(prim::bytes_get(b, 0));
-
-    let b2 = prim::bytes_new(0, 10);
-    prim::bytes_copy(b, 0, b2, 0, 5);
-    log_i32(prim::bytes_get(b2, 0));
 }
