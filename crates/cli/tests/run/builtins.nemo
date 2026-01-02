@@ -1,0 +1,127 @@
+module builtins
+exports (main)
+
+use prim
+
+import log_f32 : fn (F32) -> Unit from log_f32
+import log_f64 : fn (F64) -> Unit from log_f64
+import log_i32 : fn (I32) -> Unit from log_i32
+import log_i64 : fn (I64) -> Unit from log_i64
+import log_u32 : fn (U32) -> Unit from log_u32
+import log_u64 : fn (U64) -> Unit from log_u64
+
+fn main() {
+    // F32 Unary
+    log_f32(prim::f32_neg(1.0));
+    log_f32(prim::f32_abs(-1.5));
+    log_f32(prim::f32_ceil(1.2));
+    log_f32(prim::f32_floor(1.8));
+    log_f32(prim::f32_trunc(1.8));
+    log_f32(prim::f32_nearest(1.6));
+    log_f32(prim::f32_sqrt(4.0));
+
+    // F32 Binary
+    log_f32(prim::f32_copysign(1.0, -1.0));
+    log_f32(prim::f32_min(1.0, 2.0));
+    log_f32(prim::f32_max(1.0, 2.0));
+
+    // F64 Unary
+    log_f64(prim::f64_neg(1.0));
+    log_f64(prim::f64_abs(-1.5));
+    log_f64(prim::f64_ceil(1.2));
+    log_f64(prim::f64_floor(1.8));
+    log_f64(prim::f64_trunc(1.8));
+    log_f64(prim::f64_nearest(1.6));
+    log_f64(prim::f64_sqrt(4.0));
+
+    // F64 Binary
+    log_f64(prim::f64_copysign(1.0, -1.0));
+    log_f64(prim::f64_min(1.0, 2.0));
+    log_f64(prim::f64_max(1.0, 2.0));
+
+    // I32 Unary
+    log_i32(prim::i32_clz(1));
+    log_i32(prim::i32_ctz(4));
+    log_i32(prim::i32_popcnt(3));
+    log_i32(prim::i32_rotl(1, 1));
+    log_i32(prim::i32_rotr(2, 1));
+
+    // I32 Binary
+    log_i32(prim::i32_and(3, 1));
+    log_i32(prim::i32_or(1, 2));
+    log_i32(prim::i32_xor(3, 1));
+    log_i32(prim::i32_rem(10, 3));
+    log_i32(prim::i32_shl(1, 1));
+    log_i32(prim::i32_shr(2, 1));
+
+    // I64 Unary
+    log_i64(prim::i64_clz(1));
+    log_i64(prim::i64_ctz(4));
+    log_i64(prim::i64_popcnt(3));
+    log_i64(prim::i64_rotl(1, 1));
+    log_i64(prim::i64_rotr(2, 1));
+
+    // I64 Binary
+    log_i64(prim::i64_and(3, 1));
+    log_i64(prim::i64_or(1, 2));
+    log_i64(prim::i64_xor(3, 1));
+    log_i64(prim::i64_rem(10, 3));
+    log_i64(prim::i64_shl(1, 1));
+    log_i64(prim::i64_shr(2, 1));
+
+    // U32
+    log_u32(prim::u32_clz(1u));
+    log_u32(prim::u32_ctz(4u));
+    log_u32(prim::u32_popcnt(3u));
+    log_u32(prim::u32_rotl(1u, 1u));
+    log_u32(prim::u32_rotr(2u, 1u));
+
+    // U32 Binary
+    log_u32(prim::u32_and(3u, 1u));
+    log_u32(prim::u32_or(1u, 2u));
+    log_u32(prim::u32_xor(3u, 1u));
+    log_u32(prim::u32_rem(10u, 3u));
+    log_u32(prim::u32_shl(1u, 1u));
+    log_u32(prim::u32_shr(2u, 1u));
+
+    // U64
+    log_u64(prim::u64_clz(1u));
+    log_u64(prim::u64_ctz(4u));
+    log_u64(prim::u64_popcnt(3u));
+    log_u64(prim::u64_rotl(1u, 1u));
+    log_u64(prim::u64_rotr(2u, 1u));
+
+    // U64 Binary
+    log_u64(prim::u64_and(3u, 1u));
+    log_u64(prim::u64_or(1u, 2u));
+    log_u64(prim::u64_xor(3u, 1u));
+    log_u64(prim::u64_rem(10u, 3u));
+    log_u64(prim::u64_shl(1u, 1u));
+    log_u64(prim::u64_shr(2u, 1u));
+
+    // Conversions
+    log_f32(prim::f32_convert_i32(1));
+    log_f32(prim::f32_convert_u32(2u));
+    log_i32(prim::i32_trunc_f32(1.5));
+    log_u32(prim::u32_trunc_f32(2.5));
+
+    // i32_reinterpret_f32: 1.0 (0x3f800000) -> 1065353216
+    log_i32(prim::i32_reinterpret_f32(1.0));
+
+    log_u32(prim::i32_to_u32(-1));
+
+    log_f64(prim::f64_convert_i64(1));
+    log_f64(prim::f64_convert_u64(2u));
+    log_i64(prim::i64_trunc_f64(1.5));
+    log_u64(prim::u64_trunc_f64(2.5));
+    log_i64(prim::i64_reinterpret_f64(1.0));
+
+    log_u64(prim::i64_to_u64(-1));
+
+    log_i64(prim::i64_extend_i32(-1));
+    log_u64(prim::u64_extend_u32(4294967295u));
+    log_f64(prim::f64_promote_f32(1.5));
+    log_f32(prim::f32_demote_f64(1.5));
+    log_i32(prim::i32_wrap_i64(4294967296));
+    log_u32(prim::u32_wrap_u64(4294967297u));
+}

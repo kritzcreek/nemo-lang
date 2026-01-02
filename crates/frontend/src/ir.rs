@@ -15,6 +15,9 @@ pub enum Ty {
     I32,
     U32,
     F32,
+    I64,
+    U64,
+    F64,
     Unit,
     Bool,
     Bytes,
@@ -40,6 +43,9 @@ impl Ty {
             Ty::I32
             | Ty::U32
             | Ty::F32
+            | Ty::I64
+            | Ty::U64
+            | Ty::F64
             | Ty::Unit
             | Ty::Bool
             | Ty::Bytes
@@ -86,6 +92,9 @@ impl fmt::Display for TyDisplay<'_> {
             Ty::I32 => write!(f, "I32"),
             Ty::U32 => write!(f, "U32"),
             Ty::F32 => write!(f, "F32"),
+            Ty::I64 => write!(f, "I64"),
+            Ty::U64 => write!(f, "U64"),
+            Ty::F64 => write!(f, "F64"),
             Ty::Bool => write!(f, "Bool"),
             Ty::Unit => write!(f, "Unit"),
             Ty::Bytes => write!(f, "Bytes"),
@@ -192,6 +201,9 @@ impl Substitution {
             Ty::I32
             | Ty::U32
             | Ty::F32
+            | Ty::I64
+            | Ty::U64
+            | Ty::F64
             | Ty::Unit
             | Ty::Bool
             | Ty::Bytes
@@ -258,8 +270,12 @@ pub struct UnOp {
 pub enum UnOpData {
     I32Neg,
     F32Neg,
+    I64Neg,
+    F64Neg,
     I32Not,
     U32Not,
+    I64Not,
+    U64Not,
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -286,6 +302,22 @@ pub enum OpData {
     I32And,
     I32Or,
 
+    I64Add,
+    I64Sub,
+    I64Mul,
+    I64Div,
+    I64Shl,
+    I64Shr,
+    I64Rem,
+    I64Lt,
+    I64Gt,
+    I64Le,
+    I64Ge,
+    I64Eq,
+    I64Ne,
+    I64And,
+    I64Or,
+
     U32Add,
     U32Sub,
     U32Mul,
@@ -302,6 +334,22 @@ pub enum OpData {
     U32And,
     U32Or,
 
+    U64Add,
+    U64Sub,
+    U64Mul,
+    U64Div,
+    U64Shl,
+    U64Shr,
+    U64Rem,
+    U64Lt,
+    U64Gt,
+    U64Le,
+    U64Ge,
+    U64Eq,
+    U64Ne,
+    U64And,
+    U64Or,
+
     F32Add,
     F32Sub,
     F32Mul,
@@ -312,6 +360,17 @@ pub enum OpData {
     F32Ge,
     F32Eq,
     F32Ne,
+
+    F64Add,
+    F64Sub,
+    F64Mul,
+    F64Div,
+    F64Lt,
+    F64Gt,
+    F64Le,
+    F64Ge,
+    F64Eq,
+    F64Ne,
 
     BoolEq,
     BoolNe,
@@ -331,6 +390,9 @@ pub enum LitData {
     I32(i32),
     U32(u32),
     F32(f32),
+    I64(i64),
+    U64(u64),
+    F64(f64),
     Bool(bool),
     Bytes(String),
     Unit,
@@ -410,7 +472,7 @@ impl Expr {
                 ExprData::Call { func, arguments } => {
                     match func {
                         Callee::FuncRef(e) => free_vars_inner(current, e),
-                        Callee::Func { .. } | Callee::Builtin(_) => {}
+                        Callee::Func { .. } => {}
                     }
                     for arg in arguments {
                         free_vars_inner(current, arg)
@@ -525,7 +587,6 @@ impl Expr {
 pub enum Callee {
     Func { name: Name, type_args: Substitution },
     FuncRef(Expr),
-    Builtin(&'static str),
 }
 
 #[derive(Debug, PartialEq, Clone, IrBuilder)]

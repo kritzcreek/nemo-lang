@@ -16,7 +16,7 @@ struct Formatter<'a> {
 
 impl Formatter<'_> {
     fn name(&self, n: &Name) -> Value {
-        Value::symbol(self.names.display_name(*n).as_ref())
+        Value::symbol(self.names.display_name(*n))
     }
 
     fn ty(&self, ty: &Ty) -> Value {
@@ -66,8 +66,11 @@ impl Formatter<'_> {
         match e.it.as_ref() {
             ExprData::Lit { lit } => match &lit.it {
                 LitData::I32(i) => (*i).into(),
+                LitData::I64(i) => (*i).into(),
                 LitData::U32(i) => (*i).into(),
+                LitData::U64(i) => (*i).into(),
                 LitData::F32(f) => (*f).into(),
+                LitData::F64(f) => (*f).into(),
                 LitData::Bool(b) => (*b).into(),
                 LitData::Bytes(s) => s.as_str().into(),
                 LitData::Unit => Value::symbol("unit"),
@@ -85,7 +88,6 @@ impl Formatter<'_> {
                         }
                     }
                     Callee::FuncRef(e) => elems.push(self.expr(e)),
-                    Callee::Builtin(s) => elems.push(Value::string(*s)),
                 }
                 elems.extend(arguments.iter().map(|e| self.expr(e)));
                 Value::list(elems)

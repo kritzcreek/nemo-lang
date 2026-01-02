@@ -37,23 +37,11 @@ ParamTy = 'ident'
 
 // Types
 Type
-  = TyInt
-  | TyUInt
-  | TyFloat
-  | TyBool
-  | TyBytes
-  | TyUnit
-  | TyVar
+  = TyVar
   | TyCons
   | TyTuple
   | TyFn
 
-TyInt = 'I32'
-TyUInt = 'U32'
-TyFloat = 'F32'
-TyBool = 'Bool'
-TyBytes = 'Bytes'
-TyUnit = 'Unit'
 TyCons = ModQualifier? Qualifier? 'upper_ident' type_args:Type*
 TyTuple = Type*
 TyVar = 'ident'

@@ -1,3 +1,5 @@
+use prim
+
 import log : fn (I32) -> Unit from log
 
 fn main() {
@@ -12,7 +14,7 @@ fn main() {
 
   let double = [1, 1];
   let triple = [2, 2, 2, 2];
-  array_copy#[I32](triple, 1, double, 0, 2);
+  prim::array_copy(triple, 1, double, 0, 2);
   log(triple[0]);
   log(triple[1]);
   log(triple[2]);

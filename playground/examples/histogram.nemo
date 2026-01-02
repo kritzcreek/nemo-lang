@@ -1,3 +1,5 @@
+use prim
+
 global frame_timer = 0.0
 
 fn tick(time_elapsed_ms: F32) -> Unit {
@@ -29,12 +31,12 @@ fn histogram(count : I32, generator : fn () -> I32) -> Array[I32] {
 
 import print_char : fn (I32) -> Unit from print_char
 
-global star = bytes_get("*", 0)
+global star = prim::bytes_get("*", 0)
 global line_feed = 10
 
 fn render(buckets : Array[I32]) -> Unit {
   let i = 0 ;
-  while i < array_len#[I32](buckets) {
+  while i < prim::array_len(buckets) {
     print_stars(buckets[i]);
     print_char(line_feed);
     set i = i + 1
@@ -53,11 +55,11 @@ import random : fn () -> F32 from random
 
 fn round(x : F32) -> I32 {
   let y = x + 0.5;
-  i32_trunc_f32(y)
+  prim::i32_trunc_f32(y)
 }
 
 fn random_int(low : I32, high : I32) -> I32 {
-  let scaled = random() * f32_convert_i32(high - low);
+  let scaled = random() * prim::f32_convert_i32(high - low);
   low + round(scaled)
 }
 import move_to : fn (F32, F32) -> Unit from move_to
@@ -71,9 +73,9 @@ import clear : fn () -> Unit from clear_canvas
 
 fn render_canvas(buckets: Array[I32]) {
   let i = 0;
-  while i < array_len#[I32](buckets) {
-    let x = f32_convert_i32(i * 100);
-    let y = f32_convert_i32(buckets[i] * 50);
+  while i < prim::array_len(buckets) {
+    let x = prim::f32_convert_i32(i * 100);
+    let y = prim::f32_convert_i32(buckets[i] * 50);
     draw_rect(x, 500.0 - y, 100.0, y);
     set i = i + 1
   }

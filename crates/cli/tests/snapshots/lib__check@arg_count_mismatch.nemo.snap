@@ -14,19 +14,19 @@ success: false
 exit_code: 1
 ----- stdout -----
 [11] Error: Mismatched arg count. Expected 1 argument, but got 3
-   ╭─[ tests/check/arg_count_mismatch.nemo:6:7 ]
+   ╭─[ tests/check/arg_count_mismatch.nemo:8:7 ]
    │
- 6 │   func(1, 2, 3);
+ 8 │   func(1, 2, 3);
    │       ────┬────  
    │           ╰────── Mismatched arg count. Expected 1 argument, but got 3
 ───╯
 
 [11] Error: Mismatched arg count. Expected 2 arguments, but got 3
-   ╭─[ tests/check/arg_count_mismatch.nemo:7:10 ]
+   ╭─[ tests/check/arg_count_mismatch.nemo:9:16 ]
    │
- 7 │   i32_rem(1, 2, 3);
-   │          ────┬────  
-   │              ╰────── Mismatched arg count. Expected 2 arguments, but got 3
+ 9 │   prim::i32_rem(1, 2, 3);
+   │                ────┬────  
+   │                    ╰────── Mismatched arg count. Expected 2 arguments, but got 3
 ───╯
 
 

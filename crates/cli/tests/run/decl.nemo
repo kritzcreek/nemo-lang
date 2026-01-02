@@ -1,3 +1,5 @@
+use prim
+
 import log : fn (I32) -> Unit from log
 
 struct Point {
@@ -20,7 +22,7 @@ fn main() {
     log(p.xs[0]);
 
     let i = 0;
-    while i < array_len#[I32](p.xs) {
+    while i < prim::array_len(p.xs) {
       log(p.xs[i]);
       set i = i + 1;
     }

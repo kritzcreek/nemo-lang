@@ -1,25 +1,21 @@
 use super::names::NameSupply;
+use super::{FuncDef, StructDef, TypeDef, VariantDef};
 use super::{
+    Interface,
     error::{
         TyError,
         TyErrorData::{self, *},
         TyErrors,
     },
-    Interface,
 };
-use super::{FuncDef, StructDef, TypeDef, VariantDef};
+use crate::T;
 use crate::ir::{
-    self, Ctx, ExprBuilder, FuncTy, LambdaBuilder, LitBuilder, Name, PatVarBuilder, ReturnBuilder,
-    Substitution, Symbol, TupleBuilder, TupleIdxBuilder, Ty, VarBuilder,
+    self, Ctx, ExprBuilder, FuncTy, LambdaBuilder, LitBuilder, Name, PatVarBuilder, ReturnBuilder, Substitution, Symbol, TupleBuilder, TupleIdxBuilder, Ty, VarBuilder
 };
+use crate::ir::{ModuleId, NameTag};
 use crate::parser::SyntaxKind;
 use crate::syntax::token_ptr::SyntaxTokenPtr;
 use crate::syntax::*;
-use crate::T;
-use crate::{
-    builtins::lookup_builtin,
-    ir::{ModuleId, NameTag},
-};
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
@@ -640,27 +636,38 @@ impl Typechecker<'_> {
 
     fn check_ty(&self, errors: &mut TyErrors, scope: &mut Scope, ty: &Type) -> Ty {
         match ty {
-            Type::TyInt(_) => Ty::I32,
-            Type::TyUInt(_) => Ty::U32,
-            Type::TyFloat(_) => Ty::F32,
-            Type::TyBool(_) => Ty::Bool,
-            Type::TyUnit(_) => Ty::Unit,
-            Type::TyBytes(_) => Ty::Bytes,
             Type::TyCons(t) => {
                 let Some(ty_tkn) = t.upper_ident_token() else {
                     return Ty::Error;
                 };
-                if ty_tkn.text() == "Array" && t.mod_qualifier().is_none() {
-                    let mut ty_args: Vec<Ty> = t
-                        .type_args()
-                        .map(|t| self.check_ty(errors, scope, &t))
-                        .collect();
-                    if ty_args.len() != 1 {
-                        errors.report(t, TyArgCountMismatch(1, ty_args.len()));
-                        return Ty::Error;
+                // Handle primitives first
+                if t.mod_qualifier().is_none() {
+                    let name = ty_tkn.text();
+                    if name == "Array" {
+                        let mut ty_args: Vec<Ty> = t
+                            .type_args()
+                            .map(|t| self.check_ty(errors, scope, &t))
+                            .collect();
+                        if ty_args.len() != 1 {
+                            errors.report(t, TyArgCountMismatch(1, ty_args.len()));
+                            return Ty::Error;
+                        }
+                        let elem_ty = Box::new(ty_args.pop().unwrap());
+                        return Ty::Array(elem_ty);
                     }
-                    let elem_ty = Box::new(ty_args.pop().unwrap());
-                    return Ty::Array(elem_ty);
+
+                    match name {
+                        "I32" => return Ty::I32,
+                        "U32" => return Ty::U32,
+                        "I64" => return Ty::I64,
+                        "U64" => return Ty::U64,
+                        "F32" => return Ty::F32,
+                        "F64" => return Ty::F64,
+                        "Bool" => return Ty::Bool,
+                        "Unit" => return Ty::Unit,
+                        "Bytes" => return Ty::Bytes,
+                        _ => ()
+                    };
                 }
 
                 let Some(ty_def) =
@@ -815,48 +822,120 @@ impl Typechecker<'_> {
         funcs
     }
 
-    fn infer_literal(&self, errors: &mut TyErrors, lit: &Literal) -> (Ty, Option<ir::Lit>) {
+    fn infer_literal(
+        &self,
+        errors: &mut TyErrors,
+        lit: &Literal,
+        expected: Option<&Ty>,
+    ) -> (Ty, Option<ir::Lit>) {
         let (ty, it) = match lit {
-            Literal::LitBool(b) => (Ty::Bool, Some(ir::LitData::Bool(b.true_token().is_some()))),
+            Literal::LitBool(b) => match expected {
+                Some(Ty::Bool | Ty::Diverge | Ty::Error) | None => {
+                    (Ty::Bool, Some(ir::LitData::Bool(b.true_token().is_some())))
+                }
+                Some(expected) => {
+                    errors.report(
+                        lit,
+                        TypeMismatch {
+                            expected: expected.clone(),
+                            actual: Ty::Bool,
+                        },
+                    );
+                    (Ty::Bool, None)
+                }
+            },
             Literal::LitFloat(l) => {
                 let float_tkn = l.float_lit_token().unwrap();
-                if let Ok(float) = float_tkn.text().parse::<f32>() {
-                    (Ty::F32, Some(ir::LitData::F32(float)))
-                } else {
-                    errors.report(&float_tkn, InvalidLiteral);
-                    (Ty::F32, None)
+                match expected {
+                    None | Some(Ty::F32 | Ty::Diverge | Ty::Error) => {
+                        if let Ok(float) = float_tkn.text().parse::<f32>() {
+                            (Ty::F32, Some(ir::LitData::F32(float)))
+                        } else {
+                            errors.report(l, InvalidLiteral);
+                            (Ty::F32, None)
+                        }
+                    }
+                    Some(Ty::F64) => {
+                        if let Ok(float) = float_tkn.text().parse::<f64>() {
+                            (Ty::F64, Some(ir::LitData::F64(float)))
+                        } else {
+                            errors.report(l, InvalidLiteral);
+                            (Ty::F64, None)
+                        }
+                    }
+                    Some(expected) => {
+                        errors.report(
+                            lit,
+                            TypeMismatch {
+                                expected: expected.clone(),
+                                actual: Ty::F32,
+                            },
+                        );
+                        (Ty::F32, None)
+                    }
                 }
             }
             Literal::LitInt(l) => {
-                let mut is_signed = true;
-                let lit_data = if let Some(tkn) = l.int_lit_token() {
-                    let text = tkn.text();
-                    if let Some(text) = text.strip_suffix("u") {
-                        is_signed = false;
-                        text.parse().map(ir::LitData::U32)
-                    } else {
-                        text.parse().map(ir::LitData::I32)
-                    }
+                let (tkn, prefix, radix) = if let Some(tkn) = l.int_lit_token() {
+                    (tkn, "", 10)
                 } else if let Some(tkn) = l.binary_lit_token() {
-                    let text = tkn.text().strip_prefix("0b").unwrap();
-                    if let Some(text) = text.strip_suffix("u") {
-                        is_signed = false;
-                        u32::from_str_radix(text, 2).map(ir::LitData::U32)
-                    } else {
-                        i32::from_str_radix(text, 2).map(ir::LitData::I32)
-                    }
-                } else if let Some(tkn) = l.hex_lit_token() {
-                    let text = tkn.text().strip_prefix("0x").unwrap();
-                    if let Some(text) = text.strip_suffix("u") {
-                        is_signed = false;
-                        u32::from_str_radix(text, 16).map(ir::LitData::U32)
-                    } else {
-                        i32::from_str_radix(text, 16).map(ir::LitData::I32)
-                    }
+                    (tkn, "0b", 2)
                 } else {
-                    panic!("No token for int literal");
+                    (
+                        l.hex_lit_token().expect("No token for int literal"),
+                        "0x",
+                        16,
+                    )
                 };
-                let ty = if is_signed { Ty::I32 } else { Ty::U32 };
+                let text = tkn.text().strip_prefix(prefix).unwrap();
+                let (text, signed) = if let Some(stripped) = text.strip_suffix("u") {
+                    (stripped, false)
+                } else {
+                    (text, true)
+                };
+
+                let (ty, lit_data) = match expected {
+                    None | Some(Ty::Diverge | Ty::Error) => {
+                        if signed {
+                            (
+                                Ty::I32,
+                                i32::from_str_radix(text, radix).map(ir::LitData::I32),
+                            )
+                        } else {
+                            (
+                                Ty::U32,
+                                u32::from_str_radix(text, radix).map(ir::LitData::U32),
+                            )
+                        }
+                    }
+                    Some(Ty::I32) if signed => (
+                        Ty::I32,
+                        i32::from_str_radix(text, radix).map(ir::LitData::I32),
+                    ),
+                    Some(Ty::U32) if !signed => (
+                        Ty::U32,
+                        u32::from_str_radix(text, radix).map(ir::LitData::U32),
+                    ),
+                    Some(Ty::I64) if signed => (
+                        Ty::I64,
+                        i64::from_str_radix(text, radix).map(ir::LitData::I64),
+                    ),
+                    Some(Ty::U64) if !signed => (
+                        Ty::U64,
+                        u64::from_str_radix(text, radix).map(ir::LitData::U64),
+                    ),
+                    Some(t) => {
+                        let inferred = if signed { Ty::I32 } else { Ty::U32 };
+                        errors.report(
+                            &tkn,
+                            TypeMismatch {
+                                expected: t.clone(),
+                                actual: inferred.clone(),
+                            },
+                        );
+                        return (inferred, None);
+                    }
+                };
                 if let Ok(lit_data) = lit_data {
                     (ty, Some(lit_data))
                 } else {
@@ -864,18 +943,30 @@ impl Typechecker<'_> {
                     (ty, None)
                 }
             }
-            Literal::LitBytes(s) => {
-                let tkn = s.bytes_lit_token().unwrap();
-                let without_quotes = tkn
-                    .text()
-                    .strip_prefix('"')
-                    .and_then(|t| t.strip_suffix('"'))
-                    .unwrap();
-                (
-                    Ty::Bytes,
-                    Some(ir::LitData::Bytes(without_quotes.to_string())),
-                )
-            }
+            Literal::LitBytes(s) => match expected {
+                None | Some(Ty::Diverge) | Some(Ty::Error) | Some(Ty::Bytes) => {
+                    let tkn = s.bytes_lit_token().unwrap();
+                    let without_quotes = tkn
+                        .text()
+                        .strip_prefix('"')
+                        .and_then(|t| t.strip_suffix('"'))
+                        .unwrap();
+                    (
+                        Ty::Bytes,
+                        Some(ir::LitData::Bytes(without_quotes.to_string())),
+                    )
+                }
+                Some(expected) => {
+                    errors.report(
+                        s,
+                        TypeMismatch {
+                            expected: expected.clone(),
+                            actual: Ty::Bytes,
+                        },
+                    );
+                    (Ty::Bytes, None)
+                }
+            },
         };
         (
             ty.clone(),
@@ -920,7 +1011,7 @@ impl Typechecker<'_> {
                 }
             }
             Expr::ELit(l) => {
-                let (ty, ir) = self.infer_literal(errors, &l.literal().unwrap());
+                let (ty, ir) = self.infer_literal(errors, &l.literal().unwrap(), None);
                 let mut builder = LitBuilder::default();
                 builder.lit(ir);
                 (ty, builder.build())
@@ -1222,7 +1313,7 @@ impl Typechecker<'_> {
                 }
                 let (ty, ir) = self.infer_expr(errors, scope, &func_expr);
                 (ty, ir.map(ir::Callee::FuncRef))
-            } else if let Some(def) = self.lookup_func(mod_qual_tkn, var_sym) {
+            } else if let Some(def) = self.lookup_func(mod_qual_tkn.clone(), var_sym) {
                 self.record_ref(&var_tkn, def.name);
                 let ty_params: &[Name] = &def.ty_params;
                 // NOTE(early-return-control-flow)
@@ -1244,19 +1335,6 @@ impl Typechecker<'_> {
                         name: def.name,
                         type_args: subst,
                     }),
-                )
-            } else if let Some(builtin) = lookup_builtin(var_tkn.text()) {
-                if builtin.ty_params.len() != ty_args.len() {
-                    errors.report(
-                        &func_expr,
-                        TyArgCountMismatch(builtin.ty_params.len(), ty_args.len()),
-                    );
-                    return None;
-                }
-                let subst = Substitution::new(&builtin.ty_params, &ty_args);
-                (
-                    Ty::Func(Box::new(subst.apply_func(builtin.ty.clone()))),
-                    Some(ir::Callee::Builtin(builtin.name)),
                 )
             } else {
                 errors.report(&func_expr, UnknownVar(var_tkn.text().to_string()));
@@ -1325,10 +1403,10 @@ impl Typechecker<'_> {
             let applied_ty = subst.apply(fresh_subst.apply(expected_ty));
             let ir = if applied_ty.vars().iter().any(|v| v.tag == NameTag::Gen) {
                 let (ty, ir) = self.infer_expr(errors, scope, &expr);
-                if ty != Ty::Error {
-                    if let Err(err) = match_ty(&mut subst, applied_ty, &ty) {
-                        errors.report(&expr, err);
-                    }
+                if ty != Ty::Error
+                    && let Err(err) = match_ty(&mut subst, applied_ty, &ty)
+                {
+                    errors.report(&expr, err);
                 }
                 ir
             } else {
@@ -1390,11 +1468,11 @@ impl Typechecker<'_> {
         let func_ty = fresh_subst.apply_func(def.ty.clone());
 
         let mut subst = Substitution::empty();
-        if let Some(expected) = expected {
-            if let Err(err) = match_ty(&mut subst, func_ty.result.clone(), expected) {
-                errors.report(call_expr, err);
-                return None;
-            }
+        if let Some(expected) = expected
+            && let Err(err) = match_ty(&mut subst, func_ty.result.clone(), expected)
+        {
+            errors.report(call_expr, err);
+            return None;
         }
         let args = call_expr.e_arg_list()?.exprs().collect::<Vec<_>>();
         if args.len() != func_ty.arguments.len() {
@@ -1409,10 +1487,10 @@ impl Typechecker<'_> {
             let applied_ty = subst.apply(expected_ty.clone());
             let ir = if applied_ty.vars().iter().any(|v| v.tag == NameTag::Gen) {
                 let (ty, ir) = self.infer_expr(errors, scope, arg);
-                if ty != Ty::Error {
-                    if let Err(err) = match_ty(&mut subst, applied_ty, &ty) {
-                        errors.report(arg, err);
-                    }
+                if ty != Ty::Error
+                    && let Err(err) = match_ty(&mut subst, applied_ty, &ty)
+                {
+                    errors.report(arg, err);
                 }
                 ir
             } else {
@@ -1504,7 +1582,7 @@ impl Typechecker<'_> {
                         def,
                         &struct_name_tkn,
                         struct_expr,
-                    )
+                    );
                 }
                 Some(expected) => {
                     let Some(subst) = infer_struct_instantiation(def, expected) else {
@@ -1671,6 +1749,20 @@ impl Typechecker<'_> {
         expected: &Ty,
     ) -> Option<ir::Expr> {
         let ir = match (expr, expected) {
+            (Expr::ELit(expr), _) => {
+                let (_, ir) = self.infer_literal(errors, &expr.literal().unwrap(), Some(expected));
+                let mut builder = LitBuilder::default();
+                builder.lit(ir);
+                builder.build()
+            }
+            (Expr::EUnary(expr), _) => {
+                let mut builder = ir::UnaryBuilder::default();
+                let expr_ir = self.check_expr(errors, scope, &expr.expr()?, expected);
+                builder.expr(expr_ir);
+                let op_tkn = expr.op()?;
+                builder.op(check_un_op(errors, &op_tkn, expected));
+                builder.build()
+            }
             (Expr::EArray(expr), Ty::Array(elem_ty)) => {
                 let mut builder = ir::ArrayBuilder::default();
                 for elem in expr.exprs() {
@@ -2144,10 +2236,11 @@ impl Typechecker<'_> {
                     ty_args: args2,
                 },
             ) => {
-                if let Some(TypeDef::Variant(def)) = self.context.lookup_type_def(*n1) {
-                    if def.alternatives.values().any(|alt| alt == n2) && args1 == args2 {
-                        return None;
-                    }
+                if let Some(TypeDef::Variant(def)) = self.context.lookup_type_def(*n1)
+                    && def.alternatives.values().any(|alt| alt == n2)
+                    && args1 == args2
+                {
+                    return None;
                 }
             }
             (Ty::Error, _) => return None,
@@ -2169,8 +2262,12 @@ fn check_un_op(errors: &mut TyErrors, op: &SyntaxToken, ty: &Ty) -> Option<ir::U
     let op_data = match (op.kind(), ty) {
         (T![-], Ty::I32) => ir::UnOpData::I32Neg,
         (T![-], Ty::F32) => ir::UnOpData::F32Neg,
+        (T![-], Ty::I64) => ir::UnOpData::I64Neg,
+        (T![-], Ty::F64) => ir::UnOpData::F64Neg,
         (T![^], Ty::I32) => ir::UnOpData::I32Not,
         (T![^], Ty::U32) => ir::UnOpData::U32Not,
+        (T![^], Ty::I64) => ir::UnOpData::I64Not,
+        (T![^], Ty::U64) => ir::UnOpData::U64Not,
         _ => {
             errors.report(op, InvalidUnaryOperator(op.text().to_string(), ty.clone()));
             return None;
@@ -2205,6 +2302,22 @@ fn check_op(
         (T![==], Ty::I32, Ty::I32) => (ir::OpData::I32Eq, Ty::Bool),
         (T![!=], Ty::I32, Ty::I32) => (ir::OpData::I32Ne, Ty::Bool),
 
+        (T![+], Ty::I64, Ty::I64) => (ir::OpData::I64Add, Ty::I64),
+        (T![-], Ty::I64, Ty::I64) => (ir::OpData::I64Sub, Ty::I64),
+        (T![*], Ty::I64, Ty::I64) => (ir::OpData::I64Mul, Ty::I64),
+        (T![/], Ty::I64, Ty::I64) => (ir::OpData::I64Div, Ty::I64),
+        (T![<<], Ty::I64, Ty::I64) => (ir::OpData::I64Shl, Ty::I64),
+        (T![>>], Ty::I64, Ty::I64) => (ir::OpData::I64Shr, Ty::I64),
+        (T![%], Ty::I64, Ty::I64) => (ir::OpData::I64Rem, Ty::I64),
+        (T![&], Ty::I64, Ty::I64) => (ir::OpData::I64And, Ty::I64),
+        (T![|], Ty::I64, Ty::I64) => (ir::OpData::I64Or, Ty::I64),
+        (T![<], Ty::I64, Ty::I64) => (ir::OpData::I64Lt, Ty::Bool),
+        (T![<=], Ty::I64, Ty::I64) => (ir::OpData::I64Le, Ty::Bool),
+        (T![>], Ty::I64, Ty::I64) => (ir::OpData::I64Gt, Ty::Bool),
+        (T![>=], Ty::I64, Ty::I64) => (ir::OpData::I64Ge, Ty::Bool),
+        (T![==], Ty::I64, Ty::I64) => (ir::OpData::I64Eq, Ty::Bool),
+        (T![!=], Ty::I64, Ty::I64) => (ir::OpData::I64Ne, Ty::Bool),
+
         (T![+], Ty::U32, Ty::U32) => (ir::OpData::U32Add, Ty::U32),
         (T![-], Ty::U32, Ty::U32) => (ir::OpData::U32Sub, Ty::U32),
         (T![*], Ty::U32, Ty::U32) => (ir::OpData::U32Mul, Ty::U32),
@@ -2221,6 +2334,22 @@ fn check_op(
         (T![==], Ty::U32, Ty::U32) => (ir::OpData::U32Eq, Ty::Bool),
         (T![!=], Ty::U32, Ty::U32) => (ir::OpData::U32Ne, Ty::Bool),
 
+        (T![+], Ty::U64, Ty::U64) => (ir::OpData::U64Add, Ty::U64),
+        (T![-], Ty::U64, Ty::U64) => (ir::OpData::U64Sub, Ty::U64),
+        (T![*], Ty::U64, Ty::U64) => (ir::OpData::U64Mul, Ty::U64),
+        (T![/], Ty::U64, Ty::U64) => (ir::OpData::U64Div, Ty::U64),
+        (T![<<], Ty::U64, Ty::U64) => (ir::OpData::U64Shl, Ty::U64),
+        (T![>>], Ty::U64, Ty::U64) => (ir::OpData::U64Shr, Ty::U64),
+        (T![%], Ty::U64, Ty::U64) => (ir::OpData::U64Rem, Ty::U64),
+        (T![&], Ty::U64, Ty::U64) => (ir::OpData::U64And, Ty::U64),
+        (T![|], Ty::U64, Ty::U64) => (ir::OpData::U64Or, Ty::U64),
+        (T![<], Ty::U64, Ty::U64) => (ir::OpData::U64Lt, Ty::Bool),
+        (T![<=], Ty::U64, Ty::U64) => (ir::OpData::U64Le, Ty::Bool),
+        (T![>], Ty::U64, Ty::U64) => (ir::OpData::U64Gt, Ty::Bool),
+        (T![>=], Ty::U64, Ty::U64) => (ir::OpData::U64Ge, Ty::Bool),
+        (T![==], Ty::U64, Ty::U64) => (ir::OpData::U64Eq, Ty::Bool),
+        (T![!=], Ty::U64, Ty::U64) => (ir::OpData::U64Ne, Ty::Bool),
+
         (T![+], Ty::F32, Ty::F32) => (ir::OpData::F32Add, Ty::F32),
         (T![-], Ty::F32, Ty::F32) => (ir::OpData::F32Sub, Ty::F32),
         (T![*], Ty::F32, Ty::F32) => (ir::OpData::F32Mul, Ty::F32),
@@ -2231,6 +2360,17 @@ fn check_op(
         (T![>=], Ty::F32, Ty::F32) => (ir::OpData::F32Ge, Ty::Bool),
         (T![==], Ty::F32, Ty::F32) => (ir::OpData::F32Eq, Ty::Bool),
         (T![!=], Ty::F32, Ty::F32) => (ir::OpData::F32Ne, Ty::Bool),
+
+        (T![+], Ty::F64, Ty::F64) => (ir::OpData::F64Add, Ty::F64),
+        (T![-], Ty::F64, Ty::F64) => (ir::OpData::F64Sub, Ty::F64),
+        (T![*], Ty::F64, Ty::F64) => (ir::OpData::F64Mul, Ty::F64),
+        (T![/], Ty::F64, Ty::F64) => (ir::OpData::F64Div, Ty::F64),
+        (T![<], Ty::F64, Ty::F64) => (ir::OpData::F64Lt, Ty::Bool),
+        (T![<=], Ty::F64, Ty::F64) => (ir::OpData::F64Le, Ty::Bool),
+        (T![>], Ty::F64, Ty::F64) => (ir::OpData::F64Gt, Ty::Bool),
+        (T![>=], Ty::F64, Ty::F64) => (ir::OpData::F64Ge, Ty::Bool),
+        (T![==], Ty::F64, Ty::F64) => (ir::OpData::F64Eq, Ty::Bool),
+        (T![!=], Ty::F64, Ty::F64) => (ir::OpData::F64Ne, Ty::Bool),
 
         (T![==], Ty::Bool, Ty::Bool) => (ir::OpData::BoolEq, Ty::Bool),
         (T![!=], Ty::Bool, Ty::Bool) => (ir::OpData::BoolNe, Ty::Bool),
@@ -2269,10 +2409,10 @@ fn unit_lit(range: TextRange) -> Option<ir::Expr> {
 
 fn infer_struct_instantiation<'a>(def: &StructDef, expected: &'a Ty) -> Option<&'a Substitution> {
     // Infer instantiation
-    if let Ty::Cons { name, ty_args } = expected {
-        if *name == def.name || def.variant.is_some_and(|v| v == *name) {
-            return Some(ty_args);
-        }
+    if let Ty::Cons { name, ty_args } = expected
+        && (*name == def.name || def.variant.is_some_and(|v| v == *name))
+    {
+        return Some(ty_args);
     }
     None
 }

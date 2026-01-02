@@ -1,3 +1,5 @@
+use prim
+
 import log : fn (I32) -> Unit from log
 import log_f32 : fn (F32) -> Unit from log_f32
 
@@ -11,14 +13,14 @@ fn main() {
   log(2 / 3);
   log(3 / 2);
 
-  log(u32_to_i32(1u + 1u));
-  log(u32_to_i32(2u - 1u));
-  log(u32_to_i32(1u - 2u));
-  log(u32_to_i32(2u - 2u));
-  log(u32_to_i32(2u * 3u));
-  log(u32_to_i32(3u * 2u));
-  log(u32_to_i32(2u / 3u));
-  log(u32_to_i32(3u / 2u));
+  log(prim::u32_to_i32(1u + 1u));
+  log(prim::u32_to_i32(2u - 1u));
+  log(prim::u32_to_i32(1u - 2u));
+  log(prim::u32_to_i32(2u - 2u));
+  log(prim::u32_to_i32(2u * 3u));
+  log(prim::u32_to_i32(3u * 2u));
+  log(prim::u32_to_i32(2u / 3u));
+  log(prim::u32_to_i32(3u / 2u));
 
   log_f32(1.1 + 1.1);
   log_f32(2.1 - 1.1);

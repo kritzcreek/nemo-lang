@@ -10,7 +10,7 @@ pub mod types;
 use camino::Utf8PathBuf;
 pub use error::CheckError;
 use ir::{Ctx, Id, ModuleId, ModuleIdGen, Program};
-use parser::{parse_prog, ParseError};
+use parser::{ParseError, parse_prog};
 use rayon::prelude::*;
 use rowan::GreenNode;
 use std::{collections::HashMap, fs};
@@ -53,11 +53,7 @@ impl FrontendResult {
                 );
             }
         }
-        if count > 0 {
-            Some(count)
-        } else {
-            None
-        }
+        if count > 0 { Some(count) } else { None }
     }
 
     pub fn consume(self) -> (Ctx, ir::Program) {
@@ -102,6 +98,7 @@ fn extract_module_header(module: &Module) -> (String, Vec<Id>) {
                 at: t.text_range(),
             })
         })
+        .filter(|mod_use| mod_use.it != "prim")
         .collect();
     (name, dependencies)
 }

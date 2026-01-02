@@ -1,10 +1,12 @@
+use prim
+
 // This function gets called using `requestAnimationFrame`, which tries to maintain
 // a smooth framerate.
 fn tick(elapsed_time_ms : F32) {
   clear();
 
   let idx = 0;
-  while idx < array_len#[Shape](shapes) {
+  while idx < prim::array_len(shapes) {
     collide_shape(shapes[idx]);
     tick_shape(shapes[idx], elapsed_time_ms);
     draw_shape(shapes[idx]);
@@ -13,10 +15,10 @@ fn tick(elapsed_time_ms : F32) {
   };
 
   set idx = 0;
-  while idx < array_len#[Particle](particles.buffer) {
+  while idx < prim::array_len(particles.buffer) {
     draw_particle(particles.buffer[idx]);
     let particle = particles.buffer[idx];
-    set particle.time = f32_max(0.0, particle.time - elapsed_time_ms);
+    set particle.time = prim::f32_max(0.0, particle.time - elapsed_time_ms);
 
     set idx = idx + 1
   }
@@ -85,18 +87,18 @@ global shapes = [
 ]
 
 global particles = RingBuffer {
-  buffer = array_new#[Particle](Particle { x = 0.0, y = 0.0, color = red, time = 0.0 }, 25),
+  buffer = prim::array_new(Particle { x = 0.0, y = 0.0, color = red, time = 0.0 }, 25),
   watermark = 0
 }
 
 fn add_particle(p : Particle) {
   set particles.buffer[particles.watermark] = p;
   set particles.watermark =
-    i32_rem(particles.watermark + 1, array_len#[Particle](particles.buffer))
+    particles.watermark + 1 % prim::array_len(particles.buffer)
 }
 
 fn clamp(min : F32, val : F32, max : F32) -> F32 {
-  f32_min(max, f32_max(min, val))
+  prim::f32_min(max, prim::f32_max(min, val))
 }
 
 fn size(body : Body) -> F32 {
@@ -147,17 +149,17 @@ fn collide_shapes(c1 : Shape, c2 : Shape) {
 
     let delta_x = c1.x - c2.x;
     let delta_y = c1.y - c2.y;
-    if f32_abs(delta_x) > f32_abs(delta_y) {
-      set c1.vx = f32_copysign(c1.vx, delta_x)
+    if prim::f32_abs(delta_x) > prim::f32_abs(delta_y) {
+      set c1.vx = prim::f32_copysign(c1.vx, delta_x)
     } else {
-      set c1.vy = f32_copysign(c1.vy, delta_y)
+      set c1.vy = prim::f32_copysign(c1.vy, delta_y)
     }
   }
 }
 
 fn collide_shape(shape : Shape) {
   let idx = 0;
-  while idx < array_len#[Shape](shapes) {
+  while idx < prim::array_len(shapes) {
     if shapes[idx].x == shape.x && shapes[idx].y == shape.y {
     } else {
       collide_shapes(shape, shapes[idx])
@@ -174,11 +176,11 @@ fn tick_shape(shape : Shape, elapsed_time_ms : F32) {
 
   when shape.x < 0.0 || shape.x > 500.0 {
     set shape.x = clamp(0.0, shape.x, 500.0);
-    set shape.vx = f32_neg(shape.vx)
+    set shape.vx = prim::f32_neg(shape.vx)
   };
 
   when shape.y < 0.0 || shape.y > 500.0 {
     set shape.y = clamp(0.0, shape.y, 500.0);
-    set shape.vy = f32_neg(shape.vy)
+    set shape.vy = prim::f32_neg(shape.vy)
   };
 }

@@ -1,26 +1,28 @@
 module hash
 exports (FnvHasher, newHasher, write, write_i32, hash_i32, hash_bytes)
 
+use prim
+
 global fnv_prime = 16777619u
 global fnv_offset_basis = 2166136261u
 
 // http://www.isthe.com/chongo/tech/comp/fnv/#FNV-1a
 fn fnv_1a(hash : U32, input : Bytes) -> U32 {
-  let len = bytes_len(input);
+  let len = prim::bytes_len(input);
   let i = 0;
   while i < len {
-    set hash = u32_xor(hash, i32_to_u32(bytes_get(input, i))) * fnv_prime;
+    set hash = prim::u32_xor(hash, prim::i32_to_u32(prim::bytes_get(input, i))) * fnv_prime;
     set i = i + 1;
   };
   hash
 }
 
 fn fnv_1a_i32(hash : U32, input : I32) -> U32 {
-  let input = i32_to_u32(input);
-  set hash = u32_xor(hash, u32_and(input, 0xFFu)) * fnv_prime;
-  set hash = u32_xor(hash, u32_and(u32_shr(input, 8u), 0xFFu)) * fnv_prime;
-  set hash = u32_xor(hash, u32_and(u32_shr(input, 16u), 0xFFu)) * fnv_prime;
-  u32_xor(hash, u32_shr(input, 24u)) * fnv_prime
+  let input = prim::i32_to_u32(input);
+  set hash = prim::u32_xor(hash, prim::u32_and(input, 0xFFu)) * fnv_prime;
+  set hash = prim::u32_xor(hash, prim::u32_and(prim::u32_shr(input, 8u), 0xFFu)) * fnv_prime;
+  set hash = prim::u32_xor(hash, prim::u32_and(prim::u32_shr(input, 16u), 0xFFu)) * fnv_prime;
+  prim::u32_xor(hash, prim::u32_shr(input, 24u)) * fnv_prime
 }
 
 fn hash_i32(i : I32) -> U32 {

@@ -1,3 +1,5 @@
+use prim
+
 import log : fn (I32) -> Unit from log
 
 fn main() {
@@ -12,7 +14,7 @@ fn main() {
   log(^x);
 
   let u = 1u;
-  log(u32_to_i32(u << 1u));
-  log(u32_to_i32(u >> 1u));
-  log(u32_to_i32(^u));
+  log(prim::u32_to_i32(u << 1u));
+  log(prim::u32_to_i32(u >> 1u));
+  log(prim::u32_to_i32(^u));
 }

@@ -203,7 +203,7 @@ impl<'a> Builder<'a> {
                 type_names.append(*type_idx, &it);
                 let mut field_names = WasmNameMap::new();
                 for (field, _) in info.definition.fields.iter() {
-                    field_names.append(info.field_idx(*field), &ctx.display_name(*field))
+                    field_names.append(info.field_idx(*field), ctx.display_name(*field))
                 }
                 all_field_names.append(*type_idx, &field_names);
             }
@@ -295,7 +295,7 @@ impl<'a> Builder<'a> {
 
             let mut local_names_map = WasmNameMap::new();
             for (index, name) in local_names {
-                local_names_map.append(index, &ctx.display_name(name));
+                local_names_map.append(index, ctx.display_name(name));
             }
 
             let ix = (_ix + _import_count) as u32;
@@ -334,7 +334,7 @@ impl<'a> Builder<'a> {
         (module.finish(), ctx)
     }
 
-    pub fn resolve_name(&self, name: Name) -> String {
+    pub fn resolve_name(&self, name: Name) -> &str {
         self.ctx.display_name(name)
     }
 
@@ -342,7 +342,7 @@ impl<'a> Builder<'a> {
         self.ctx.get_module_name(name.module)
     }
 
-    pub fn resolve_qualified_name(&self, name: Name) -> (&str, String) {
+    pub fn resolve_qualified_name(&self, name: Name) -> (&str, &str) {
         let mod_name = self.ctx.get_module_name(name.module);
         let it = self.ctx.display_name(name);
         (mod_name, it)
@@ -524,7 +524,9 @@ impl<'a> Builder<'a> {
     pub fn val_ty(&mut self, ty: &Ty) -> ValType {
         match ty {
             Ty::F32 => ValType::F32,
+            Ty::F64 => ValType::F64,
             Ty::I32 | Ty::U32 | Ty::Unit | Ty::Bool => ValType::I32,
+            Ty::I64 | Ty::U64 => ValType::I64,
             Ty::Bytes => {
                 let idx = self.bytes_ty();
                 ValType::Ref(RefType {

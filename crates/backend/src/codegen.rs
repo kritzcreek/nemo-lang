@@ -53,7 +53,9 @@ impl<'a> Codegen<'a> {
     fn const_init_for_ty(&mut self, ty: &Ty) -> ConstExpr {
         match ty {
             Ty::I32 | Ty::U32 | Ty::Unit | Ty::Bool => ConstExpr::i32_const(0),
+            Ty::I64 | Ty::U64 => ConstExpr::i64_const(0),
             Ty::F32 => ConstExpr::f32_const((0.0).into()),
+            Ty::F64 => ConstExpr::f64_const((0.0).into()),
             Ty::Bytes => {
                 let ty_idx = self.builder.bytes_ty();
                 ConstExpr::ref_null(HeapType::Concrete(ty_idx))
@@ -89,8 +91,11 @@ impl<'a> Codegen<'a> {
     fn compile_lit(&mut self, lit: Lit) -> Vec<Instruction<'a>> {
         match lit.it {
             LitData::I32(i) => vec![Instruction::I32Const(i)],
+            LitData::I64(i) => vec![Instruction::I64Const(i)],
             LitData::U32(i) => vec![Instruction::I32Const(i as i32)],
+            LitData::U64(i) => vec![Instruction::I64Const(i as i64)],
             LitData::F32(f) => vec![Instruction::F32Const(f.into())],
+            LitData::F64(f) => vec![Instruction::F64Const(f.into())],
             LitData::Bool(t) => vec![Instruction::I32Const(if t { 1 } else { 0 })],
             LitData::Bytes(s) => {
                 let bytes = s.as_bytes().to_vec();
@@ -125,6 +130,22 @@ impl<'a> Codegen<'a> {
             OpData::I32Eq => Instruction::I32Eq,
             OpData::I32Ne => Instruction::I32Ne,
 
+            OpData::I64Add => Instruction::I64Add,
+            OpData::I64Sub => Instruction::I64Sub,
+            OpData::I64Mul => Instruction::I64Mul,
+            OpData::I64Div => Instruction::I64DivS,
+            OpData::I64Shl => Instruction::I64Shl,
+            OpData::I64Shr => Instruction::I64ShrS,
+            OpData::I64Rem => Instruction::I64RemS,
+            OpData::I64And => Instruction::I64And,
+            OpData::I64Or => Instruction::I64Or,
+            OpData::I64Lt => Instruction::I64LtS,
+            OpData::I64Gt => Instruction::I64GtS,
+            OpData::I64Le => Instruction::I64LeS,
+            OpData::I64Ge => Instruction::I64GeS,
+            OpData::I64Eq => Instruction::I64Eq,
+            OpData::I64Ne => Instruction::I64Ne,
+
             OpData::U32Add => Instruction::I32Add,
             OpData::U32Sub => Instruction::I32Sub,
             OpData::U32Mul => Instruction::I32Mul,
@@ -141,6 +162,22 @@ impl<'a> Codegen<'a> {
             OpData::U32Eq => Instruction::I32Eq,
             OpData::U32Ne => Instruction::I32Ne,
 
+            OpData::U64Add => Instruction::I32Add,
+            OpData::U64Sub => Instruction::I32Sub,
+            OpData::U64Mul => Instruction::I32Mul,
+            OpData::U64Div => Instruction::I32DivU,
+            OpData::U64Shl => Instruction::I32Shl,
+            OpData::U64Shr => Instruction::I32ShrU,
+            OpData::U64Rem => Instruction::I32RemU,
+            OpData::U64And => Instruction::I32And,
+            OpData::U64Or => Instruction::I32Or,
+            OpData::U64Lt => Instruction::I32LtU,
+            OpData::U64Gt => Instruction::I32GtU,
+            OpData::U64Le => Instruction::I32LeU,
+            OpData::U64Ge => Instruction::I32GeU,
+            OpData::U64Eq => Instruction::I32Eq,
+            OpData::U64Ne => Instruction::I32Ne,
+
             OpData::F32Add => Instruction::F32Add,
             OpData::F32Sub => Instruction::F32Sub,
             OpData::F32Mul => Instruction::F32Mul,
@@ -151,6 +188,18 @@ impl<'a> Codegen<'a> {
             OpData::F32Ge => Instruction::F32Ge,
             OpData::F32Eq => Instruction::F32Eq,
             OpData::F32Ne => Instruction::F32Ne,
+
+            OpData::F64Add => Instruction::F64Add,
+            OpData::F64Sub => Instruction::F64Sub,
+            OpData::F64Mul => Instruction::F64Mul,
+            OpData::F64Div => Instruction::F64Div,
+            OpData::F64Lt => Instruction::F64Lt,
+            OpData::F64Gt => Instruction::F64Gt,
+            OpData::F64Le => Instruction::F64Le,
+            OpData::F64Ge => Instruction::F64Ge,
+            OpData::F64Eq => Instruction::F64Eq,
+            OpData::F64Ne => Instruction::F64Ne,
+
             OpData::BoolEq => Instruction::I32Eq,
             OpData::BoolNe => Instruction::I32Eq,
             OpData::BoolAnd => Instruction::I32And,
@@ -179,8 +228,6 @@ impl<'a> Codegen<'a> {
             },
             ExprData::Call { func, arguments } => {
                 let mut arg_instrs = vec![];
-                // TODO: Hack to support the array_copy instruction
-                let first_arg_ty = arguments.first().map(|e| e.ty.clone());
                 for arg in arguments {
                     arg_instrs.extend(self.compile_expr(body, arg));
                 }
@@ -189,14 +236,18 @@ impl<'a> Codegen<'a> {
                 match func {
                     Callee::Func { name, type_args } => {
                         instrs.extend(arg_instrs);
-                        let name = if !type_args.is_empty() {
-                            let type_args = self.builder.substitution().apply_subst(type_args);
-                            self.instantiate_polyfunc(name, &type_args)
+                        if name.module == ModuleId::PRIM {
+                            instrs.extend(self.compile_builtin_call(name, type_args));
                         } else {
-                            name
-                        };
-                        let func_idx = self.builder.lookup_func(&name);
-                        instrs.push(Instruction::Call(func_idx));
+                            let name = if !type_args.is_empty() {
+                                let type_args = self.builder.substitution().apply_subst(type_args);
+                                self.instantiate_polyfunc(name, &type_args)
+                            } else {
+                                name
+                            };
+                            let func_idx = self.builder.lookup_func(&name);
+                            instrs.push(Instruction::Call(func_idx));
+                        }
                     }
                     Callee::FuncRef(callee) => {
                         let Ty::Func(ty) = callee.ty.clone() else {
@@ -219,42 +270,6 @@ impl<'a> Codegen<'a> {
                         ]);
                         instrs.push(Instruction::CallRef(closure_info.closure_func_ty));
                     }
-                    Callee::Builtin(builtin) => {
-                        instrs.extend(arg_instrs);
-                        if builtin == "array_new" {
-                            let array_ty = self.builder.array_type(&expr.ty);
-                            instrs.push(Instruction::ArrayNew(array_ty))
-                        } else if builtin == "array_copy" {
-                            let array_ty = self.builder.array_type(&first_arg_ty.unwrap());
-                            instrs.push(Instruction::ArrayCopy {
-                                array_type_index_dst: array_ty,
-                                array_type_index_src: array_ty,
-                            });
-                            instrs.push(Instruction::I32Const(0))
-                        } else if builtin == "bytes_get" {
-                            let bytes_ty = self.builder.bytes_ty();
-                            instrs.push(Instruction::ArrayGetU(bytes_ty))
-                        } else if builtin == "bytes_set" {
-                            let bytes_ty = self.builder.bytes_ty();
-                            instrs.push(Instruction::ArraySet(bytes_ty));
-                            instrs.push(Instruction::I32Const(0))
-                        } else if builtin == "bytes_len" {
-                            instrs.push(Instruction::ArrayLen)
-                        } else if builtin == "bytes_new" {
-                            let bytes_ty = self.builder.bytes_ty();
-                            instrs.push(Instruction::ArrayNew(bytes_ty))
-                        } else if builtin == "bytes_copy" {
-                            let bytes_ty = self.builder.bytes_ty();
-                            instrs.push(Instruction::ArrayCopy {
-                                array_type_index_src: bytes_ty,
-                                array_type_index_dst: bytes_ty,
-                            });
-                            // unit return value
-                            instrs.push(Instruction::I32Const(0));
-                        } else {
-                            instrs.push(builtin_instruction(builtin))
-                        }
-                    }
                 }
                 instrs
             }
@@ -266,14 +281,28 @@ impl<'a> Codegen<'a> {
                         instrs.push(Instruction::I32Const(-1));
                         instrs.push(Instruction::I32Xor);
                     }
+                    UnOpData::I64Not | UnOpData::U64Not => {
+                        instrs.extend(self.compile_expr(body, expr));
+                        instrs.push(Instruction::I64Const(-1));
+                        instrs.push(Instruction::I64Xor);
+                    }
                     UnOpData::I32Neg => {
                         instrs.push(Instruction::I32Const(0));
                         instrs.extend(self.compile_expr(body, expr));
                         instrs.push(Instruction::I32Sub);
                     }
+                    UnOpData::I64Neg => {
+                        instrs.push(Instruction::I64Const(0));
+                        instrs.extend(self.compile_expr(body, expr));
+                        instrs.push(Instruction::I64Sub);
+                    }
                     UnOpData::F32Neg => {
                         instrs.extend(self.compile_expr(body, expr));
                         instrs.push(Instruction::F32Neg);
+                    }
+                    UnOpData::F64Neg => {
+                        instrs.extend(self.compile_expr(body, expr));
+                        instrs.push(Instruction::F64Neg);
                     }
                 }
                 instrs
@@ -768,6 +797,128 @@ impl<'a> Codegen<'a> {
         self.builder.fill_func(start_fn, start_locals, start_instrs);
     }
 
+    fn compile_builtin_call(
+        &mut self,
+        name: Name,
+        ty_args: Substitution,
+    ) -> Vec<Instruction<'static>> {
+        assert!(name.module == ModuleId::PRIM);
+        assert!(name.tag == NameTag::Func);
+
+        match self.builder.resolve_name(name) {
+            "f32_neg" => vec![Instruction::F32Neg],
+            "f32_abs" => vec![Instruction::F32Abs],
+            "f32_ceil" => vec![Instruction::F32Ceil],
+            "f32_floor" => vec![Instruction::F32Floor],
+            "f32_trunc" => vec![Instruction::F32Trunc],
+            "f32_nearest" => vec![Instruction::F32Nearest],
+            "f32_sqrt" => vec![Instruction::F32Sqrt],
+            "f32_copysign" => vec![Instruction::F32Copysign],
+            "f32_min" => vec![Instruction::F32Min],
+            "f32_max" => vec![Instruction::F32Max],
+            "f32_convert_i32" => vec![Instruction::F32ConvertI32S],
+            "f32_convert_u32" => vec![Instruction::F32ConvertI32U],
+            "f32_demote_f64" => vec![Instruction::F32DemoteF64],
+
+            "f64_neg" => vec![Instruction::F64Neg],
+            "f64_abs" => vec![Instruction::F64Abs],
+            "f64_ceil" => vec![Instruction::F64Ceil],
+            "f64_floor" => vec![Instruction::F64Floor],
+            "f64_trunc" => vec![Instruction::F64Trunc],
+            "f64_nearest" => vec![Instruction::F64Nearest],
+            "f64_sqrt" => vec![Instruction::F64Sqrt],
+            "f64_copysign" => vec![Instruction::F64Copysign],
+            "f64_min" => vec![Instruction::F64Min],
+            "f64_max" => vec![Instruction::F64Max],
+            "f64_convert_i64" => vec![Instruction::F64ConvertI64S],
+            "f64_convert_u64" => vec![Instruction::F64ConvertI64U],
+            "f64_promote_f32" => vec![Instruction::F64PromoteF32],
+
+            "i32_clz" | "u32_clz" => vec![Instruction::I32Clz],
+            "i32_ctz" | "u32_ctz" => vec![Instruction::I32Ctz],
+            "i32_popcnt" | "u32_popcnt" => vec![Instruction::I32Popcnt],
+            "i32_rotl" | "u32_rotl" => vec![Instruction::I32Rotl],
+            "i32_rotr" | "u32_rotr" => vec![Instruction::I32Rotr],
+            "i32_and" | "u32_and" => vec![Instruction::I32And],
+            "i32_or" | "u32_or" => vec![Instruction::I32Or],
+            "i32_xor" | "u32_xor" => vec![Instruction::I32Xor],
+            "i32_shl" | "u32_shl" => vec![Instruction::I32Shl],
+
+            "i64_clz" | "u64_clz" => vec![Instruction::I64Clz],
+            "i64_ctz" | "u64_ctz" => vec![Instruction::I64Ctz],
+            "i64_popcnt" | "u64_popcnt" => vec![Instruction::I64Popcnt],
+            "i64_rotl" | "u64_rotl" => vec![Instruction::I64Rotl],
+            "i64_rotr" | "u64_rotr" => vec![Instruction::I64Rotr],
+            "i64_and" | "u64_and" => vec![Instruction::I64And],
+            "i64_or" | "u64_or" => vec![Instruction::I64Or],
+            "i64_xor" | "u64_xor" => vec![Instruction::I64Xor],
+            "i64_shl" | "u64_shl" => vec![Instruction::I64Shl],
+
+            "i32_rem" => vec![Instruction::I32RemS],
+            "u32_rem" => vec![Instruction::I32RemU],
+            "i32_shr" => vec![Instruction::I32ShrS],
+            "u32_shr" => vec![Instruction::I32ShrU],
+            "i32_trunc_f32" => vec![Instruction::I32TruncF32S],
+            "u32_trunc_f32" => vec![Instruction::I32TruncF32U],
+
+            "i64_rem" => vec![Instruction::I64RemS],
+            "u64_rem" => vec![Instruction::I64RemU],
+            "i64_shr" => vec![Instruction::I64ShrS],
+            "u64_shr" => vec![Instruction::I64ShrU],
+            "i64_trunc_f64" => vec![Instruction::I64TruncF64S],
+            "u64_trunc_f64" => vec![Instruction::I64TruncF64U],
+
+            "i32_to_u32" | "u32_to_i32" => vec![],
+            "i64_to_u64" | "u64_to_i64" => vec![],
+
+            "i64_extend_i32" => vec![Instruction::I64ExtendI32S],
+            "u64_extend_u32" => vec![Instruction::I64ExtendI32U],
+
+            "i32_wrap_i64" => vec![Instruction::I32WrapI64],
+            "u32_wrap_u64" => vec![Instruction::I32WrapI64],
+
+            "i32_reinterpret_f32" => vec![Instruction::I32ReinterpretF32],
+            "i64_reinterpret_f64" => vec![Instruction::I64ReinterpretF64],
+
+            "array_len" => vec![Instruction::ArrayLen],
+            "array_new" => {
+                let ty_idx = self.builder.array_type_elem(ty_args.tys()[0]);
+                vec![Instruction::ArrayNew(ty_idx)]
+            }
+            "array_copy" => {
+                let ty_idx = self.builder.array_type_elem(ty_args.tys()[0]);
+                vec![
+                    Instruction::ArrayCopy {
+                        array_type_index_dst: ty_idx,
+                        array_type_index_src: ty_idx,
+                    },
+                    Instruction::I32Const(0),
+                ]
+            }
+            "bytes_get" => vec![Instruction::ArrayGetU(self.builder.bytes_ty())],
+            "bytes_set" => vec![
+                Instruction::ArraySet(self.builder.bytes_ty()),
+                Instruction::I32Const(0),
+            ],
+            "bytes_len" => vec![Instruction::ArrayLen],
+            "bytes_new" => vec![Instruction::ArrayNew(self.builder.bytes_ty())],
+            "bytes_copy" => {
+                let bytes_ty = self.builder.bytes_ty();
+                vec![
+                    Instruction::ArrayCopy {
+                        array_type_index_src: bytes_ty,
+                        array_type_index_dst: bytes_ty,
+                    },
+                    Instruction::I32Const(0),
+                ]
+            }
+            "panic" => {
+                vec![Instruction::Unreachable]
+            }
+            name => panic!("Unknown prim: {name}"),
+        }
+    }
+
     pub fn compile_program(&mut self, program: Program) {
         for import in program.imports {
             self.builder.declare_import(import);
@@ -812,7 +963,7 @@ impl<'a> Codegen<'a> {
             self.builder.fill_func(func.name, locals, body);
             let module_name = self.builder.resolve_module_name(func.name);
             let external_name = if module_name.is_empty() {
-                self.builder.resolve_name(func.name)
+                self.builder.resolve_name(func.name).to_owned()
             } else {
                 format!("{module_name}::{}", self.builder.resolve_name(func.name))
             };
@@ -822,48 +973,5 @@ impl<'a> Codegen<'a> {
 
     pub fn finish(self) -> (Vec<u8>, Ctx) {
         self.builder.finish()
-    }
-}
-
-fn builtin_instruction(builtin: &str) -> Instruction<'static> {
-    match builtin {
-        "f32_neg" => Instruction::F32Neg,
-        "f32_abs" => Instruction::F32Abs,
-        "f32_ceil" => Instruction::F32Ceil,
-        "f32_floor" => Instruction::F32Floor,
-        "f32_trunc" => Instruction::F32Trunc,
-        "f32_nearest" => Instruction::F32Nearest,
-        "f32_sqrt" => Instruction::F32Sqrt,
-        "f32_copysign" => Instruction::F32Copysign,
-        "f32_min" => Instruction::F32Min,
-        "f32_max" => Instruction::F32Max,
-        "f32_convert_i32" => Instruction::F32ConvertI32S,
-        "f32_convert_u32" => Instruction::F32ConvertI32U,
-
-        "i32_clz" | "u32_clz" => Instruction::I32Clz,
-        "i32_ctz" | "u32_ctz" => Instruction::I32Ctz,
-        "i32_popcnt" | "u32_popcnt" => Instruction::I32Popcnt,
-        "i32_rotl" | "u32_rotl" => Instruction::I32Rotl,
-        "i32_rotr" | "u32_rotr" => Instruction::I32Rotr,
-        "i32_and" | "u32_and" => Instruction::I32And,
-        "i32_or" | "u32_or" => Instruction::I32Or,
-        "i32_xor" | "u32_xor" => Instruction::I32Xor,
-        "i32_shl" | "u32_shl" => Instruction::I32Shl,
-
-        "i32_rem" => Instruction::I32RemS,
-        "u32_rem" => Instruction::I32RemU,
-        "i32_shr" => Instruction::I32ShrS,
-        "u32_shr" => Instruction::I32ShrU,
-        "i32_trunc_f32" => Instruction::I32TruncF32S,
-        "u32_trunc_f32" => Instruction::I32TruncF32U,
-
-        "i32_to_u32" | "u32_to_i32" => Instruction::Nop,
-
-        "i32_reinterpret_f32" => Instruction::I32ReinterpretF32,
-        "array_len" => Instruction::ArrayLen,
-        "array_new" => unreachable!("array_new needs special handling"),
-        "array_copy" => unreachable!("array_copy needs special handling"),
-        "panic" => Instruction::Unreachable,
-        b => unreachable!("Unknown builtin {b}"),
     }
 }

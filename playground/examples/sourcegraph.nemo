@@ -5,6 +5,7 @@ exports (
   zero_stick, sg_logo, random_sign, random_between
 )
 
+use prim
 use canvas
 
 import random : fn () -> F32 from random
@@ -23,9 +24,9 @@ fn make_logos() -> Array[Stick] {
     sg_logo(290.0, 300.0, 0.75, 0.7),
     sg_logo(45.0, 400.0, 0.5, 1.7),
   ];
-  let sticks = array_new#[Stick](zero_stick(), array_len#[Array[Stick]](logos) * 3);
+  let sticks = prim::array_new(zero_stick(), prim::array_len(logos) * 3);
   let i = 0;
-  while i < array_len#[Array[Stick]](logos) {
+  while i < prim::array_len(logos) {
     let offset = i * 3;
     set sticks[offset] = logos[i][0];
     set sticks[offset + 1] = logos[i][1];
@@ -58,7 +59,7 @@ fn draw_stick(stick : Stick) {
 }
 
 fn rad(deg : I32) -> F32 {
- f32_convert_i32(deg) * two_pi / 360.0
+ prim::f32_convert_i32(deg) * two_pi / 360.0
 }
 
 struct Vec2 {
@@ -95,7 +96,7 @@ fn tick_stick(stick : Stick, time : F32) {
     set stick.velocity.y = stick.velocity.y + (time * 500.0);
   } else {};
   tick_position(stick.position, stick.velocity, time);
-  set stick.degree = stick.degree + i32_trunc_f32(stick.turns_per_sec * 360.0 * time);
+  set stick.degree = stick.degree + prim::i32_trunc_f32(stick.turns_per_sec * 360.0 * time);
 }
 
 fn zero_stick() -> Stick {
@@ -154,7 +155,7 @@ fn sg_logo(x : F32, y : F32, size : F32, turns_per_sec : F32) -> Array[Stick] {
 
 fn random_sign(x : F32) -> F32 {
   if random() < 0.5 {
-    f32_neg(x)
+    prim::f32_neg(x)
   } else {
     x
   }
@@ -175,11 +176,11 @@ fn tick(elapsed_time_ms : F32) {
     false
   };
 
-  while i < array_len#[Stick](sticks) {
+  while i < prim::array_len(sticks) {
     if boom {
       let v = Vec2 {
         x = random_sign(random_between(100.0, 120.0)),
-        y = f32_neg(random_between(400.0, 450.0)),
+        y = prim::f32_neg(random_between(400.0, 450.0)),
       };
       set sticks[i].velocity = v;
       set sticks[i].turns_per_sec = random_between(0.5, 2.5);

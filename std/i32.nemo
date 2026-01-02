@@ -1,6 +1,7 @@
 module i32
 exports (print, print_binary, print_hex, print_radix)
 
+use prim
 use string
 use byte
 use vec
@@ -30,7 +31,7 @@ fn print_radix(i : I32, radix : I32) -> string::Str {
 
   let chars : vec::Vec[I32] = vec::new(0);
   while i != 0 {
-    let digit = i32_rem(i, radix);
+    let digit = prim::i32_rem(i, radix);
     vec::push(chars, alphabet[digit]);
     set i = i / radix;
   };
@@ -40,10 +41,10 @@ fn print_radix(i : I32, radix : I32) -> string::Str {
   };
 
   let char_count = chars.len;
-  let bytes = bytes_new(0, char_count);
+  let bytes = prim::bytes_new(0, char_count);
   let j = 0;
   while j < char_count {
-    bytes_set(bytes, char_count - j - 1, chars.buf[j]);
+    prim::bytes_set(bytes, char_count - j - 1, chars.buf[j]);
     set j = j + 1;
   };
   string::unsafe_new(bytes)
