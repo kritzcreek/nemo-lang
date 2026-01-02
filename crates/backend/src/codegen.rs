@@ -805,6 +805,17 @@ impl<'a> Codegen<'a> {
             "f32_convert_i32" => vec![Instruction::F32ConvertI32S],
             "f32_convert_u32" => vec![Instruction::F32ConvertI32U],
 
+            "f64_neg" => vec![Instruction::F64Neg],
+            "f64_abs" => vec![Instruction::F64Abs],
+            "f64_ceil" => vec![Instruction::F64Ceil],
+            "f64_floor" => vec![Instruction::F64Floor],
+            "f64_trunc" => vec![Instruction::F64Trunc],
+            "f64_nearest" => vec![Instruction::F64Nearest],
+            "f64_sqrt" => vec![Instruction::F64Sqrt],
+            "f64_copysign" => vec![Instruction::F64Copysign],
+            "f64_min" => vec![Instruction::F64Min],
+            "f64_max" => vec![Instruction::F64Max],
+
             "i32_clz" | "u32_clz" => vec![Instruction::I32Clz],
             "i32_ctz" | "u32_ctz" => vec![Instruction::I32Ctz],
             "i32_popcnt" | "u32_popcnt" => vec![Instruction::I32Popcnt],
@@ -815,6 +826,16 @@ impl<'a> Codegen<'a> {
             "i32_xor" | "u32_xor" => vec![Instruction::I32Xor],
             "i32_shl" | "u32_shl" => vec![Instruction::I32Shl],
 
+            "i64_clz" | "u64_clz" => vec![Instruction::I64Clz],
+            "i64_ctz" | "u64_ctz" => vec![Instruction::I64Ctz],
+            "i64_popcnt" | "u64_popcnt" => vec![Instruction::I64Popcnt],
+            "i64_rotl" | "u64_rotl" => vec![Instruction::I64Rotl],
+            "i64_rotr" | "u64_rotr" => vec![Instruction::I64Rotr],
+            "i64_and" | "u64_and" => vec![Instruction::I64And],
+            "i64_or" | "u64_or" => vec![Instruction::I64Or],
+            "i64_xor" | "u64_xor" => vec![Instruction::I64Xor],
+            "i64_shl" | "u64_shl" => vec![Instruction::I64Shl],
+
             "i32_rem" => vec![Instruction::I32RemS],
             "u32_rem" => vec![Instruction::I32RemU],
             "i32_shr" => vec![Instruction::I32ShrS],
@@ -822,9 +843,18 @@ impl<'a> Codegen<'a> {
             "i32_trunc_f32" => vec![Instruction::I32TruncF32S],
             "u32_trunc_f32" => vec![Instruction::I32TruncF32U],
 
+            "i64_rem" => vec![Instruction::I64RemS],
+            "u64_rem" => vec![Instruction::I64RemU],
+            "i64_shr" => vec![Instruction::I64ShrS],
+            "u64_shr" => vec![Instruction::I64ShrU],
+            "i64_trunc_f64" => vec![Instruction::I64TruncF64S],
+            "u64_trunc_f64" => vec![Instruction::I64TruncF64U],
+
             "i32_to_u32" | "u32_to_i32" => vec![],
+            "i64_to_u64" | "u64_to_i64" => vec![],
 
             "i32_reinterpret_f32" => vec![Instruction::I32ReinterpretF32],
+            "i64_reinterpret_f64" => vec![Instruction::I64ReinterpretF64],
 
             "array_len" => vec![Instruction::ArrayLen],
             "array_new" => {

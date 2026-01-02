@@ -25,6 +25,18 @@ pub fn define_prim(ctx: &Ctx) {
         (Ty::F32, Arity::Binary, "f32_copysign"),
         (Ty::F32, Arity::Binary, "f32_min"),
         (Ty::F32, Arity::Binary, "f32_max"),
+
+        (Ty::F64, Arity::Unary, "f64_neg"),
+        (Ty::F64, Arity::Unary, "f64_abs"),
+        (Ty::F64, Arity::Unary, "f64_ceil"),
+        (Ty::F64, Arity::Unary, "f64_floor"),
+        (Ty::F64, Arity::Unary, "f64_trunc"),
+        (Ty::F64, Arity::Unary, "f64_nearest"),
+        (Ty::F64, Arity::Unary, "f64_sqrt"),
+        (Ty::F64, Arity::Binary, "f64_copysign"),
+        (Ty::F64, Arity::Binary, "f64_min"),
+        (Ty::F64, Arity::Binary, "f64_max"),
+
         (Ty::I32, Arity::Unary, "i32_clz"),
         (Ty::I32, Arity::Unary, "i32_ctz"),
         (Ty::I32, Arity::Unary, "i32_popcnt"),
@@ -36,6 +48,19 @@ pub fn define_prim(ctx: &Ctx) {
         (Ty::I32, Arity::Binary, "i32_rem"),
         (Ty::I32, Arity::Binary, "i32_shl"),
         (Ty::I32, Arity::Binary, "i32_shr"),
+
+        (Ty::I64, Arity::Unary, "i64_clz"),
+        (Ty::I64, Arity::Unary, "i64_ctz"),
+        (Ty::I64, Arity::Unary, "i64_popcnt"),
+        (Ty::I64, Arity::Unary, "i64_rotl"),
+        (Ty::I64, Arity::Unary, "i64_rotr"),
+        (Ty::I64, Arity::Binary, "i64_and"),
+        (Ty::I64, Arity::Binary, "i64_or"),
+        (Ty::I64, Arity::Binary, "i64_xor"),
+        (Ty::I64, Arity::Binary, "i64_rem"),
+        (Ty::I64, Arity::Binary, "i64_shl"),
+        (Ty::I64, Arity::Binary, "i64_shr"),
+
         (Ty::U32, Arity::Unary, "u32_clz"),
         (Ty::U32, Arity::Unary, "u32_ctz"),
         (Ty::U32, Arity::Unary, "u32_popcnt"),
@@ -48,6 +73,20 @@ pub fn define_prim(ctx: &Ctx) {
         (Ty::U32, Arity::Binary, "u32_rem"),
         (Ty::U32, Arity::Binary, "u32_shl"),
         (Ty::U32, Arity::Binary, "u32_shr"),
+
+        (Ty::U64, Arity::Unary, "u64_clz"),
+        (Ty::U64, Arity::Unary, "u64_ctz"),
+        (Ty::U64, Arity::Unary, "u64_popcnt"),
+        (Ty::U64, Arity::Unary, "u64_rotl"),
+        (Ty::U64, Arity::Unary, "u64_rotr"),
+        (Ty::U64, Arity::Binary, "u64_and"),
+        (Ty::U64, Arity::Binary, "u64_or"),
+        (Ty::U64, Arity::Binary, "u64_xor"),
+        (Ty::U64, Arity::Binary, "u64_rem"),
+        (Ty::U64, Arity::Binary, "u64_rem"),
+        (Ty::U64, Arity::Binary, "u64_shl"),
+        (Ty::U64, Arity::Binary, "u64_shr"),
+
     ];
 
     let conversions = [
@@ -58,6 +97,15 @@ pub fn define_prim(ctx: &Ctx) {
         (Ty::F32, Ty::I32, "i32_reinterpret_f32"),
         (Ty::I32, Ty::U32, "i32_to_u32"),
         (Ty::U32, Ty::I32, "u32_to_i32"),
+
+        (Ty::I64, Ty::F64, "f64_convert_i64"),
+        (Ty::U64, Ty::F64, "f64_convert_u64"),
+        (Ty::F64, Ty::I64, "i64_trunc_f64"),
+        (Ty::F64, Ty::U64, "u64_trunc_f64"),
+        (Ty::F64, Ty::I64, "i64_reinterpret_f64"),
+        (Ty::I64, Ty::U64, "i64_to_u64"),
+        (Ty::U64, Ty::I64, "u64_to_i64"),
+
     ];
 
     let func_name = |n| {
