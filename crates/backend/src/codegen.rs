@@ -818,6 +818,7 @@ impl<'a> Codegen<'a> {
             "f32_max" => vec![Instruction::F32Max],
             "f32_convert_i32" => vec![Instruction::F32ConvertI32S],
             "f32_convert_u32" => vec![Instruction::F32ConvertI32U],
+            "f32_demote_f64" => vec![Instruction::F32DemoteF64],
 
             "f64_neg" => vec![Instruction::F64Neg],
             "f64_abs" => vec![Instruction::F64Abs],
@@ -831,6 +832,7 @@ impl<'a> Codegen<'a> {
             "f64_max" => vec![Instruction::F64Max],
             "f64_convert_i64" => vec![Instruction::F64ConvertI64S],
             "f64_convert_u64" => vec![Instruction::F64ConvertI64U],
+            "f64_promote_f32" => vec![Instruction::F64PromoteF32],
 
             "i32_clz" | "u32_clz" => vec![Instruction::I32Clz],
             "i32_ctz" | "u32_ctz" => vec![Instruction::I32Ctz],
@@ -868,6 +870,9 @@ impl<'a> Codegen<'a> {
 
             "i32_to_u32" | "u32_to_i32" => vec![],
             "i64_to_u64" | "u64_to_i64" => vec![],
+
+            "i64_extend_i32" => vec![Instruction::I64ExtendI32S],
+            "u64_extend_u32" => vec![Instruction::I64ExtendI32U],
 
             "i32_reinterpret_f32" => vec![Instruction::I32ReinterpretF32],
             "i64_reinterpret_f64" => vec![Instruction::I64ReinterpretF64],

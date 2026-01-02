@@ -97,7 +97,23 @@ fn wasmtime_runner(wasm: Vec<u8>) -> Result<Run> {
     linker.func_wrap(
         "env",
         "log_i64",
-        |mut caller: Caller<'_, Vec<String>>, param: i64| {
+        |mut caller: Caller<'_, Vec<String>>, param: i64| -> i32 {
+            caller.data_mut().push(format!("{param}"));
+            0
+        },
+    )?;
+    linker.func_wrap(
+        "env",
+        "log_u32",
+        |mut caller: Caller<'_, Vec<String>>, param: u32| -> i32 {
+            caller.data_mut().push(format!("{param}"));
+            0
+        },
+    )?;
+    linker.func_wrap(
+        "env",
+        "log_u64",
+        |mut caller: Caller<'_, Vec<String>>, param: u64| -> i32 {
             caller.data_mut().push(format!("{param}"));
             0
         },
@@ -105,7 +121,7 @@ fn wasmtime_runner(wasm: Vec<u8>) -> Result<Run> {
     linker.func_wrap(
         "env",
         "log_float",
-        |mut caller: Caller<'_, Vec<String>>, param: f32| {
+        |mut caller: Caller<'_, Vec<String>>, param: f32| -> i32 {
             caller.data_mut().push(format!("{param}"));
             0
         },
@@ -113,7 +129,7 @@ fn wasmtime_runner(wasm: Vec<u8>) -> Result<Run> {
     linker.func_wrap(
         "env",
         "log_f32",
-        |mut caller: Caller<'_, Vec<String>>, param: f32| {
+        |mut caller: Caller<'_, Vec<String>>, param: f32| -> i32 {
             caller.data_mut().push(format!("{param}"));
             0
         },
@@ -121,7 +137,7 @@ fn wasmtime_runner(wasm: Vec<u8>) -> Result<Run> {
     linker.func_wrap(
         "env",
         "log_f64",
-        |mut caller: Caller<'_, Vec<String>>, param: f64| {
+        |mut caller: Caller<'_, Vec<String>>, param: f64| -> i32 {
             caller.data_mut().push(format!("{param}"));
             0
         },
