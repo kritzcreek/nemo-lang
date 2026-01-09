@@ -10,6 +10,6 @@ crate-type = ["cdylib"]
 frontend = { path = "../frontend" }
 backend = { path = "../backend" }
 wasm-bindgen = "0.2.105"
-wasmprinter = "0.243"
+wasmprinter = "0.244"
 console_error_panic_hook = "0.1.7"
 camino = "1.1.9"

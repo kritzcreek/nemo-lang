@@ -10,7 +10,8 @@ use super::{
 };
 use crate::T;
 use crate::ir::{
-    self, Ctx, ExprBuilder, FuncTy, LambdaBuilder, LitBuilder, Name, PatVarBuilder, ReturnBuilder, Substitution, Symbol, TupleBuilder, TupleIdxBuilder, Ty, VarBuilder
+    self, Ctx, ExprBuilder, FuncTy, LambdaBuilder, LitBuilder, Name, PatVarBuilder, ReturnBuilder,
+    Substitution, Symbol, TupleBuilder, TupleIdxBuilder, Ty, VarBuilder,
 };
 use crate::ir::{ModuleId, NameTag};
 use crate::parser::SyntaxKind;
@@ -666,7 +667,7 @@ impl Typechecker<'_> {
                         "Bool" => return Ty::Bool,
                         "Unit" => return Ty::Unit,
                         "Bytes" => return Ty::Bytes,
-                        _ => ()
+                        _ => (),
                     };
                 }
 

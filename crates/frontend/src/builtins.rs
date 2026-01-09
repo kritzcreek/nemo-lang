@@ -98,7 +98,6 @@ pub fn define_prim(ctx: &Ctx) {
         (Ty::F64, Ty::I64, "i64_reinterpret_f64"),
         (Ty::I64, Ty::U64, "i64_to_u64"),
         (Ty::U64, Ty::I64, "u64_to_i64"),
-
         (Ty::I32, Ty::I64, "i64_extend_i32"),
         (Ty::U32, Ty::U64, "u64_extend_u32"),
         (Ty::F32, Ty::F64, "f64_promote_f32"),
