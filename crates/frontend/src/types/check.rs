@@ -43,11 +43,11 @@ impl Scope {
     }
 
     fn lookup_var(&self, v: Symbol) -> Option<(Ty, Name)> {
-        if let Some((ty, name)) = self.values.iter().rev().find_map(|scope| scope.get(&v)) {
-            Some((ty.clone(), *name))
-        } else {
-            None
-        }
+        self.values
+            .iter()
+            .rev()
+            .find_map(|scope| scope.get(&v))
+            .cloned()
     }
 
     fn add_type_var(&mut self, v: Symbol, name: Name) {

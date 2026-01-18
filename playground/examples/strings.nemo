@@ -39,25 +39,25 @@ struct CodepointAtByte {
 fn codepoint_at_byte(offset : I32, bs : Bytes) -> CodepointAtByte {
   let first_byte = prim::bytes_get(bs, offset);
   // ASCII case
-  if prim::i32_and(first_byte, 0x80) == 0 {
+  if first_byte & 0x80 == 0 {
     CodepointAtByte { codepoint = first_byte, byte_count = 1 }
   } else {
     let extra_bytes = prim::i32_xor(first_byte, 0 - 1);
     if extra_bytes == 1 {
-      let res = prim::i32_shl(prim::i32_and(first_byte, 63), 6);
-      set res = res + prim::i32_and(prim::bytes_get(bs, offset + 1), 63);
+      let res = (first_byte & 63) << 6;
+      set res = res + (prim::bytes_get(bs, offset + 1) & 63);
       CodepointAtByte { codepoint = res, byte_count = 2 }
     } else {
       if extra_bytes == 2 {
-        let res = prim::i32_shl(prim::i32_and(first_byte, 15), 6);
-        set res = prim::i32_shl(res + prim::i32_and(prim::bytes_get(bs, offset + 1), 63), 6);
-        set res = res + prim::i32_and(prim::bytes_get(bs, offset + 2), 63);
+        let res = (first_byte & 15) << 6;
+        set res = (res + (prim::bytes_get(bs, offset + 1) & 63)) << 6;
+        set res = res + (prim::bytes_get(bs, offset + 2) & 63);
         CodepointAtByte { codepoint = res, byte_count = 3 }
       } else {
-        let res = prim::i32_shl(prim::i32_and(first_byte, 7), 6);
-        set res = prim::i32_shl(res + prim::i32_and(prim::bytes_get(bs, offset + 1), 63), 6);
-        set res = prim::i32_shl(res + prim::i32_and(prim::bytes_get(bs, offset + 2), 63), 6);
-        set res = res + prim::i32_and(prim::bytes_get(bs, offset + 3), 63);
+        let res = (first_byte & 7) << 6;
+        set res = (res + (prim::bytes_get(bs, offset + 1) & 63)) << 6;
+        set res = (res + (prim::bytes_get(bs, offset + 2) & 63)) << 6;
+        set res = res + (prim::bytes_get(bs, offset + 3) & 63);
         CodepointAtByte { codepoint = res, byte_count = 4 }
       }
     }
@@ -109,14 +109,14 @@ fn print_bytes(s: Bytes) {
 // The following functions aren't used in the example, but they're nice to have
 fn bytes_eq(a: Bytes, b: Bytes) -> Bool {
   let len = prim::bytes_len(a);
-  if len != prim::bytes_len(b) {
+  when len != prim::bytes_len(b) {
     return false;
-  } else {};
+  };
   let i = 0;
   while i < len {
-    if prim::bytes_get(a, i) != prim::bytes_get(b, i) {
+    when prim::bytes_get(a, i) != prim::bytes_get(b, i) {
       return false;
-    } else {};
+    };
     set i = i + 1;
   };
   true
@@ -128,9 +128,9 @@ fn codepoint_len(bs : Bytes) -> I32 {
   let bytes_len = prim::bytes_len(bs);
   while i < bytes_len {
     let b = prim::bytes_get(bs, i);
-    if prim::i32_and(b, 0xC0) != 0x80 {
+    when b & 0xC0 != 0x80 {
       set result = result + 1;
-    } else {};
+    };
     set i = i + 1;
   };
   result
@@ -151,14 +151,14 @@ fn str_concat(a : Str, b : Str) -> Str {
 }
 
 fn str_eq(a : Str, b : Str) -> Bool {
-  if a.len != b.len {
+  when a.len != b.len {
     return false;
-  } else {};
+  };
   let i = 0;
   while i < a.len {
-    if prim::bytes_get(a.buf, a.offset + i) != prim::bytes_get(b.buf, b.offset + i) {
+    when prim::bytes_get(a.buf, a.offset + i) != prim::bytes_get(b.buf, b.offset + i) {
       return false;
-    } else {};
+    };
     set i = i + 1;
   };
   true

@@ -92,9 +92,9 @@ fn tick_position(position : Vec2, velocity : Vec2, time : F32) {
 }
 
 fn tick_stick(stick : Stick, time : F32) {
-  if boom_timer < 0.0 {
+  when boom_timer < 0.0 {
     set stick.velocity.y = stick.velocity.y + (time * 500.0);
-  } else {};
+  };
   tick_position(stick.position, stick.velocity, time);
   set stick.degree = stick.degree + prim::i32_trunc_f32(stick.turns_per_sec * 360.0 * time);
 }
@@ -177,14 +177,14 @@ fn tick(elapsed_time_ms : F32) {
   };
 
   while i < prim::array_len(sticks) {
-    if boom {
+    when boom {
       let v = Vec2 {
         x = random_sign(random_between(100.0, 120.0)),
         y = prim::f32_neg(random_between(400.0, 450.0)),
       };
       set sticks[i].velocity = v;
       set sticks[i].turns_per_sec = random_between(0.5, 2.5);
-    } else {};
+    };
     tick_stick(sticks[i], time);
     draw_stick(sticks[i]);
     set i = i + 1;
