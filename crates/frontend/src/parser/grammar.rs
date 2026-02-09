@@ -465,8 +465,13 @@ fn if_expr(p: &mut Parser) {
         p.error("expected a block as the then branch")
     }
     p.expect(T![else]);
-    if !block_expr(p).made_progress() {
-        p.error("expected a block as the else branch")
+    match p.current() {
+        T![if] => if_expr(p),
+        T![when] => when_expr(p),
+        T!['{'] => {
+            block_expr(p);
+        }
+        _ => p.error("expected an else expression"),
     }
     p.finish_at(c, SyntaxKind::EIf)
 }

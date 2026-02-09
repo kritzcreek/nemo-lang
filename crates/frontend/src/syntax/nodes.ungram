@@ -100,7 +100,7 @@ EStruct = ModQualifier? Qualifier? 'upper_ident' ETyArgList? '{' EStructField* '
 EStructField = 'ident' '=' Expr
 
 EStructIdx = Expr '.' 'ident'
-EIf = Condition then_branch:EBlock else_branch:EBlock
+EIf = Condition then_branch:EBlock else_branch:Expr
 EWhen = Condition branch:Expr
 Condition = Expr
 

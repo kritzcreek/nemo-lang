@@ -39,28 +39,25 @@ struct CodepointAtByte {
 fn codepoint_at_byte(offset : I32, bs : Bytes) -> CodepointAtByte {
   let first_byte = prim::bytes_get(bs, offset);
   // ASCII case
-  if first_byte & 0x80 == 0 {
-    CodepointAtByte { codepoint = first_byte, byte_count = 1 }
+  when prim::i32_and(first_byte, 0x80) == 0 {
+    return CodepointAtByte { codepoint = first_byte, byte_count = 1 }
+  };
+  let extra_bytes = prim::i32_xor(first_byte, 0 - 1);
+  if extra_bytes == 1 {
+    let res = (first_byte & 63) << 6;
+    set res = res + (prim::bytes_get(bs, offset + 1) & 63);
+    CodepointAtByte { codepoint = res, byte_count = 2 }
+  } else if extra_bytes == 2 {
+      let res = (first_byte & 15) << 6;
+      set res = (res + prim::bytes_get(bs, offset + 1) & 63) << 6;
+      set res = res + (prim::bytes_get(bs, offset + 2) & 63);
+      CodepointAtByte { codepoint = res, byte_count = 3 }
   } else {
-    let extra_bytes = prim::i32_xor(first_byte, 0 - 1);
-    if extra_bytes == 1 {
-      let res = (first_byte & 63) << 6;
-      set res = res + (prim::bytes_get(bs, offset + 1) & 63);
-      CodepointAtByte { codepoint = res, byte_count = 2 }
-    } else {
-      if extra_bytes == 2 {
-        let res = (first_byte & 15) << 6;
-        set res = (res + (prim::bytes_get(bs, offset + 1) & 63)) << 6;
-        set res = res + (prim::bytes_get(bs, offset + 2) & 63);
-        CodepointAtByte { codepoint = res, byte_count = 3 }
-      } else {
-        let res = (first_byte & 7) << 6;
-        set res = (res + (prim::bytes_get(bs, offset + 1) & 63)) << 6;
-        set res = (res + (prim::bytes_get(bs, offset + 2) & 63)) << 6;
-        set res = res + (prim::bytes_get(bs, offset + 3) & 63);
-        CodepointAtByte { codepoint = res, byte_count = 4 }
-      }
-    }
+    let res = (first_byte & 7) << 6;
+    set res = (res + (prim::bytes_get(bs, offset + 1) & 63)) << 6;
+    set res = (res + (prim::bytes_get(bs, offset + 2) & 63)) << 6;
+    set res = res + (prim::bytes_get(bs, offset + 3) & 63);
+    CodepointAtByte { codepoint = res, byte_count = 4 }
   }
 }
 

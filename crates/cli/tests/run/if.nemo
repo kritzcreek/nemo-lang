@@ -3,6 +3,19 @@ import log : fn (I32) -> Unit from log
 fn main() {
   if true { log(1) } else { log(2) };
   if false { log(1) } else { log(2) };
+  let x = 10;
+  if x == 3 {
+    log(2)
+  } else if x == 10 {
+    log(5)
+  } else {
+    log(10)
+  };
+  if x == 5 {
+    log(1)
+  } else when x == 10 {
+    log(2)
+  };
   when true { log(3) };
   when false { log(4) };
 }
