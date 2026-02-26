@@ -200,6 +200,27 @@ pub fn define_prim(ctx: &Ctx) {
             },
         );
     }
+
+    {
+        let (sym, name) = func_name("array_fill");
+        let ty_name = ty_param();
+        functions.insert(
+            sym,
+            FuncDef {
+                name,
+                ty_params: vec![ty_name],
+                ty: FuncTy {
+                    arguments: vec![
+                        Ty::Array(Box::new(Ty::Var(ty_name))),
+                        Ty::I32,
+                        Ty::Var(ty_name),
+                        Ty::I32,
+                    ],
+                    result: Ty::Unit,
+                },
+            },
+        );
+    }
     {
         let (sym, name) = func_name("panic");
         functions.insert(
