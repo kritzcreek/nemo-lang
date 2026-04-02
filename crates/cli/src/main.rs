@@ -58,7 +58,7 @@ fn find_wasm_main<T>(instance: &Instance, mut store: &mut Store<T>) -> Result<Ty
         .exports(&mut store)
         .find(|export| export.name() == "main" || export.name().ends_with("::main"))
         .unwrap();
-    main_export.into_func().unwrap().typed::<(), i32>(store)
+    Ok(main_export.into_func().unwrap().typed::<(), i32>(store)?)
 }
 
 fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
