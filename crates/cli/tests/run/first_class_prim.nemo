@@ -1,0 +1,12 @@
+module fcp
+exports (main)
+
+use prim
+
+import log_i32 : fn (I32) -> Unit from log_i32
+
+fn main() {
+  let i32_clz = prim::i32_clz;
+  let thirty_two = i32_clz(0);
+  log_i32(thirty_two);
+}

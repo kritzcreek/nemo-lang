@@ -897,10 +897,7 @@ impl<'a> Codegen<'a> {
             }
             "array_fill" => {
                 let ty_idx = self.builder.array_type_elem(ty_args.tys()[0]);
-                vec![
-                    Instruction::ArrayFill(ty_idx),
-                    Instruction::I32Const(0),
-                ]
+                vec![Instruction::ArrayFill(ty_idx), Instruction::I32Const(0)]
             }
             "bytes_get" => vec![Instruction::ArrayGetU(self.builder.bytes_ty())],
             "bytes_set" => vec![

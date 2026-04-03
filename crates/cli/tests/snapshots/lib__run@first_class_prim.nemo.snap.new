@@ -1,0 +1,8 @@
+---
+source: crates/cli/tests/lib.rs
+assertion_line: 183
+expression: output
+input_file: crates/cli/tests/run/first_class_prim.nemo
+---
+Success: 0
+32

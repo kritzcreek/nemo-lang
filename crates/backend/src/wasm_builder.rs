@@ -840,7 +840,7 @@ impl<'a> Builder<'a> {
         func_idx
     }
 
-    pub fn lookup_func(&self, name: &Name) -> FuncIdx {
+    pub fn lookup_func(&mut self, name: &Name) -> FuncIdx {
         match self
             .funcs
             .get(name)
@@ -848,10 +848,36 @@ impl<'a> Builder<'a> {
             .or_else(|| self.lookup_import(name))
         {
             Some(f) => f,
-            None => panic!(
-                "Couldn't find a function for {:?}",
-                self.resolve_name(*name)
-            ),
+            None => {
+                if name.module == ModuleId::PRIM {
+                    let sym = self.ctx.get_names(ModuleId::PRIM).lookup(*name).it;
+                    let ty = {
+                        let prim_iface = self.ctx.get_interface(ModuleId::PRIM);
+                        let func = prim_iface.lookup_func(sym).unwrap();
+                        assert!(func.ty_params.is_empty());
+                        func.ty.clone()
+                    };
+                    self.declare_func(*name, ty.clone());
+
+                    let locals = FnLocals {
+                        locals: ty.arguments.iter().map(|t| self.val_ty(t)).collect(),
+                        names: HashMap::new(),
+                    };
+                    let mut body = (0..locals.locals.len())
+                        .map(|ix| Instruction::LocalGet(ix as u32))
+                        .collect::<Vec<_>>();
+                    // TODO: move compile_builtin_call here, or move wrapper generation into codegen
+                    // (probably the latter)
+                    body.push(Instruction::I32Clz);
+                    self.fill_func(*name, locals, body);
+                    self.funcs.get(name).unwrap().index
+                } else {
+                    panic!(
+                        "Couldn't find a function for {:?}",
+                        self.resolve_name(*name)
+                    )
+                }
+            }
         }
     }
 
