@@ -1,8 +1,14 @@
+module test
+exports (main)
+
+use prim
+
 fn id[a](x : a) -> a {
   x
 }
 
 fn main() -> I32 {
   let my_id = id;
+  let array_len = prim::array_len;
   my_id#[I32](10)
 }
