@@ -805,7 +805,13 @@ impl<'a> Builder<'a> {
         });
     }
 
-    pub fn func_ref(&mut self, name: Name, closure_info: ClosureInfo, ty: &FuncTy) -> FuncIdx {
+    pub fn func_ref(
+        &mut self,
+        name: Name,
+        call: Vec<Instruction<'a>>,
+        closure_info: ClosureInfo,
+        ty: &FuncTy,
+    ) -> FuncIdx {
         if let Some(idx) = self.func_refs.get(&name) {
             return *idx;
         }
@@ -822,7 +828,7 @@ impl<'a> Builder<'a> {
         let mut instrs: Vec<Instruction> = (0..ty.arguments.len())
             .map(|i| Instruction::LocalGet(i as u32 + 1))
             .collect();
-        instrs.push(Instruction::Call(self.lookup_func(&name)));
+        instrs.extend(call);
         let func_idx = (self.imports.len() + self.funcs.len()) as u32;
         self.funcs.insert(
             func_name,
@@ -848,36 +854,10 @@ impl<'a> Builder<'a> {
             .or_else(|| self.lookup_import(name))
         {
             Some(f) => f,
-            None => {
-                if name.module == ModuleId::PRIM {
-                    let sym = self.ctx.get_names(ModuleId::PRIM).lookup(*name).it;
-                    let ty = {
-                        let prim_iface = self.ctx.get_interface(ModuleId::PRIM);
-                        let func = prim_iface.lookup_func(sym).unwrap();
-                        assert!(func.ty_params.is_empty());
-                        func.ty.clone()
-                    };
-                    self.declare_func(*name, ty.clone());
-
-                    let locals = FnLocals {
-                        locals: ty.arguments.iter().map(|t| self.val_ty(t)).collect(),
-                        names: HashMap::new(),
-                    };
-                    let mut body = (0..locals.locals.len())
-                        .map(|ix| Instruction::LocalGet(ix as u32))
-                        .collect::<Vec<_>>();
-                    // TODO: move compile_builtin_call here, or move wrapper generation into codegen
-                    // (probably the latter)
-                    body.push(Instruction::I32Clz);
-                    self.fill_func(*name, locals, body);
-                    self.funcs.get(name).unwrap().index
-                } else {
-                    panic!(
-                        "Couldn't find a function for {:?}",
-                        self.resolve_name(*name)
-                    )
-                }
-            }
+            None => panic!(
+                "Couldn't find a function for {:?}",
+                self.resolve_name(*name)
+            ),
         }
     }
 
