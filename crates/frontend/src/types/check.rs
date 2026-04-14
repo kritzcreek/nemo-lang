@@ -108,6 +108,7 @@ impl TyCtx<'_> {
         scope.lookup_var(v).or_else(|| {
             let def = self.lookup_func(v)?;
             if !def.ty_params.is_empty() {
+                // TODO: report as error
                 eprintln!(
                     "No func refs for polymorphic functions yet. Allow instantiate in the future?"
                 );
@@ -1030,11 +1031,16 @@ impl Typechecker<'_> {
                             return None;
                         }
                         Some(func_def) => {
-                            let mut builder = VarBuilder::default();
-                            builder.name(Some(func_def.name));
-                            let ir = builder.build();
-                            self.record_ref(&var_tkn, func_def.name);
-                            (Ty::Func(Box::new(func_def.ty.clone())), ir)
+                            if !func_def.ty_params.is_empty() {
+                                errors.report(v, CantInstantiateFunctionRef);
+                                (Ty::Error, None)
+                            } else {
+                                let mut builder = VarBuilder::default();
+                                builder.name(Some(func_def.name));
+                                let ir = builder.build();
+                                self.record_ref(&var_tkn, func_def.name);
+                                (Ty::Func(Box::new(func_def.ty.clone())), ir)
+                            }
                         }
                     }
                 } else {

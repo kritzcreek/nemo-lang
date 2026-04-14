@@ -14,22 +14,30 @@ success: false
 exit_code: 1
 ----- stdout -----
 [05] Error: Unknown variable id
-   ╭─[ tests/check/cant_instantiate_function_ref.nemo:6:15 ]
-   │
- 6 │   let my_id = id;
-   │               ─┬  
-   │                ╰── Unknown variable id
-───╯
+    ╭─[ tests/check/cant_instantiate_function_ref.nemo:11:15 ]
+    │
+ 11 │   let my_id = id;
+    │               ─┬  
+    │                ╰── Unknown variable id
+────╯
 
 [21] Error: Can't instantiate function reference. Only top-level functions may be polymorphic at this time.
-   ╭─[ tests/check/cant_instantiate_function_ref.nemo:7:3 ]
-   │
- 7 │   my_id#[I32](10)
-   │   ──┬──  
-   │     ╰──── Can't instantiate function reference. Only top-level functions may be polymorphic at this time.
-───╯
+    ╭─[ tests/check/cant_instantiate_function_ref.nemo:12:19 ]
+    │
+ 12 │   let array_len = prim::array_len;
+    │                   ───────┬───────  
+    │                          ╰───────── Can't instantiate function reference. Only top-level functions may be polymorphic at this time.
+────╯
+
+[21] Error: Can't instantiate function reference. Only top-level functions may be polymorphic at this time.
+    ╭─[ tests/check/cant_instantiate_function_ref.nemo:13:3 ]
+    │
+ 13 │   my_id#[I32](10)
+    │   ──┬──  
+    │     ╰──── Can't instantiate function reference. Only top-level functions may be polymorphic at this time.
+────╯
 
 
 ----- stderr -----
 No func refs for polymorphic functions yet. Allow instantiate in the future?
-Error: "Check failed with 2 errors"
+Error: "Check failed with 3 errors"

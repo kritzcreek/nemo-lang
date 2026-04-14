@@ -805,7 +805,13 @@ impl<'a> Builder<'a> {
         });
     }
 
-    pub fn func_ref(&mut self, name: Name, closure_info: ClosureInfo, ty: &FuncTy) -> FuncIdx {
+    pub fn func_ref(
+        &mut self,
+        name: Name,
+        call: Vec<Instruction<'a>>,
+        closure_info: ClosureInfo,
+        ty: &FuncTy,
+    ) -> FuncIdx {
         if let Some(idx) = self.func_refs.get(&name) {
             return *idx;
         }
@@ -822,7 +828,7 @@ impl<'a> Builder<'a> {
         let mut instrs: Vec<Instruction> = (0..ty.arguments.len())
             .map(|i| Instruction::LocalGet(i as u32 + 1))
             .collect();
-        instrs.push(Instruction::Call(self.lookup_func(&name)));
+        instrs.extend(call);
         let func_idx = (self.imports.len() + self.funcs.len()) as u32;
         self.funcs.insert(
             func_name,
@@ -840,7 +846,7 @@ impl<'a> Builder<'a> {
         func_idx
     }
 
-    pub fn lookup_func(&self, name: &Name) -> FuncIdx {
+    pub fn lookup_func(&mut self, name: &Name) -> FuncIdx {
         match self
             .funcs
             .get(name)

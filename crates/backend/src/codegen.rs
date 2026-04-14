@@ -218,7 +218,13 @@ impl<'a> Codegen<'a> {
                         unreachable!("Non-function type for function reference")
                     };
                     let closure_ty = self.builder.closure_type(ty);
-                    let wrapped_func_idx = self.builder.func_ref(name, closure_ty, ty);
+
+                    let call = if name.module == ModuleId::PRIM {
+                        self.compile_builtin_call(name, Substitution::empty())
+                    } else {
+                        vec![Instruction::Call(self.builder.lookup_func(&name))]
+                    };
+                    let wrapped_func_idx = self.builder.func_ref(name, call, closure_ty, ty);
                     vec![
                         Instruction::RefFunc(wrapped_func_idx),
                         Instruction::StructNew(closure_ty.closure_struct_ty),
@@ -897,10 +903,7 @@ impl<'a> Codegen<'a> {
             }
             "array_fill" => {
                 let ty_idx = self.builder.array_type_elem(ty_args.tys()[0]);
-                vec![
-                    Instruction::ArrayFill(ty_idx),
-                    Instruction::I32Const(0),
-                ]
+                vec![Instruction::ArrayFill(ty_idx), Instruction::I32Const(0)]
             }
             "bytes_get" => vec![Instruction::ArrayGetU(self.builder.bytes_ty())],
             "bytes_set" => vec![
