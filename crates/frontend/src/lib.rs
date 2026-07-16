@@ -161,14 +161,12 @@ fn check_modules(
     let mut parsed_modules: HashMap<ModuleId, ModuleParseResult> = HashMap::new();
     let mut module_lookup: HashMap<String, ModuleId> = HashMap::new();
     for parse_result in parse_results {
-        match parse_result {
-            Ok(res) => {
-                if module_lookup.insert(res.name.clone(), res.id).is_some() {
-                    return Err(format!("Duplicate module name declared: '{}'", res.name));
-                };
-                assert!(parsed_modules.insert(res.id, res).is_none());
-            }
-            Err(err) => return Err(err),
+        {
+            let res = parse_result?;
+            if module_lookup.insert(res.name.clone(), res.id).is_some() {
+                return Err(format!("Duplicate module name declared: '{}'", res.name));
+            };
+            assert!(parsed_modules.insert(res.id, res).is_none());
         }
     }
     let mut unknown_modules = vec![];

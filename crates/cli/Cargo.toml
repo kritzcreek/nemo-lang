@@ -13,9 +13,9 @@ frontend = { path = "../frontend" }
 backend = { path = "../backend" }
 # language-server = { path = "../language-server" }
 camino = "1.1.9"
-wasmtime = "43"
+wasmtime = "46"
 anyhow = "1.0"
 
 [dev-dependencies]
 insta = { version = "1.42.0", features = ["glob", "filters"] }
-insta-cmd = "0.6.0"
+insta-cmd = "0.7.0"

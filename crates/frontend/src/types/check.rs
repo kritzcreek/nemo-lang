@@ -794,7 +794,7 @@ impl Typechecker<'_> {
                 let Some(param_list) = top_fn.param_list() else {
                     continue;
                 };
-                for (param, ty) in param_list.params().zip(func_ty.arguments.into_iter()) {
+                for (param, ty) in param_list.params().zip(func_ty.arguments) {
                     let Some(ident_tkn) = param.ident_token() else {
                         continue;
                     };

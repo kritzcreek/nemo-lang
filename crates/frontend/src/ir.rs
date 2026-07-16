@@ -234,7 +234,7 @@ impl Substitution {
             return subst;
         }
         let mut subst = subst;
-        for (_, v) in subst.0.iter_mut() {
+        for v in subst.0.values_mut() {
             let ty = std::mem::replace(v, Ty::Error);
             *v = self.apply(ty);
         }
@@ -242,21 +242,15 @@ impl Substitution {
     }
 
     pub fn names(&self) -> Vec<Name> {
-        let mut keys: Vec<Name> = self.0.keys().copied().collect();
-        keys.sort();
-        keys
+      self.0.keys().copied().collect()
     }
 
     pub fn tys(&self) -> Vec<&Ty> {
-        let mut keys: Vec<(&Name, &Ty)> = self.0.iter().collect();
-        keys.sort_by_key(|(n, _)| **n);
-        keys.into_iter().map(|(_, t)| t).collect()
+      self.0.values().collect()
     }
 
     pub fn tys_owned(&self) -> Vec<Ty> {
-        let mut keys: Vec<(&Name, &Ty)> = self.0.iter().collect();
-        keys.sort_by_key(|(n, _)| **n);
-        keys.into_iter().map(|(_, t)| t.clone()).collect()
+      self.0.values().cloned().collect()
     }
 }
 
