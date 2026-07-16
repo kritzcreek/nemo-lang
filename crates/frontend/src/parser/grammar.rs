@@ -388,7 +388,9 @@ fn expr_bp(p: &mut Parser, min_bp: u32) -> Progress {
     }
     postfix_expr(p, c);
 
-    while let Some((op_bp, op)) = current_bin_op(p) && op_bp > min_bp {
+    while let Some((op_bp, op)) = current_bin_op(p)
+        && op_bp > min_bp
+    {
         p.start_node(SyntaxKind::BinOp);
         p.bump(op);
         p.finish_node();

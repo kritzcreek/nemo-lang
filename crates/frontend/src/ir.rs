@@ -242,15 +242,15 @@ impl Substitution {
     }
 
     pub fn names(&self) -> Vec<Name> {
-      self.0.keys().copied().collect()
+        self.0.keys().copied().collect()
     }
 
     pub fn tys(&self) -> Vec<&Ty> {
-      self.0.values().collect()
+        self.0.values().collect()
     }
 
     pub fn tys_owned(&self) -> Vec<Ty> {
-      self.0.values().cloned().collect()
+        self.0.values().cloned().collect()
     }
 }
 
