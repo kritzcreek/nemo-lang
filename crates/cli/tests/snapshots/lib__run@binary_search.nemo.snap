@@ -1,0 +1,13 @@
+---
+source: crates/cli/tests/lib.rs
+expression: output
+input_file: crates/cli/tests/run/binary_search.nemo
+---
+Success: 0
+0
+4
+9
+5
+-1
+-1
+-1

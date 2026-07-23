@@ -1,0 +1,32 @@
+use prim
+
+import log : fn (I32) -> Unit from log
+
+// Return the index of `target` in the sorted array `xs`, or -1 if absent.
+fn binary_search(xs : Array[I32], target : I32) -> I32 {
+  let lo = 0;
+  let hi = prim::array_len(xs) - 1;
+  let result = -1;
+  while lo <= hi && result < 0 {
+    let mid = lo + (hi - lo) / 2;
+    if xs[mid] == target {
+      set result = mid;
+    } else if xs[mid] < target {
+      set lo = mid + 1;
+    } else {
+      set hi = mid - 1;
+    };
+  };
+  result
+}
+
+fn main() {
+  let xs = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19];
+  log(binary_search(xs, 1));   // 0
+  log(binary_search(xs, 9));   // 4
+  log(binary_search(xs, 19));  // 9
+  log(binary_search(xs, 11));  // 5
+  log(binary_search(xs, 4));   // -1 (absent)
+  log(binary_search(xs, 20));  // -1 (past the end)
+  log(binary_search(xs, 0));   // -1 (before the start)
+}

@@ -1,0 +1,164 @@
+use prim
+
+import log : fn (I32) -> Unit from log
+
+fn log_array(xs : Array[I32]) {
+  let i = 0;
+  while i < prim::array_len(xs) {
+    log(xs[i]);
+    set i = i + 1;
+  }
+}
+
+fn bubble_sort(xs : Array[I32]) {
+  let n = prim::array_len(xs);
+  let i = 0;
+  while i < n {
+    let j = 0;
+    while j < n - i - 1 {
+      when xs[j] > xs[j + 1] {
+        let tmp = xs[j];
+        set xs[j] = xs[j + 1];
+        set xs[j + 1] = tmp;
+      };
+      set j = j + 1;
+    };
+    set i = i + 1;
+  }
+}
+
+fn insertion_sort(xs : Array[I32]) {
+  let n = prim::array_len(xs);
+  let i = 1;
+  while i < n {
+    let key = xs[i];
+    let j = i - 1;
+    while j >= 0 && xs[j] > key {
+      set xs[j + 1] = xs[j];
+      set j = j - 1;
+    };
+    set xs[j + 1] = key;
+    set i = i + 1;
+  }
+}
+
+fn selection_sort(xs : Array[I32]) {
+  let n = prim::array_len(xs);
+  let i = 0;
+  while i < n - 1 {
+    let min = i;
+    let j = i + 1;
+    while j < n {
+      when xs[j] < xs[min] {
+        set min = j;
+      };
+      set j = j + 1;
+    };
+    let tmp = xs[i];
+    set xs[i] = xs[min];
+    set xs[min] = tmp;
+    set i = i + 1;
+  }
+}
+
+fn partition(xs : Array[I32], lo : I32, hi : I32) -> I32 {
+  let pivot = xs[hi];
+  let i = lo - 1;
+  let j = lo;
+  while j < hi {
+    when xs[j] <= pivot {
+      set i = i + 1;
+      let tmp = xs[i];
+      set xs[i] = xs[j];
+      set xs[j] = tmp;
+    };
+    set j = j + 1;
+  };
+  let tmp = xs[i + 1];
+  set xs[i + 1] = xs[hi];
+  set xs[hi] = tmp;
+  i + 1
+}
+
+fn quicksort_range(xs : Array[I32], lo : I32, hi : I32) {
+  when lo < hi {
+    let p = partition(xs, lo, hi);
+    quicksort_range(xs, lo, p - 1);
+    quicksort_range(xs, p + 1, hi);
+  };
+}
+
+fn quicksort(xs : Array[I32]) {
+  quicksort_range(xs, 0, prim::array_len(xs) - 1);
+}
+
+// Merge the two sorted halves xs[lo..mid) and xs[mid..hi) using scratch.
+fn merge(xs : Array[I32], scratch : Array[I32], lo : I32, mid : I32, hi : I32) {
+  let i = lo;
+  let j = mid;
+  let k = lo;
+  while i < mid && j < hi {
+    if xs[i] <= xs[j] {
+      set scratch[k] = xs[i];
+      set i = i + 1;
+    } else {
+      set scratch[k] = xs[j];
+      set j = j + 1;
+    };
+    set k = k + 1;
+  };
+  while i < mid {
+    set scratch[k] = xs[i];
+    set i = i + 1;
+    set k = k + 1;
+  };
+  while j < hi {
+    set scratch[k] = xs[j];
+    set j = j + 1;
+    set k = k + 1;
+  };
+  // Copy the merged range back into xs.
+  set k = lo;
+  while k < hi {
+    set xs[k] = scratch[k];
+    set k = k + 1;
+  }
+}
+
+// Sort the half-open range xs[lo..hi).
+fn merge_sort_range(xs : Array[I32], scratch : Array[I32], lo : I32, hi : I32) {
+  when hi - lo > 1 {
+    let mid = lo + (hi - lo) / 2;
+    merge_sort_range(xs, scratch, lo, mid);
+    merge_sort_range(xs, scratch, mid, hi);
+    merge(xs, scratch, lo, mid, hi);
+  };
+}
+
+fn merge_sort(xs : Array[I32]) {
+  let n = prim::array_len(xs);
+  let scratch = prim::array_new(0, n);
+  merge_sort_range(xs, scratch, 0, n);
+}
+
+fn main() {
+  let a = [5, 2, 9, 1, 5, 6, 3, 8, 7, 0, 4];
+  bubble_sort(a);
+  log_array(a);
+
+  let b = [9, 3, 7, 1, 8, 2, 6, 0, 5, 4];
+  insertion_sort(b);
+  log_array(b);
+
+  let c = [4, 8, 1, 6, 3, 9, 0, 7, 2, 5];
+  selection_sort(c);
+  log_array(c);
+
+  let d = [8, 3, 1, 7, 0, 10, 2, 5, 9, 4, 6];
+  quicksort(d);
+  log_array(d);
+
+  let e = [6, 2, 8, 4, 0, 9, 1, 7, 3, 5];
+  merge_sort(e);
+  log_array(e);
+}
